@@ -7,13 +7,29 @@
     <property name="version" value="1.2"/>
 
 	<path id="my.classpath">
-		<pathelement location="${libs}/*.jar"/>
+		<pathelement location="${libs}/basicplayer3.0.jar"/>
+		<pathelement location="${libs}/commons-logging-api.jar"/>
+		<pathelement location="${libs}/JHTK.jar"/>
+		<pathelement location="${libs}/jl1.0.jar"/>
+		<pathelement location="${libs}/jogg-0.0.7.jar"/>
+		<pathelement location="${libs}/jorbis-0.0.15.jar"/>
+		<pathelement location="${libs}/jsafran.jar"/>
+		<pathelement location="${libs}/jspeex0.9.7.jar"/>
+		<pathelement location="${libs}/JUNG.jar"/>
+		<pathelement location="${libs}/junit-4.5.jar"/>
+		<pathelement location="${libs}/mp3spi1.9.4.jar"/>
+		<pathelement location="${libs}/sphinx4.jar"/>
+		<pathelement location="${libs}/tritonus_gsm-0.3.6.jar"/>
+		<pathelement location="${libs}/tritonus_remaining.jar"/>
+		<pathelement location="${libs}/tritonus_share.jar"/>
+		<pathelement location="${libs}/vorbisspi1.0.2.jar"/>
+		<pathelement location="${libs}/weka.jar"/>
 	</path>
 	
     <target name="compile" description="compile the source " >
         <echo message="JVM - ${ant.java.version}" />
         <mkdir dir="${build}"/>
-        <javac debug="true" srcdir="${src}" destdir="${build}" encoding="UTF-8">
+        <javac debug="true" srcdir="${src}" includes="tools/**/*,plugins/**/*.java,main/**/*.java,utils/**/*.java,speechreco/**/*.java,test/**/*.java" destdir="${build}" encoding="UTF-8">
     	    <classpath refid="my.classpath" />
         </javac>
     </target>
