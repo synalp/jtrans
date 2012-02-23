@@ -10,34 +10,34 @@ Copyright Christophe Cerisara, Josselin Pierre (1er septembre 2008)
 
 cerisara@loria.fr
 
-Ce logiciel est un programme informatique servant à aligner un
+Ce logiciel est un programme informatique servant e aligner un
 corpus de parole avec sa transcription textuelle.
 
-Ce logiciel est régi par la licence CeCILL-C soumise au droit français et
+Ce logiciel est regi par la licence CeCILL-C soumise au droit franeais et
 respectant les principes de diffusion des logiciels libres. Vous pouvez
 utiliser, modifier et/ou redistribuer ce programme sous les conditions
-de la licence CeCILL-C telle que diffusée par le CEA, le CNRS et l'INRIA 
+de la licence CeCILL-C telle que diffusee par le CEA, le CNRS et l'INRIA 
 sur le site "http://www.cecill.info".
 
-En contrepartie de l'accessibilité au code source et des droits de copie,
-de modification et de redistribution accordés par cette licence, il n'est
-offert aux utilisateurs qu'une garantie limitée.  Pour les mêmes raisons,
-seule une responsabilité restreinte pèse sur l'auteur du programme,  le
-titulaire des droits patrimoniaux et les concédants successifs.
+En contrepartie de l'accessibilite au code source et des droits de copie,
+de modification et de redistribution accordes par cette licence, il n'est
+offert aux utilisateurs qu'une garantie limitee.  Pour les memes raisons,
+seule une responsabilite restreinte pese sur l'auteur du programme,  le
+titulaire des droits patrimoniaux et les concedants successifs.
 
-A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
-avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
-sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+A cet egard  l'attention de l'utilisateur est attiree sur les risques
+associes au chargement,  e l'utilisation,  e la modification et/ou au
+developpement et e la reproduction du logiciel par l'utilisateur etant 
+donne sa specificite de logiciel libre, qui peut le rendre complexe e 
+manipuler et qui le reserve donc e des developpeurs et des professionnels
+avertis possedant  des  connaissances  informatiques approfondies.  Les
+utilisateurs sont donc invites e charger  et  tester  l'adequation  du
+logiciel e leurs besoins dans des conditions permettant d'assurer la
+securite de leurs systemes et ou de leurs donnees et, plus generalement, 
+e l'utiliser et l'exploiter dans les memes conditions de securite. 
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
-pris connaissance de la licence CeCILL-C, et que vous en avez accepté les
+Le fait que vous puissiez acceder e cet en-tete signifie que vous avez 
+pris connaissance de la licence CeCILL-C, et que vous en avez accepte les
 termes.
 */
 
@@ -67,7 +67,7 @@ import plugins.text.regexp.TypeElement;
 import plugins.text.regexp.controler.ActionAddRegexp;
 import plugins.text.regexp.controler.ActionDeleteRegexp;
 
-/** Fenetre d'édition des regexp */
+/** Fenetre d'edition des regexp */
 public class RegExpFrame extends JFrame {
 
 	//---------------- Private Fields ---------------
@@ -78,7 +78,7 @@ public class RegExpFrame extends JFrame {
 	
 	//--------------------- Constructor -----------------
 	public RegExpFrame(TexteEditor textEdit){
-		setTitle("Edition des différents types");
+		setTitle("Edition des differents types");
 		texteEditor = textEdit;
 		
 		initFileFilters();
@@ -127,7 +127,7 @@ public class RegExpFrame extends JFrame {
 		
 		JPanel pan;
 		JList liste;
-		//Un panel pour chaque element défini.
+		//Un panel pour chaque element defini.
 		for(TypeElement typeElement : texteEditor.getListeTypes()){
 			pan = new JPanel();
 			pan.setLayout(new BorderLayout());
@@ -163,10 +163,10 @@ public class RegExpFrame extends JFrame {
 		
 		JTextPane texteExplicatif = new JTextPane();
 		StringBuilder strBuilder = new StringBuilder();
-		strBuilder.append("Cette fenêtre vous permet d'éditer les expressions régulières ");
-		strBuilder.append("qui permettent de reconnaitre les différentes syntaxes présentes dans ");
+		strBuilder.append("Cette fenetre vous permet d'editer les expressions regulieres ");
+		strBuilder.append("qui permettent de reconnaitre les differentes syntaxes presentes dans ");
 		strBuilder.append("les fichier textes que vous allez ouvrir.\n");
-		strBuilder.append("Ces expressions régulières utilisent la syntaxe d'expression du langage JAVA.\n");
+		strBuilder.append("Ces expressions regulieres utilisent la syntaxe d'expression du langage JAVA.\n");
 		strBuilder.append("Une description de la syntaxe est disponible sur la page : \n");
 		strBuilder.append("http://java.sun.com/javase/6/docs/api/java/util/regex/Pattern.html \n\n");
 		strBuilder.append("Attention, ne modifiez cela que si vous savez ce que vous faites !");
@@ -179,7 +179,7 @@ public class RegExpFrame extends JFrame {
 		panelBoutons.setLayout(new BoxLayout(panelBoutons,BoxLayout.X_AXIS));
 		
 		JButton saveregexps = new JButton("Sauver");
-		saveregexps.setToolTipText("Sauvegarder les expressions régulières dans un fichier");
+		saveregexps.setToolTipText("Sauvegarder les expressions regulieres dans un fichier");
 		saveregexps.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser filechooser = new JFileChooser();
@@ -199,7 +199,7 @@ public class RegExpFrame extends JFrame {
 		panelBoutons.add(saveregexps);
 		
 		JButton loadregexp = new JButton("Ouvrir");
-		loadregexp.setToolTipText("Charger les expressions régulières depuis un fichier");
+		loadregexp.setToolTipText("Charger les expressions regulieres depuis un fichier");
 		loadregexp.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser filechooser = new JFileChooser();
