@@ -41,17 +41,17 @@ public class TransformerDicoNomsPropresAuFormatBDLex {
         char k;
         while ((s = r.readLine()) != null) {
             k = Character.toLowerCase(s.charAt(0));
-            if ((k == 'â') || (k == 'à') || (k == 'ä')) {
+            if ((k == 'Ã¢') || (k == 'Ã ') || (k == 'Ã¤')) {
                 k = 'a';
-            } else if ((k == 'ê') || (k == 'é') || (k == 'è') || (k == 'ë')) {
+            } else if ((k == 'Ãª') || (k == 'Ã©') || (k == 'Ã¨') || (k == 'Ã«')) {
                 k = 'e';
-            } else if ((k == 'î') || (k == 'ï')) {
+            } else if ((k == 'Ã®') || (k == 'Ã¯')) {
                 k = 'i';
-            } else if ((k == 'ô') || (k == 'ö')) {
+            } else if ((k == 'Ã´') || (k == 'Ã¶')) {
                 k = 'o';
-            } else if ((k == 'û') || (k == 'ù') || (k == 'ü')) {
+            } else if ((k == 'Ã»') || (k == 'Ã¹') || (k == 'Ã¼')) {
                 k = 'u';
-            } else if (k == 'ç') {
+            } else if (k == 'Ã§') {
                 k = 'c';
             }
             if (!hm.containsKey(k)) {
