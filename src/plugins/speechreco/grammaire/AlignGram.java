@@ -56,7 +56,7 @@ public class AlignGram {
 	}
 	
 	/**
-	 * possibilité de sauter chaque mot avec un modele de "bruit"
+	 * possibilite de sauter chaque mot avec un modele de "bruit"
 	 *
 	 */
 	public static String addNoiseLinks(String gram) {
@@ -67,11 +67,11 @@ public class AlignGram {
 		for (;;) {
 			cur = gram.indexOf(' ',cur+1);
 			if (cur<0) break;
-			if (gram.charAt(cur+1)=='¤') {
+			if (gram.charAt(cur+1)=='â‚¬') {
 				s+=" ( "+gram.substring(deb,cur);
 				deb = gram.indexOf(' ',cur+1);
 				// il vaut mieux ne pas mettre le mot dans le chemin du noise
-				s+=gram.substring(cur,deb)+" | noise ¤??¤ ) ";
+				s+=gram.substring(cur,deb)+" | noise â‚¬??â‚¬ ) ";
 				cur=deb;
 			}
 		}
@@ -244,8 +244,8 @@ public class AlignGram {
 
 	/**
 	 * etend le reseau monophones en le parcourant et annotant chacun de ses noeuds avec la liste des nouveaux noeuds 3ph associes
-	 * lorsque, en entrant dans un noeud 1ph, on veut y créer un 3ph, on vérifie si ce 3ph existe, auquel cas on on s'y rattache
-	 * sans créer de nouveaux noeuds
+	 * lorsque, en entrant dans un noeud 1ph, on veut y creer un 3ph, on verifie si ce 3ph existe, auquel cas on on s'y rattache
+	 * sans creer de nouveaux noeuds
 	 * 
 	 * @param hmms
 	 * @return
@@ -376,7 +376,7 @@ public class AlignGram {
 	}
 	void deepparse1ph(Network net, Noeud n1ph, int n3phprec, String leftctxt, String locID) {
 		// 2 etapes:
-		if (n1ph.unit.startsWith("§%")) {
+		if (n1ph.unit.startsWith("Â§%")) {
 			locID = n1ph.unit.substring(2);
 			/* on peut avoir plusieurs noeuds suivants le noeud locuteur, par exemple lorsque
 			 * le 1er mot suivant est un mot inconnu...
@@ -483,7 +483,7 @@ public class AlignGram {
 			for (int i=0;i<n.suivants.size();i++) {
 				Noeud nn = n.suivants.get(i);
 				// on teste si le noeud est non-emetteur ou si c'est une info locuteur
-				if (nn.unit==null||(nn.unit.startsWith("§%"))) {
+				if (nn.unit==null||(nn.unit.startsWith("Â§%"))) {
 					if (nn.mot!=null) motsCourant.add(nn.mot);
 					findNextEmitting(nn);
 				} else if (!suiv.contains(nn))
