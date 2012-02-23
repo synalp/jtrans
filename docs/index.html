@@ -1,0 +1,224 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+
+  
+  <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type"><title>JTrans</title></head><body lang="EN">
+<h1>JTrans: a Java software for text-to-speech alignment</h1>
+
+<ol>
+
+
+  <li>
+    <h3>What is this all about ?<br>
+    </h3>
+"Text-to-speech" alignment is a speech processing task that is related
+to the well-known "speech recognition" task, but at the difference to
+speech recognition, text-to-speech alignment assumes that the text that
+is pronounced is already known. All what remains to do is to align the
+words onto the speech signal, i.e., find the millisecond at which every
+word starts in the audio WAVE file, and the millisecond at which every
+word ends. This is very useful for example to synchronize the lips
+animation of a cartoon character with the recording of an actor, or to
+build "Karaoke"-like applications, or yet to quickly find in a video
+database the start of a target utterance. <br>
+    <br>
+It is easier than speech recognition, thanks to the additional
+information that comes from the available (approximate) transcription,
+which makes this technology more precise and more efficient than speech
+recognition for many corpora where the sound quality is not good enough
+and where speech recognition fails. </li>
+  
+  <li>
+    
+    <h3>Have a look at the online applet !<br>
+    </h3>
+If Java is installed, you may go to <a href="http://rapsodis.loria.fr/jtrans/demojtrans.html">demo</a> to see a limited applet version of JTrans.<br>
+  </li>
+  
+  <li>
+    <h3>How to get it<br>
+    </h3>
+
+Download <a href="http://rapsodis.loria.fr/jtrans/jtrans2full.tgz">jtrans2full.tgz</a>
+and unzip it.<br>
+    <br>You can then execute the file dist/jtrans.jar, and test JTrans by loading the wav file "culture.wav" and<br>
+the text file "culture.txt". Then, press the "Play" button to check that the audio playback is<br>
+working; press the same button again to stop audio playback. Then, use menu "edit / parse text standard"<br>
+to analyze the text (you should see punctuation marks highlighted in orange).<br>
+Then, press the "AutoAlign" button to start automatic alignement. After a few seconds, the aligned text gets<br>
+underlined and you can press the "Play" button again to start playback in "karaoke" mode.<br>
+    <br>
+The following excamples files are also included in the zip file : <a href="http://rapsodis.loria.fr/jtrans/culture.wav">culture.wav</a> and
+    <a href="http://rapsodis.loria.fr/jtrans/culture.txt">culture.txt<br>
+    </a> <br>
+You may get the source code from there:<br>
+git clone http://rapsodis.loria.fr/jtrans2.git jtrans2<br>
+    <br>
+If you are interested in JTrans, please contact me: cerisara AT loria DOT fr<br>
+  </li>
+
+
+  <li>
+    <h3>JTrans main features</h3>
+  </li>
+  <ol>
+    <li>Depends on the Sphinx4 library for automatic alignment</li>
+    <li>Optionnaly depends on the WEKA library for automatic
+phonetisation, and on the TRITONUS and JAVALAYER libraries for MP3
+support.</li>
+    <li>Integrates 3 levels of phonetisation: dictionary-based,
+rule-based and decision-tree based.</li>
+    <li>Export Praat Format<br>
+    </li>
+  </ol>
+  <li>
+    <h3>Tutorial: first steps for using JTrans</h3>
+  </li>
+  <ol>
+    <li>
+      <h3>Setting-up a project<br>
+      </h3>
+Any project in JTrans requires two types of file: a text file, and a
+speech file.<br>
+      <br>
+The text file can be loaded with the "File - load text" menu, but the
+recommended method is rather to open the text file within another
+editor - just like Word, WordPad, Gedit... - and copy/paste the text
+within the JTrans window. Regarding the WAVE file, it must be loaded
+with the menu "File - load wav". In theory, any type of WAVE file is
+supported (even mp3). But in case of trouble, try to convert first your
+speech file into an uncompressed WAVE format, monophone, 16 kHz, signed
+2 bytes/sample.<br>
+      <br>
+When the WAVE file is correctly loaded, you should see a spectrogram of
+the speech stream in the lower panel of JTrans. When clicking on the
+"PLAY" button, you should also hear the speech. If you see the
+spectrogram, but cannot listen to the speech, this may be due to an
+audio driver issue. See section 4 to solve it.<br>
+    </li>
+    <li>
+      <h3>Analyzing the text<br>
+      </h3>
+The second step consists in analyzing the text, i.e., identifying in
+the text what is pronounced vs. what is not pronounced (punctuation
+marks, comments, speakers identity...). This is realized with the menu
+"Edit - parse text standard". When this is done, you shall see the
+unpronounced text highlighted in different colors. Note that the text
+cannot be modified any more after it has been analyzed. You may still
+later on edit the text with the menu "edit- edit text", but this might
+destroy all alignment obtained so far.<br>
+    </li>
+    <li>
+      <h3>Aligning the text and speech<br>
+      </h3>
+Once the text is analyzed, you can launch the automatic alignment
+process: just click on "Auto-Align", and waits for a few minutes. The
+first time you click on this button, it will take about 1 to 2 minutes
+to load all the models. Next times it will be faster. You can stop this
+process at any time by clicking on the "Stop it !" button.<br>
+      <br>
+As soon as some words are aligned, they are underlined in the JTrans
+window, so you can see the progress of the automatic alignment.<br>
+    </li>
+    <li>
+      <h3>Checking the alignment<br>
+      </h3>
+You can check the alignment while it is aligning, as soon as you see
+some text that is underlined. You can then press the "Play" button,
+which will start the playback from the last position (or from the
+beginning) in a "Karaoke mode", i.e., the words that you are currently
+hearing should be highlighted in grey. If you see that the alignment is
+fine, you can go faster and skip some sentences by clicking with the
+mouse on any word that is underlined: the player will then immediately
+stop,&nbsp; position itself on the corresponding speech segment, and
+restart
+from there. You can then "naviguate" through the corpus by clicking on
+aligned words. Note that as soon as you click on a word, the
+spectrogram of the aligned speech is shown in the lower panel, along
+with a timeline with the words boundaries. If you see that the
+alignment gets wrong, you may guide the automatic aligner as explained
+in the following.<br>
+    </li>
+    <li>
+      <h3>Correcting an erroneous alignement<br>
+      </h3>
+First, you may want to stop the aligner ("Stop it !" button), and
+eventually clean the existing alignment from a previous position that
+is correct: to do so, click on a word that is correctly aligned, then
+use the menu "process - clear alignment from selected word". You now
+want to manually define an "anchor" that associates a position in the
+audio stream to a position in the text. This can be realized in several
+different ways:<br>
+      <h3> </h3>
+      <ol>
+        <li>You can play from the last aligned word, wait once you have
+heard
+about a dozen words, and then "Ctrl-clic" (with both the "Ctrl" key and
+the left mouse button) on a word in the text panel as soon as you hear
+it.</li>
+        <li>Another more accurate option is to stop the player and use
+instead the spectrogram panel: you can move it in the audio file with
+either "+1 sec." or "-1 sec." buttons, and then, clicking at any
+position on the spectrogram will make you hear 1 second of speech
+before that audio position. You can thus try several positions until
+you hear a whole word. The last audio position clicked is always saved
+in memory, even though no "visual bar" is shown for now. You can now
+"Ctrl-clic" on a word in the text panel in order to associate this word
+to the last audio position clicked.</li>
+        <li>Same approach as in (ii), but rather "Ctrl-clic" with the
+right mouse button, which will produce a basic "equally-spaced"
+alignment
+from the last aligned word to the anchor. With both (i) and (ii), as
+soon as an anchor is defined, the background automatic process is
+executed to find the best possible alignment between the last alignment
+word and the anchor. But in some cases, it may be better to just skip a
+very noisy audio segment with a right Ctrl-click.<br>
+        </li>
+      </ol>
+      <br>
+When an anchor is defined, you can re-launch the automatic alignment
+process from this position with the "Auto-Align" button.<br>
+      <br>
+    </li>
+    <li>
+      <h3>Troubleshooting</h3>
+    </li>
+    <ol>
+      <li>
+        <h4>Accents are replaced by weird
+characters !<br>
+        </h4>
+This is an encoding issue. A good option to prevent this is to
+copy/paste the text from another text editor (Word, WordPad...) into
+JTrans. Otherwise, JTrans better works with UTF-8 encoding in an UTF-8
+environment.<br>
+      </li>
+      <li>
+        <h4>After parsing the text, the characters
+that are highlighted in yellow are not the punctuation marks !<br>
+        </h4>
+This is an "end-of-line" issue: in Linux, end-of-lines are encoded with
+a single byte "\n", while in Windows, they are encoded with two bytes
+"\r\n". Again, you may want to try the copy/paste method as above, or
+you may want to first save the text with "Unix-like" end-of-lines
+encoding (most editors like Work allow offer this option).<br>
+      </li>
+      <li>
+        <h4>I can see the spectrogram but I cannot
+hear the sound<br>
+        </h4>
+This might be a sound driver issue. You should try closing all
+programs, to prevent concurrent access to your sound card, and then
+open again only JTrans. If this does not work, you may want to select,
+in JTrans, an alternative soundcard driver: this can be realized with
+the menu "option - audio mixers", which brings up a new menu with all
+possible sound drivers. If none works, you can try launching JTrans
+with another java virtual machine: in particular, the OpenJDK is known
+to perform better than the Sun JDK regarding sound management,
+especially with Pulse on Linux.</li>
+    </ol>
+  </ol>
+</ol>
+
+
+</body></html>

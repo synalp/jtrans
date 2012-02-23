@@ -12,3 +12,5 @@ available under GIT on my website.
 Please find the latest documentations on my website:
 http://synalp.loria.fr/html/jtrans/index.html
 
+If you are interested in JTrans, please contact me: cerisara AT loria DOT fr
+
