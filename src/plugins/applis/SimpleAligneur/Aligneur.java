@@ -450,12 +450,15 @@ public class Aligneur extends JPanel implements PrintLogger {
 				// d'un nouveau fichier-source texte; donc ce dernier est toujours a jour !
 				// TODO: mettre a jour ce sourcetxtfile lorsqu'il y a une edition manuelle
 
-				/*
-				 * Non, ceci est incompatible avec une applet, car on ne peut pas sauver dans un fichier !
+				if( sourceTxtfile==null && withgui==false) {
+					// cas d'une applet:
+					JOptionPane.showMessageDialog(null, "WARNING: impossible to save a file with an applet !");
+					return;
+				}
+				
 				if (sourceTxtfile==null || !(new File(sourceTxtfile).exists())) {
 					saveCurrentTextInSourcefile();
 				}
-				*/
 				ListeElement elts = parser.parseimmutable(sourceTxtfile);
 				edit.setListeElement(elts);
 				colorieElements();
