@@ -9,7 +9,7 @@ package plugins.speechreco.aligners;
 
 public interface AlignListener {
 	/**
-	 * motidx est le dernier mot aligné
+	 * motidx est le dernier mot aligne
 	 */
 	public void newAlign(int firstmotidx, int lastmotidx);
 	/**
@@ -17,7 +17,7 @@ public interface AlignListener {
 	 */
 	public void noAlignFound();
 	/**
-	 * appelé uniquement quand la reco est terminée parce que la fin du fichier a été atteinte
+	 * appele uniquement quand la reco est terminee parce que la fin du fichier a ete atteinte
 	 */
 	public void recoFinished();
 }
