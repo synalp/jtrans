@@ -124,6 +124,15 @@ public class Menus {
 		JMenu sig = new JMenu("Process");
 		menubar.add(sig);
 		
+		JMenuItem bias = new JMenuItem("biasAdapt");
+		sig.add(bias);
+
+		bias.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				aligneur.biasAdapt();
+			}
+		});
+
 		JMenuItem clear = new JMenuItem("clear all align");
 		sig.add(clear);
 		JMenuItem clearfrom = new JMenuItem("clear align from selected word");

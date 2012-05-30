@@ -101,7 +101,7 @@ import edu.cmu.sphinx.util.LogMath;
  */
 public class S4ForceAlignBlocViterbi extends Thread {
 	//	S4RoundBufferFrontEnd mfccs = null;
-	S4mfccBuffer mfccs = null;
+	public S4mfccBuffer mfccs = null;
 	FrameDecoder decoder=null;
 	PhoneticForcedGrammar grammar = null;
 	String[] mots;

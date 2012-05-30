@@ -54,6 +54,7 @@ import plugins.signalViewers.temporalSigPanel.TemporalSigPanel;
 import plugins.signalViewers.temporalSigPanel.ToolBarTemporalSig;
 import plugins.sourceSignals.TemporalSigFromWavFile;
 import plugins.speechreco.acousticModels.HMM.LogMath;
+import plugins.speechreco.adaptation.BiaisAdapt;
 import plugins.speechreco.aligners.Alignement;
 import plugins.speechreco.aligners.ForceAlignBlocViterbi;
 import plugins.speechreco.aligners.sphiinx4.AlignementEtat;
@@ -1376,6 +1377,11 @@ public class Aligneur extends JPanel implements PrintLogger {
 		clicAtCaretPosition((int)posInText,MouseEvent.BUTTON1);
 	}
 
+	public void biasAdapt() {
+		BiaisAdapt b=new BiaisAdapt(this);
+		b.calculateBiais();
+	}
+	
 	public static void main(String args[]) {
 		Aligneur m = new Aligneur();
 		m.inputControls();
