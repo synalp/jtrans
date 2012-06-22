@@ -1813,6 +1813,7 @@ public class SpeechReco {
 		resRecoPublic.clear();
 
 		System.out.println("RECOMFCC ");
+		initSphinx4(cfg);
 
 		StreamCepstrumSource dataSource = (StreamCepstrumSource) cm.lookup("mfccFileDataSource");
 		try {
