@@ -352,7 +352,10 @@ public class TextSegments {
 					} else {
 						// il y a un mot devant
 						long offset = getSegmentStartPos(i);
-						insertSegment(++i, offset+(long)relpos+1, segmentEndPos.get(i-1), pcttype, seg.substring((int)(offset+(long)relpos+1), segmentEndPos.get(i-1).intValue()));
+//						System.out.println("debug off "+offset+" relpos "+relpos+" "+segmentEndPos.get(i).intValue());
+//						System.out.println("debug2 segdeb "+segmentStartPos.get(i).intValue()+" ["+seg+"]");
+//						insertSegment(++i, offset+(long)relpos+1, segmentEndPos.get(i-1), pcttype, seg.substring((int)(offset+(long)relpos+1), segmentEndPos.get(i-1).intValue()));
+						insertSegment(++i, offset+(long)relpos+1, segmentEndPos.get(i-1), pcttype, seg.substring(relpos+1));
 						segmentEndPos.set(i-1, offset+(long)relpos+1);
 					}
 					break;
