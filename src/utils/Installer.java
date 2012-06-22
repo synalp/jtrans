@@ -25,7 +25,8 @@ public class Installer {
 	}
 	
 	public static void install() {
-		int rep = JOptionPane.showConfirmDialog(null, "First time run detected. OK for downloading the resources ?");
+		File tf = new File(".");
+		int rep = JOptionPane.showConfirmDialog(null, "First time run detected. OK for downloading all resources (400Mb) in "+tf.getAbsolutePath()+"?");
 		if (rep==JOptionPane.OK_OPTION) {
 			try {
 				URL resurl = new URL("http://talc1.loria.fr/users/cerisara/jtrans/jtransres.zip");
