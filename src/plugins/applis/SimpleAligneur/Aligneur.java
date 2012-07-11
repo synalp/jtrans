@@ -199,7 +199,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 		}
 		System.out.println("before dispose");
 		jf.dispose();
-		System.out.println("after dispose");
+		System.out.println("after dispose : exiting");
+		System.exit(0);
 	}
 	public void savetxt(File txtout) {
 		List<Element_Mot> mots = edit.getListeElement().getMots();
