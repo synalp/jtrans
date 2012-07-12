@@ -53,10 +53,12 @@ public class AlignementEtat {
 			// si le mot ne correspond pas, alors on suppose que c'est un mot optionnel
 			int walidx=-1;
 			if (getSegmentLabel(segidx).trim().equals(mots[motidx].trim())) {
-				System.out.println("matchWithtext: pronunced token ["+mots[motidx]+"] ["+getSegmentLabel(segidx)+"] "+segidx+" "+getSegmentDebFrame(segidx)+" "+getSegmentEndFrame(segidx));
+//				System.out.println("matchWithtext: pronunced token ["+mots[motidx]+"] ["+getSegmentLabel(segidx)+"] "+segidx+" "+getSegmentDebFrame(segidx)+" "+getSegmentEndFrame(segidx));
 				walidx=segidx++;
 			} else {
 				System.out.println("matchWithtext: optional token ["+mots[motidx]+"] "+segidx+" ["+getSegmentLabel(segidx)+"]");
+				// il ne faut pas qu'un mot ne soit associe a aucun segment !! QUE FAIRE ??
+				walidx = segidx;
 			}
 			mots2segidx[motidx]=walidx;
 		}
@@ -140,7 +142,7 @@ public class AlignementEtat {
 		for (int i=0;i<segEndFrames.length;i++) {
 			segEndFrames[i]=segs.getSegmentFinFrame(i);
 		}
-		System.out.println("index updated "+segEndFrames.length);
+		System.out.println("index updated "+segEndFrames.length+" "+segEndFrames[segEndFrames.length-1]);
 		segs.setFirstSegmentAltered(-1);
 	}
 	/**

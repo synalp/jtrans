@@ -100,6 +100,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 	private GriserWhilePlaying griserwhenplaying = new GriserWhilePlaying(null, null);
 	private PlayerGUI playergui;
+	private static boolean parseWithRegexp = false;
 
 	private boolean withgui = true;
 	private String sourceTxtfile = null;
@@ -440,49 +441,72 @@ public class Aligneur extends JPanel implements PrintLogger {
 	 * cree une liste d'elements a partir d'un texte brut
 	 * @param thenew
 	 */
-	public void parse(boolean thenew) {
+	public void parse(final boolean thenew) {
+		parseWithRegexp = !thenew;
 		edit.setEditable(false);
 		caretSensible = false;
-		if (thenew) {
-			PonctParser parser = new PonctParser(this);
-			if (thenew) {
-				// version avec un texte immutable
-				// verifie si un fichier-source texte existe
-				// si oui, on suppose que toute modification manuelle du texte dans jtrans a déclenché l'enregistrement
-				// d'un nouveau fichier-source texte; donc ce dernier est toujours a jour !
-				// TODO: mettre a jour ce sourcetxtfile lorsqu'il y a une edition manuelle
+		final Aligneur main = this;
 
-				if( sourceTxtfile==null && withgui==false) {
-					// cas d'une applet:
-					JOptionPane.showMessageDialog(null, "WARNING: impossible to save a file with an applet !");
-					return;
+		// pas de thread, car il faut attendre la fin dans le loadProject !
+		
+//		Thread t = new Thread(new Runnable() {
+//			public void run() {
+				if (thenew) {
+					PonctParser parser = new PonctParser(main);
+					if (thenew) {
+						// version avec un texte immutable
+						// verifie si un fichier-source texte existe
+						// si oui, on suppose que toute modification manuelle du texte dans jtrans a déclenché l'enregistrement
+						// d'un nouveau fichier-source texte; donc ce dernier est toujours a jour !
+						// TODO: mettre a jour ce sourcetxtfile lorsqu'il y a une edition manuelle
+
+						if( sourceTxtfile==null && withgui==false) {
+							// cas d'une applet:
+							JOptionPane.showMessageDialog(null, "WARNING: impossible to save a file with an applet !");
+							return;
+						}
+						
+						if (sourceTxtfile==null || !(new File(sourceTxtfile).exists())) {
+							saveCurrentTextInSourcefile();
+						}
+						ListeElement elts = parser.parseimmutable(sourceTxtfile);
+						edit.setListeElement(elts);
+						colorieElements();
+					} else {
+						// version avec un texte mutable mais un parser indep du TextEditor
+						parser.parse();
+					}
+				} else {
+					// vieille version avec le parser du TexteEditor
+/*
+					List<Element_Mot> oldmots = edit.getListeElement().getMots();
+					ArrayList<Integer> sav = new ArrayList<Integer>();
+					for (int i=0;i<oldmots.size();i++)
+						if (oldmots.get(i).posInAlign<0) break;
+						else sav.add(oldmots.get(i).posInAlign);
+					Integer[] savealign = sav.toArray(new Integer[sav.size()]);
+					*/
+					edit.reparse();
+					/*
+					int i=0;
+					for (Element_Mot m : edit.getListeElement().getMots()) {
+						if (i>=savealign.length) break;
+						m.posInAlign=savealign[i++];
+					}
+					System.out.println("reparse: saved naligns "+i);
+					*/
 				}
-				
-				if (sourceTxtfile==null || !(new File(sourceTxtfile).exists())) {
-					saveCurrentTextInSourcefile();
+				if (alignement!=null) {
+					// matche les Element_Mot avec l'alignement existant
+					int[] match = alignement.matchWithText(edit.getListeElement().getMotsInTab());
+					edit.getListeElement().importAlign(match,0);
+					if (edit!=null) edit.colorizeAlignedWords(0,getLastMotAligned());
+					repaint();
 				}
-				ListeElement elts = parser.parseimmutable(sourceTxtfile);
-				edit.setListeElement(elts);
-				colorieElements();
-			} else {
-				// version avec un texte mutable mais un parser indep du TextEditor
-				parser.parse();
-			}
-			if (alignement!=null) {
-				// matche les Element_Mot avec l'alignement existant
-				int[] match = alignement.matchWithText(edit.getListeElement().getMotsInTab());
-				edit.getListeElement().importAlign(match,0);
-			}
-		} else {
-			// vieille version avec le parser du TexteEditor
-			edit.reparse();
-			ArrayList<String> mots = new ArrayList<String>();
-			for (Element_Mot m : edit.getListeElement().getMots()) mots.add(m.getWordString());
-			//        alignement.checkWithText(mots,0);
-			souligneAncres();
-			colorizeAlignedWords();
-		}
-		caretSensible = true;
+				caretSensible = true;
+//			}
+//		});
+//		t.start();
 	}
 
 	void loadProject() {
@@ -532,6 +556,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 			PrintWriter f = FileUtils.writeFileUTF(outfile);
 			f.println("wavname= " + wavname);
 			f.println("txtname= " + txtfile);
+			if (parseWithRegexp) f.println("parse with regexp");
+			else f.println("parse with new");
 			if (elts!=null) elts.save(f);
 			else f.println("listeelements 0");
 			alignement.save(f);
@@ -559,6 +585,12 @@ public class Aligneur extends JPanel implements PrintLogger {
 			s = f.readLine();
 			assert s.startsWith("txtname= ");
 			sourceTxtfile = s.substring(9);
+			s = f.readLine();
+			assert s.startsWith("parse with ");
+			parseWithRegexp = false;
+			if (s.startsWith("parse with regexp")) parseWithRegexp = true;
+			else if (s.startsWith("parse with new")) parseWithRegexp = false;
+			else System.out.println("ERROR jtr format "+s);
 
 			InputStream in = FileUtils.findFileOrUrl(sourceTxtfile);
 			loadtxt(in);
@@ -568,25 +600,33 @@ public class Aligneur extends JPanel implements PrintLogger {
 			System.out.println("loadproject source "+sourceTxtfile);
 			edit.getListeElement().clear();
 			// on ecrase la tokenisation realisee dans loadtxt()
+			// ici, on charge les elements et on les met en correspondance avec le textArea, MAIS PAS AVEC l'ALIGNEMENT !
 			edit.getListeElement().load(f, edit);
+			// ici, on charge les segments, mais ils ne sont toujours pas mis en correspondance avec les elements !
 			alignement = AlignementEtat.load(f);
 			alignementPhones = AlignementEtat.load(f);
 			System.out.println("align loaded "+alignement.getNbSegments());
+			// ici, on affiche les segments sur le spectro
 			sigpan.setAlign(alignement);
 
 			// regexps
 			edit.parserRegexpFromBufferedReader(f);
 
-			parse(true);
+			parse(!parseWithRegexp);
 			f.close();
+			System.out.println("text parsing done");
 
 			//            goToLastAlignedWord();
 			caretSensible = true;
 
 			// force la construction de l'index
+			alignement.clearIndex();
 			alignement.getSegmentAtFrame(0);
+			System.out.println("align index built");
+			alignementPhones.clearIndex();
 			alignementPhones.getSegmentAtFrame(0);
 			edit.getListeElement().refreshIndex();
+			System.out.println("project load finish");
 
 			printInStatusBar("project loaded !");
 
@@ -597,15 +637,17 @@ public class Aligneur extends JPanel implements PrintLogger {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		System.out.println("end align "+alignement.getNbSegments());
-		String[] mots = new String[edit.getListeElement().getMots().size()];
+		List<Element_Mot> mts = edit.getListeElement().getMots();
+		System.out.println("end align "+alignement.getNbSegments()+" "+mts.size());
+		String[] mots = new String[mts.size()];
 		for (int i=0;i<mots.length;i++) {
-			mots[i]=edit.getListeElement().getMots().get(i).getWordString().trim();
+			mots[i]=mts.get(i).getWordString().trim();
 		}
 		int[] mots2segidx = alignement.matchWithText(mots);
 		System.err.println("mots2segidx "+mots.length+" "+mots2segidx.length);
 		int lastMotAligned = edit.getListeElement().importAlign(mots2segidx,0);
 		System.err.println("last mot aligned "+lastMotAligned+" "+edit);
+		System.err.println("debug lastremot aligned "+getLastMotAligned());
 		if (edit!=null) edit.colorizeAlignedWords(0,lastMotAligned-1);
 	}
 
@@ -786,11 +828,12 @@ public class Aligneur extends JPanel implements PrintLogger {
 	}
 
 	public void newplaystarted() {
-		System.out.println("newplaystarted");
 		if (alignement!=null) {
+			System.out.println("newplaystarted "+alignement.getNbSegments());
 			griserwhenplaying = new GriserWhilePlaying(playergui, edit);
 			griserwhenplaying.setAlignement(alignement);
-		}
+		} else
+			System.out.println("newplaystarted no align");
 	}
 	public void newplaystopped() {
 		griserwhenplaying.killit();
@@ -957,6 +1000,11 @@ public class Aligneur extends JPanel implements PrintLogger {
 				System.out.println("Ctrl-clic while playing: caret "+caretPos+" word "+mot+" "+edit.getListeElement().getMot(mot).getWordString());
 				insertManualAnchor(mot,-1);
 			} else {
+				/*
+				 * je n'utilise plus le "clic on spectro" (pas de feedback visu), mais plutot ce qu'on vient d'entendre au player !
+				 */
+				
+				lastSecClickedOnSpectro = playergui.getRelativeStartingSec()+(float)playergui.getTimePlayed()/1000f;
 				System.out.println("Ctrl-clic without playing: set at last selected frame "+lastSecClickedOnSpectro);
 				System.out.println("set word "+mot+" "+edit.getListeElement().getMot(mot).getWordString());
 				float sec0 = getCurPosInSec();
@@ -995,6 +1043,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 					if (edit!=null) edit.colorizeAlignedWords(0,mot);
 				}
 				setCurPosInSec(sec0);
+				if (edit!=null) edit.getListeElement().refreshIndex();
 				repaint();
 			}
 		} else if (kmgr.isShiftOn) {
@@ -1018,8 +1067,14 @@ public class Aligneur extends JPanel implements PrintLogger {
 					// TODO
 				} else {
 					// premier mot
+					alignement.clear();
 					int curdebfr = 0;
-					if (deb>=0) curdebfr = SpectroControl.second2frame(deb);
+					if (deb>0) {
+						curdebfr = SpectroControl.second2frame(deb);
+						if (curdebfr>0) {
+							alignement.addRecognizedSegment("SIL", 0, curdebfr, null, null);
+						}
+					}
 					if (end>=0) {
 						int newseg = alignement.addRecognizedSegment(edit.getListeElement().getMot(0).getWordString(),
 								curdebfr, SpectroControl.second2frame(end), null, null);
@@ -1027,6 +1082,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 					} else {
 						// TODO
 					}
+					System.out.println("debug segs  \n"+alignement.toString());
 				}
 			}
 			System.out.println("last aligned word "+getLastMotAligned());
@@ -1096,8 +1152,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 	 * de ce mot, on realigne donc jusqu'a ce mot inclu
 	 */
 	void realignBeforeAnchor(int motClicked, int lastFrame) {
-		int firstMot = motClicked-10;
-		if (firstMot<0) firstMot=0;
+		int firstMot = motClicked;
 		clearAlignFrom(firstMot); // arrete aussi l'autoaligner
 		firstMot = getLastMotAligned()+1;
 		int firstFrame = 0;
@@ -1423,5 +1478,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 		Aligneur m = new Aligneur();
 		m.inputControls();
 		if (args.length>0) m.loadProject(args[0]);
+		m.repaint();
 	}
 }

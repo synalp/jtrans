@@ -44,7 +44,6 @@ termes.
 package plugins.text;
 
 import java.io.BufferedReader;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -53,9 +52,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.StringTokenizer;
-import java.util.regex.Pattern;
-
 import javax.swing.JTextPane;
 
 import plugins.text.elements.Element;

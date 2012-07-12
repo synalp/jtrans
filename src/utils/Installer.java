@@ -11,12 +11,11 @@ import utils.WGETJava;
 public class Installer {
 	
 	public static void main(String args[]) {
-		launchJSafran();
+		launchJSafran(args);
 	}
 	
-	public static void launchJSafran() {
+	public static void launchJSafran(final String[] args) {
 		if (!isAlreadyInstalled()) install();
-		final String[] args = {};
 		try {
 			plugins.applis.SimpleAligneur.Aligneur.main(args);
 		} catch (Exception e) {
