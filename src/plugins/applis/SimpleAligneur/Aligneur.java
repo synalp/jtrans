@@ -962,7 +962,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 		List<Element_Mot> mots = edit.getListeElement().getMots();
 		for (;mot<mots.size();mot++) {
 			seg4mot = mots.get(mot).posInAlign;
-			if (seg4mot>=0) break;
+			if (seg4mot>=0&&!alignement.getSegmentLabel(seg4mot).equals("SIL")) break;
 		}
 		if (seg4mot<0) return; // rien n'est aligne
 		// supprimer les alignements
@@ -971,6 +971,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 		alignementPhones.cutAfterFrame(fr);
 		alignement.clearIndex();
 		alignementPhones.clearIndex();
+		
 		// supprimer la correspondance mots/segments
 		for (int i=mot;i<edit.getListeElement().getMots().size();i++) {
 			edit.getListeElement().getMot(i).posInAlign=-1;
@@ -1034,6 +1035,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 							curdebfr = curendfr;
 							curendfr+=frdelta;
 						}
+						// bugfix last end frame
+						alignement.setSegmentEndFrame(prevseg, SpectroControl.second2frame(lastSecClickedOnSpectro));
 					} else {
 						//						clearAlignFrom(mot+1);
 						System.out.println("set end of segment "+segmentDuMot+" "+alignement.getSegmentLabel(segmentDuMot));

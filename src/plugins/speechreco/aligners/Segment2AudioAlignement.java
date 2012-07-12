@@ -79,7 +79,7 @@ public class Segment2AudioAlignement {
 					if (firstSegmentModified<0) firstSegmentModified=i;
 					return i;
 				} else {
-					System.out.println("ERREUR ADD SEGMENT "+deb+" "+fin+" prev: "+i);
+					System.out.println("ERREUR ADD SEGMENT "+deb+" "+fin+" prev: "+i+" "+segmentsDeb.get(i)+"--"+segmentsFin.get(i));
 					String h = null;
 					h.charAt(0);
 					return -1;
