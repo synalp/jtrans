@@ -413,8 +413,12 @@ public class Menus {
 					File file = filechooser.getSelectedFile();
 					if (file.exists()) {
 						aligneur.setWavSource(file.getAbsolutePath());
+						System.out.println("wav set");
+						aligneur.setCurPosInSec(0);
+						return;
 					}
 				}
+				System.out.println("load wav pb");
 			}
 		});
 		savewav.addActionListener(new ActionListener() {

@@ -997,6 +997,41 @@ public class Aligneur extends JPanel implements PrintLogger {
 				setCurPosInSec(sec0);
 				repaint();
 			}
+		} else if (kmgr.isShiftOn) {
+			System.out.println("last aligned word "+getLastMotAligned());
+			System.out.println("manual definition of word limits");
+			float deb=-1, end=-1;
+			String s = JOptionPane.showInputDialog("word "+mot+" "+edit.getListeElement().getMot(mot).getWordString()+" start (in sec):").trim();
+			if (s.length()>0) deb = Float.parseFloat(s);
+			s = JOptionPane.showInputDialog("word "+mot+" end (in sec):").trim();
+			if (s.length()>0) end = Float.parseFloat(s);
+			
+			int segmentDuMot = edit.getListeElement().getMot(mot).posInAlign;
+			if (segmentDuMot>=0) {
+				// mot deja aligne
+				if (deb>=0) alignement.setSegmentDebFrame(segmentDuMot, SpectroControl.second2frame(deb));
+				if (end>=0) alignement.setSegmentEndFrame(segmentDuMot, SpectroControl.second2frame(end));
+			} else {
+				// mot non encore aligne
+				if (mot>0) {
+					// ce n'est pas le 1er mot: j'aligne auto les precedents jusqu'au debut
+					// TODO
+				} else {
+					// premier mot
+					int curdebfr = 0;
+					if (deb>=0) curdebfr = SpectroControl.second2frame(deb);
+					if (end>=0) {
+						int newseg = alignement.addRecognizedSegment(edit.getListeElement().getMot(0).getWordString(),
+								curdebfr, SpectroControl.second2frame(end), null, null);
+						edit.getListeElement().getMot(0).posInAlign=newseg;
+					} else {
+						// TODO
+					}
+				}
+			}
+			System.out.println("last aligned word "+getLastMotAligned());
+			if (edit!=null) edit.colorizeAlignedWords(0,mot);
+			repaint();
 		} else {
 			System.out.println("clic sans control: repositionne mot "+edit.getListeElement().getMot(mot).getWordString());
 
@@ -1169,6 +1204,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 		long absms;
 		if (seconds<0) {
 			long relms = ctrlbox.getPlayerGUI().getTimePlayed();
+			System.out.println("insertanchor cursec = "+getCurPosInSec());
 			absms = (long)(getCurPosInSec()*1000f)+relms;
 		} else {
 			absms = (long)(1000f*seconds);
