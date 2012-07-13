@@ -790,6 +790,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 	 * parce qu'on a appuye sur ESC, soit parce qu'on est arriv� � la fin
 	 */
 	void stopPlaying() {
+		ctrlbox.getPlayerGUI().stopPlaying();
 		/*
 		if (player.isPlaying()) {
 			currentSample = player.getLastSamplePlayed();
@@ -994,103 +995,139 @@ public class Aligneur extends JPanel implements PrintLogger {
 			System.out.println("no mot at position "+caretPos);
 			return;
 		}
-		if (kmgr.isControlOn) {
-			//				player.isPlaying()) {
-			// ancre manuelle
-			if (ctrlbox.getPlayerGUI().isPlaying()) {
-				System.out.println("Ctrl-clic while playing: caret "+caretPos+" word "+mot+" "+edit.getListeElement().getMot(mot).getWordString());
-				insertManualAnchor(mot,-1);
-			} else {
-				/*
-				 * je n'utilise plus le "clic on spectro" (pas de feedback visu), mais plutot ce qu'on vient d'entendre au player !
-				 */
+		// simplification:
+		// shift+clic = del align from there + replay from here
+		// ctrl +clic = equi-align up to here + auto-align from here
+		// shift + ctrl + clic = manual def of limits for one word
+		// ctrl = toggle play/pause
+		// le realign pourra se fait en batch apres, en comparant les word-align et les phone-aligns pour detecter les segments non-alignes
+		if (kmgr.isShiftOn) {
+			ctrlbox.getPlayerGUI().stopPlaying();
+			Thread.yield();
+			try {
+				Thread.sleep(60);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			if (kmgr.isControlOn) {
+				System.out.println("last aligned word "+getLastMotAligned());
+				System.out.println("manual definition of word limits");
+				float deb=-1, end=-1;
+				String s = JOptionPane.showInputDialog("word "+mot+" "+edit.getListeElement().getMot(mot).getWordString()+" start (in sec):").trim();
+				if (s.length()>0) deb = Float.parseFloat(s);
+				s = JOptionPane.showInputDialog("word "+mot+" end (in sec):").trim();
+				if (s.length()>0) end = Float.parseFloat(s);
 				
-				lastSecClickedOnSpectro = playergui.getRelativeStartingSec()+(float)playergui.getTimePlayed()/1000f;
-				System.out.println("Ctrl-clic without playing: set at last selected frame "+lastSecClickedOnSpectro);
-				System.out.println("set word "+mot+" "+edit.getListeElement().getMot(mot).getWordString());
-				float sec0 = getCurPosInSec();
-				setCurPosInSec(lastSecClickedOnSpectro);
-				if (button==MouseEvent.BUTTON1) {
-					System.out.println("realining auto...");
-					insertManualAnchor(mot,getCurPosInSec());
-				} else if (button==MouseEvent.BUTTON3) {
-					System.out.println("no batch align");
-					int segmentDuMot = edit.getListeElement().getMot(mot).posInAlign;
-					if (segmentDuMot<0) {
-						// il n'est pas aligné, que fais-je ???
-						int mot0 = getLastMotAligned();
-						int mot0seg = edit.getListeElement().getMot(mot0).posInAlign;
-						int mot0endfr = alignement.getSegmentEndFrame(mot0seg);
-						System.out.println("last word aligned "+mot0+" "+mot0seg+" "+mot0endfr+" "+edit.getListeElement().getMot(mot0).getWordString());
-						float frdelta = ((float)(SpectroControl.second2frame(lastSecClickedOnSpectro)-mot0endfr))/(float)(mot+1-mot0);
-						System.out.println("nwords = "+(mot+1-mot0)+" "+frdelta);
-						int prevseg = mot0seg;
-						float curdebfr = alignement.getSegmentEndFrame(prevseg);
-						float curendfr = alignement.getSegmentEndFrame(prevseg)+frdelta;
-						for (int i=mot0+1;i<=mot;i++) {
-							System.out.println("addsegment "+i+" "+edit.getListeElement().getMot(i).getWordString()+" "+curdebfr+"-"+curendfr);
-							int newseg = alignement.addRecognizedSegment(edit.getListeElement().getMot(i).getWordString(), (int)curdebfr, (int)curendfr, null, null);
-							edit.getListeElement().getMot(i).posInAlign=newseg;
-							prevseg=newseg;
-							curdebfr = curendfr;
-							curendfr+=frdelta;
-						}
-						// bugfix last end frame
-						alignement.setSegmentEndFrame(prevseg, SpectroControl.second2frame(lastSecClickedOnSpectro));
-					} else {
-						//						clearAlignFrom(mot+1);
-						System.out.println("set end of segment "+segmentDuMot+" "+alignement.getSegmentLabel(segmentDuMot));
-						System.out.println("set at frame "+SpectroControl.second2frame(lastSecClickedOnSpectro));
-						alignement.setSegmentEndFrame(segmentDuMot, SpectroControl.second2frame(lastSecClickedOnSpectro));
-					}
-					if (edit!=null) edit.colorizeAlignedWords(0,mot);
-				}
-				setCurPosInSec(sec0);
-				if (edit!=null) edit.getListeElement().refreshIndex();
-				repaint();
-			}
-		} else if (kmgr.isShiftOn) {
-			System.out.println("last aligned word "+getLastMotAligned());
-			System.out.println("manual definition of word limits");
-			float deb=-1, end=-1;
-			String s = JOptionPane.showInputDialog("word "+mot+" "+edit.getListeElement().getMot(mot).getWordString()+" start (in sec):").trim();
-			if (s.length()>0) deb = Float.parseFloat(s);
-			s = JOptionPane.showInputDialog("word "+mot+" end (in sec):").trim();
-			if (s.length()>0) end = Float.parseFloat(s);
-			
-			int segmentDuMot = edit.getListeElement().getMot(mot).posInAlign;
-			if (segmentDuMot>=0) {
-				// mot deja aligne
-				if (deb>=0) alignement.setSegmentDebFrame(segmentDuMot, SpectroControl.second2frame(deb));
-				if (end>=0) alignement.setSegmentEndFrame(segmentDuMot, SpectroControl.second2frame(end));
-			} else {
-				// mot non encore aligne
-				if (mot>0) {
-					// ce n'est pas le 1er mot: j'aligne auto les precedents jusqu'au debut
-					// TODO
+				int segmentDuMot = edit.getListeElement().getMot(mot).posInAlign;
+				if (segmentDuMot>=0) {
+					// mot deja aligne
+					if (deb>=0) alignement.setSegmentDebFrame(segmentDuMot, SpectroControl.second2frame(deb));
+					if (end>=0) alignement.setSegmentEndFrame(segmentDuMot, SpectroControl.second2frame(end));
 				} else {
-					// premier mot
-					alignement.clear();
-					int curdebfr = 0;
-					if (deb>0) {
-						curdebfr = SpectroControl.second2frame(deb);
-						if (curdebfr>0) {
-							alignement.addRecognizedSegment("SIL", 0, curdebfr, null, null);
-						}
-					}
-					if (end>=0) {
-						int newseg = alignement.addRecognizedSegment(edit.getListeElement().getMot(0).getWordString(),
-								curdebfr, SpectroControl.second2frame(end), null, null);
-						edit.getListeElement().getMot(0).posInAlign=newseg;
-					} else {
+					// mot non encore aligne
+					if (mot>0) {
+						// ce n'est pas le 1er mot: j'aligne auto les precedents jusqu'au debut
 						// TODO
+					} else {
+						// premier mot
+						alignement.clear();
+						int curdebfr = 0;
+						if (deb>0) {
+							curdebfr = SpectroControl.second2frame(deb);
+							if (curdebfr>0) {
+								alignement.addRecognizedSegment("SIL", 0, curdebfr, null, null);
+							}
+						}
+						if (end>=0) {
+							int newseg = alignement.addRecognizedSegment(edit.getListeElement().getMot(0).getWordString(),
+									curdebfr, SpectroControl.second2frame(end), null, null);
+							edit.getListeElement().getMot(0).posInAlign=newseg;
+						} else {
+							// TODO
+						}
+						System.out.println("debug segs  \n"+alignement.toString());
 					}
-					System.out.println("debug segs  \n"+alignement.toString());
 				}
+				System.out.println("last aligned word "+getLastMotAligned());
+				if (edit!=null) edit.colorizeAlignedWords(0,mot);
+				repaint();
+			} else { // juste un SHIFT-clic
+				// position pour le play
+				wordSelectedIdx=mot;
+				Element_Mot emot = edit.getListeElement().getMot(mot);
+				int segidx = emot.posInAlign;
+				if (segidx>=0) {
+					int frame = alignement.getSegmentDebFrame(segidx);
+					cursec = Alignement.frame2second(frame);
+					long currentSample = Alignement.frame2sample(frame);
+					if (currentSample<0) currentSample=0;
+					edit.griseMot(emot);
+					// vieux panel
+					if (sigPanel!=null) {
+						sigPanel.setProgressBar(currentSample);
+					}
+					// nouveau panel
+					sigpan.setAudioInputStream(getCurPosInSec(), getAudioStreamFromSec(getCurPosInSec()));
+					if (showPhones) {
+						int segphidx = alignementPhones.getSegmentAtFrame(frame);
+						sigpan.setAlign(alignementPhones);
+						sigpan.setFirstSeg(segphidx);
+					} else {
+						sigpan.setFirstSeg(segidx);
+						sigpan.setAlign(alignement);
+					}
+					repaint();
+				} else {
+					System.err.println("warning: pas de segment associé au mot "+emot.getWordString());
+				}
+				Thread.yield();
+				try {
+					Thread.sleep(50);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				clearAlignFrom(mot);
+				ctrlbox.getPlayerGUI().startPlaying();
 			}
-			System.out.println("last aligned word "+getLastMotAligned());
+		} else if (kmgr.isControlOn) {
+			lastSecClickedOnSpectro = playergui.getRelativeStartingSec()+(float)playergui.getTimePlayed()/1000f;
+			System.out.println("Ctrl-clic without playing: set at last selected frame "+lastSecClickedOnSpectro);
+			System.out.println("set word "+mot+" "+edit.getListeElement().getMot(mot).getWordString());
+			float sec0 = getCurPosInSec();
+			setCurPosInSec(lastSecClickedOnSpectro);
+			int segmentDuMot = edit.getListeElement().getMot(mot).posInAlign;
+			if (segmentDuMot<0) {
+				// il n'est pas aligné, que fais-je ???
+				int mot0 = getLastMotAligned();
+				int mot0seg = edit.getListeElement().getMot(mot0).posInAlign;
+				int mot0endfr = alignement.getSegmentEndFrame(mot0seg);
+				System.out.println("last word aligned "+mot0+" "+mot0seg+" "+mot0endfr+" "+edit.getListeElement().getMot(mot0).getWordString());
+				float frdelta = ((float)(SpectroControl.second2frame(lastSecClickedOnSpectro)-mot0endfr))/(float)(mot+1-mot0);
+				System.out.println("nwords = "+(mot+1-mot0)+" "+frdelta);
+				int prevseg = mot0seg;
+				float curdebfr = alignement.getSegmentEndFrame(prevseg);
+				float curendfr = alignement.getSegmentEndFrame(prevseg)+frdelta;
+				for (int i=mot0+1;i<=mot;i++) {
+					System.out.println("addsegment "+i+" "+edit.getListeElement().getMot(i).getWordString()+" "+curdebfr+"-"+curendfr);
+					int newseg = alignement.addRecognizedSegment(edit.getListeElement().getMot(i).getWordString(), (int)curdebfr, (int)curendfr, null, null);
+					edit.getListeElement().getMot(i).posInAlign=newseg;
+					prevseg=newseg;
+					curdebfr = curendfr;
+					curendfr+=frdelta;
+				}
+				// bugfix last end frame
+				alignement.setSegmentEndFrame(prevseg, SpectroControl.second2frame(lastSecClickedOnSpectro));
+			} else {
+				System.out.println("set end of segment "+segmentDuMot+" "+alignement.getSegmentLabel(segmentDuMot));
+				System.out.println("set at frame "+SpectroControl.second2frame(lastSecClickedOnSpectro));
+				alignement.setSegmentEndFrame(segmentDuMot, SpectroControl.second2frame(lastSecClickedOnSpectro));
+			}
 			if (edit!=null) edit.colorizeAlignedWords(0,mot);
+			setCurPosInSec(sec0);
+			if (edit!=null) edit.getListeElement().refreshIndex();
 			repaint();
+			useS4aligner=true;
+			s4fastAutoAlign();
 		} else {
 			System.out.println("clic sans control: repositionne mot "+edit.getListeElement().getMot(mot).getWordString());
 
