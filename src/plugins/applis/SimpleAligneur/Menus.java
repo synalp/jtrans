@@ -32,6 +32,7 @@ import javax.swing.text.html.HTMLDocument;
 import javax.swing.text.html.HTMLEditorKit;
 
 import main.JTrans;
+import main.LiveSpeechReco;
 
 import plugins.sourceSignals.Mike2wav;
 import plugins.speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
@@ -178,6 +179,16 @@ public class Menus {
 		prefs.add(mixers);
 		JMenuItem mikerec = new JMenuItem("record from mike");
 		prefs.add(mikerec);
+		JMenuItem liveasr = new JMenuItem("live ASR");
+		prefs.add(liveasr);
+		liveasr.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// asynchrone
+				LiveSpeechReco.doReco();
+				// TODO: wait for the user press the ESC key, then stop the reco and put the result in the text panel 
+			}
+		});
 //		JMenuItem gui1 = new JMenuItem("GUI: view text only");
 //		prefs.add(gui1);
 //		JMenuItem gui2 = new JMenuItem("GUI: view signal");
@@ -285,6 +296,7 @@ public class Menus {
 					@Override
 					public void actionPerformed(ActionEvent e) {
 						String wavnom = e.getActionCommand().split(" ")[1];
+						System.out.println("wavsource for mike : "+wavnom);
 						aligneur.setWavSource(wavnom);
 						aligneur.repaint();
 					}
