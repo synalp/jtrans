@@ -148,7 +148,11 @@ public class S4ForceAlignBlocViterbi extends Thread {
 	public void setNewAudioFile(String wavname) {
 		this.wavname=wavname;
 		mfccs.clear();
-		wavfile.setAudioFile(new File(wavname), null);
+		if (wavname==null) {
+			// TODO: use mike
+		} else {
+			wavfile.setAudioFile(new File(wavname), null);
+		}
 	}
 
 	private void initS4() {
