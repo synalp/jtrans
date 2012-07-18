@@ -57,6 +57,8 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import javax.swing.JFrame;
+
+import main.LiveSpeechReco;
 import plugins.utils.FileUtils;
 import edu.cmu.sphinx.decoder.FrameDecoder;
 import edu.cmu.sphinx.decoder.ResultListener;
@@ -81,6 +83,7 @@ import edu.cmu.sphinx.frontend.frequencywarp.MelFrequencyFilterBank;
 import edu.cmu.sphinx.frontend.transform.DiscreteCosineTransform;
 import edu.cmu.sphinx.frontend.transform.DiscreteFourierTransform;
 import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
+import edu.cmu.sphinx.frontend.util.Microphone;
 import edu.cmu.sphinx.frontend.window.RaisedCosineWindower;
 import edu.cmu.sphinx.linguist.SearchState;
 import edu.cmu.sphinx.linguist.SearchStateArc;
@@ -110,6 +113,7 @@ public class S4ForceAlignBlocViterbi extends Thread {
 	public final int NBMOTS = 20;
 	private String wavname=null;
 	private AudioFileDataSource wavfile;
+	private Microphone mikeSource;
 
 	/**
 	 * contient (1) la 1ere trame (2) le 1er mot
@@ -124,8 +128,9 @@ public class S4ForceAlignBlocViterbi extends Thread {
 		if (aligner==null) {
 			aligner = new S4ForceAlignBlocViterbi(wavname);
 			aligner.start();
-		} else if (!wavname.equals(aligner.wavname))
-			aligner.setNewAudioFile(wavname);
+		} else if (!wavname.equals(aligner.wavname)) {
+			if (wavname!=null) aligner.setNewAudioFile(wavname);
+		}
 		return aligner;
 	}
 	private static S4ForceAlignBlocViterbi aligner = null;
@@ -149,12 +154,33 @@ public class S4ForceAlignBlocViterbi extends Thread {
 		this.wavname=wavname;
 		mfccs.clear();
 		if (wavname==null) {
-			// TODO: use mike
+			// use mike
+			initS4Mike();
+			// shall be called AFTER having defined the recognition grammar (with setMots()), because it starts immediately the mike !
 		} else {
 			wavfile.setAudioFile(new File(wavname), null);
 		}
 	}
 
+	private void initS4Mike() {
+		ArrayList<DataProcessor> frontEndList = new ArrayList<DataProcessor>();
+		mikeSource = new Microphone(16000, 16, 1, true, true, false, 10, false, "average", 0, "0", 6400);
+		frontEndList.add(mikeSource);
+		frontEndList.add(new Dither(2,false,Double.MAX_VALUE,-Double.MAX_VALUE));
+		frontEndList.add(new DataBlocker(50));
+		frontEndList.add(new Preemphasizer(0.97));
+		frontEndList.add(new RaisedCosineWindower(0.46f,25.625f,10f));
+		frontEndList.add(new DiscreteFourierTransform(512, false));
+		frontEndList.add(new MelFrequencyFilterBank(133.33334, 6855.4976, 40));
+		frontEndList.add(new DiscreteCosineTransform(40,13));
+		frontEndList.add(new LiveCMN(12,100,160));
+		frontEndList.add(new DeltasFeatureExtractor(3));
+
+		BaseDataProcessor mfcc = new FrontEnd(frontEndList);
+		//		mfccs = new S4RoundBufferFrontEnd(null, 10000);
+		mfccs = new S4mfccBuffer();
+		mfccs.setSource(mfcc);
+	}
 	private void initS4() {
 		ArrayList<DataProcessor> frontEndList = new ArrayList<DataProcessor>();
 		wavfile = new AudioFileDataSource(3200,null);
@@ -303,6 +329,11 @@ public class S4ForceAlignBlocViterbi extends Thread {
 					synchronized (order) {
 						order.notifyAll();
 					}
+					break;
+				}
+				if (wavname==null) {
+					// whatever the order is, do a live reco from mike !!
+					LiveSpeechReco.liveMikeReco();
 					break;
 				}
 				int firstFrame = order.getFirstFrame();
