@@ -17,6 +17,7 @@ import javax.swing.JPanel;
 
 import main.LiveSpeechReco;
 import plugins.applis.SimpleAligneur.Aligneur;
+import plugins.text.TextEditorRecoListener;
 import tools.audio.PlayerGUI;
 
 public class ControlBox extends JPanel implements ActionListener {
@@ -49,7 +50,8 @@ public class ControlBox extends JPanel implements ActionListener {
 		liveButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				LiveSpeechReco.doReco();
+				LiveSpeechReco r = LiveSpeechReco.doReco();
+				r.addResultListener(new TextEditorRecoListener(aligneur.edit));
 			}
 		});
 		JButton stopit = new JButton("Stop It !");

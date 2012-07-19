@@ -40,6 +40,7 @@ import edu.cmu.sphinx.linguist.language.grammar.GrammarNode;
 import edu.cmu.sphinx.result.Result;
 import edu.cmu.sphinx.util.LogMath;
 
+import plugins.speechreco.RecoListener;
 import plugins.speechreco.aligners.sphiinx4.AlignementEtat;
 import plugins.speechreco.aligners.sphiinx4.HMMModels;
 import plugins.speechreco.aligners.sphiinx4.PhoneticForcedGrammar;
@@ -63,7 +64,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 	public static void stopall() {
 		if (gram!=null&&gram.mikeSource!=null) gram.mikeSource.stopRecording();
 	}
-	public static void doReco() {
+	public static LiveSpeechReco doReco() {
 		String[] voc = {"un","deux","trois","quatre","cinq"};
 		try {
 			gram = new LiveSpeechReco();
@@ -80,6 +81,12 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		return gram;
+	}
+	
+	private RecoListener listener=null;
+	public void addResultListener(RecoListener l) {
+		listener = l;
 	}
 	
 	private void liveReco() {
@@ -123,7 +130,10 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		for (int t=0;;t++) {
 			Result r = decoder.decode(null);
 			if (r.isFinal()) break;
-			if (t%100==0) System.out.println("mike frame "+(t/100));
+			if (t%100==0) {
+				if (listener!=null) listener.recoEnCours(r);
+				System.out.println("mike frame "+(t/100));
+			}
 			// TODO: backtrack apres N trames ?
 		}
 		System.out.println("MIKE AND DECODE FINISHED !!");
@@ -148,17 +158,17 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		}
 		if (besttok==null) {
 			System.err.println("ERROR: meme pas de best token !");
-			gram.resPhones=gram.resStates=gram.resWords=null;
+			resPhones=resStates=resWords=null;
 		} else {
 			AlignementEtat[] bestaligns = AlignementEtat.backtrack(besttok);
 			if (bestaligns!=null) {
-				gram.resPhones = bestaligns[0];
-				gram.resWords = S4ForceAlignBlocViterbi.segmentePhonesEnMots(gram.resPhones);
-				gram.resStates = bestaligns[2];
+				resPhones = bestaligns[0];
+				resWords = S4ForceAlignBlocViterbi.segmentePhonesEnMots(gram.resPhones);
+				resStates = bestaligns[2];
 			}
 		}
-		System.out.println("debug res "+gram.resWords);
-		if (gram.resWords!=null) {
+		System.out.println("debug res "+resWords);
+		if (resWords!=null) {
 /*
 			// recopie l'identite des mots alignes
 			int midx=firstWord;
@@ -174,6 +184,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 			System.out.println("copie finie");
 */
 		}
+		if (listener!=null) listener.recoFinie(null, resWords.toString());
 	}
 	
 	private void initGrammar(String[] mots) {
