@@ -264,7 +264,7 @@ public class S4ForceAlignBlocViterbi extends Thread {
 	}
 
 	// je suppose que l'alignement est complet (a été jusqu'au bout)
-	public AlignementEtat segmentePhonesEnMots(AlignementEtat alignPhone) {
+	public static AlignementEtat segmentePhonesEnMots(AlignementEtat alignPhone) {
 		// on a une liste de phonemes et non pas une liste de mots !
 		// il faut retrouver les mots a partir des phonemes...
 		System.out.println("liste phones:");
@@ -338,7 +338,7 @@ public class S4ForceAlignBlocViterbi extends Thread {
 				if (wavname==null) {
 					// whatever the order is, do a live reco from mike !!
 					LiveSpeechReco.liveMikeReco(this);
-					break;
+					continue;
 				}
 				int firstFrame = order.getFirstFrame();
 				if (firstFrame<0) break;
@@ -519,7 +519,7 @@ public class S4ForceAlignBlocViterbi extends Thread {
 		}
 	}
 	
-	public boolean hasNonEmittingFinalPath(SearchState s) {
+	public static boolean hasNonEmittingFinalPath(SearchState s) {
 		SearchStateArc[] arcs = s.getSuccessors();
 		for (SearchStateArc a : arcs) {
 			SearchState dest = a.getState();

@@ -58,7 +58,7 @@ public class ControlBox extends JPanel implements ActionListener {
 			public void actionPerformed(ActionEvent e) {
 				if (aligneur.autoAligner!=null)
 					aligneur.autoAligner.stopAutoAlign();
-				LiveSpeechReco.stopit=true;
+				LiveSpeechReco.stopall();
 			}
 		});
 		
