@@ -113,7 +113,7 @@ public class S4ForceAlignBlocViterbi extends Thread {
 	public final int NBMOTS = 20;
 	private String wavname=null;
 	private AudioFileDataSource wavfile;
-	private Microphone mikeSource;
+	public Microphone mikeSource;
 
 	/**
 	 * contient (1) la 1ere trame (2) le 1er mot
@@ -128,8 +128,9 @@ public class S4ForceAlignBlocViterbi extends Thread {
 		if (aligner==null) {
 			aligner = new S4ForceAlignBlocViterbi(wavname);
 			aligner.start();
+		} else if (wavname==null) {return aligner;
 		} else if (!wavname.equals(aligner.wavname)) {
-			if (wavname!=null) aligner.setNewAudioFile(wavname);
+			aligner.setNewAudioFile(wavname);
 		}
 		return aligner;
 	}
@@ -166,7 +167,8 @@ public class S4ForceAlignBlocViterbi extends Thread {
 
 	private void initS4Mike() {
 		ArrayList<DataProcessor> frontEndList = new ArrayList<DataProcessor>();
-		mikeSource = new Microphone(16000, 16, 1, true, true, false, 10, false, "average", 0, "0", 6400);
+		mikeSource = new Microphone(16000, 16, 1, true, true, false, 10, false, "average", 0, "default", 6400);
+		mikeSource.initialize();
 		frontEndList.add(mikeSource);
 		frontEndList.add(new Dither(2,false,Double.MAX_VALUE,-Double.MAX_VALUE));
 		frontEndList.add(new DataBlocker(50));

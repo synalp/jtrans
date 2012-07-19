@@ -8,6 +8,7 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
+import javax.sound.sampled.AudioFormat;
 import javax.swing.JFrame;
 
 import edu.cmu.sphinx.decoder.FrameDecoder;
@@ -18,6 +19,20 @@ import edu.cmu.sphinx.decoder.scorer.ThreadedAcousticScorer;
 import edu.cmu.sphinx.decoder.search.PartitionActiveListFactory;
 import edu.cmu.sphinx.decoder.search.SimpleBreadthFirstSearchManager;
 import edu.cmu.sphinx.decoder.search.Token;
+import edu.cmu.sphinx.frontend.BaseDataProcessor;
+import edu.cmu.sphinx.frontend.Data;
+import edu.cmu.sphinx.frontend.DataBlocker;
+import edu.cmu.sphinx.frontend.DataProcessor;
+import edu.cmu.sphinx.frontend.FrontEnd;
+import edu.cmu.sphinx.frontend.feature.DeltasFeatureExtractor;
+import edu.cmu.sphinx.frontend.feature.LiveCMN;
+import edu.cmu.sphinx.frontend.filter.Dither;
+import edu.cmu.sphinx.frontend.filter.Preemphasizer;
+import edu.cmu.sphinx.frontend.frequencywarp.MelFrequencyFilterBank;
+import edu.cmu.sphinx.frontend.transform.DiscreteCosineTransform;
+import edu.cmu.sphinx.frontend.transform.DiscreteFourierTransform;
+import edu.cmu.sphinx.frontend.util.Microphone;
+import edu.cmu.sphinx.frontend.window.RaisedCosineWindower;
 import edu.cmu.sphinx.jsgf.JSGFGrammar;
 import edu.cmu.sphinx.jsgf.JSGFGrammarException;
 import edu.cmu.sphinx.jsgf.JSGFGrammarParseException;
@@ -32,6 +47,7 @@ import plugins.speechreco.aligners.sphiinx4.PhoneticForcedGrammar;
 import plugins.speechreco.aligners.sphiinx4.ProgressDialog;
 import plugins.speechreco.aligners.sphiinx4.S4AlignOrder;
 import plugins.speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
+import plugins.speechreco.aligners.sphiinx4.S4mfccBuffer;
 import plugins.speechreco.grammaire.Grammatiseur;
 
 public class LiveSpeechReco extends PhoneticForcedGrammar {
@@ -86,7 +102,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 //		initialNode = n;
 		
 		StringBuilder gramstring = new StringBuilder();
-		gramstring.append("[ sil ] ( ");
+		gramstring.append("[ sil ] ( sil | ");
 
 		for (int wi=0;wi<mots.length;wi++) {
 			String w = mots[wi];
@@ -163,7 +179,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 	 * synchronous (blocking !) function for live reco from mike
 	 */
 	public static void liveMikeReco(final S4ForceAlignBlocViterbi s4) {
-		if (gram==null) {
+		if (s4.searchManager==null) {
 			ProgressDialog waiting = new ProgressDialog((JFrame)null, new Runnable() {
 				@Override
 				public void run() {
@@ -190,13 +206,16 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		// TODO
 		
 		// boucle jusqu'a interruption (TODO)
+		s4.mikeSource.startRecording();
 		s4.searchManager.startRecognition();
 		stopit=false;
 		for (int t=0;;t++) {
 			s4.decoder.decode(null);
+			if (t%100==0) System.out.println("mike frame "+(t/100));
 			if (stopit) break;
 			// TODO: backtrack apres N trames ?
 		}
+		s4.mikeSource.stopRecording();
 		// on backtrack depuis la fin
 		Token besttok = null;
 		for (Token tok : s4.searchManager.getActiveList().getTokens()) {
@@ -245,6 +264,60 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 	}
 	
 	public static void main(String args[]) {
+		debug2();
+	}
+	private static void debug2() {
+		// FRONTEND
+		ArrayList<DataProcessor> frontEndList = new ArrayList<DataProcessor>();
+		Microphone mikeSource = new Microphone(16000, 16, 1, true, true, false, 10, false, "average", 0, "default", 6400);
+		frontEndList.add(mikeSource);
+		frontEndList.add(new Dither(2,false,Double.MAX_VALUE,-Double.MAX_VALUE));
+		frontEndList.add(new DataBlocker(50));
+		frontEndList.add(new Preemphasizer(0.97));
+		frontEndList.add(new RaisedCosineWindower(0.46f,25.625f,10f));
+		frontEndList.add(new DiscreteFourierTransform(512, false));
+		frontEndList.add(new MelFrequencyFilterBank(133.33334, 6855.4976, 40));
+		frontEndList.add(new DiscreteCosineTransform(40,13));
+		frontEndList.add(new LiveCMN(12,100,160));
+		frontEndList.add(new DeltasFeatureExtractor(3));
+		BaseDataProcessor mfcc = new FrontEnd(frontEndList);
+		//		mfccs = new S4RoundBufferFrontEnd(null, 10000);
+		S4mfccBuffer mfccs = new S4mfccBuffer();
+		mfccs.setSource(mfcc);
+
+		// ACCMODS
+		System.out.println("loading acoustic models...");
+		LogMath logMath = HMMModels.getLogMath();
+		AcousticModel mods = HMMModels.getAcousticModels();
+		float silprob = 0.1f;
+		int beamwidth = 0;
+
+		// LANGMODS
+		String[] voc = {"un","deux","trois","quatre","cinq"};
+		try {
+			gram = new LiveSpeechReco();
+			gram.initGrammar(voc);
+			System.out.println("********* MIKE GRAMMAR DEFINED");
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+
+		// S4 DECODER
+		FlatLinguist linguist = new FlatLinguist(mods, logMath, gram, HMMModels.getUnitManager(), 1f, silprob, silprob, 1f, 1f, false, false, false, false, 1f, 1f, mods);
+		Pruner pruner = new SimplePruner();
+		ThreadedAcousticScorer scorer = new ThreadedAcousticScorer(mfccs, null, 1, false, 1, Thread.NORM_PRIORITY);
+		PartitionActiveListFactory activeList = new PartitionActiveListFactory(beamwidth, 1E-300, logMath);
+		SimpleBreadthFirstSearchManager searchManager = new SimpleBreadthFirstSearchManager(logMath, linguist, pruner, scorer, activeList, false, 1E-60, 0, false);
+		ArrayList<ResultListener> listeners = new ArrayList<ResultListener>();
+		FrameDecoder decoder = new FrameDecoder(searchManager, false, true, listeners);
+		
+		mikeSource.initialize();
+		mikeSource.startRecording();
+		searchManager.startRecognition();
+	}
+	private static void debug1() {
 		JSGFGrammar gram = new JSGFGrammar();
 		try {
 			File f = new File(".");
