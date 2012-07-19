@@ -26,12 +26,13 @@ public class Nombres implements Serializable {
 	private String segmentNormed = null;
 	
 	void load() {
-		String sx = FileUtils.getRessource("plugins.speechreco.grammaire.Nombres","ressources/Nbrules.txt");
+		String sx = "ressources/Nbrules.txt";
+//		String sx = FileUtils.getRessource("plugins.speechreco.grammaire.Nombres","ressources/Nbrules.txt");
 //		InputStream is = FileUtils.getRessourceAsStream("plugins.speechreco.grammaire.Nombres","ressources/Nbrules.txt");
-		if (sx==null) {
-			System.out.println("ERROR loading ressources/Nbrules.txt curdir="+(new File(".")).getAbsolutePath());
-			return;
-		}
+//		if (sx==null) {
+//			System.out.println("ERROR loading ressources/Nbrules.txt curdir="+(new File(".")).getAbsolutePath());
+//			return;
+//		}
 		try {
 			BufferedReader f = FileUtils.openFileUTF(sx);
 //			BufferedReader f = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));

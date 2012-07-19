@@ -105,10 +105,10 @@ import edu.cmu.sphinx.util.LogMath;
 public class S4ForceAlignBlocViterbi extends Thread {
 	//	S4RoundBufferFrontEnd mfccs = null;
 	public S4mfccBuffer mfccs = null;
-	FrameDecoder decoder=null;
+	public FrameDecoder decoder=null;
 	PhoneticForcedGrammar grammar = null;
 	String[] mots;
-	SimpleBreadthFirstSearchManager searchManager = null;
+	public SimpleBreadthFirstSearchManager searchManager = null;
 
 	public final int NBMOTS = 20;
 	private String wavname=null;
@@ -141,23 +141,25 @@ public class S4ForceAlignBlocViterbi extends Thread {
 
 		System.out.println("create S4aligner with "+wavname+" "+Arrays.toString(mots));
 
-		ProgressDialog waiting = new ProgressDialog((JFrame)null, new Runnable() {
-			@Override
-			public void run() {
-				initS4();
-			}
-		}, "please wait: initializing grammars...");
-		waiting.setVisible(true);
+		if (wavname!=null) {
+			ProgressDialog waiting = new ProgressDialog((JFrame)null, new Runnable() {
+				@Override
+				public void run() {
+					initS4();
+				}
+			}, "please wait: initializing grammars...");
+			waiting.setVisible(true);
+		}
 	}
 
 	public void setNewAudioFile(String wavname) {
 		this.wavname=wavname;
-		mfccs.clear();
 		if (wavname==null) {
 			// use mike
 			initS4Mike();
 			// shall be called AFTER having defined the recognition grammar (with setMots()), because it starts immediately the mike !
 		} else {
+			mfccs.clear();
 			wavfile.setAudioFile(new File(wavname), null);
 		}
 	}
@@ -260,7 +262,7 @@ public class S4ForceAlignBlocViterbi extends Thread {
 	}
 
 	// je suppose que l'alignement est complet (a été jusqu'au bout)
-	AlignementEtat segmentePhonesEnMots(AlignementEtat alignPhone) {
+	public AlignementEtat segmentePhonesEnMots(AlignementEtat alignPhone) {
 		// on a une liste de phonemes et non pas une liste de mots !
 		// il faut retrouver les mots a partir des phonemes...
 		System.out.println("liste phones:");
@@ -333,7 +335,7 @@ public class S4ForceAlignBlocViterbi extends Thread {
 				}
 				if (wavname==null) {
 					// whatever the order is, do a live reco from mike !!
-					LiveSpeechReco.liveMikeReco();
+					LiveSpeechReco.liveMikeReco(this);
 					break;
 				}
 				int firstFrame = order.getFirstFrame();
@@ -515,7 +517,7 @@ public class S4ForceAlignBlocViterbi extends Thread {
 		}
 	}
 	
-	private boolean hasNonEmittingFinalPath(SearchState s) {
+	public boolean hasNonEmittingFinalPath(SearchState s) {
 		SearchStateArc[] arcs = s.getSuccessors();
 		for (SearchStateArc a : arcs) {
 			SearchState dest = a.getState();

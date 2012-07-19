@@ -746,12 +746,12 @@ public class Grammatiseur implements Serializable {
 
 	public void serialize() {
 		try {
-			URL url = getClass().getResource("/jtrans.jar");
-			int i=url.toString().indexOf("dist/jtrans.jar");
-			String prefix = "./ressources/";
-			if (i>=0) {
-				prefix = (new URL(url.toString().substring(0,i)+"ressources/")).getPath();
-			}
+//			URL url = getClass().getResource("/jtrans.jar");
+//			int i=url.toString().indexOf("dist/jtrans.jar");
+			String prefix = "ressources/";
+//			if (i>=0) {
+//				prefix = (new URL(url.toString().substring(0,i)+"ressources/")).getPath();
+//			}
 			ObjectOutputStream f = new ObjectOutputStream(new FileOutputStream(prefix+"grammatiseur"));
 			f.writeObject(this);
 			f.close();

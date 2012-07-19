@@ -143,9 +143,9 @@ public class Classifieurs {
         for (int i = 0; i < lexique.getNbGraphemes(); i++) {
             String graphemeCourant = lexique.getGraphemeFromIndice(i);
             
-            System.out.println("accnent avant "+graphemeCourant);
+//            System.out.println("accnent avant "+graphemeCourant);
             graphemeCourant=convaccents(graphemeCourant);
-            System.out.println("accnent apres "+graphemeCourant);
+//            System.out.println("accnent apres "+graphemeCourant);
 
             {
             	String s = repertoireFichiersARFF + Configuration.NOM_FICHIER_ARFF_SIMPLE_PHONEME + "_" + graphemeCourant + ".arff";

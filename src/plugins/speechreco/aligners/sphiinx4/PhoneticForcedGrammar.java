@@ -37,7 +37,7 @@ public class PhoneticForcedGrammar extends JSGFGrammar {
 	List<String> words0 = null;
 	List<String> wordRule = new ArrayList<String>();
 	
-	Grammatiseur grammatiseur = null;
+	protected Grammatiseur grammatiseur = null;
 	
 	GrammarNode[] finsDesMots;
 
@@ -220,7 +220,7 @@ public class PhoneticForcedGrammar extends JSGFGrammar {
 		}
 	}
 	
-	private String annoteFirstPhones(String rule, int wi) {
+	protected String annoteFirstPhones(String rule, int wi) {
 		String[] rules = rule.split(" ");
 		chercheFirstPhones(rules,0,wi);
 		StringBuilder sb = new StringBuilder();
@@ -265,7 +265,7 @@ public class PhoneticForcedGrammar extends JSGFGrammar {
 	}
 	
 	HashMap<String, String> phmap = null;
-	private String convertPhone(String ph) {
+	protected String convertPhone(String ph) {
 		if (phmap==null) {
 			// TODO: je ne suis pas sur de cette conversion: la verifier !
 			final String[] from = {"xx",  "J", "euf","H","a","an","in","b","d","e","E","eh" ,"eu","f","g","i","j","k","l","m","n","o","O", "oh","on","p","R","s","sil","SIL","swa","t","u","v","y","z","Z", "S", "w"};

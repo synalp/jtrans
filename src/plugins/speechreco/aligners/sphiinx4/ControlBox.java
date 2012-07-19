@@ -14,6 +14,8 @@ import java.awt.event.ActionListener;
 import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JPanel;
+
+import main.LiveSpeechReco;
 import plugins.applis.SimpleAligneur.Aligneur;
 import tools.audio.PlayerGUI;
 
@@ -43,12 +45,20 @@ public class ControlBox extends JPanel implements ActionListener {
 				aligneur.asr();
 			}
 		});
+		JButton liveButton = new JButton("Live ASR");
+		liveButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				LiveSpeechReco.doReco();
+			}
+		});
 		JButton stopit = new JButton("Stop It !");
 		stopit.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if (aligneur.autoAligner!=null)
 					aligneur.autoAligner.stopAutoAlign();
+				LiveSpeechReco.stopit=true;
 			}
 		});
 		
@@ -60,6 +70,8 @@ public class ControlBox extends JPanel implements ActionListener {
 		b.add(alignButton);
 		b.add(Box.createGlue());
 		b.add(asrButton);
+		b.add(Box.createGlue());
+		b.add(liveButton);
 		b.add(Box.createGlue());
 		b.add(stopit);
 		b.add(Box.createGlue());
