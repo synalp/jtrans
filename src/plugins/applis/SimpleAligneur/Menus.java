@@ -298,6 +298,7 @@ public class Menus {
 						String wavnom = e.getActionCommand().split(" ")[1];
 						System.out.println("wavsource for mike : "+wavnom);
 						aligneur.setWavSource(wavnom);
+						aligneur.setCurPosInSec(0);
 						aligneur.repaint();
 					}
 				});

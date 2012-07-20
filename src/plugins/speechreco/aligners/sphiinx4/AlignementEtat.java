@@ -142,7 +142,8 @@ public class AlignementEtat {
 		for (int i=0;i<segEndFrames.length;i++) {
 			segEndFrames[i]=segs.getSegmentFinFrame(i);
 		}
-		System.out.println("index updated "+segEndFrames.length+" "+segEndFrames[segEndFrames.length-1]);
+		if (segEndFrames.length>0)
+			System.out.println("index updated "+segEndFrames.length+" "+segEndFrames[segEndFrames.length-1]);
 		segs.setFirstSegmentAltered(-1);
 	}
 	/**

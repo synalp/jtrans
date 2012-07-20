@@ -1,5 +1,7 @@
 package plugins.text;
 
+import java.util.StringTokenizer;
+
 import javax.swing.JTextPane;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
@@ -28,7 +30,19 @@ public class TextEditorRecoListener implements RecoListener {
 	@Override
 	public void recoFinie(Result finalres, String res) {
 		try {
-			doc.insertString(doc.getLength(), "\n"+res+"\n", null);
+			StringTokenizer st = new StringTokenizer(res, ":\n");
+			StringBuilder sb = new StringBuilder();
+			sb.append('\n');
+			for (;;) {
+				if (!st.hasMoreTokens()) break;
+				st.nextToken(); st.nextToken();
+				String s = st.nextToken();
+				if (!s.startsWith("SIL")) {
+					sb.append(s); sb.append(' ');
+				}
+			}
+			sb.append('\n');
+			doc.insertString(doc.getLength(), sb.toString(), null);
 			edit.repaint();
 		} catch (BadLocationException e) {
 			e.printStackTrace();

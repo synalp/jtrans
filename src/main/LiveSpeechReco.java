@@ -1,6 +1,8 @@
 package main;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -8,7 +10,9 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 
 import edu.cmu.sphinx.decoder.FrameDecoder;
 import edu.cmu.sphinx.decoder.ResultListener;
@@ -51,12 +55,15 @@ import plugins.speechreco.grammaire.Grammatiseur;
 
 public class LiveSpeechReco extends PhoneticForcedGrammar {
 	public static LiveSpeechReco gram=null;
+	public static File vocfile = null;
 	
 	FrameDecoder decoder=null;
 	AcousticModel mods=null;
 	Microphone mikeSource=null;
 	public AlignementEtat resWords=null, resPhones=null, resStates=null;
-	
+	private RecoListener listener=null;
+	ArrayList<String> voc = new ArrayList<String>();
+
 	public LiveSpeechReco() throws MalformedURLException, ClassNotFoundException {
 		super();
 	}
@@ -65,10 +72,18 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		if (gram!=null&&gram.mikeSource!=null) gram.mikeSource.stopRecording();
 	}
 	public static LiveSpeechReco doReco() {
-		String[] voc = {"un","deux","trois","quatre","cinq"};
 		try {
 			gram = new LiveSpeechReco();
-			gram.initGrammar(voc);
+			if (vocfile==null) {
+				JOptionPane.showMessageDialog(null, "Please open the vocabulary file");
+				JFileChooser jfc = new JFileChooser();
+				int res = jfc.showOpenDialog(null);
+				if (res==JFileChooser.APPROVE_OPTION) {
+					vocfile = jfc.getSelectedFile();
+				}
+			}
+			gram.loadVoc(vocfile);
+			gram.initGrammar();
 			System.out.println("********* MIKE GRAMMAR DEFINED");
 			
 			Thread t = new Thread(new Runnable() {
@@ -84,7 +99,23 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		return gram;
 	}
 	
-	private RecoListener listener=null;
+	public void loadVoc(File f) {
+		try {
+			vocfile=f;
+			voc.clear();
+			BufferedReader bf = new BufferedReader(new FileReader(f));
+			for (;;) {
+				String s=bf.readLine();
+				if (s==null) break;
+				s=s.trim();
+				if (s.length()>0) voc.add(s);
+			}
+			bf.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
 	public void addResultListener(RecoListener l) {
 		listener = l;
 	}
@@ -169,25 +200,18 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		}
 		System.out.println("debug res "+resWords);
 		if (resWords!=null) {
-/*
-			// recopie l'identite des mots alignes
-			int midx=firstWord;
-			System.out.println("recopie mots dans les places vides de l'alignement "+midx+" "+align.getNbSegments());
-			for (int i=0;i<align.getNbSegments();i++) {
-				// on a stocké l'indice du mot (car certains mots sont optionnels)
-				String s = align.getSegmentLabel(i);
+			for (int i=0;i<resWords.getNbSegments();i++) {
+				String s = resWords.getSegmentLabel(i);
 				if (s.startsWith("XZ")) {
 					int widx = Integer.parseInt(s.substring(2));
-					align.setSegmentLabel(i, mots[midx+widx]);
+					resWords.setSegmentLabel(i, voc.get(widx));
 				}
 			}
-			System.out.println("copie finie");
-*/
 		}
 		if (listener!=null) listener.recoFinie(null, resWords.toString());
 	}
 	
-	private void initGrammar(String[] mots) {
+	private void initGrammar() {
 		if (super.grammatiseur==null) {
 			ProgressDialog waiting = new ProgressDialog((JFrame)null, new Runnable() {
 				@Override
@@ -206,8 +230,9 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		StringBuilder gramstring = new StringBuilder();
 		gramstring.append("[ sil ] ( sil | ");
 
-		for (int wi=0;wi<mots.length;wi++) {
-			String w = mots[wi];
+		for (int wi=0;wi<voc.size();wi++) {
+			String w = voc.get(wi);
+			w=w.replace('_', ' ');
 			String rule = grammatiseur.getGrammar(w);
 			// on recupere toujours un silence optionnel au debut et a la fin, que je supprime:
 //			rule = rule.substring(4,rule.length()-8).trim();
@@ -277,12 +302,6 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		}
 	}
 	
-	/**
-	 * synchronous (blocking !) function for live reco from mike
-	 */
-	public static void liveMikeReco(final S4ForceAlignBlocViterbi s4) {
-	}
-	
 	public static void main(String args[]) {
 		debug2();
 	}
@@ -313,10 +332,10 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		int beamwidth = 0;
 
 		// LANGMODS
-		String[] voc = {"un","deux","trois","quatre","cinq"};
+		vocfile=new File("tmpvoc.txt");
 		try {
 			gram = new LiveSpeechReco();
-			gram.initGrammar(voc);
+			gram.initGrammar();
 			System.out.println("********* MIKE GRAMMAR DEFINED");
 		} catch (MalformedURLException e) {
 			e.printStackTrace();

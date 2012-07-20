@@ -336,8 +336,6 @@ public class S4ForceAlignBlocViterbi extends Thread {
 					break;
 				}
 				if (wavname==null) {
-					// whatever the order is, do a live reco from mike !!
-					LiveSpeechReco.liveMikeReco(this);
 					continue;
 				}
 				int firstFrame = order.getFirstFrame();
