@@ -35,6 +35,7 @@ import main.JTrans;
 import main.LiveSpeechReco;
 
 import plugins.sourceSignals.Mike2wav;
+import plugins.speechreco.adaptation.BiaisAdapt;
 import plugins.speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
 import plugins.utils.TextInputWindow;
 import plugins.utils.UserInputProcessor;
@@ -131,6 +132,16 @@ public class Menus {
 		bias.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				aligneur.biasAdapt();
+			}
+		});
+		
+		JMenuItem map = new JMenuItem("MAP adapt");
+		sig.add(map);
+
+		map.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				BiaisAdapt a = new BiaisAdapt(aligneur);
+				a.adaptMAP(aligneur.alignementPhones);
 			}
 		});
 
