@@ -7,6 +7,7 @@ import java.util.List;
 
 import javax.swing.JOptionPane;
 
+import edu.cmu.sphinx.frontend.Data;
 import edu.cmu.sphinx.frontend.DataEndSignal;
 import edu.cmu.sphinx.frontend.DataStartSignal;
 import edu.cmu.sphinx.frontend.FloatData;
@@ -41,12 +42,16 @@ public class BiaisAdapt
 	{
 		this.aligneur = aligneur;
 	}
-	
+
 	public void adaptMAP(AlignementEtat alignPhones) {
 		// TODO: 1- equi-split phone segments into state segments
 		// 2- compute the "weights" of each Gaussian in the state by Mahalanobis
 		// 3- adapt based on the weight
-		
+
+		String ss = JOptionPane.showInputDialog("Number of iterations ?");
+		if (ss==null) return;
+		int niters = Integer.parseInt(ss);
+
 		HashMap<String,List<GaussianMixture>> ph2gauss = new HashMap<String, List<GaussianMixture>>();
 		AcousticModel a=HMMModels.getAcousticModels();
 		Iterator<HMM> hmmit = a.getHMMIterator();
@@ -66,41 +71,71 @@ public class BiaisAdapt
 				}
 			}
 		}
-		
+
 		ArrayList<float[]> mfccs=new ArrayList<float[]>();
+		aligneur.getS4aligner().mfccs.gotoFrame(0);
 		while(aligneur.getS4aligner().mfccs.noMoreFramesAvailable==false) {
-			if(!(aligneur.getS4aligner().mfccs.getData() instanceof DataEndSignal) && !(aligneur.getS4aligner().mfccs.getData() instanceof DataStartSignal)) {
-				mfccs.add(((FloatData) aligneur.getS4aligner().mfccs.getData()).getValues());
+			Data d = aligneur.getS4aligner().mfccs.getData();
+			if(!(d instanceof DataEndSignal) && !(d instanceof DataStartSignal)) {
+				mfccs.add(((FloatData)d).getValues());
 			}
 		}
-		for (int i=0;i<mfccs.size();i++) {
-			float[] x = mfccs.get(i);
-			int s = alignPhones.getSegmentAtFrame(i);
-			if (s<0) continue;
-			String ph=alignPhones.getSegmentLabel(s);
-			List<GaussianMixture> gau = ph2gauss.get(ph);
-			if (gau==null) {
-				JOptionPane.showMessageDialog(null, "ERROR MAP adapt: "+ph+" "+ph2gauss.keySet());
-			} else {
-				MixtureComponent bestg = null; float bestsc = -Float.MAX_VALUE;
-				for (GaussianMixture gm : gau) {
-					for (MixtureComponent gauss : gm.getMixtureComponents()) {
-						float sc = gauss.getScore(x);
-						if (bestg==null||bestsc<sc) {
-							bestsc=sc; bestg=gauss;
+
+		for (int iter=0;iter<niters;iter++) {
+			// calcule loglike
+			float loglike = 0;
+			for (int i=0;i<mfccs.size();i++) {
+				float[] x = mfccs.get(i);
+				int s = alignPhones.getSegmentAtFrame(i);
+				if (s<0) continue;
+				String ph=alignPhones.getSegmentLabel(s);
+				List<GaussianMixture> gau = ph2gauss.get(ph);
+				if (gau==null) System.out.println("ERROR NULL "+ph);
+				else {
+					MixtureComponent bestg = null; float bestsc = -Float.MAX_VALUE;
+					for (GaussianMixture gm : gau) {
+						for (MixtureComponent gauss : gm.getMixtureComponents()) {
+							float sc = gauss.getScore(x);
+							if (bestg==null||bestsc<sc) {
+								bestsc=sc; bestg=gauss;
+							}
 						}
 					}
+					loglike+=bestsc;
 				}
-				float[] m = bestg.getMean();
-				for (int j=0;j<x.length;j++) {
-					m[j] = 0.9f*m[j]+0.1f*x[j];
+			}
+			System.out.println("iter "+iter+" loglike "+loglike);
+			
+			// adapt
+			for (int i=0;i<mfccs.size();i++) {
+				float[] x = mfccs.get(i);
+				int s = alignPhones.getSegmentAtFrame(i);
+				if (s<0) continue;
+				String ph=alignPhones.getSegmentLabel(s);
+				List<GaussianMixture> gau = ph2gauss.get(ph);
+				if (gau==null) {
+					JOptionPane.showMessageDialog(null, "ERROR MAP adapt: "+ph+" "+ph2gauss.keySet());
+				} else {
+					MixtureComponent bestg = null; float bestsc = -Float.MAX_VALUE;
+					for (GaussianMixture gm : gau) {
+						for (MixtureComponent gauss : gm.getMixtureComponents()) {
+							float sc = gauss.getScore(x);
+							if (bestg==null||bestsc<sc) {
+								bestsc=sc; bestg=gauss;
+							}
+						}
+					}
+					float[] m = bestg.getMean();
+					for (int j=0;j<x.length;j++) {
+						m[j] = 0.9f*m[j]+0.1f*x[j];
+					}
+					// TODO: augmenter weight de bestg !
 				}
-				// TODO: augmenter weight de bestg !
 			}
 		}
 	}
-	
-	
+
+
 	public float[] calculateBiais() {
 		//récupération des means et mfccs
 		float[] biais;
@@ -126,9 +161,11 @@ public class BiaisAdapt
 				}
 			}
 		}
+		aligneur.getS4aligner().mfccs.gotoFrame(0);
 		ArrayList<float[]> mfccs=new ArrayList<float[]>();
 		while(aligneur.getS4aligner().mfccs.noMoreFramesAvailable==false) {
-			if(!(aligneur.getS4aligner().mfccs.getData() instanceof DataEndSignal) && !(aligneur.getS4aligner().mfccs.getData() instanceof DataStartSignal)) {
+			Data d = aligneur.getS4aligner().mfccs.getData();
+			if(!(d instanceof DataEndSignal) && !(d instanceof DataStartSignal)) {
 				mfccs.add(((FloatData) aligneur.getS4aligner().mfccs.getData()).getValues());
 			}
 		}
@@ -159,5 +196,5 @@ public class BiaisAdapt
 		}
 		return biais;
 	}
-	
+
 }

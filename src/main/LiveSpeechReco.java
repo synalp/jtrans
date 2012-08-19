@@ -76,7 +76,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 			gram = new LiveSpeechReco();
 			if (vocfile==null) {
 				JOptionPane.showMessageDialog(null, "Please open the vocabulary file");
-				JFileChooser jfc = new JFileChooser();
+				JFileChooser jfc = new JFileChooser((new File(".")));
 				int res = jfc.showOpenDialog(null);
 				if (res==JFileChooser.APPROVE_OPTION) {
 					vocfile = jfc.getSelectedFile();
@@ -332,7 +332,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		int beamwidth = 0;
 
 		// LANGMODS
-		vocfile=new File("tmpvoc.txt");
+		vocfile=new File("voc.txt");
 		try {
 			gram = new LiveSpeechReco();
 			gram.initGrammar();
