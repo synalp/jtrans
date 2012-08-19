@@ -19,6 +19,7 @@ import edu.cmu.sphinx.linguist.acoustic.tiedstate.MixtureComponent;
 import edu.cmu.sphinx.linguist.acoustic.tiedstate.Senone;
 import edu.cmu.sphinx.linguist.acoustic.tiedstate.SenoneHMM;
 import edu.cmu.sphinx.linguist.acoustic.tiedstate.SenoneHMMState;
+import edu.cmu.sphinx.linguist.acoustic.tiedstate.Sphinx3Loader;
 import plugins.applis.SimpleAligneur.Aligneur;
 import plugins.speechreco.aligners.sphiinx4.AlignementEtat;
 import plugins.speechreco.aligners.sphiinx4.HMMModels;
@@ -71,6 +72,7 @@ public class BiaisAdapt
 				}
 			}
 		}
+		System.out.println("MAPadapt: got in HMMs: "+ph2gauss.keySet());
 
 		ArrayList<float[]> mfccs=new ArrayList<float[]>();
 		aligneur.getS4aligner().mfccs.gotoFrame(0);
@@ -133,6 +135,9 @@ public class BiaisAdapt
 				}
 			}
 		}
+		
+		// save models
+		
 	}
 
 
@@ -196,5 +201,4 @@ public class BiaisAdapt
 		}
 		return biais;
 	}
-
 }
