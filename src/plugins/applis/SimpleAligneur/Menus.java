@@ -137,11 +137,18 @@ public class Menus {
 		
 		JMenuItem map = new JMenuItem("MAP adapt");
 		sig.add(map);
-
 		map.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				BiaisAdapt a = new BiaisAdapt(aligneur);
 				a.adaptMAP(aligneur.alignementPhones);
+			}
+		});
+		JMenuItem mapload = new JMenuItem("load Adapted models");
+		sig.add(mapload);
+		mapload.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				BiaisAdapt a = new BiaisAdapt(aligneur);
+				a.loadAdapted(null);
 			}
 		});
 

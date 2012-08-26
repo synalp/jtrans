@@ -55,7 +55,8 @@ public abstract class HMMModels {
 				} else {
 					modurl = (new File(path)).toURI().toURL();
 				}
-				loader = new Sphinx3Loader(modurl, modelDef, datapath, logm, um, 0, 1e-7f, 0.0001f, false);
+				loader = new Sphinx3Loader(modurl,modelDef,datapath,logm,um,0f,1e-7f,0.0001f,false);
+				
 /*				
 				for (int pathidx=0;pathidx<pathHMMs.length;pathidx++) {
 					String u = FileUtils.getRessource("plugins.speechreco.aligners.sphiinx4.HMMModels", pathHMMs[pathidx]);

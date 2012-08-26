@@ -1,7 +1,13 @@
 package plugins.speechreco.adaptation;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
@@ -27,6 +33,7 @@ import plugins.speechreco.aligners.sphiinx4.HMMModels;
 public class BiaisAdapt
 {
 	private Aligneur aligneur;
+	int nmeansAdapted=0;
 
 	public BiaisAdapt(Aligneur aligneur)
 	{
@@ -109,6 +116,7 @@ public class BiaisAdapt
 			System.out.println("iter "+iter+" loglike "+loglike);
 			
 			// adapt
+			HashSet<float[]> adapted = new HashSet<float[]>();
 			for (int i=0;i<mfccs.size();i++) {
 				float[] x = mfccs.get(i);
 				int s = alignPhones.getSegmentAtFrame(i);
@@ -128,18 +136,110 @@ public class BiaisAdapt
 						}
 					}
 					float[] m = bestg.getMean();
+					adapted.add(m);
 					for (int j=0;j<x.length;j++) {
 						m[j] = 0.9f*m[j]+0.1f*x[j];
 					}
 					// TODO: augmenter weight de bestg !
 				}
 			}
+			nmeansAdapted=adapted.size();
 		}
 		
 		// save models
-		
+		saveAdapted(null);
 	}
 
+	public void loadAdapted(String name) {
+		if (name==null) {
+			name = JOptionPane.showInputDialog("Plz give a name for adapted models");
+		}
+		if (name==null) return;
+		name=name.trim();
+		ArrayList<float[]> means=new ArrayList<float[]>();
+		AcousticModel a=HMMModels.getAcousticModels();
+		Iterator<HMM> hmmit = a.getHMMIterator();
+		while (hmmit.hasNext()) {
+			HMM hmm = hmmit.next();
+			SenoneHMM shmm = (SenoneHMM) hmm;			
+			int nstates = shmm.getTransitionMatrix().length;
+			for (int st=0;st<nstates;st++) {
+				HMMState hmmst = shmm.getState(st);
+				SenoneHMMState shmmst=(SenoneHMMState) hmmst;
+				Senone s=shmmst.getSenone();
+				if(s!=null) { 
+					GaussianMixture g=(GaussianMixture) s;
+					MixtureComponent[] mc=g.getMixtureComponents();
+					System.out.println("debug adapt senone "+s+" "+shmm+" ngauss "+mc.length);
+					int k=mc.length;
+					for(int j=0;j<k;j++) {
+						means.add(mc[j].getMean());
+					}
+				}
+			}
+		}
+		
+		try {
+			DataInputStream fin = new DataInputStream(new FileInputStream(name+"adapt.bin"));
+			int taille=means.get(1).length;
+			for(int i=0;i<means.size();i++) {
+				for (int j=0;j<taille;j++) {
+					float v = fin.readFloat();
+					means.get(i)[j] = v;
+				}
+			}
+			fin.close();
+			JOptionPane.showMessageDialog(null, "adapted models loaded "+name);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}
+	
+	public void saveAdapted(String name) {
+		if (name==null) {
+			name = JOptionPane.showInputDialog("Plz give a name for adapted models");
+		}
+		if (name==null) return;
+		name=name.trim();
+		ArrayList<float[]> means=new ArrayList<float[]>();
+		AcousticModel a=HMMModels.getAcousticModels();
+		Iterator<HMM> hmmit = a.getHMMIterator();
+		while (hmmit.hasNext()) {
+			HMM hmm = hmmit.next();
+			SenoneHMM shmm = (SenoneHMM) hmm;			
+			int nstates = shmm.getTransitionMatrix().length;
+			for (int st=0;st<nstates;st++) {
+				HMMState hmmst = shmm.getState(st);
+				SenoneHMMState shmmst=(SenoneHMMState) hmmst;
+				Senone s=shmmst.getSenone();
+				if(s!=null) { 
+					GaussianMixture g=(GaussianMixture) s;
+					MixtureComponent[] mc=g.getMixtureComponents();
+					System.out.println("debug adapt senone "+s+" "+shmm+" ngauss "+mc.length);
+					int k=mc.length;
+					for(int j=0;j<k;j++) {
+						means.add(mc[j].getMean());
+					}
+				}
+			}
+		}
+		
+		try {
+			DataOutputStream fout = new DataOutputStream(new FileOutputStream(name+"adapt.bin"));
+			int taille=means.get(1).length;
+			for(int i=0;i<means.size();i++) {
+				for (int j=0;j<taille;j++) {
+					fout.writeFloat(means.get(i)[j]);
+				}
+			}
+			fout.close();
+			float r = (float)nmeansAdapted/(float)means.size();
+			JOptionPane.showMessageDialog(null, "adapted models saved "+name+" "+nmeansAdapted+" "+means.size()+" "+r);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
 	public float[] calculateBiais() {
 		//récupération des means et mfccs
