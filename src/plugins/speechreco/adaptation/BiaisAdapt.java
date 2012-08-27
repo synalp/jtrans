@@ -133,12 +133,23 @@ public class BiaisAdapt
 							if (bestg==null||bestsc<sc) {
 								bestsc=sc; bestg=gauss;
 							}
+							// alternative: adapt ALL gauss in state
+							{
+								float[] m = gauss.getMean();
+								adapted.add(m);
+								for (int j=0;j<x.length;j++) {
+									m[j] = 0.95f*m[j]+0.05f*x[j];
+								}
+							}
 						}
 					}
-					float[] m = bestg.getMean();
-					adapted.add(m);
-					for (int j=0;j<x.length;j++) {
-						m[j] = 0.9f*m[j]+0.1f*x[j];
+					if (false) {
+						// adapt only the closest mean
+						float[] m = bestg.getMean();
+						adapted.add(m);
+						for (int j=0;j<x.length;j++) {
+							m[j] = 0.9f*m[j]+0.1f*x[j];
+						}
 					}
 					// TODO: augmenter weight de bestg !
 				}
