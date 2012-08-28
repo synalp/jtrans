@@ -56,8 +56,9 @@ import plugins.speechreco.grammaire.Grammatiseur;
 public class LiveSpeechReco extends PhoneticForcedGrammar {
 	public static LiveSpeechReco gram=null;
 	public static File vocfile = null;
-	
+
 	FrameDecoder decoder=null;
+	SimpleBreadthFirstSearchManager searchManager=null;
 	AcousticModel mods=null;
 	Microphone mikeSource=null;
 	public AlignementEtat resWords=null, resPhones=null, resStates=null;
@@ -67,9 +68,16 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 	public LiveSpeechReco() throws MalformedURLException, ClassNotFoundException {
 		super();
 	}
-	
+
+	private boolean stopit=false;
+	public void stopit() {
+		stopit=true;
+	}
+
 	public static void stopall() {
-		if (gram!=null&&gram.mikeSource!=null) gram.mikeSource.stopRecording();
+		if (gram!=null&&gram.mikeSource!=null) {
+			gram.mikeSource.stopRecording();
+		}
 	}
 	public static LiveSpeechReco doReco() {
 		try {
@@ -85,7 +93,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 			gram.loadVoc(vocfile);
 			gram.initGrammar();
 			System.out.println("********* MIKE GRAMMAR DEFINED");
-			
+
 			Thread t = new Thread(new Runnable() {
 				@Override
 				public void run() {
@@ -98,7 +106,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		}
 		return gram;
 	}
-	
+
 	public void loadVoc(File f) {
 		try {
 			vocfile=f;
@@ -115,11 +123,11 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public void addResultListener(RecoListener l) {
 		listener = l;
 	}
-	
+
 	private void liveReco() {
 		// FRONTEND
 		ArrayList<DataProcessor> frontEndList = new ArrayList<DataProcessor>();
@@ -141,24 +149,27 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 			// ACCMODS
 			System.out.println("loading acoustic models...");
 			mods = HMMModels.getAcousticModels();
-		}
-		float silprob = 0.1f;
-		int beamwidth = 0;
 
-		// S4 DECODER
-		FlatLinguist linguist = new FlatLinguist(mods, logMath, gram, HMMModels.getUnitManager(), 1f, silprob, silprob, 1f, 1f, false, false, false, false, 1f, 1f, mods);
-		Pruner pruner = new SimplePruner();
-		ThreadedAcousticScorer scorer = new ThreadedAcousticScorer(mfcc, null, 1, false, 1, Thread.NORM_PRIORITY);
-		PartitionActiveListFactory activeList = new PartitionActiveListFactory(beamwidth, 1E-300, logMath);
-		SimpleBreadthFirstSearchManager searchManager = new SimpleBreadthFirstSearchManager(logMath, linguist, pruner, scorer, activeList, false, 1E-60, 0, false);
-		ArrayList<ResultListener> listeners = new ArrayList<ResultListener>();
-		decoder = new FrameDecoder(searchManager, false, true, listeners);
-		
-		mikeSource.initialize();
+			float silprob = 0.1f;
+			int beamwidth = 0;
+
+			// S4 DECODER
+			FlatLinguist linguist = new FlatLinguist(mods, logMath, gram, HMMModels.getUnitManager(), 1f, silprob, silprob, 1f, 1f, false, false, false, false, 1f, 1f, mods);
+			Pruner pruner = new SimplePruner();
+			ThreadedAcousticScorer scorer = new ThreadedAcousticScorer(mfcc, null, 1, false, 1, Thread.NORM_PRIORITY);
+			PartitionActiveListFactory activeList = new PartitionActiveListFactory(beamwidth, 1E-300, logMath);
+			searchManager = new SimpleBreadthFirstSearchManager(logMath, linguist, pruner, scorer, activeList, false, 1E-60, 0, false);
+			ArrayList<ResultListener> listeners = new ArrayList<ResultListener>();
+			decoder = new FrameDecoder(searchManager, false, true, listeners);
+
+			mikeSource.initialize();
+		}
+
 		mikeSource.startRecording();
 		searchManager.startRecognition();
 
 		for (int t=0;;t++) {
+			if (stopit) break;
 			Result r = decoder.decode(null);
 			if (r.isFinal()) break;
 			if (t%100==0) {
@@ -169,7 +180,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		}
 		System.out.println("MIKE AND DECODE FINISHED !!");
 		mikeSource.stopRecording();
-		
+
 		// on backtrack depuis la fin
 		Token besttok = null;
 		for (Token tok : searchManager.getActiveList().getTokens()) {
@@ -207,10 +218,10 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 					resWords.setSegmentLabel(i, voc.get(widx));
 				}
 			}
+			if (listener!=null) listener.recoFinie(null, resWords.toString());
 		}
-		if (listener!=null) listener.recoFinie(null, resWords.toString());
 	}
-	
+
 	private void initGrammar() {
 		if (super.grammatiseur==null) {
 			ProgressDialog waiting = new ProgressDialog((JFrame)null, new Runnable() {
@@ -221,12 +232,12 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 			}, "please wait: initializing grammars...");
 			waiting.setVisible(true);
 		}
-		
-//		// on commence toujours par un silence !
-//		n = createGrammarNode("SIL");
-//		n.setFinalNode(false);
-//		initialNode = n;
-		
+
+		//		// on commence toujours par un silence !
+		//		n = createGrammarNode("SIL");
+		//		n.setFinalNode(false);
+		//		initialNode = n;
+
 		StringBuilder gramstring = new StringBuilder();
 		gramstring.append("[ sil ] ( sil | ");
 
@@ -235,7 +246,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 			w=w.replace('_', ' ');
 			String rule = grammatiseur.getGrammar(w);
 			// on recupere toujours un silence optionnel au debut et a la fin, que je supprime:
-//			rule = rule.substring(4,rule.length()-8).trim();
+			//			rule = rule.substring(4,rule.length()-8).trim();
 			System.out.println("rule for word "+w+" "+rule);
 			if (rule==null || rule.length()==0) {
 				System.out.println("ERROR PHONETISEUR mot "+w);
@@ -272,7 +283,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		gramstring.append(" )* [ sil ]");
 
 		System.out.println("gramstring "+gramstring);
-		
+
 		{
 			try {
 				PrintWriter f = new PrintWriter(new FileWriter("detgrammar.gram"));
@@ -280,11 +291,11 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 				f.println("grammar detgrammar;");
 				f.println("public <a> = "+gramstring.toString()+";");
 				f.close();
-				
+
 				loadJSGF("detgrammar");
-//				System.out.println("GRAMMAR JSGF");
-//				getInitialNode().dump();
-				
+				//				System.out.println("GRAMMAR JSGF");
+				//				getInitialNode().dump();
+
 				System.out.println("nb of grammar nodes "+getGrammarNodes().size());
 				System.out.println("final nodes:");
 				for (GrammarNode n : getGrammarNodes()) {
@@ -301,9 +312,9 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 			}
 		}
 	}
-	
+
 	public static void main(String args[]) {
-		debug2();
+		recoNoGUI();
 	}
 	private static void debug2() {
 		// FRONTEND
@@ -351,11 +362,46 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		SimpleBreadthFirstSearchManager searchManager = new SimpleBreadthFirstSearchManager(logMath, linguist, pruner, scorer, activeList, false, 1E-60, 0, false);
 		ArrayList<ResultListener> listeners = new ArrayList<ResultListener>();
 		FrameDecoder decoder = new FrameDecoder(searchManager, false, true, listeners);
-		
+
 		mikeSource.initialize();
 		mikeSource.startRecording();
 		searchManager.startRecognition();
 	}
+
+	public static void recoNoGUI() {
+		vocfile = new File("voc.txt");
+		LiveSpeechReco r = doReco();
+		r.addResultListener(new RecoListener() {
+			@Override
+			public void recoFinie(Result finalres, String res) {
+				System.out.println("reco fin "+res);
+			}
+			@Override
+			public void recoEnCours(Result tmpres) {
+				System.out.println("reco en cours"+tmpres);
+			}
+		});
+		try {
+			System.out.println("WAITING...");
+			Thread.sleep(15000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		System.out.println("stopping...");
+		r.stopit();
+		System.out.println("after stop : relaunch");
+
+		r = doReco();
+		try {
+			Thread.sleep(3000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		System.out.println("stopping again...");
+		r.stopit();
+
+	}
+
 	private static void debug1() {
 		JSGFGrammar gram = new JSGFGrammar();
 		try {
