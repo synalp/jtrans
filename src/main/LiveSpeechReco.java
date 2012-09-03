@@ -33,6 +33,7 @@ import edu.cmu.sphinx.frontend.filter.Preemphasizer;
 import edu.cmu.sphinx.frontend.frequencywarp.MelFrequencyFilterBank;
 import edu.cmu.sphinx.frontend.transform.DiscreteCosineTransform;
 import edu.cmu.sphinx.frontend.transform.DiscreteFourierTransform;
+import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
 import edu.cmu.sphinx.frontend.util.Microphone;
 import edu.cmu.sphinx.frontend.window.RaisedCosineWindower;
 import edu.cmu.sphinx.jsgf.JSGFGrammar;
@@ -56,6 +57,7 @@ import plugins.speechreco.grammaire.Grammatiseur;
 public class LiveSpeechReco extends PhoneticForcedGrammar {
 	public static LiveSpeechReco gram=null;
 	public static File vocfile = null;
+	public static String wavfile = "wavout.wav";
 
 	FrameDecoder decoder=null;
 	SimpleBreadthFirstSearchManager searchManager=null;
@@ -97,7 +99,8 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 			Thread t = new Thread(new Runnable() {
 				@Override
 				public void run() {
-					gram.liveReco();
+					gram.wavReco();
+//					gram.liveReco();
 				}
 			},"liveRecoThread");
 			t.start();
@@ -180,6 +183,101 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		}
 		System.out.println("MIKE AND DECODE FINISHED !!");
 		mikeSource.stopRecording();
+
+		// on backtrack depuis la fin
+		Token besttok = null;
+		for (Token tok : searchManager.getActiveList().getTokens()) {
+			// est-ce le dernier (emitting) token d'un HMM ?
+			if (S4ForceAlignBlocViterbi.hasNonEmittingFinalPath(tok.getSearchState())) {
+				if (besttok==null||besttok.getScore()<tok.getScore())
+					besttok=tok;
+			}
+		}
+		if (besttok==null) {
+			System.err.println("WARNING: pas de best tok final ! Je tente le premier token venu...");
+			for (Token tok : searchManager.getActiveList().getTokens()) {
+				System.out.println("\t DEBUG ActiveList "+tok);
+			}
+			// faut-il recuperer l'alignement partial que l'on a, meme si on sait qu'il est mauvais ?
+			besttok=searchManager.getActiveList().getBestToken();
+		}
+		if (besttok==null) {
+			System.err.println("ERROR: meme pas de best token !");
+			resPhones=resStates=resWords=null;
+		} else {
+			AlignementEtat[] bestaligns = AlignementEtat.backtrack(besttok);
+			if (bestaligns!=null) {
+				resPhones = bestaligns[0];
+				resWords = S4ForceAlignBlocViterbi.segmentePhonesEnMots(gram.resPhones);
+				resStates = bestaligns[2];
+			}
+		}
+		System.out.println("debug res "+resWords);
+		if (resWords!=null) {
+			for (int i=0;i<resWords.getNbSegments();i++) {
+				String s = resWords.getSegmentLabel(i);
+				if (s.startsWith("XZ")) {
+					int widx = Integer.parseInt(s.substring(2));
+					resWords.setSegmentLabel(i, voc.get(widx));
+				}
+			}
+			if (listener!=null) listener.recoFinie(null, resWords.toString());
+		}
+	}
+
+	private void wavReco() {
+		// FRONTEND
+		ArrayList<DataProcessor> frontEndList = new ArrayList<DataProcessor>();
+		mikeSource=null;
+		
+		AudioFileDataSource wavsrc = new AudioFileDataSource(3200, null);
+		wavsrc.setAudioFile(new File(wavfile), null);
+		frontEndList.add(wavsrc);
+		frontEndList.add(new Dither(2,false,Double.MAX_VALUE,-Double.MAX_VALUE));
+		frontEndList.add(new DataBlocker(50));
+		frontEndList.add(new Preemphasizer(0.97));
+		frontEndList.add(new RaisedCosineWindower(0.46f,25.625f,10f));
+		frontEndList.add(new DiscreteFourierTransform(512, false));
+		frontEndList.add(new MelFrequencyFilterBank(133.33334, 6855.4976, 40));
+		frontEndList.add(new DiscreteCosineTransform(40,13));
+		frontEndList.add(new LiveCMN(12,100,160));
+		frontEndList.add(new DeltasFeatureExtractor(3));
+		BaseDataProcessor mfcc = new FrontEnd(frontEndList);
+
+		LogMath logMath = HMMModels.getLogMath();
+		if (mods==null) {
+			// ACCMODS
+			System.out.println("loading acoustic models...");
+			mods = HMMModels.getAcousticModels();
+
+			float silprob = 0.1f;
+			int beamwidth = 0;
+
+			// S4 DECODER
+			FlatLinguist linguist = new FlatLinguist(mods, logMath, gram, HMMModels.getUnitManager(), 1f, silprob, silprob, 1f, 1f, false, false, false, false, 1f, 1f, mods);
+			Pruner pruner = new SimplePruner();
+			ThreadedAcousticScorer scorer = new ThreadedAcousticScorer(mfcc, null, 1, false, 1, Thread.NORM_PRIORITY);
+			PartitionActiveListFactory activeList = new PartitionActiveListFactory(beamwidth, 1E-300, logMath);
+			searchManager = new SimpleBreadthFirstSearchManager(logMath, linguist, pruner, scorer, activeList, false, 1E-60, 0, false);
+			ArrayList<ResultListener> listeners = new ArrayList<ResultListener>();
+			decoder = new FrameDecoder(searchManager, false, true, listeners);
+			
+			wavsrc.initialize();
+		}
+
+		searchManager.startRecognition();
+
+		for (int t=0;;t++) {
+			if (stopit) break;
+			Result r = decoder.decode(null);
+			if (r.isFinal()) break;
+			if (t%100==0) {
+				if (listener!=null) listener.recoEnCours(r);
+				System.out.println("mike frame "+(t/100));
+			}
+			// TODO: backtrack apres N trames ?
+		}
+		System.out.println("MIKE AND DECODE FINISHED !!");
 
 		// on backtrack depuis la fin
 		Token besttok = null;
@@ -314,6 +412,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 	}
 
 	public static void main(String args[]) {
+		LiveSpeechReco.wavfile="wavout.wav";
 		recoNoGUI();
 	}
 	private static void debug2() {
