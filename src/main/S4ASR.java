@@ -77,7 +77,7 @@ public class S4ASR implements SignalListener {
 	AudioFileDataSource wavsource;
 	FrontEnd mfcc=null;
 	Dictionary dico;
-	LanguageModel lm;
+//	LanguageModel lm;
 	Linguist linguist;
 	Pruner pruner;
 	ActiveListManager almgr;
@@ -211,7 +211,7 @@ public class S4ASR implements SignalListener {
 		try {
 			String bp = basepath;
 			dico = new FastDictionary("file://"+bp+"/Lex_phon.africain.dic_sans_hh.utf8", "file://"+bp+"/ESTER2_Train_373f_s01.f04_align.filler", null, false, null, false, false, HMMModels.getUnitManager());
-			lm = new LargeTrigramModel("arpa",new URL("file://"+bp+"LM_africain_3g.sorted.arpa.utf8.dmp"),null,100000,50000,false,-1,logMath,dico,false,lw,wip,0.5f,false);
+//			lm = new LargeTrigramModel("arpa",new URL("file://"+bp+"LM_africain_3g.sorted.arpa.utf8.dmp"),null,100000,50000,false,-1,logMath,dico,false,lw,wip,0.5f,false);
 //			linguist = new LexTreeLinguist(mods, logMath, HMMModels.getUnitManager(), lm, dico, true, false, wip, 0.1, 1E-10, 1, lw, false, false, 1f, 0);
 			pruner = new SimplePruner();
 			ArrayList<ActiveListFactory> alfacts = new ArrayList<ActiveListFactory>();

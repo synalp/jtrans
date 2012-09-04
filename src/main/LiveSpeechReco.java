@@ -273,11 +273,11 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 			if (r.isFinal()) break;
 			if (t%100==0) {
 				if (listener!=null) listener.recoEnCours(r);
-				System.out.println("mike frame "+(t/100));
+				System.out.println("wav frame "+(t/100));
 			}
 			// TODO: backtrack apres N trames ?
 		}
-		System.out.println("MIKE AND DECODE FINISHED !!");
+		System.out.println("WAV DECODE FINISHED !!");
 
 		// on backtrack depuis la fin
 		Token besttok = null;
@@ -307,7 +307,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 				resStates = bestaligns[2];
 			}
 		}
-		System.out.println("debug res "+resWords);
+//		System.out.println("debug res "+resWords);
 		if (resWords!=null) {
 			for (int i=0;i<resWords.getNbSegments();i++) {
 				String s = resWords.getSegmentLabel(i);
@@ -491,8 +491,18 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		System.out.println("after stop : relaunch");
 
 		r = doReco();
+		r.addResultListener(new RecoListener() {
+			@Override
+			public void recoFinie(Result finalres, String res) {
+				System.out.println("reco fin "+res);
+			}
+			@Override
+			public void recoEnCours(Result tmpres) {
+				System.out.println("reco en cours"+tmpres);
+			}
+		});
 		try {
-			Thread.sleep(3000);
+			Thread.sleep(15000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
