@@ -32,6 +32,7 @@ import java.util.zip.ZipFile;
  */
 public abstract class PronunciationsLexicon implements Serializable {
 	final static String dicoperso[] = {
+		"res/dicoperso",
 		"/users/parole/cerisara/cvsreps2/ESTER2/dicoLORIA",
 		"C:/xtof/ESTER2/dicoLORIA"
 	};
