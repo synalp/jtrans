@@ -225,7 +225,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		}
 	}
 
-	private void wavReco() {
+	public void wavReco() {
 		// FRONTEND
 		ArrayList<DataProcessor> frontEndList = new ArrayList<DataProcessor>();
 		mikeSource=null;
@@ -320,7 +320,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		}
 	}
 
-	private void initGrammar() {
+	public void initGrammar() {
 		if (super.grammatiseur==null) {
 			ProgressDialog waiting = new ProgressDialog((JFrame)null, new Runnable() {
 				@Override
