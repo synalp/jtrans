@@ -99,8 +99,8 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 			Thread t = new Thread(new Runnable() {
 				@Override
 				public void run() {
-					gram.wavReco();
-//					gram.liveReco();
+//					gram.wavReco();
+					gram.liveReco();
 				}
 			},"liveRecoThread");
 			t.start();
@@ -131,7 +131,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		listener = l;
 	}
 
-	private void liveReco() {
+	public void liveReco() {
 		// FRONTEND
 		ArrayList<DataProcessor> frontEndList = new ArrayList<DataProcessor>();
 		mikeSource = new Microphone(16000, 16, 1, true, true, false, 10, false, "average", 0, "default", 6400);
@@ -411,7 +411,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 	}
 
 	public static void main(String args[]) {
-		LiveSpeechReco.wavfile="wavout.wav";
+//		LiveSpeechReco.wavfile="wavout.wav";
 		recoNoGUI();
 	}
 	private static void debug2() {
