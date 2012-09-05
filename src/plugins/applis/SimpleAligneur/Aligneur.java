@@ -120,7 +120,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 	JScrollPane scrollPane;
 	JSplitPane splitPane = null;
 	Box textBox, sigBox;
-	private String wavname=null;
+	public String wavname=null;
 	public RoundBuffer audiobuf = new RoundBuffer(this, 10000000);
 	public RoundBufferFrontEnd mfccbuf;
 	TemporalSigFromWavFile wavForMFCC;
