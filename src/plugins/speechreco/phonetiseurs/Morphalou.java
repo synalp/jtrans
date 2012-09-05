@@ -37,7 +37,12 @@ public class Morphalou extends PronunciationsLexicon {
 		try {
 			loadCorpus();
 		} catch (Exception e) {
-			System.err.println("ERROR loading Morphalou - on continue sans dictionnaire !");
+			System.err.println("ERROR loading Morphalou - on continue sans dictionnaire de base !");
+		}
+		try {
+			loadCorpus2();
+		} catch (Exception e) {
+			System.err.println("ERROR loading dicoperso - on continue sans dictionnaire perso !");
 		}
 	}
 	
@@ -51,7 +56,9 @@ public class Morphalou extends PronunciationsLexicon {
 		System.err.println("loading main corpus...");
 		loadFile(f);
 		System.err.println("main corpus loaded !");
-		f = getEntries(dicoperso, false);
+	}
+	void loadCorpus2() {
+		Enumeration<String> f = getEntries(dicoperso, false);
 		if (f==null) System.err.println("WARNING: morphalou dico perso not found !");
 		else loadFileBDLEX(f, false);
 		System.err.println("all corpus loaded !");

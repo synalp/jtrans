@@ -161,7 +161,7 @@ public class BiaisAdapt
 		saveAdapted(null);
 	}
 
-	public void loadAdapted(String name) {
+	public static void loadAdapted(String name) {
 		if (name==null) {
 			name = JOptionPane.showInputDialog("Plz give a name for adapted models");
 		}

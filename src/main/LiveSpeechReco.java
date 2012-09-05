@@ -250,21 +250,20 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 			System.out.println("loading acoustic models...");
 			mods = HMMModels.getAcousticModels();
 
-			float silprob = 0.1f;
-			int beamwidth = 0;
-
-			// S4 DECODER
-			FlatLinguist linguist = new FlatLinguist(mods, logMath, gram, HMMModels.getUnitManager(), 1f, silprob, silprob, 1f, 1f, false, false, false, false, 1f, 1f, mods);
-			Pruner pruner = new SimplePruner();
-			ThreadedAcousticScorer scorer = new ThreadedAcousticScorer(mfcc, null, 1, false, 1, Thread.NORM_PRIORITY);
-			PartitionActiveListFactory activeList = new PartitionActiveListFactory(beamwidth, 1E-300, logMath);
-			searchManager = new SimpleBreadthFirstSearchManager(logMath, linguist, pruner, scorer, activeList, false, 1E-60, 0, false);
-			ArrayList<ResultListener> listeners = new ArrayList<ResultListener>();
-			decoder = new FrameDecoder(searchManager, false, true, listeners);
-			
-			wavsrc.initialize();
 		}
+		
+		float silprob = 0.1f;
+		int beamwidth = 0;
 
+		// S4 DECODER
+		FlatLinguist linguist = new FlatLinguist(mods, logMath, gram, HMMModels.getUnitManager(), 1f, silprob, silprob, 1f, 1f, false, false, false, false, 1f, 1f, mods);
+		Pruner pruner = new SimplePruner();
+		ThreadedAcousticScorer scorer = new ThreadedAcousticScorer(mfcc, null, 1, false, 1, Thread.NORM_PRIORITY);
+		PartitionActiveListFactory activeList = new PartitionActiveListFactory(beamwidth, 1E-300, logMath);
+		searchManager = new SimpleBreadthFirstSearchManager(logMath, linguist, pruner, scorer, activeList, false, 1E-60, 0, false);
+		ArrayList<ResultListener> listeners = new ArrayList<ResultListener>();
+		decoder = new FrameDecoder(searchManager, false, true, listeners);
+		wavsrc.initialize();
 		searchManager.startRecognition();
 
 		for (int t=0;;t++) {
