@@ -132,6 +132,8 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 	}
 
 	public void liveReco() {
+		stopit=false;
+		
 		// FRONTEND
 		ArrayList<DataProcessor> frontEndList = new ArrayList<DataProcessor>();
 		mikeSource = new Microphone(16000, 16, 1, true, true, false, 10, false, "average", 0, "default", 6400);
@@ -152,10 +154,11 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 			// ACCMODS
 			System.out.println("loading acoustic models...");
 			mods = HMMModels.getAcousticModels();
-
+		}
+		{
 			float silprob = 0.1f;
 			int beamwidth = 0;
-
+			
 			// S4 DECODER
 			FlatLinguist linguist = new FlatLinguist(mods, logMath, gram, HMMModels.getUnitManager(), 1f, silprob, silprob, 1f, 1f, false, false, false, false, 1f, 1f, mods);
 			Pruner pruner = new SimplePruner();
@@ -164,7 +167,6 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 			searchManager = new SimpleBreadthFirstSearchManager(logMath, linguist, pruner, scorer, activeList, false, 1E-60, 0, false);
 			ArrayList<ResultListener> listeners = new ArrayList<ResultListener>();
 			decoder = new FrameDecoder(searchManager, false, true, listeners);
-
 			mikeSource.initialize();
 		}
 
