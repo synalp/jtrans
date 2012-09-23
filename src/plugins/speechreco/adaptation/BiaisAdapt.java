@@ -126,15 +126,18 @@ public class BiaisAdapt
 				if (gau==null) {
 					JOptionPane.showMessageDialog(null, "ERROR MAP adapt: "+ph+" "+ph2gauss.keySet());
 				} else {
-					MixtureComponent bestg = null; float bestsc = -Float.MAX_VALUE;
-					for (GaussianMixture gm : gau) {
-						for (MixtureComponent gauss : gm.getMixtureComponents()) {
+					MixtureComponent bestgauss = null; float bestsc = -Float.MAX_VALUE;
+					GaussianMixture bestgmm = null; int gaussid=-1;
+					for (GaussianMixture gmm : gau) {
+						MixtureComponent[] mixcomp =gmm.getMixtureComponents(); 
+						for (int gid=0;gid<mixcomp.length;gid++) {
+							MixtureComponent gauss = mixcomp[gid];
 							float sc = gauss.getScore(x);
-							if (bestg==null||bestsc<sc) {
-								bestsc=sc; bestg=gauss;
+							if (bestgauss==null||bestsc<sc) {
+								bestsc=sc; bestgauss=gauss; bestgmm = gmm; gaussid=gid;
 							}
-							// alternative: adapt ALL gauss in state
-							{
+							// alternative: adapt ALL gauss in state: bad results !
+							if (false) {
 								float[] m = gauss.getMean();
 								adapted.add(m);
 								for (int j=0;j<x.length;j++) {
@@ -143,15 +146,19 @@ public class BiaisAdapt
 							}
 						}
 					}
-					if (false) {
+					if (true) {
 						// adapt only the closest mean
-						float[] m = bestg.getMean();
+						float[] m = bestgauss.getMean();
 						adapted.add(m);
 						for (int j=0;j<x.length;j++) {
 							m[j] = 0.9f*m[j]+0.1f*x[j];
 						}
+						// adapt its weight
+						float[] weights = bestgmm.getComponentWeights();
+						weights[gaussid]+=0.1;
+						float sum=0f; for (float w : weights) sum+=w;
+						for (int j=0;j<weights.length;j++) weights[j]/=sum;
 					}
-					// TODO: augmenter weight de bestg !
 				}
 			}
 			nmeansAdapted=adapted.size();
@@ -161,13 +168,14 @@ public class BiaisAdapt
 		saveAdapted(null);
 	}
 
-	public void loadAdapted(String name) {
+	public static void loadAdapted(String name) {
 		if (name==null) {
 			name = JOptionPane.showInputDialog("Plz give a name for adapted models");
 		}
 		if (name==null) return;
 		name=name.trim();
 		ArrayList<float[]> means=new ArrayList<float[]>();
+		ArrayList<float[]> weights=new ArrayList<float[]>();
 		AcousticModel a=HMMModels.getAcousticModels();
 		Iterator<HMM> hmmit = a.getHMMIterator();
 		while (hmmit.hasNext()) {
@@ -181,7 +189,8 @@ public class BiaisAdapt
 				if(s!=null) { 
 					GaussianMixture g=(GaussianMixture) s;
 					MixtureComponent[] mc=g.getMixtureComponents();
-					System.out.println("debug adapt senone "+s+" "+shmm+" ngauss "+mc.length);
+					weights.add(g.getComponentWeights());
+//					System.out.println("debug adapt senone "+s+" "+shmm+" ngauss "+mc.length);
 					int k=mc.length;
 					for(int j=0;j<k;j++) {
 						means.add(mc[j].getMean());
@@ -199,6 +208,13 @@ public class BiaisAdapt
 					means.get(i)[j] = v;
 				}
 			}
+			for(int i=0;i<weights.size();i++) {
+				taille = weights.get(i).length;
+				for (int j=0;j<taille;j++) {
+					float v = fin.readFloat();
+					weights.get(i)[j]=v;
+				}
+			}
 			fin.close();
 			JOptionPane.showMessageDialog(null, "adapted models loaded "+name);
 		} catch (IOException e) {
@@ -214,6 +230,7 @@ public class BiaisAdapt
 		if (name==null) return;
 		name=name.trim();
 		ArrayList<float[]> means=new ArrayList<float[]>();
+		ArrayList<float[]> weights=new ArrayList<float[]>();
 		AcousticModel a=HMMModels.getAcousticModels();
 		Iterator<HMM> hmmit = a.getHMMIterator();
 		while (hmmit.hasNext()) {
@@ -227,7 +244,8 @@ public class BiaisAdapt
 				if(s!=null) { 
 					GaussianMixture g=(GaussianMixture) s;
 					MixtureComponent[] mc=g.getMixtureComponents();
-					System.out.println("debug adapt senone "+s+" "+shmm+" ngauss "+mc.length);
+					weights.add(g.getComponentWeights());
+//					System.out.println("debug adapt senone "+s+" "+shmm+" ngauss "+mc.length);
 					int k=mc.length;
 					for(int j=0;j<k;j++) {
 						means.add(mc[j].getMean());
@@ -242,6 +260,12 @@ public class BiaisAdapt
 			for(int i=0;i<means.size();i++) {
 				for (int j=0;j<taille;j++) {
 					fout.writeFloat(means.get(i)[j]);
+				}
+			}
+			for(int i=0;i<weights.size();i++) {
+				taille = weights.get(i).length;
+				for (int j=0;j<taille;j++) {
+					fout.writeFloat(weights.get(i)[j]);
 				}
 			}
 			fout.close();

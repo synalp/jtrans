@@ -49,7 +49,7 @@ public class Grammatiseur implements Serializable {
 	PhonetiseurFacade phonetiseur=null;
 	Nombres parsernb = new Nombres();
 
-	private static Grammatiseur grammatiseur = null;
+	public static Grammatiseur grammatiseur = null;
 
 	public static Grammatiseur getGrammatiseur() {
 		System.err.println("init grammar "+grammatiseur);

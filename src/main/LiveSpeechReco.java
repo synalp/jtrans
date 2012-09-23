@@ -99,8 +99,8 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 			Thread t = new Thread(new Runnable() {
 				@Override
 				public void run() {
-					gram.wavReco();
-//					gram.liveReco();
+//					gram.wavReco();
+					gram.liveReco();
 				}
 			},"liveRecoThread");
 			t.start();
@@ -131,7 +131,9 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		listener = l;
 	}
 
-	private void liveReco() {
+	public void liveReco() {
+		stopit=false;
+		
 		// FRONTEND
 		ArrayList<DataProcessor> frontEndList = new ArrayList<DataProcessor>();
 		mikeSource = new Microphone(16000, 16, 1, true, true, false, 10, false, "average", 0, "default", 6400);
@@ -152,10 +154,11 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 			// ACCMODS
 			System.out.println("loading acoustic models...");
 			mods = HMMModels.getAcousticModels();
-
+		}
+		{
 			float silprob = 0.1f;
 			int beamwidth = 0;
-
+			
 			// S4 DECODER
 			FlatLinguist linguist = new FlatLinguist(mods, logMath, gram, HMMModels.getUnitManager(), 1f, silprob, silprob, 1f, 1f, false, false, false, false, 1f, 1f, mods);
 			Pruner pruner = new SimplePruner();
@@ -164,7 +167,6 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 			searchManager = new SimpleBreadthFirstSearchManager(logMath, linguist, pruner, scorer, activeList, false, 1E-60, 0, false);
 			ArrayList<ResultListener> listeners = new ArrayList<ResultListener>();
 			decoder = new FrameDecoder(searchManager, false, true, listeners);
-
 			mikeSource.initialize();
 		}
 
@@ -250,21 +252,20 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 			System.out.println("loading acoustic models...");
 			mods = HMMModels.getAcousticModels();
 
-			float silprob = 0.1f;
-			int beamwidth = 0;
-
-			// S4 DECODER
-			FlatLinguist linguist = new FlatLinguist(mods, logMath, gram, HMMModels.getUnitManager(), 1f, silprob, silprob, 1f, 1f, false, false, false, false, 1f, 1f, mods);
-			Pruner pruner = new SimplePruner();
-			ThreadedAcousticScorer scorer = new ThreadedAcousticScorer(mfcc, null, 1, false, 1, Thread.NORM_PRIORITY);
-			PartitionActiveListFactory activeList = new PartitionActiveListFactory(beamwidth, 1E-300, logMath);
-			searchManager = new SimpleBreadthFirstSearchManager(logMath, linguist, pruner, scorer, activeList, false, 1E-60, 0, false);
-			ArrayList<ResultListener> listeners = new ArrayList<ResultListener>();
-			decoder = new FrameDecoder(searchManager, false, true, listeners);
-			
-			wavsrc.initialize();
 		}
+		
+		float silprob = 0.1f;
+		int beamwidth = 0;
 
+		// S4 DECODER
+		FlatLinguist linguist = new FlatLinguist(mods, logMath, gram, HMMModels.getUnitManager(), 1f, silprob, silprob, 1f, 1f, false, false, false, false, 1f, 1f, mods);
+		Pruner pruner = new SimplePruner();
+		ThreadedAcousticScorer scorer = new ThreadedAcousticScorer(mfcc, null, 1, false, 1, Thread.NORM_PRIORITY);
+		PartitionActiveListFactory activeList = new PartitionActiveListFactory(beamwidth, 1E-300, logMath);
+		searchManager = new SimpleBreadthFirstSearchManager(logMath, linguist, pruner, scorer, activeList, false, 1E-60, 0, false);
+		ArrayList<ResultListener> listeners = new ArrayList<ResultListener>();
+		decoder = new FrameDecoder(searchManager, false, true, listeners);
+		wavsrc.initialize();
 		searchManager.startRecognition();
 
 		for (int t=0;;t++) {
@@ -412,7 +413,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 	}
 
 	public static void main(String args[]) {
-		LiveSpeechReco.wavfile="wavout.wav";
+//		LiveSpeechReco.wavfile="wavout.wav";
 		recoNoGUI();
 	}
 	private static void debug2() {

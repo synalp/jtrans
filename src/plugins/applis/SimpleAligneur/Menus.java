@@ -3,7 +3,7 @@ This source code is copyrighted by Christophe Cerisara, CNRS, France.
 
 It is licensed under the terms of the INRIA Cecill-C licence, as described in:
 http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html
-*/
+ */
 
 package plugins.applis.SimpleAligneur;
 
@@ -12,7 +12,6 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Mixer;
 import javax.swing.JEditorPane;
@@ -26,22 +25,26 @@ import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.text.Element;
-import javax.swing.text.View;
-import javax.swing.text.html.HTMLDocument;
-import javax.swing.text.html.HTMLEditorKit;
+import edu.cmu.sphinx.result.Result;
 
 import main.JTrans;
 import main.LiveSpeechReco;
 
 import plugins.sourceSignals.Mike2wav;
+import plugins.speechreco.RecoListener;
 import plugins.speechreco.adaptation.BiaisAdapt;
 import plugins.speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
+import plugins.speechreco.grammaire.Grammatiseur;
 import plugins.utils.TextInputWindow;
 import plugins.utils.UserInputProcessor;
 
 public class Menus {
 	Aligneur aligneur;
+
+	String reco;
+	boolean[] done = {false};
+	LiveSpeechReco gram;
+
 	public Menus(Aligneur main) {
 		aligneur=main;
 	}
@@ -76,17 +79,17 @@ public class Menus {
 		file.add(save);
 		JMenuItem loadp = new JMenuItem("load project");
 		file.add(loadp);
-//		JMenuItem loadtrs = new JMenuItem("load ref TRS");
-//		file.add(loadtrs);
-//		JMenuItem loadstm = new JMenuItem("load STM");
-//		file.add(loadstm);
-//		JMenuItem savetrs = new JMenuItem("save TRS");
-//		file.add(savetrs);
+		//		JMenuItem loadtrs = new JMenuItem("load ref TRS");
+		//		file.add(loadtrs);
+		//		JMenuItem loadstm = new JMenuItem("load STM");
+		//		file.add(loadstm);
+		//		JMenuItem savetrs = new JMenuItem("save TRS");
+		//		file.add(savetrs);
 		JMenuItem savepho = new JMenuItem("save .pho");
 		savepho.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-//				aligneur.alignement.savePho("align.pho");
+				//				aligneur.alignement.savePho("align.pho");
 				System.out.println("saving: "+(new File("align.pho")).getAbsolutePath());
 			}
 		});
@@ -121,11 +124,11 @@ public class Menus {
 		actionsm.add(regexp);
 		JMenuItem gototime = new JMenuItem("goto time [sec]");
 		actionsm.add(gototime);
-		
+
 		// //////////////////////////////////////////////////////////////
 		JMenu sig = new JMenu("Process");
 		menubar.add(sig);
-		
+
 		JMenuItem bias = new JMenuItem("biasAdapt");
 		sig.add(bias);
 
@@ -134,7 +137,7 @@ public class Menus {
 				aligneur.biasAdapt();
 			}
 		});
-		
+
 		JMenuItem map = new JMenuItem("MAP adapt");
 		sig.add(map);
 		map.addActionListener(new ActionListener() {
@@ -156,10 +159,12 @@ public class Menus {
 		sig.add(clear);
 		JMenuItem clearfrom = new JMenuItem("clear align from selected word");
 		sig.add(clearfrom);
-//		JMenuItem batchalign= new JMenuItem("batch align between anchors");
-//		actionsm.add(batchalign);
+		//		JMenuItem batchalign= new JMenuItem("batch align between anchors");
+		//		actionsm.add(batchalign);
 		JMenuItem asr= new JMenuItem("Automatic Speech Recognition");
 		sig.add(asr);
+		JMenuItem asrJSAPI= new JMenuItem("JSAPI Speech Recognition");
+		sig.add(asrJSAPI);
 		JMenuItem batch= new JMenuItem("batch align all");
 		sig.add(batch);
 		JMenuItem beam= new JMenuItem("set beam");
@@ -173,7 +178,7 @@ public class Menus {
 				S4ForceAlignBlocViterbi.beamwidth=Integer.parseInt(s);
 			}
 		});
-		
+
 		sig.addSeparator();
 		JMenuItem playfrom = new JMenuItem("play from");
 		sig.add(playfrom);
@@ -191,8 +196,8 @@ public class Menus {
 		// //////////////////////////////////////////////////////////////
 		JMenu prefs = new JMenu("options");
 		menubar.add(prefs);
-//		JMenuItem mots = new JMenuItem("forward mots");
-//		prefs.add(mots);
+		//		JMenuItem mots = new JMenuItem("forward mots");
+		//		prefs.add(mots);
 		JMenuItem mixers = new JMenuItem("audio mixers");
 		prefs.add(mixers);
 		JMenuItem mikerec = new JMenuItem("record from mike");
@@ -207,10 +212,10 @@ public class Menus {
 				// TODO: wait for the user press the ESC key, then stop the reco and put the result in the text panel 
 			}
 		});
-//		JMenuItem gui1 = new JMenuItem("GUI: view text only");
-//		prefs.add(gui1);
-//		JMenuItem gui2 = new JMenuItem("GUI: view signal");
-//		prefs.add(gui2);
+		//		JMenuItem gui1 = new JMenuItem("GUI: view text only");
+		//		prefs.add(gui1);
+		//		JMenuItem gui2 = new JMenuItem("GUI: view signal");
+		//		prefs.add(gui2);
 		JMenuItem gui3 = new JMenuItem("GUI: toggle words/phones");
 		prefs.add(gui3);
 		JMenuItem font = new JMenuItem("font size");
@@ -224,7 +229,7 @@ public class Menus {
 		tuto.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				
+
 				try {
 					JEditorPane pane = new JEditorPane((new File("tutorial.html")).toURI().toURL());
 					pane.setEditable(false);
@@ -241,35 +246,35 @@ public class Menus {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
-//				HTMLEditorKit helpwin = new HTMLEditorKit();
-//				helpwin.in
-//				View v = helpwin.getViewFactory().create(helpwin.createDefaultDocument().getDefaultRootElement());
+				//				HTMLEditorKit helpwin = new HTMLEditorKit();
+				//				helpwin.in
+				//				View v = helpwin.getViewFactory().create(helpwin.createDefaultDocument().getDefaultRootElement());
 			}
 		});
-		
+
 		// //////////////////////////////////////////////////////////////
 		// //////////////////////////////////////////////////////////////
-//		gui1.addActionListener(new ActionListener() {
-//			public void actionPerformed(ActionEvent e) {
-//				aligneur.GUIfast();
-//			}
-//		});
-//		gui2.addActionListener(new ActionListener() {
-//			public void actionPerformed(ActionEvent e) {
-//				aligneur.GUIslow();
-//			}
-//		});
+		//		gui1.addActionListener(new ActionListener() {
+		//			public void actionPerformed(ActionEvent e) {
+		//				aligneur.GUIfast();
+		//			}
+		//		});
+		//		gui2.addActionListener(new ActionListener() {
+		//			public void actionPerformed(ActionEvent e) {
+		//				aligneur.GUIslow();
+		//			}
+		//		});
 		gui3.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				aligneur.toggleShowPhones();
-//				TemporalSigPanel.showPhones=!TemporalSigPanel.showPhones;
-//				aligneur.repaint();
+				//				TemporalSigPanel.showPhones=!TemporalSigPanel.showPhones;
+				//				aligneur.repaint();
 			}
 		});
 		font.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				final String[] fonts = {"10","12","16","18","20","24","30"};
-				
+
 				final JFrame fl = new JFrame("choose font size");
 				final JList jl = new JList(fonts);
 				jl.addListSelectionListener(new ListSelectionListener() {
@@ -322,17 +327,17 @@ public class Menus {
 				});
 			}
 		});
-		
-//		mots.addActionListener(new ActionListener() {
-//			public void actionPerformed(ActionEvent e) {
-//				new TextInputWindow("enter nb of words for auto. align",new UserInputProcessor() {
-//					public void processInput(String txt) {
-//						aligneur.setNwordsForward(Integer.parseInt(txt));
-//					}
-//				});
-//			}
-//		});
-//		
+
+		//		mots.addActionListener(new ActionListener() {
+		//			public void actionPerformed(ActionEvent e) {
+		//				new TextInputWindow("enter nb of words for auto. align",new UserInputProcessor() {
+		//					public void processInput(String txt) {
+		//						aligneur.setNwordsForward(Integer.parseInt(txt));
+		//					}
+		//				});
+		//			}
+		//		});
+		//		
 		regexp.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				new plugins.text.regexp.graphique.RegExpFrame(aligneur.edit);
@@ -370,11 +375,11 @@ public class Menus {
 			}
 		});
 
-//		batchalign.addActionListener(new ActionListener() {
-//			public void actionPerformed(ActionEvent e) {
-//				aligneur.batchAlign();
-//			}
-//		});
+		//		batchalign.addActionListener(new ActionListener() {
+		//			public void actionPerformed(ActionEvent e) {
+		//				aligneur.batchAlign();
+		//			}
+		//		});
 
 		batch.addActionListener(new ActionListener() {
 			@Override
@@ -389,10 +394,72 @@ public class Menus {
 				aligneur.asr();
 			}
 		});
-		
+		asrJSAPI.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				try {
+					File vocfile = new File("res/voc.txt");
+					Grammatiseur.fastLoading=true;
+					Grammatiseur.grammatiseur=null;
+					gram = new LiveSpeechReco();
+					gram.wavfile=aligneur.wavname;
+					gram.loadVoc(vocfile);
+					gram.initGrammar();
+					gram.gram=gram;
+					gram.addResultListener(new RecoListener() {
+						@Override
+						public void recoFinie(Result finalres, String res) {
+							System.out.println("reco fin "+Thread.currentThread().getName()+" "+res);
+							reco=res;
+							synchronized (done) {
+								done[0]=true;
+								done.notify();
+							}
+						}
+						@Override
+						public void recoEnCours(Result tmpres) {
+							System.out.println("reco en cours"+tmpres);
+						}
+					});
+					Thread recothread = new Thread(new Runnable() {
+						@Override
+						public void run() {
+							gram.wavReco();
+							// au cas ou la reco s'arrete sans terminer completement
+							synchronized (done) {
+								done[0]=true;
+								done.notify();
+							}
+						}
+					});
+					recothread.start();
+					for (;;) {
+						synchronized (done) {
+							System.out.println("thread waiting: "+Thread.currentThread().getName());
+							done.wait();
+							System.out.println("done waiting: "+Thread.currentThread().getName());
+							if (done[0]) break;
+						}
+					}
+					String[] ss = reco.split("\n");
+					StringBuilder res = new StringBuilder();
+					for (int i=0;i<ss.length;i++) {
+						String[] x = ss[i].split(":");
+						if (x.length==3 && !x[2].equals("SIL")) {
+							res.append(x[2]+" ");
+						}
+					}
+					aligneur.edit.setText(res.toString());
+					aligneur.edit.repaint();
+				} catch (Exception ee) {
+					ee.printStackTrace();
+				}
+			}
+		});
+
 		aligneur.playerController = new PlayerListener(aligneur, 100);
 
-		
+
 		save.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				aligneur.saveProject();
@@ -403,32 +470,32 @@ public class Menus {
 				aligneur.loadProject();
 			}
 		});
-//		loadstm.addActionListener(new ActionListener() {
-//			public void actionPerformed(ActionEvent e) {
-//				JFileChooser filechooser = new JFileChooser();
-//				filechooser.validate();
-//				filechooser.setApproveButtonText("Ouvrir");
-//				int returnVal = filechooser.showOpenDialog(null);
-//				if (returnVal == JFileChooser.APPROVE_OPTION) {
-//					File file = filechooser.getSelectedFile();
-//					if (file.exists()) {
-////						aligneur.loadSTM reference(file);
-//					}
-//				}
-//			}
-//		});
-//		savetrs.addActionListener(new ActionListener() {
-//			public void actionPerformed(ActionEvent e) {
-//				JFileChooser filechooser = new JFileChooser();
-//				filechooser.validate();
-//				filechooser.setApproveButtonText("Ouvrir");
-//				int returnVal = filechooser.showOpenDialog(null);
-//				if (returnVal == JFileChooser.APPROVE_OPTION) {
-//					File file = filechooser.getSelectedFile();
-//					// TODO
-//				}
-//			}
-//		});
+		//		loadstm.addActionListener(new ActionListener() {
+		//			public void actionPerformed(ActionEvent e) {
+		//				JFileChooser filechooser = new JFileChooser();
+		//				filechooser.validate();
+		//				filechooser.setApproveButtonText("Ouvrir");
+		//				int returnVal = filechooser.showOpenDialog(null);
+		//				if (returnVal == JFileChooser.APPROVE_OPTION) {
+		//					File file = filechooser.getSelectedFile();
+		//					if (file.exists()) {
+		////						aligneur.loadSTM reference(file);
+		//					}
+		//				}
+		//			}
+		//		});
+		//		savetrs.addActionListener(new ActionListener() {
+		//			public void actionPerformed(ActionEvent e) {
+		//				JFileChooser filechooser = new JFileChooser();
+		//				filechooser.validate();
+		//				filechooser.setApproveButtonText("Ouvrir");
+		//				int returnVal = filechooser.showOpenDialog(null);
+		//				if (returnVal == JFileChooser.APPROVE_OPTION) {
+		//					File file = filechooser.getSelectedFile();
+		//					// TODO
+		//				}
+		//			}
+		//		});
 		quit.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				aligneur.quit();

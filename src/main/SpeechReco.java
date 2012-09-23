@@ -155,8 +155,14 @@ public class SpeechReco {
 	*/
 	
 	private SpeechReco() {
-		URL cfg0 = FileUtils.getRessourceAsURL("main.SpeechReco", "ressources/config.xml");
-		cfg = fixCfgPaths(cfg0);
+//		URL cfg0 = FileUtils.getRessourceAsURL("main.SpeechReco", "ressources/config.xml");
+		URL cfg0;
+		try {
+			cfg0 = (new File("ressources/config.xml")).toURI().toURL();
+			cfg = fixCfgPaths(cfg0);
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+		}
 	}
 	public SpeechReco(URL cfg) {
 		this.cfg = fixCfgPaths(cfg);
