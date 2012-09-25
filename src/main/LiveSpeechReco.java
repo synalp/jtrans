@@ -138,7 +138,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		
 		// FRONTEND
 		ArrayList<DataProcessor> frontEndList = new ArrayList<DataProcessor>();
-		mikeSource = new Microphone(16000, 16, 1, true, true, false, 10, false, "average", 0, ""+mixidx, 6400);
+		mikeSource = new Microphone(16000, 16, 1, true, true, true, 10, false, "average", 0, ""+mixidx, 6400);
 		frontEndList.add(mikeSource);
 		frontEndList.add(new Dither(2,false,Double.MAX_VALUE,-Double.MAX_VALUE));
 		frontEndList.add(new DataBlocker(50));
@@ -401,7 +401,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 				System.out.println("final nodes:");
 				for (GrammarNode n : getGrammarNodes()) {
 					if (n.isFinalNode()) {
-						System.out.println("\t"+n);
+						System.out.println("\t final "+n);
 					}
 				}
 			} catch (IOException e) {
@@ -415,6 +415,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 	}
 
 	public static void main(String args[]) {
+		mixidx=3;
 //		LiveSpeechReco.wavfile="wavout.wav";
 		recoNoGUI();
 	}
@@ -471,7 +472,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 	}
 
 	public static void recoNoGUI() {
-		vocfile = new File("voc.txt");
+		vocfile = new File("res/voc.txt");
 		LiveSpeechReco r = doReco();
 		r.addResultListener(new RecoListener() {
 			@Override
@@ -485,7 +486,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		});
 		try {
 			System.out.println("WAITING...");
-			Thread.sleep(15000);
+			Thread.sleep(5000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
