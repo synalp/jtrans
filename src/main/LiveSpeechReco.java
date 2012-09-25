@@ -58,6 +58,8 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 	public static LiveSpeechReco gram=null;
 	public static File vocfile = null;
 	public static String wavfile = "wavout.wav";
+	
+	public static int mixidx = 0;
 
 	FrameDecoder decoder=null;
 	SimpleBreadthFirstSearchManager searchManager=null;
@@ -136,7 +138,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		
 		// FRONTEND
 		ArrayList<DataProcessor> frontEndList = new ArrayList<DataProcessor>();
-		mikeSource = new Microphone(16000, 16, 1, true, true, false, 10, false, "average", 0, "default", 6400);
+		mikeSource = new Microphone(16000, 16, 1, true, true, false, 10, false, "average", 0, ""+mixidx, 6400);
 		frontEndList.add(mikeSource);
 		frontEndList.add(new Dither(2,false,Double.MAX_VALUE,-Double.MAX_VALUE));
 		frontEndList.add(new DataBlocker(50));
