@@ -46,6 +46,7 @@ import edu.cmu.sphinx.result.Result;
 import edu.cmu.sphinx.util.LogMath;
 
 import plugins.speechreco.RecoListener;
+import plugins.speechreco.adaptation.BiaisAdapt;
 import plugins.speechreco.aligners.sphiinx4.AlignementEtat;
 import plugins.speechreco.aligners.sphiinx4.HMMModels;
 import plugins.speechreco.aligners.sphiinx4.PhoneticForcedGrammar;
@@ -133,6 +134,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		listener = l;
 	}
 
+	public String adaptedmods = null;
 	public void liveReco() {
 		stopit=false;
 		
@@ -162,6 +164,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 			// ACCMODS
 			System.out.println("loading acoustic models...");
 			mods = HMMModels.getAcousticModels();
+			if (adaptedmods!=null) BiaisAdapt.loadAdapted(adaptedmods);
 		}
 		{
 			float silprob = 0.1f;
