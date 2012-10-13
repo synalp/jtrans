@@ -216,7 +216,7 @@ public class BiaisAdapt
 				}
 			}
 			fin.close();
-			JOptionPane.showMessageDialog(null, "adapted models loaded "+name);
+//			JOptionPane.showMessageDialog(null, "adapted models loaded "+name);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
