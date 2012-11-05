@@ -92,7 +92,11 @@ public class Mike2wav {
 		wavwriter.setPredecessor(starter);
 		wavwriter.getData();
 		
+<<<<<<< HEAD
 		mike = new Microphone(16000, 16, 1, true, true, true, 10, false, "average", 0, ""+mxidx, 6400);
+=======
+		mike = new Microphone(16000, 16, 1, true, true, true, 10, false, "average", 0, ""+mixidx, 6400);
+>>>>>>> 5b42fed74ef427a90f5aac2a66969b9f82c6769d
 		DataBlocker datablocker = new DataBlocker(100);
 		datablocker.setPredecessor(mike);
 		vum = new VUMeterMonitor();
@@ -143,7 +147,8 @@ public class Mike2wav {
 	private static Mike2wav unik = null;
 	private int mxidx=0;
 	public static Mike2wav getMike2wav(int mixidx) {
-		if (unik==null) unik = new Mike2wav(mixidx);
+//		if (unik==null)
+			unik = new Mike2wav(mixidx);
 		return unik;
 	}
 	

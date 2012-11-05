@@ -46,6 +46,7 @@ import edu.cmu.sphinx.result.Result;
 import edu.cmu.sphinx.util.LogMath;
 
 import plugins.speechreco.RecoListener;
+import plugins.speechreco.adaptation.BiaisAdapt;
 import plugins.speechreco.aligners.sphiinx4.AlignementEtat;
 import plugins.speechreco.aligners.sphiinx4.HMMModels;
 import plugins.speechreco.aligners.sphiinx4.PhoneticForcedGrammar;
@@ -132,12 +133,19 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		listener = l;
 	}
 
+	public String adaptedmods = null;
 	public void liveReco() {
 		stopit=false;
 		
 		// FRONTEND
 		ArrayList<DataProcessor> frontEndList = new ArrayList<DataProcessor>();
+		System.out.println("LIVERECO OPENMIKE mixidx "+mixidx);
 		mikeSource = new Microphone(16000, 16, 1, true, true, true, 10, false, "average", 0, ""+mixidx, 6400);
+
+		{
+			System.out.println("mikesource created");
+		}
+		
 		frontEndList.add(mikeSource);
 		frontEndList.add(new Dither(2,false,Double.MAX_VALUE,-Double.MAX_VALUE));
 		frontEndList.add(new DataBlocker(50));
@@ -155,6 +163,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 			// ACCMODS
 			System.out.println("loading acoustic models...");
 			mods = HMMModels.getAcousticModels();
+			if (adaptedmods!=null) BiaisAdapt.loadAdapted(adaptedmods);
 		}
 		{
 			float silprob = 0.1f;
@@ -171,16 +180,25 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 			mikeSource.initialize();
 		}
 
+		{
+			System.out.println("mikesource initialized");
+		}
+
+		
 		mikeSource.startRecording();
 		searchManager.startRecognition();
 
+		{
+			System.out.println("mikesource started");
+		}
+		
 		for (int t=0;;t++) {
 			if (stopit) break;
 			Result r = decoder.decode(null);
 			if (r.isFinal()) break;
 			if (t%100==0) {
 				if (listener!=null) listener.recoEnCours(r);
-				System.out.println("mike frame "+(t/100));
+				System.out.print("mike frame "+(t/100)+" \r");
 			}
 			// TODO: backtrack apres N trames ?
 		}
@@ -215,7 +233,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 				resStates = bestaligns[2];
 			}
 		}
-		System.out.println("debug res "+resWords);
+//		System.out.println("debug res "+resWords);
 		if (resWords!=null) {
 			for (int i=0;i<resWords.getNbSegments();i++) {
 				String s = resWords.getSegmentLabel(i);
@@ -225,7 +243,8 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 				}
 			}
 			if (listener!=null) listener.recoFinie(null, resWords.toString());
-		}
+		} else
+			if (listener!=null) listener.recoFinie(null, "");
 	}
 
 	public void wavReco() {
@@ -400,7 +419,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 				System.out.println("final nodes:");
 				for (GrammarNode n : getGrammarNodes()) {
 					if (n.isFinalNode()) {
-						System.out.println("\t"+n);
+						System.out.println("\t final "+n);
 					}
 				}
 			} catch (IOException e) {
@@ -414,6 +433,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 	}
 
 	public static void main(String args[]) {
+		mixidx=3;
 //		LiveSpeechReco.wavfile="wavout.wav";
 		recoNoGUI();
 	}
@@ -470,7 +490,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 	}
 
 	public static void recoNoGUI() {
-		vocfile = new File("voc.txt");
+		vocfile = new File("res/voc.txt");
 		LiveSpeechReco r = doReco();
 		r.addResultListener(new RecoListener() {
 			@Override
@@ -484,7 +504,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		});
 		try {
 			System.out.println("WAITING...");
-			Thread.sleep(15000);
+			Thread.sleep(5000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
