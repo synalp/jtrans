@@ -18,7 +18,7 @@ public class Phonetiseur {
 			String s=f.readLine();
 			if (s==null) break;
 			String r = gram.getGrammar(s);
-			System.out.println(s+" "+r);
+			System.out.println("PHONUTT "+s+" .. .. "+r);
 		}
 		f.close();
 	}
