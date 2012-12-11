@@ -55,6 +55,20 @@
         <delete dir="${dist}"/>
     </target>
 
+    <target name="digest"
+        description="getdown" >
+<property file="certificate.properties"/>
+<digest appdir="getdown/jtrans" keystore="${sign.keystore}" storepass="${sign.storepass}"
+        alias="${sign.alias}"/>
+<signjar keystore="${sign.keystore}" alias="${sign.alias}" storepass="${sign.storepass}">
+  <fileset dir="getdown" includes="getdown-client-1.2.jar"/>
+</signjar>
+    </target>
+
+<taskdef name="digest" classname="com.threerings.getdown.tools.DigesterTask"
+         classpath="../../softs/getdown-tools-1.2.jar"/>
+
+
 </project>
 
 
