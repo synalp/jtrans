@@ -55,6 +55,7 @@
         <delete dir="${dist}"/>
     </target>
 
+<!--
     <target name="digest"
         description="getdown" >
 <property file="certificate.properties"/>
@@ -68,6 +69,7 @@
 <taskdef name="digest" classname="com.threerings.getdown.tools.DigesterTask"
          classpath="../../softs/getdown-tools-1.2.jar"/>
 
+-->
 
 </project>
 

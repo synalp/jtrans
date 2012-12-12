@@ -1,0 +1,12 @@
+# The URL from which the client is downloaded
+appbase = http://talc1.loria.fr/users/cerisara/jtrans
+
+# UI Configuration
+ui.name = JTrans
+
+# Application jar files
+code = jtrans.jar
+
+# The main entry point for the application
+class = utils.Installer
+
