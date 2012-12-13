@@ -29,7 +29,7 @@
     <target name="compile" description="compile the source " >
         <echo message="JVM - ${ant.java.version}" />
         <mkdir dir="${build}"/>
-        <javac target="1.6" source="1.6" debug="true" srcdir="${src}" includes="tools/**/*,plugins/**/*.java,main/**/*.java,utils/**/*.java,speechreco/**/*.java,test/**/*.java" destdir="${build}" encoding="UTF-8">
+        <javac target="1.6" debug="false" srcdir="${src}" includes="tools/**/*,plugins/**/*.java,main/**/*.java,utils/**/*.java,speechreco/**/*.java,test/**/*.java" destdir="${build}" encoding="UTF-8">
     	    <classpath refid="my.classpath" />
         </javac>
     </target>
@@ -57,17 +57,15 @@
 
     <target name="digest"
         description="getdown" >
-<property file="certificate.properties"/>
-<digest appdir="getdown/jtrans" keystore="${sign.keystore}" storepass="${sign.storepass}"
-        alias="${sign.alias}"/>
-<signjar keystore="${sign.keystore}" alias="${sign.alias}" storepass="${sign.storepass}">
-  <fileset dir="getdown" includes="getdown-client-1.2.jar"/>
-</signjar>
+	<property file="certificate.properties"/>
+	<digest appdir="getdown/jtrans" keystore="${sign.keystore}" storepass="${sign.storepass}" alias="${sign.alias}"/>
+	<signjar keystore="${sign.keystore}" alias="${sign.alias}" storepass="${sign.storepass}">
+  		<fileset dir="getdown" includes="getdown-client-1.2.jar"/>
+	</signjar>
     </target>
 
 <taskdef name="digest" classname="com.threerings.getdown.tools.DigesterTask"
          classpath="../../softs/getdown-tools-1.2.jar"/>
-
 
 </project>
 

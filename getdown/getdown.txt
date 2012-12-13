@@ -21,5 +21,9 @@ code = libs/tritonus_share.jar
 code = libs/vorbisspi1.0.2.jar
 code = libs/weka.jar
 
+resource = culture.wav
+resource = culture.txt
+resource = culture.jtr
+
 class = utils.Installer
 

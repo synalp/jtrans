@@ -1,7 +1,14 @@
 #!/bin/tcsh
 
+rm -rf jtrans
+mkdir jtrans
+cp getdown.txt jtrans/
 cp -r ../libs jtrans/
+cp -r ../jtrans.jar jtrans/
 cp ../../../softs/getdown-client-1.2.jar .
+cp ../culture.wav jtrans/
+cp ../culture.txt jtrans/
+cp ../culture.jtr jtrans/
 
 # java -cp /home/xtof/softs/getdown-tools-1.2.jar com.threerings.getdown.tools.Digester jtrans
 pushd .
