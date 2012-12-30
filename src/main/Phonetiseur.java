@@ -1,7 +1,6 @@
 package main;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 
 import phonetiseur.FileUtils;
 import plugins.phonetiseur.PhonetiseurFacade;
