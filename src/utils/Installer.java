@@ -1,8 +1,10 @@
 package utils;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLDecoder;
 
 import javax.swing.JOptionPane;
 
@@ -11,7 +13,19 @@ import utils.WGETJava;
 
 public class Installer {
 	
+	public static String getCurrentDir() {
+		String path = Installer.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+		try {
+			String decodedPath = URLDecoder.decode(path, "UTF-8");
+			return decodedPath;
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
 	public static void main(String args[]) {
+		System.out.println("starting JTrans installer in curdir "+((new File(".")).getAbsolutePath()));
 		if ((new File("culture.jtr")).exists())
 			launchJSafran(args);
 		else {

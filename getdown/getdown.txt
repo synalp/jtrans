@@ -1,0 +1,29 @@
+appbase = http://talc1.loria.fr/users/cerisara/jtrans/getdown/jtrans
+
+ui.name = JTrans
+
+code = jtrans.jar
+code = libs/basicplayer3.0.jar
+code = libs/commons-logging-api.jar
+code = libs/JHTK.jar
+code = libs/jl1.0.jar
+code = libs/jogg-0.0.7.jar
+code = libs/jorbis-0.0.15.jar
+code = libs/jsafran.jar
+code = libs/jspeex0.9.7.jar
+code = libs/JUNG.jar
+code = libs/junit-4.5.jar
+code = libs/mp3spi1.9.4.jar
+code = libs/sphinx4.jar
+code = libs/tritonus_gsm-0.3.6.jar
+code = libs/tritonus_remaining.jar
+code = libs/tritonus_share.jar
+code = libs/vorbisspi1.0.2.jar
+code = libs/weka.jar
+
+resource = culture.wav
+resource = culture.txt
+resource = culture.jtr
+
+class = utils.Installer
+

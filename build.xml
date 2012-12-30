@@ -29,7 +29,7 @@
     <target name="compile" description="compile the source " >
         <echo message="JVM - ${ant.java.version}" />
         <mkdir dir="${build}"/>
-        <javac debug="true" srcdir="${src}" includes="tools/**/*,plugins/**/*.java,main/**/*.java,utils/**/*.java,speechreco/**/*.java,test/**/*.java" destdir="${build}" encoding="UTF-8">
+        <javac target="1.6" debug="false" srcdir="${src}" includes="tools/**/*,plugins/**/*.java,main/**/*.java,utils/**/*.java,speechreco/**/*.java,test/**/*.java" destdir="${build}" encoding="UTF-8">
     	    <classpath refid="my.classpath" />
         </javac>
     </target>
@@ -38,7 +38,7 @@
     	<mkdir dir="${dist}"/>
 	<manifest file="${dist}/MANIFEST.MF">
 		<attribute name="Class-Path" value="libs/basicplayer3.0.jar libs/commons-logging-api.jar libs/JHTK.jar libs/jl1.0.jar libs/jogg-0.0.7.jar libs/jorbis-0.0.15.jar libs/jsafran.jar libs/jspeex0.9.7.jar libs/JUNG.jar libs/junit-4.5.jar libs/mp3spi1.9.4.jar libs/sphinx4.jar libs/tritonus_gsm-0.3.6.jar libs/tritonus_remaining.jar libs/tritonus_share.jar libs/vorbisspi1.0.2.jar libs/weka.jar"/>
-		<attribute name="Main-Class" value="utils.Installer"/>
+		<attribute name="Main-Class" value="utils.installer.JTransInstall"/>
 		<attribute name="Implementation-Title" value="JTrans"/>
 		<attribute name="Implementation-Version" value="${version}"/>
 		<attribute name="Implementation-Vendor" value="Christophe Cerisara"/>
@@ -55,6 +55,20 @@
         <delete dir="${dist}"/>
     </target>
 
+<!--
+    <target name="digest"
+        description="getdown" >
+	<property file="certificate.properties"/>
+	<digest appdir="getdown/jtrans" keystore="${sign.keystore}" storepass="${sign.storepass}" alias="${sign.alias}"/>
+	<signjar keystore="${sign.keystore}" alias="${sign.alias}" storepass="${sign.storepass}">
+  		<fileset dir="getdown" includes="getdown-client-1.2.jar"/>
+	</signjar>
+    </target>
+
+<taskdef name="digest" classname="com.threerings.getdown.tools.DigesterTask"
+         classpath="../../softs/getdown-tools-1.2.jar"/>
+
+-->
 </project>
 
 
