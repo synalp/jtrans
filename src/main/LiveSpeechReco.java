@@ -211,7 +211,12 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		}
 		
 		for (int t=0;;t++) {
-			if (stopit) break;
+			if (stopit) {
+				//break;
+				// non: je ne sors pas tout de suite, car il faut vider ke buffer du mike !
+				System.out.println("delayed stop");
+				mikeSource.stopRecording();
+			}
 			Result r = decoder.decode(null);
 			if (r.isFinal()) break;
 			if (t%100==0) {
