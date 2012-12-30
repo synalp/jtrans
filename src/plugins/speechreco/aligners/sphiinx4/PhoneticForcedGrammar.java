@@ -182,6 +182,7 @@ public class PhoneticForcedGrammar extends JSGFGrammar {
 			rule = rule2.toString().trim();
 			// j'aoute un prefixe pour reperer les 1ers phones de chaque mot
 			rule = annoteFirstPhones(rule,wi);
+			rule = rule.replaceAll("\\[ *\\]", "").trim();
 			if (rule.length()>0)
 				gramstring.append("[ sil ] "+rule+" ");
 			wordRule.add(""+rule);
@@ -193,6 +194,8 @@ public class PhoneticForcedGrammar extends JSGFGrammar {
 		// create JSGF file and load it
 		{
 			try {
+				
+				// bugfix:
 				PrintWriter f = new PrintWriter(new FileWriter("detgrammar.gram"));
 				f.println("#JSGF V1.0;");
 				f.println("grammar detgrammar;");

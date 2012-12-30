@@ -17,10 +17,10 @@ public class JTransInstall {
 		File flibs = new File("libs");
 		if (!flibs.exists()) downloadApp();
 		
-		runApp();
+		runApp(args);
 	}
 	
-	private static void runApp() {
+	private static void runApp(String args[]) {
 		File d = new File("libs");
 		File[] jars = d.listFiles(new FilenameFilter() {
 			@Override
@@ -35,7 +35,7 @@ public class JTransInstall {
 			e.printStackTrace();
 		}
 		
-		main.Main.main();
+		main.Main.main(args);
 	}
 	
 	private static void downloadApp() {
