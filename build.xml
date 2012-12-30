@@ -29,7 +29,7 @@
     <target name="compile" description="compile the source " >
         <echo message="JVM - ${ant.java.version}" />
         <mkdir dir="${build}"/>
-        <javac target="1.6" debug="false" srcdir="${src}" includes="tools/**/*,plugins/**/*.java,main/**/*.java,utils/**/*.java,speechreco/**/*.java,test/**/*.java" destdir="${build}" encoding="UTF-8">
+        <javac debug="false" srcdir="${src}" includes="tools/**/*,plugins/**/*.java,main/**/*.java,utils/**/*.java,speechreco/**/*.java,test/**/*.java" destdir="${build}" encoding="UTF-8">
     	    <classpath refid="my.classpath" />
         </javac>
     </target>

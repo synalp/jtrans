@@ -23,7 +23,10 @@ import edu.cmu.sphinx.decoder.search.PartitionActiveListFactory;
 import edu.cmu.sphinx.decoder.search.SimpleBreadthFirstSearchManager;
 import edu.cmu.sphinx.decoder.search.Token;
 import edu.cmu.sphinx.frontend.BaseDataProcessor;
+import edu.cmu.sphinx.frontend.Data;
 import edu.cmu.sphinx.frontend.DataBlocker;
+import edu.cmu.sphinx.frontend.DataEndSignal;
+import edu.cmu.sphinx.frontend.DataProcessingException;
 import edu.cmu.sphinx.frontend.DataProcessor;
 import edu.cmu.sphinx.frontend.FrontEnd;
 import edu.cmu.sphinx.frontend.feature.DeltasFeatureExtractor;
@@ -45,6 +48,8 @@ import edu.cmu.sphinx.linguist.flat.FlatLinguist;
 import edu.cmu.sphinx.linguist.language.grammar.GrammarNode;
 import edu.cmu.sphinx.result.Result;
 import edu.cmu.sphinx.util.LogMath;
+import edu.cmu.sphinx.util.props.PropertyException;
+import edu.cmu.sphinx.util.props.PropertySheet;
 
 import plugins.speechreco.RecoListener;
 import plugins.speechreco.adaptation.BiaisAdapt;
@@ -60,7 +65,10 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 	public static LiveSpeechReco gram=null;
 	public static File vocfile = null;
 	public static String wavfile = "wavout.wav";
-	public static int mixidx = 0;
+	public static int mixidx = 4;
+
+	public String adaptedmods = null;
+	public static String wavout = null;
 
 	FrameDecoder decoder=null;
 	SimpleBreadthFirstSearchManager searchManager=null;
@@ -134,8 +142,6 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		listener = l;
 	}
 
-	public String adaptedmods = null;
-	public String wavout = null;
 	public void liveReco() {
 		stopit=false;
 		
@@ -150,8 +156,12 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		
 		frontEndList.add(mikeSource);
 		
+		WavWriter wavw=null;
+		final long wavwritestart = System.currentTimeMillis();
 		if (wavout!=null) {
-			WavWriter wavw = new WavWriter(wavout, true, 16, true, false);
+			System.out.println("SAVING IN "+wavout);
+			wavw = new WavWriter(wavout, true, 16, true, false);
+			wavw.initialize();
 			frontEndList.add(wavw);
 		}
 		
@@ -210,6 +220,32 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 			}
 			// TODO: backtrack apres N trames ?
 		}
+		
+		if (wavw!=null) {
+			// stop the wavwriter
+			DataProcessor endsig = new DataProcessor() {
+				@Override
+				public void newProperties(PropertySheet arg0) throws PropertyException {}
+				@Override
+				public void setPredecessor(DataProcessor arg0) {}
+				@Override
+				public void initialize() {}
+				@Override
+				public DataProcessor getPredecessor() {
+					return null;
+				}
+				@Override
+				public Data getData() throws DataProcessingException {
+					final long dur = System.currentTimeMillis()-wavwritestart;
+					final DataEndSignal ends = new DataEndSignal(dur);
+					return ends;
+				}
+			};
+			wavw.setPredecessor(endsig);
+			wavw.getData();
+			wavw=null;
+		}
+		
 		System.out.println("MIKE AND DECODE FINISHED !!");
 		mikeSource.stopRecording();
 
@@ -441,8 +477,14 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 	}
 
 	public static void main(String args[]) {
-		mixidx=3;
+//		mixidx=3;
 //		LiveSpeechReco.wavfile="wavout.wav";
+		int i=0;
+		for (;i<args.length;i++) {
+			if (args[i].equals("-wavout")) {
+				++i; LiveSpeechReco.wavout=args[i];
+			}
+		}
 		recoNoGUI();
 	}
 	private static void debug2() {
