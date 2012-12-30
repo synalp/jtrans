@@ -35,6 +35,7 @@ import edu.cmu.sphinx.frontend.transform.DiscreteCosineTransform;
 import edu.cmu.sphinx.frontend.transform.DiscreteFourierTransform;
 import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
 import edu.cmu.sphinx.frontend.util.Microphone;
+import edu.cmu.sphinx.frontend.util.WavWriter;
 import edu.cmu.sphinx.frontend.window.RaisedCosineWindower;
 import edu.cmu.sphinx.jsgf.JSGFGrammar;
 import edu.cmu.sphinx.jsgf.JSGFGrammarException;
@@ -134,6 +135,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 	}
 
 	public String adaptedmods = null;
+	public String wavout = null;
 	public void liveReco() {
 		stopit=false;
 		
@@ -147,6 +149,12 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		}
 		
 		frontEndList.add(mikeSource);
+		
+		if (wavout!=null) {
+			WavWriter wavw = new WavWriter(wavout, true, 16, true, false);
+			frontEndList.add(wavw);
+		}
+		
 		frontEndList.add(new Dither(2,false,Double.MAX_VALUE,-Double.MAX_VALUE));
 		frontEndList.add(new DataBlocker(50));
 		frontEndList.add(new Preemphasizer(0.97));
