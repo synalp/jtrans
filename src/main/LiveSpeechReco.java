@@ -67,7 +67,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 	public static String wavfile = "wavout.wav";
 	public static int mixidx = 4;
 
-	public String adaptedmods = "../emospeech/adaptCorpus/modxtof0";
+	public static String adaptedmods = "../emospeech/adaptCorpus/modxtof0";
 	public static String wavout = null;
 
 	FrameDecoder decoder=null;
@@ -325,7 +325,9 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 			// ACCMODS
 			System.out.println("loading acoustic models...");
 			mods = HMMModels.getAcousticModels();
+			if (adaptedmods!=null) BiaisAdapt.loadAdapted(adaptedmods);
 		}
+
 		
 		float silprob = 0.1f;
 		int beamwidth = 0;
@@ -486,16 +488,17 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 	}
 
 	public static void main(String args[]) {
-//		mixidx=3;
+//		mixidx=4;
+		LiveSpeechReco.adaptedmods="../emospeech/adaptCorpus/xtofall";
 		LiveSpeechReco.wavfile="../emospeech/session3/wavout0.wav";
-//		LiveSpeechReco.wavfile="../emospeech/adaptCorpus/voc0.wav";
+		LiveSpeechReco.vocfile=new File("../emospeech/res/voc0.txt");
 		int i=0;
 		for (;i<args.length;i++) {
 			if (args[i].equals("-wavout")) {
 				++i; LiveSpeechReco.wavout=args[i];
 			}
 		}
-		recoNoGUI();
+		testRecoNoGUI();
 	}
 	private static void debug2() {
 		// FRONTEND
@@ -549,8 +552,8 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		searchManager.startRecognition();
 	}
 
-	public static void recoNoGUI() {
-		vocfile = new File("res/voc0.txt");
+	// test: fait la reco 2 fois
+	public static void testRecoNoGUI() {
 		LiveSpeechReco r = doReco();
 		r.addResultListener(new RecoListener() {
 			@Override
@@ -584,7 +587,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 			}
 		});
 		try {
-			Thread.sleep(15000);
+			Thread.sleep(5000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}

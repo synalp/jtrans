@@ -174,6 +174,7 @@ public class BiaisAdapt
 		}
 		if (name==null) return;
 		name=name.trim();
+		System.out.println("loading adapted models: "+name);
 		ArrayList<float[]> means=new ArrayList<float[]>();
 		ArrayList<float[]> weights=new ArrayList<float[]>();
 		AcousticModel a=HMMModels.getAcousticModels();
