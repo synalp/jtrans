@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.StringTokenizer;
 
 import javax.swing.JFileChooser;
@@ -69,6 +70,8 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 
 	public static String adaptedmods = "../emospeech/adaptCorpus/modxtof0";
 	public static String wavout = null;
+	// map directement chaque mot du vocab vers une JSGF rule; évite d'utiliser le grammatiseur !
+	public static HashMap<String, String> tinyvocab = null;
 
 	FrameDecoder decoder=null;
 	SimpleBreadthFirstSearchManager searchManager=null;
@@ -397,14 +400,17 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 	}
 
 	public void initGrammar() {
-		if (super.grammatiseur==null) {
-			ProgressDialog waiting = new ProgressDialog((JFrame)null, new Runnable() {
-				@Override
-				public void run() {
-					grammatiseur = Grammatiseur.getGrammatiseur();
-				}
-			}, "please wait: initializing grammars...");
-			waiting.setVisible(true);
+		if (tinyvocab==null) {
+			System.out.println("loading grammatiseur... "+tinyvocab);
+			if (super.grammatiseur==null) {
+				ProgressDialog waiting = new ProgressDialog((JFrame)null, new Runnable() {
+					@Override
+					public void run() {
+						grammatiseur = Grammatiseur.getGrammatiseur();
+					}
+				}, "please wait: initializing grammars...");
+				waiting.setVisible(true);
+			}
 		}
 
 		//		// on commence toujours par un silence !
@@ -418,7 +424,12 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		for (int wi=0;wi<voc.size();wi++) {
 			String w = voc.get(wi);
 			w=w.replace('_', ' ');
-			String rule = grammatiseur.getGrammar(w);
+			String rule;
+			if (tinyvocab!=null) {
+				rule = tinyvocab.get(w);
+				if (rule==null) System.out.println("ERROR TINYVOCAB NO RULE 4 "+w);
+			} else 
+				rule = grammatiseur.getGrammar(w);
 			// on recupere toujours un silence optionnel au debut et a la fin, que je supprime:
 			//			rule = rule.substring(4,rule.length()-8).trim();
 			System.out.println("rule for word "+w+" "+rule);
@@ -487,11 +498,35 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		}
 	}
 
+	static void loadPhoneDico(String nom) {
+		HashMap<String, String> mot2rule = new HashMap<String, String>();
+		try {
+			BufferedReader f = new BufferedReader(new FileReader(nom));
+			for (;;) {
+				String s=f.readLine();
+				if (s==null) break;
+				s=s.trim();
+				int i=s.indexOf(',');
+				if (i<0) continue;
+				String w = s.substring(0,i);
+				String r = s.substring(i+1);
+				mot2rule.put(w, r);
+			}
+			f.close();
+			LiveSpeechReco.tinyvocab=mot2rule;
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
 	public static void main(String args[]) {
 //		mixidx=4;
 		LiveSpeechReco.adaptedmods="../emospeech/adaptCorpus/xtofall";
-		LiveSpeechReco.wavfile="../emospeech/session3/wavout0.wav";
+		LiveSpeechReco.wavfile="../emospeech/wavout0.wav";
 		LiveSpeechReco.vocfile=new File("../emospeech/res/voc0.txt");
+		
+		loadPhoneDico("../emospeech/res/vocrules0.txt");
+		
 		int i=0;
 		for (;i<args.length;i++) {
 			if (args[i].equals("-wavout")) {

@@ -9,9 +9,9 @@ import javax.sound.sampled.AudioSystem;
 public class WavUtils {
 
 	public static void main(String[] args) {
-		String wavFile1 = "../emospeech/adaptCorpus/voc0.wav";
-		String wavFile2 = "../emospeech/adaptCorpus/voc0a.wav";
-		String wavFileo = "../emospeech/adaptCorpus/voc0b.wav";
+		String wavFile1 = "../emospeech/adaptCorpus/voc0b.wav";
+		String wavFile2 = "../emospeech/adaptCorpus/voc0c.wav";
+		String wavFileo = "../emospeech/adaptCorpus/voc0x.wav";
 		
 		try {
 			AudioInputStream clip1 = AudioSystem.getAudioInputStream(new File(wavFile1));

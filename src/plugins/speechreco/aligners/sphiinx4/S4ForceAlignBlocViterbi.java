@@ -280,7 +280,7 @@ public class S4ForceAlignBlocViterbi extends Thread {
 		
 		AlignementEtat alignMots = new AlignementEtat();
 		int isinmot = -1;
-		HashSet<Integer> wiAdded = new HashSet<Integer>();
+		int prevwi=-1;
 		int firstSegOfWord = -1;
 		for (int i=0;i<phones.size();i++) {
 			if (phones.get(i).equals("SIL")) {
@@ -300,12 +300,13 @@ public class S4ForceAlignBlocViterbi extends Thread {
 				int wi = Integer.parseInt(us.substring(0,u));
 				if (isinmot>=0) {
 					// cela peut etre le debut d'un nouveau mot, ou le 2eme phone d'un mot qui commence par un phone optionnel !
-					if (!wiAdded.contains(wi)) {
+					// TODO : ATTENTION ! ceci nous interdit d'avoir 2 fois le meme mot de suite !
+					if (wi!=prevwi) {
 						// on ajoute le mot precedent
 						alignMots.addRecognizedSegment("XZ"+isinmot, starts.get(firstSegOfWord), ends.get(i-1), null, null);
 					}
 				} // sinon, on a surement un SIL devant, et on a donc deja ajoute le mot precedent
-				wiAdded.add(wi);
+				prevwi=wi;
 				isinmot=wi;
 				firstSegOfWord=i;
 			}
@@ -316,7 +317,7 @@ public class S4ForceAlignBlocViterbi extends Thread {
 		} else {
 			// si on n'ajoute aucun vrai mot, alors il faut retourner null, sinon autoaligner bouclera indefiniment
 			// dans le cas ou le dernier mot est optionnel
-			if (wiAdded.size()==0) return null;
+			if (prevwi<0) return null;
 			else return alignMots;
 		}
 	}
