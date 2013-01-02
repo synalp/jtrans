@@ -88,6 +88,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 	// Si adaptedmods n'est pas nul, alors les modeles acoustiques adaptes par JTrans.MAPAdapt seront utilises
 	public static String adaptedmods = null;
 
+	public static float lw=1f;
 	// ====================================================
 	
 	FrameDecoder decoder=null;
@@ -353,7 +354,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		int beamwidth = 0;
 
 		// S4 DECODER
-		FlatLinguist linguist = new FlatLinguist(mods, logMath, gram, HMMModels.getUnitManager(), 1f, silprob, silprob, 1f, 1f, false, false, false, false, 1f, 1f, mods);
+		FlatLinguist linguist = new FlatLinguist(mods, logMath, gram, HMMModels.getUnitManager(), 1f, silprob, silprob, 1f, lw, false, false, false, false, 1f, 1f, mods);
 		Pruner pruner = new SimplePruner();
 		ThreadedAcousticScorer scorer = new ThreadedAcousticScorer(mfcc, null, 1, false, 1, Thread.NORM_PRIORITY);
 		PartitionActiveListFactory activeList = new PartitionActiveListFactory(beamwidth, 1E-300, logMath);
@@ -585,7 +586,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 				mot2rule.put(w, r);
 			}
 			f.close();
-//			LiveSpeechReco.vocGarb=mot2rule;
+			LiveSpeechReco.vocGarb=mot2rule;
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -596,6 +597,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		LiveSpeechReco.adaptedmods="../emospeech/adaptCorpus/xtofall";
 		LiveSpeechReco.wavfile="../emospeech/wavout7.wav";
 		LiveSpeechReco.vocfile=new File("../emospeech/res/voc0.txt");
+		LiveSpeechReco.lw=10f;
 		
 		loadPhoneDico("../emospeech/res/vocrules0.txt");
 		loadGarbDico("../emospeech/res/lex2rules.txt");
