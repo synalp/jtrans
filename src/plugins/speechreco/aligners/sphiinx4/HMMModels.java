@@ -55,6 +55,8 @@ public abstract class HMMModels {
 				} else {
 					modurl = (new File(path)).toURI().toURL();
 				}
+//				loader = new Sphinx3Loader(modurl, modelDef, datapath, logm, um, true, false, 39, 0f, 1e-7f, 0.0001f, false);
+				// ancienne version de S4
 				loader = new Sphinx3Loader(modurl,modelDef,datapath,logm,um,0f,1e-7f,0.0001f,false);
 				
 /*				

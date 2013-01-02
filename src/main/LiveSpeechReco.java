@@ -466,6 +466,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 				String rule = analyzRule(w,wi+finVocMain,vocGarb);
 				if (rule.length()>0) {
 					//nouvelle version de la grammaire qui separe chaque mot
+//					gramstring.append(rule+" | ");
 					gramstring.append("/1/ "+rule+" | ");
 				}
 			}
@@ -584,7 +585,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 				mot2rule.put(w, r);
 			}
 			f.close();
-			LiveSpeechReco.vocGarb=mot2rule;
+//			LiveSpeechReco.vocGarb=mot2rule;
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
