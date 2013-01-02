@@ -223,6 +223,7 @@ public class PhoneticForcedGrammar extends JSGFGrammar {
 		}
 	}
 	
+	// wi est utilise only pour ajouter l'indice du mot dans le prefixe du mot
 	protected String annoteFirstPhones(String rule, int wi) {
 		String[] rules = rule.split(" ");
 		chercheFirstPhones(rules,0,wi);

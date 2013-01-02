@@ -64,15 +64,30 @@ import plugins.speechreco.grammaire.Grammatiseur;
 
 public class LiveSpeechReco extends PhoneticForcedGrammar {
 	public static LiveSpeechReco gram=null;
+	
+	// =========== definition du vocabulaire =============
+	// vocabulaire dans un fichier: contient seulement la liste de mots
 	public static File vocfile = null;
+	// alternative: map directement chaque mot du vocab vers une JSGF rule; évite d'utiliser le grammatiseur !
+	// Attention: dans ce cas, le vocabulaire est extrait de tinyvocab et vocfile n'est plus utilise !
+	public static HashMap<String, String> tinyvocab = null;
+	// autres mots qui completent avec une proba plus faible.
+	public static HashMap<String, String> vocGarb = null;
+	// ====================================================
+	
+	// si wavfile n'est pas nul, alors la reco sera faite a partir de ce fichier, a la place du micro
 	public static String wavfile = "wavout.wav";
+	// si wavout n'est pas nul, alors le son capture depuis le micro sera enregistre dans ce fichier
+	public static String wavout = null;
+	
+	// audio mixer a utiliser pour capturer le micro
 	public static int mixidx = 4;
 
-	public static String adaptedmods = "../emospeech/adaptCorpus/modxtof0";
-	public static String wavout = null;
-	// map directement chaque mot du vocab vers une JSGF rule; évite d'utiliser le grammatiseur !
-	public static HashMap<String, String> tinyvocab = null;
+	// Si adaptedmods n'est pas nul, alors les modeles acoustiques adaptes par JTrans.MAPAdapt seront utilises
+	public static String adaptedmods = null;
 
+	// ====================================================
+	
 	FrameDecoder decoder=null;
 	SimpleBreadthFirstSearchManager searchManager=null;
 	AcousticModel mods=null;
@@ -411,6 +426,12 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 				}, "please wait: initializing grammars...");
 				waiting.setVisible(true);
 			}
+		} else {
+			// quand on utilise tinyvoc, on reset le voc aux mots definis dans tinyvoc
+			voc.clear();
+			voc.addAll(tinyvocab.keySet());
+			// non, il ne faut pas ajouter vocGarb au main voc !
+//			if (vocGarb!=null) voc.addAll(vocGarb.keySet());
 		}
 
 		//		// on commence toujours par un silence !
@@ -419,53 +440,28 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		//		initialNode = n;
 
 		StringBuilder gramstring = new StringBuilder();
-		gramstring.append("[ sil ] ( sil | ");
+		gramstring.append("[ sil ] ( sil | <mots> )* [ sil ];\n");
+		gramstring.append("<mots> = ");
 
 		for (int wi=0;wi<voc.size();wi++) {
 			String w = voc.get(wi);
-			w=w.replace('_', ' ');
-			String rule;
-			if (tinyvocab!=null) {
-				rule = tinyvocab.get(w);
-				if (rule==null) System.out.println("ERROR TINYVOCAB NO RULE 4 "+w);
-			} else 
-				rule = grammatiseur.getGrammar(w);
-			// on recupere toujours un silence optionnel au debut et a la fin, que je supprime:
-			//			rule = rule.substring(4,rule.length()-8).trim();
-			System.out.println("rule for word "+w+" "+rule);
-			if (rule==null || rule.length()==0) {
-				System.out.println("ERROR PHONETISEUR mot "+w);
-				continue;
+			String rule = analyzRule(w,wi,tinyvocab);
+			if (rule.length()>0) {
+				//nouvelle version de la grammaire qui separe chaque mot
+				gramstring.append("/100/ "+rule+" | ");
+				
+				// test: j'ajoute une proba au chemin
+//				gramstring.append("/10/ ");
+//				gramstring.append(rule+" | ");
 			}
-			if (rule.charAt(0)=='#') {
-				// le phonetiseur n'a pas marche: on suppose que c'est un bruit
-				rule = "xx "+rule;
-			}
-			// conversion des phonemes
-			StringBuilder rule2 = new StringBuilder();
-			StringTokenizer st = new StringTokenizer(rule);
-			while (st.hasMoreTokens()) {
-				String s = st.nextToken();
-				if (s.startsWith("#")) {
-				} else if (s.equals("(") || s.equals("[") || s.equals(")") || s.equals("]") || s.equals("|")) {
-					rule2.append(s+" ");
-				} else {
-					s=super.convertPhone(s);
-					rule2.append(s+" ");
-				}
-			}
-			// regle pour _un_ mot:
-			rule = rule2.toString().trim();
-			// j'aoute un prefixe pour reperer les 1ers phones de chaque mot
-			rule = super.annoteFirstPhones(rule,wi);
-			if (rule.length()>0)
-				gramstring.append(rule+" | ");
 		}
+		// TODO: ajouter les autres mots "garbage" avec une proba de 1 et des wi > voc.size()
+		
+		// supprime le dernier | car il n'y a plus d'options suivantes
 		int i=gramstring.lastIndexOf("|");
 		gramstring.deleteCharAt(i);
 		gramstring.trimToSize();
-		// TODO: add a filler + weights
-		gramstring.append(" )* [ sil ]");
+		gramstring.append(";");
 
 		System.out.println("gramstring "+gramstring);
 
@@ -474,7 +470,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 				PrintWriter f = new PrintWriter(new FileWriter("detgrammar.gram"));
 				f.println("#JSGF V1.0;");
 				f.println("grammar detgrammar;");
-				f.println("public <a> = "+gramstring.toString()+";");
+				f.println("public <a> = "+gramstring.toString());
 				f.close();
 
 				loadJSGF("detgrammar");
@@ -498,7 +494,47 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		}
 	}
 
-	static void loadPhoneDico(String nom) {
+	private String analyzRule(String w, int wi, HashMap<String, String> localvoc) {
+		w=w.replace('_', ' ');
+		String rule;
+		if (localvoc!=null) {
+			rule = localvoc.get(w);
+			if (rule==null) System.out.println("ERROR VOCAB NO RULE FOR "+w);
+		} else 
+			rule = grammatiseur.getGrammar(w);
+		// on recupere toujours un silence optionnel au debut et a la fin, que je supprime:
+		//			rule = rule.substring(4,rule.length()-8).trim();
+		System.out.println("rule for word "+w+" "+rule);
+		if (rule==null || rule.length()==0) {
+			System.out.println("ERROR PHONETISEUR mot "+w);
+			return null;
+		}
+		if (rule.charAt(0)=='#') {
+			// le phonetiseur n'a pas marche: on suppose que c'est un bruit
+			rule = "xx "+rule;
+		}
+		// conversion des phonemes
+		StringBuilder rule2 = new StringBuilder();
+		StringTokenizer st = new StringTokenizer(rule);
+		while (st.hasMoreTokens()) {
+			String s = st.nextToken();
+			if (s.startsWith("#")) {
+			} else if (s.equals("(") || s.equals("[") || s.equals(")") || s.equals("]") || s.equals("|")) {
+				rule2.append(s+" ");
+			} else {
+				s=super.convertPhone(s);
+				rule2.append(s+" ");
+			}
+		}
+		// regle pour _un_ mot:
+		rule = rule2.toString().trim();
+		// j'aoute un prefixe pour reperer les 1ers phones de chaque mot
+		rule = super.annoteFirstPhones(rule,wi);
+		return rule;
+	}
+	
+	// cette fonction charge tinyvoc a partir d'un fichier
+	public static void loadPhoneDico(String nom) {
 		HashMap<String, String> mot2rule = new HashMap<String, String>();
 		try {
 			BufferedReader f = new BufferedReader(new FileReader(nom));
@@ -518,14 +554,36 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 			e.printStackTrace();
 		}
 	}
+	// cette fonction charge vocGarb a partir d'un fichier
+	public static void loadGarbDico(String nom) {
+		HashMap<String, String> mot2rule = new HashMap<String, String>();
+		try {
+			BufferedReader f = new BufferedReader(new FileReader(nom));
+			for (;;) {
+				String s=f.readLine();
+				if (s==null) break;
+				s=s.trim();
+				int i=s.indexOf(',');
+				if (i<0) continue;
+				String w = s.substring(0,i);
+				String r = s.substring(i+1);
+				mot2rule.put(w, r);
+			}
+			f.close();
+			LiveSpeechReco.vocGarb=mot2rule;
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
 	public static void main(String args[]) {
 //		mixidx=4;
 		LiveSpeechReco.adaptedmods="../emospeech/adaptCorpus/xtofall";
-		LiveSpeechReco.wavfile="../emospeech/wavout0.wav";
+		LiveSpeechReco.wavfile="../emospeech/wavout7.wav";
 		LiveSpeechReco.vocfile=new File("../emospeech/res/voc0.txt");
 		
 		loadPhoneDico("../emospeech/res/vocrules0.txt");
+		loadGarbDico("../emospeech/res/lex2rules.txt");
 		
 		int i=0;
 		for (;i<args.length;i++) {
