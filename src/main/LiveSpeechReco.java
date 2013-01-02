@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.StringTokenizer;
 
@@ -73,6 +74,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 	public static HashMap<String, String> tinyvocab = null;
 	// autres mots qui completent avec une proba plus faible.
 	public static HashMap<String, String> vocGarb = null;
+	private int finVocMain=0;
 	// ====================================================
 	
 	// si wavfile n'est pas nul, alors la reco sera faite a partir de ce fichier, a la place du micro
@@ -426,12 +428,14 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 				}, "please wait: initializing grammars...");
 				waiting.setVisible(true);
 			}
+			finVocMain = voc.size();
 		} else {
 			// quand on utilise tinyvoc, on reset le voc aux mots definis dans tinyvoc
 			voc.clear();
 			voc.addAll(tinyvocab.keySet());
 			// non, il ne faut pas ajouter vocGarb au main voc !
-//			if (vocGarb!=null) voc.addAll(vocGarb.keySet());
+			finVocMain = voc.size();
+			if (vocGarb!=null) voc.addAll(vocGarb.keySet());
 		}
 
 		//		// on commence toujours par un silence !
@@ -443,19 +447,29 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		gramstring.append("[ sil ] ( sil | <mots> )* [ sil ];\n");
 		gramstring.append("<mots> = ");
 
-		for (int wi=0;wi<voc.size();wi++) {
+		for (int wi=0;wi<finVocMain;wi++) {
 			String w = voc.get(wi);
 			String rule = analyzRule(w,wi,tinyvocab);
 			if (rule.length()>0) {
 				//nouvelle version de la grammaire qui separe chaque mot
-				gramstring.append("/100/ "+rule+" | ");
-				
-				// test: j'ajoute une proba au chemin
-//				gramstring.append("/10/ ");
-//				gramstring.append(rule+" | ");
+				gramstring.append("/1000/ "+rule+" | ");
 			}
 		}
-		// TODO: ajouter les autres mots "garbage" avec une proba de 1 et des wi > voc.size()
+		if (vocGarb!=null) {
+			ArrayList<String> gw = new ArrayList<String>();
+			gw.addAll(vocGarb.keySet());
+			// il faut un ordre fixe, donc j'utilise l'ordre alphabetique; sinon, il faudrait remplacer le HashMap par une liste, mais pour le moment ca ira
+			Collections.sort(gw);
+			// ajouter les autres mots "garbage" avec une proba de 1 et des wi > voc.size()
+			for (int wi=0;wi<gw.size();wi++) {
+				String w = gw.get(wi);
+				String rule = analyzRule(w,wi+finVocMain,vocGarb);
+				if (rule.length()>0) {
+					//nouvelle version de la grammaire qui separe chaque mot
+					gramstring.append("/1/ "+rule+" | ");
+				}
+			}
+		}
 		
 		// supprime le dernier | car il n'y a plus d'options suivantes
 		int i=gramstring.lastIndexOf("|");
