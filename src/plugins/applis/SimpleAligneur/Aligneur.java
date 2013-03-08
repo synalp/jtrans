@@ -1099,24 +1099,28 @@ public class Aligneur extends JPanel implements PrintLogger {
 			if (segmentDuMot<0) {
 				// il n'est pas aligné, que fais-je ???
 				int mot0 = getLastMotAligned();
-				int mot0seg = edit.getListeElement().getMot(mot0).posInAlign;
-				int mot0endfr = alignement.getSegmentEndFrame(mot0seg);
-				System.out.println("last word aligned "+mot0+" "+mot0seg+" "+mot0endfr+" "+edit.getListeElement().getMot(mot0).getWordString());
-				float frdelta = ((float)(SpectroControl.second2frame(lastSecClickedOnSpectro)-mot0endfr))/(float)(mot+1-mot0);
-				System.out.println("nwords = "+(mot+1-mot0)+" "+frdelta);
-				int prevseg = mot0seg;
-				float curdebfr = alignement.getSegmentEndFrame(prevseg);
-				float curendfr = alignement.getSegmentEndFrame(prevseg)+frdelta;
-				for (int i=mot0+1;i<=mot;i++) {
-					System.out.println("addsegment "+i+" "+edit.getListeElement().getMot(i).getWordString()+" "+curdebfr+"-"+curendfr);
-					int newseg = alignement.addRecognizedSegment(edit.getListeElement().getMot(i).getWordString(), (int)curdebfr, (int)curendfr, null, null);
-					edit.getListeElement().getMot(i).posInAlign=newseg;
-					prevseg=newseg;
-					curdebfr = curendfr;
-					curendfr+=frdelta;
+				if (mot0<0) {
+					// pas d'align precedent TODO
+				} else {
+					int mot0seg = edit.getListeElement().getMot(mot0).posInAlign;
+					int mot0endfr = alignement.getSegmentEndFrame(mot0seg);
+					System.out.println("last word aligned "+mot0+" "+mot0seg+" "+mot0endfr+" "+edit.getListeElement().getMot(mot0).getWordString());
+					float frdelta = ((float)(SpectroControl.second2frame(lastSecClickedOnSpectro)-mot0endfr))/(float)(mot+1-mot0);
+					System.out.println("nwords = "+(mot+1-mot0)+" "+frdelta);
+					int prevseg = mot0seg;
+					float curdebfr = alignement.getSegmentEndFrame(prevseg);
+					float curendfr = alignement.getSegmentEndFrame(prevseg)+frdelta;
+					for (int i=mot0+1;i<=mot;i++) {
+						System.out.println("addsegment "+i+" "+edit.getListeElement().getMot(i).getWordString()+" "+curdebfr+"-"+curendfr);
+						int newseg = alignement.addRecognizedSegment(edit.getListeElement().getMot(i).getWordString(), (int)curdebfr, (int)curendfr, null, null);
+						edit.getListeElement().getMot(i).posInAlign=newseg;
+						prevseg=newseg;
+						curdebfr = curendfr;
+						curendfr+=frdelta;
+					}
+					// bugfix last end frame
+					alignement.setSegmentEndFrame(prevseg, SpectroControl.second2frame(lastSecClickedOnSpectro));
 				}
-				// bugfix last end frame
-				alignement.setSegmentEndFrame(prevseg, SpectroControl.second2frame(lastSecClickedOnSpectro));
 			} else {
 				System.out.println("set end of segment "+segmentDuMot+" "+alignement.getSegmentLabel(segmentDuMot));
 				System.out.println("set at frame "+SpectroControl.second2frame(lastSecClickedOnSpectro));
