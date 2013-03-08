@@ -46,8 +46,9 @@ public class AudioStreamSource extends StreamDataSource {
 			nread=0;
 			for (;;) {
 				int n=audiodata.read(buf,nread,buf.length-nread);
-				if (n<0) break;
+				if (n<=0) break;
 				nread+=n;
+				System.out.println("debug wavbuffill "+nread+" "+buf.length);
 				if (nread>=buf.length) break;
 			}
 		} catch (IOException e) {

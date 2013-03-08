@@ -1091,7 +1091,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 			}
 		} else if (kmgr.isControlOn) {
 			lastSecClickedOnSpectro = playergui.getRelativeStartingSec()+(float)playergui.getTimePlayed()/1000f;
-			System.out.println("Ctrl-clic without playing: set at last selected frame "+lastSecClickedOnSpectro);
+			System.out.println("Ctrl-clic without playing: set at last selected frame "+lastSecClickedOnSpectro+" "+playergui.getRelativeStartingSec()+" "+playergui.getTimePlayed());
 			System.out.println("set word "+mot+" "+edit.getListeElement().getMot(mot).getWordString());
 			float sec0 = getCurPosInSec();
 			setCurPosInSec(lastSecClickedOnSpectro);

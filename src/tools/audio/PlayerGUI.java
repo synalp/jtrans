@@ -92,7 +92,16 @@ public class PlayerGUI extends JPanel {
 	 * 
 	 * @return the length of the play in ms, between its start and its end
 	 */
-	public long getTimePlayed() {return timeIntervalPlayed;}
+	public long getTimePlayed() {
+		if (timeIntervalPlayed<=0) {
+			// TODO
+			long curtime = System.currentTimeMillis()-timePlayStartedMs;
+			return curtime;
+		} else {
+			// le play a ete arrete
+			return timeIntervalPlayed;
+		}
+	}
 	
 	public long getTimePlayStarted() {return timePlayStartedMs;}
 	
