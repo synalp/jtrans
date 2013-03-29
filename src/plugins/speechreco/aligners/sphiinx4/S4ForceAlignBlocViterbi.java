@@ -489,6 +489,10 @@ public class S4ForceAlignBlocViterbi extends Thread {
 					if (align!=null&&containsRealWords) break;
 					System.out.println("WARNING: increase bloc size "+oneBlocLen);
 					oneBlocLen+=300;
+					if (oneBlocLen>5000) {
+						System.out.println("WARNING: can't fint align - stop it");
+						break;
+					}
 				}
 				removePrefixes(order.alignPhones);
 				synchronized (order) {

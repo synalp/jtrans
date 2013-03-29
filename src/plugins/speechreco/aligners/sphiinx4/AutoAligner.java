@@ -200,7 +200,7 @@ public class AutoAligner extends Thread {
 						else
 							editor.colorizeAlignedWords(premierMotNotAligned-1,lastMotAligned-1);
 					}
-					CMStats.newAlignedSegment(premierMotNotAligned, lastMotAligned-1, order.alignWords);
+					CMStats.newAlignedSegment(premierMotNotAligned, lastMotAligned-1, order.alignWords, nmots);
 				} else {
 					System.out.println("================================= ALIGN FOUND null");
 					// TODO
