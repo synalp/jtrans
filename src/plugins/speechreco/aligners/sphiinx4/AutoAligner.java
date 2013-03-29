@@ -10,6 +10,8 @@ package plugins.speechreco.aligners.sphiinx4;
 import java.awt.Color;
 import java.util.Arrays;
 import java.util.List;
+
+import plugins.speechreco.confidenceMeasure.CMStats;
 import plugins.text.TexteEditor;
 import plugins.text.elements.Element_Mot;
 
@@ -88,6 +90,9 @@ public class AutoAligner extends Thread {
 		return unik;
 	}
 
+	/**
+	 * cette fonction est appelée lorsqu'on utilise le menu "File - Quit"
+	 */
 	public void terminateAll() {
 		if (s4blocViterbi==null) return;
 		try {
@@ -195,6 +200,7 @@ public class AutoAligner extends Thread {
 						else
 							editor.colorizeAlignedWords(premierMotNotAligned-1,lastMotAligned-1);
 					}
+					CMStats.newAlignedSegment(premierMotNotAligned, lastMotAligned-1, order.alignWords);
 				} else {
 					System.out.println("================================= ALIGN FOUND null");
 					// TODO
