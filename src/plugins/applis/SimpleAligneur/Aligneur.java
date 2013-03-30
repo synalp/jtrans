@@ -989,6 +989,41 @@ public class Aligneur extends JPanel implements PrintLogger {
 		showPhones=!showPhones;
 	}
 
+	// aligne tous les mots 
+	void doForceAnchor(float sec, int mot) {
+		int mot0 = getLastMotAligned();
+		System.out.println("forceanchor "+mot0);
+		if (mot0<0) {
+			// TODO: sec indique l'offset qu'il faut considerer dans le fichier WAV
+			// donc, il faut ajouter un silence au debut du fichier jusqu'a cet offset
+			Element elt = edit.getListeElement().get(0);
+			System.out.println("setting offset of WAV file... "+elt.getClass().getName()+" "+((Element_Mot)elt).getWordString());
+			if (elt instanceof Element_Mot) {
+				Element_Mot firstmot = (Element_Mot)elt;
+				System.out.println("fmot "+firstmot.getWordString());
+			}
+			return;
+		}
+		int mot0seg = edit.getListeElement().getMot(mot0).posInAlign;
+		int mot0endfr = alignement.getSegmentEndFrame(mot0seg);
+		System.out.println("last word aligned "+mot0+" "+mot0seg+" "+mot0endfr+" "+edit.getListeElement().getMot(mot0).getWordString());
+		float frdelta = ((float)(SpectroControl.second2frame(sec)-mot0endfr))/(float)(mot+1-mot0);
+		System.out.println("nwords = "+(mot+1-mot0)+" "+frdelta);
+		int prevseg = mot0seg;
+		float curdebfr = alignement.getSegmentEndFrame(prevseg);
+		float curendfr = alignement.getSegmentEndFrame(prevseg)+frdelta;
+		for (int i=mot0+1;i<=mot;i++) {
+			System.out.println("addsegment "+i+" "+edit.getListeElement().getMot(i).getWordString()+" "+curdebfr+"-"+curendfr);
+			int newseg = alignement.addRecognizedSegment(edit.getListeElement().getMot(i).getWordString(), (int)curdebfr, (int)curendfr, null, null);
+			edit.getListeElement().getMot(i).posInAlign=newseg;
+			prevseg=newseg;
+			curdebfr = curendfr;
+			curendfr+=frdelta;
+		}
+		// bugfix last end frame
+		alignement.setSegmentEndFrame(prevseg, SpectroControl.second2frame(sec));
+	}
+	
 	void clicAtCaretPosition(int caretPos, int button) {
 		int mot = edit.getListeElement().getIndiceMotAtTextPosi(caretPos);
 		if (mot<0) {
@@ -1098,29 +1133,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 			int segmentDuMot = edit.getListeElement().getMot(mot).posInAlign;
 			if (segmentDuMot<0) {
 				// il n'est pas aligné, que fais-je ???
-				int mot0 = getLastMotAligned();
-				if (mot0<0) {
-					// pas d'align precedent TODO
-				} else {
-					int mot0seg = edit.getListeElement().getMot(mot0).posInAlign;
-					int mot0endfr = alignement.getSegmentEndFrame(mot0seg);
-					System.out.println("last word aligned "+mot0+" "+mot0seg+" "+mot0endfr+" "+edit.getListeElement().getMot(mot0).getWordString());
-					float frdelta = ((float)(SpectroControl.second2frame(lastSecClickedOnSpectro)-mot0endfr))/(float)(mot+1-mot0);
-					System.out.println("nwords = "+(mot+1-mot0)+" "+frdelta);
-					int prevseg = mot0seg;
-					float curdebfr = alignement.getSegmentEndFrame(prevseg);
-					float curendfr = alignement.getSegmentEndFrame(prevseg)+frdelta;
-					for (int i=mot0+1;i<=mot;i++) {
-						System.out.println("addsegment "+i+" "+edit.getListeElement().getMot(i).getWordString()+" "+curdebfr+"-"+curendfr);
-						int newseg = alignement.addRecognizedSegment(edit.getListeElement().getMot(i).getWordString(), (int)curdebfr, (int)curendfr, null, null);
-						edit.getListeElement().getMot(i).posInAlign=newseg;
-						prevseg=newseg;
-						curdebfr = curendfr;
-						curendfr+=frdelta;
-					}
-					// bugfix last end frame
-					alignement.setSegmentEndFrame(prevseg, SpectroControl.second2frame(lastSecClickedOnSpectro));
-				}
+				System.out.println("ctrl-clic when playing: create anchor");
+				doForceAnchor(lastSecClickedOnSpectro,mot);
 			} else {
 				System.out.println("set end of segment "+segmentDuMot+" "+alignement.getSegmentLabel(segmentDuMot));
 				System.out.println("set at frame "+SpectroControl.second2frame(lastSecClickedOnSpectro));
@@ -1172,6 +1186,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 				repaint();
 			} else {
 				System.err.println("warning: pas de segment associé au mot "+emot.getWordString());
+				MouseManager.clicMotMenu(this,mot);
+				replay=false;
 			}
 			Thread.yield();
 			try {

@@ -52,6 +52,8 @@ import javax.swing.JTextPane;
  */
 public class Element_Mot implements Element {
 	public static final long serialVersionUID = 1;
+	
+	public boolean isBruit=false;
 
 	//----------- Private Fields --------------
 	// c'est l'un ou l'autre:

@@ -324,6 +324,7 @@ public class TexteEditor extends JTextPane {
 						break;
 					case 2: // BRUIT
 						Element_Mot elmot = new Element_Mot(this);
+						elmot.isBruit=true;
 						elmot.posDebInTextPanel=deb;
 						elmot.posFinInTextPanel=fin;
 						listeElts.add(elmot);
