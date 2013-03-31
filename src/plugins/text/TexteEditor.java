@@ -43,6 +43,8 @@ import javax.swing.text.StyleContext;
 import javax.swing.text.View;
 import javax.swing.text.LayeredHighlighter.LayerPainter;
 
+import facade.JTransAPI;
+
 import plugins.speechreco.aligners.sphiinx4.AutoAligner;
 import plugins.text.ListeElement;
 import plugins.text.elements.Element_Mot;
@@ -203,6 +205,7 @@ public class TexteEditor extends JTextPane {
 	 * et on aura donc des objets-mots  dupliques ! (cf. fin de la fonction)
 	 */
 	public void reparse(){
+		JTransAPI.elts=listeElement;
 		int caretPosition = getCaretPosition();
 		nbMot = 0;
 		

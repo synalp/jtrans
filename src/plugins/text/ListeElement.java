@@ -54,6 +54,8 @@ import java.util.Arrays;
 import java.util.List;
 import javax.swing.JTextPane;
 
+import facade.JTransAPI;
+
 import plugins.text.elements.Element;
 import plugins.text.elements.Element_Mot;
 import plugins.text.elements.Element_Commentaire;
@@ -145,6 +147,7 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 	}
 	
 	public void load(BufferedReader f, JTextPane textarea) {
+		JTransAPI.elts=this;
 		try {
 			String s = f.readLine();
 			assert s.startsWith("listeelements ");
@@ -156,7 +159,10 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 					String[] ss = s.split(" ");
 					int pdeb = Integer.parseInt(ss[1]);
 					int pfin = Integer.parseInt(ss[2]);
+					boolean bruit = false;
+					if (ss.length>3) bruit=Boolean.parseBoolean(ss[3]);
 					Element_Mot mot = new Element_Mot(textarea);
+					mot.isBruit=bruit;
 					mot.posDebInTextPanel=pdeb;
 					mot.posFinInTextPanel=pfin;
 					add(mot);
@@ -251,7 +257,7 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 			Element e = get(i);
 			if (e instanceof Element_Mot) {
 				Element_Mot mot = (Element_Mot) e;
-				f.println("mot "+mot.posDebInTextPanel+" "+mot.posFinInTextPanel);
+				f.println("mot "+mot.posDebInTextPanel+" "+mot.posFinInTextPanel+" "+mot.isBruit);
 			} else if (e instanceof Element_Locuteur) {
 				Element_Locuteur loc = (Element_Locuteur) e;
 				f.println("loc "+loc.getLocuteurID()+" "+loc.getNumeroParole());

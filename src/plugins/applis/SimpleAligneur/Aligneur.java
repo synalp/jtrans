@@ -42,6 +42,8 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 
+import facade.JTransAPI;
+
 import main.JTrans;
 import main.SpeechReco;
 
@@ -547,11 +549,11 @@ public class Aligneur extends JPanel implements PrintLogger {
 	 * 
 	 * @param outfile
 	 * @param wavname
-	 * @param alignement
+	 * @param alWords
 	 * @param texte
 	 * @param regexp
 	 */
-	public static void saveProject(ListeElement elts, String outfile, String txtfile, String wavname, AlignementEtat alignement, AlignementEtat alPhones, String regexp) {
+	public static void saveProject(ListeElement elts, String outfile, String txtfile, String wavname, AlignementEtat alWords, AlignementEtat alPhones, String regexp) {
 		try {
 			PrintWriter f = FileUtils.writeFileUTF(outfile);
 			f.println("wavname= " + wavname);
@@ -560,7 +562,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 			else f.println("parse with new");
 			if (elts!=null) elts.save(f);
 			else f.println("listeelements 0");
-			alignement.save(f);
+			alWords.save(f);
 			alPhones.save(f);
 			f.println(regexp);
 			f.close();
@@ -604,6 +606,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 			edit.getListeElement().load(f, edit);
 			// ici, on charge les segments, mais ils ne sont toujours pas mis en correspondance avec les elements !
 			alignement = AlignementEtat.load(f);
+			JTransAPI.alignementWords=alignement;
 			alignementPhones = AlignementEtat.load(f);
 			System.out.println("align loaded "+alignement.getNbSegments());
 			// ici, on affiche les segments sur le spectro
@@ -697,6 +700,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 	}
 
 	public Aligneur() {
+		JTransAPI.alignementWords=alignement;
 		withgui=true;
 		initPanel();
 		createJFrame();
@@ -996,14 +1000,18 @@ public class Aligneur extends JPanel implements PrintLogger {
 		if (mot0<0) {
 			// TODO: sec indique l'offset qu'il faut considerer dans le fichier WAV
 			// donc, il faut ajouter un silence au debut du fichier jusqu'a cet offset
-			Element elt = edit.getListeElement().get(0);
-			System.out.println("setting offset of WAV file... "+elt.getClass().getName()+" "+((Element_Mot)elt).getWordString());
-			if (elt instanceof Element_Mot) {
-				Element_Mot firstmot = (Element_Mot)elt;
-				System.out.println("fmot "+firstmot.getWordString());
+			if (JTransAPI.isBruit(0)) {
+				// TODO: verifier que le mot suivant est bien un mot, et non un bruit ou silence
+				JTransAPI.setAlignWord(0, 0f, sec);
+			} else {
+				// ajouter un silence devant
+				// TODO: est-ce que le prochain alignement auto, lorsqu'il verra qu'il n'y a aucune mot
+				// de deja aligne, prendra en compte le premier silence qui est aligne ?
+				JTransAPI.setSilenceSegment(0f, sec);
 			}
 			return;
 		}
+		// TODO: refaire la suite avec JTransAPI
 		int mot0seg = edit.getListeElement().getMot(mot0).posInAlign;
 		int mot0endfr = alignement.getSegmentEndFrame(mot0seg);
 		System.out.println("last word aligned "+mot0+" "+mot0seg+" "+mot0endfr+" "+edit.getListeElement().getMot(mot0).getWordString());

@@ -21,6 +21,7 @@ import edu.cmu.sphinx.linguist.SearchState;
 import edu.cmu.sphinx.linguist.acoustic.HMMState;
 import edu.cmu.sphinx.linguist.flat.HMMStateState;
 import edu.cmu.sphinx.linguist.lextree.LexTreeLinguist.LexTreeHMMState;
+import facade.JTransAPI;
 import plugins.speechreco.aligners.Segment2AudioAlignement;
 import plugins.text.elements.Element_Mot;
 import plugins.utils.ProgressDialog;
@@ -33,6 +34,10 @@ import plugins.utils.ProgressDialog;
  */
 public class AlignementEtat {
 
+	public AlignementEtat() {
+		System.out.println("============================= CREATION ALIGN");
+	}
+	
 	// ne contient QUE des segments alignés
 	private Segment2AudioAlignement segs = new Segment2AudioAlignement();
 	private int firstFrame = 0;
@@ -84,6 +89,8 @@ public class AlignementEtat {
 	}
 
 	public void save(PrintWriter f) {
+		if (this==JTransAPI.alignementWords) System.out.println("saving align same");
+		else System.out.println("saving diff");
 		f.println(firstFrame);
 		segs.save(f);
 	}
@@ -224,6 +231,9 @@ public class AlignementEtat {
 	public int getSegmentDebFrame(int segidx) {
 		if (segidx<0||segidx>=segs.getNbSegments()) return -1;
 		return segs.getSegmentDebFrame(segidx)+firstFrame;
+	}
+	public void delSegment(int segidx) {
+		segs.delSeg(segidx);
 	}
 
 	public void adjustOffset(int tr) {

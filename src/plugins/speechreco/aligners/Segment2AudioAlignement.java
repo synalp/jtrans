@@ -152,6 +152,12 @@ public class Segment2AudioAlignement {
 		}
 	}
 	
+	public void delSeg(int i) {
+		segments.remove(i);
+		segmentsDeb.remove(i);
+		segmentsFin.remove(i);
+	}
+	
 	private List<String> segments = new ArrayList<String>();
 	private List<Integer> segmentsDeb = new ArrayList<Integer>();
 	private List<Integer> segmentsFin = new ArrayList<Integer>();
