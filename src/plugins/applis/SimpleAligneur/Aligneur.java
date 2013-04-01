@@ -733,6 +733,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 		setSize(800,700);
 		// partie texte
 		edit = new TexteEditor();
+		JTransAPI.edit=edit;
 		scrollPane = new JScrollPane(edit,
 				JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 				JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
@@ -1012,24 +1013,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 			return;
 		}
 		// TODO: refaire la suite avec JTransAPI
-		int mot0seg = edit.getListeElement().getMot(mot0).posInAlign;
-		int mot0endfr = alignement.getSegmentEndFrame(mot0seg);
-		System.out.println("last word aligned "+mot0+" "+mot0seg+" "+mot0endfr+" "+edit.getListeElement().getMot(mot0).getWordString());
-		float frdelta = ((float)(SpectroControl.second2frame(sec)-mot0endfr))/(float)(mot+1-mot0);
-		System.out.println("nwords = "+(mot+1-mot0)+" "+frdelta);
-		int prevseg = mot0seg;
-		float curdebfr = alignement.getSegmentEndFrame(prevseg);
-		float curendfr = alignement.getSegmentEndFrame(prevseg)+frdelta;
-		for (int i=mot0+1;i<=mot;i++) {
-			System.out.println("addsegment "+i+" "+edit.getListeElement().getMot(i).getWordString()+" "+curdebfr+"-"+curendfr);
-			int newseg = alignement.addRecognizedSegment(edit.getListeElement().getMot(i).getWordString(), (int)curdebfr, (int)curendfr, null, null);
-			edit.getListeElement().getMot(i).posInAlign=newseg;
-			prevseg=newseg;
-			curdebfr = curendfr;
-			curendfr+=frdelta;
-		}
-		// bugfix last end frame
-		alignement.setSegmentEndFrame(prevseg, SpectroControl.second2frame(sec));
+		JTransAPI.setAlignWord(mot, -1, sec);
 	}
 	
 	void clicAtCaretPosition(int caretPos, int button) {

@@ -224,6 +224,8 @@ public class AlignementEtat {
 		if (segidx<0||segidx>=segs.getNbSegments()) return;
 		segs.setSegmentFinFrame(segidx, frame);
 	}
+	public void setSegmentSourceManu(int segidx) {segs.setSegmentSourceManu(segidx);}
+	public void setSegmentSourceEqui(int segidx) {segs.setSegmentSourceEqui(segidx);}
 	public int getSegmentEndFrame(int segidx) {
 		if (segidx<0||segidx>=segs.getNbSegments()) return -1;
 		return segs.getSegmentFinFrame(segidx)+firstFrame;

@@ -76,6 +76,7 @@ public class Segment2AudioAlignement {
 					segments.add(i, label);
 					segmentsDeb.add(i,deb);
 					segmentsFin.add(i,fin);
+					segmentsSource.add(i,(byte)0);
 					if (firstSegmentModified<0) firstSegmentModified=i;
 					return i;
 				} else {
@@ -90,6 +91,7 @@ public class Segment2AudioAlignement {
 		segments.add(label);
 		segmentsDeb.add(deb);
 		segmentsFin.add(fin);
+		segmentsSource.add((byte)0);
 		return segments.size()-1;
 	}
 	public String segToString(int segidx) {
@@ -109,6 +111,7 @@ public class Segment2AudioAlignement {
 				segments = segments.subList(0, i);
 				segmentsDeb = segmentsDeb.subList(0, i);
 				segmentsFin = segmentsFin.subList(0, i);
+				segmentsSource =  segmentsSource.subList(0, i);
 				break;
 			}
 		}
@@ -121,6 +124,7 @@ public class Segment2AudioAlignement {
 				segments = segments.subList(i,z);
 				segmentsDeb = segmentsDeb.subList(i,z);
 				segmentsFin = segmentsFin.subList(i,z);
+				segmentsSource =  segmentsSource.subList(i, z);
 				break;
 			}
 		}
@@ -138,6 +142,9 @@ public class Segment2AudioAlignement {
 				String[] ss = s.split(" ");
 				segmentsDeb.add(Integer.parseInt(ss[0]));
 				segmentsFin.add(Integer.parseInt(ss[1]));
+				byte src=0;
+				if (ss.length>2) src=Byte.parseByte(ss[1]);
+				segmentsSource.add(src);
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -148,7 +155,7 @@ public class Segment2AudioAlignement {
 		f.println(segments.size());
 		for (int i=0;i<segments.size();i++) {
 			f.println(segments.get(i));
-			f.println(segmentsDeb.get(i)+" "+segmentsFin.get(i));
+			f.println(segmentsDeb.get(i)+" "+segmentsFin.get(i)+" "+segmentsSource.get(i));
 		}
 	}
 	
@@ -156,9 +163,16 @@ public class Segment2AudioAlignement {
 		segments.remove(i);
 		segmentsDeb.remove(i);
 		segmentsFin.remove(i);
+		segmentsSource.remove(i);
 	}
+	
+	public void setSegmentSourceManu(int segidx) {segmentsSource.set(segidx, (byte)1);}
+	public void setSegmentSourceEqui(int segidx) {segmentsSource.set(segidx, (byte)2);}
 	
 	private List<String> segments = new ArrayList<String>();
 	private List<Integer> segmentsDeb = new ArrayList<Integer>();
 	private List<Integer> segmentsFin = new ArrayList<Integer>();
+	// contient la source de l'alignement = Auto/Manu/Equi
+	// 0=Auto 1=Manu 2=Equi
+	private List<Byte> segmentsSource = new ArrayList<Byte>();
 }

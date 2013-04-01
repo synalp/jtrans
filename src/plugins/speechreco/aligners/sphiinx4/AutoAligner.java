@@ -155,6 +155,11 @@ public class AutoAligner extends Thread {
 					if (motidx>=0) {
 						tr=alignementMots.getSegmentEndFrame(mots2segidx[motidx]);
 						System.out.println("lookfrom frame "+tr+" "+mots2segidx[motidx]+" "+mots[motidx]);
+					} else {
+						// aucun mot n'est aligne, mais on peut avoir un segment SIL au tout debut
+						if (alignementMots.getNbSegments()>0) {
+							tr = alignementMots.getSegmentEndFrame(alignementMots.getNbSegments()-1);
+						}
 					}
 				}
 				System.out.println("looking for align from word "+premierMotNotAligned+" "+mots[premierMotNotAligned]+" "+tr);

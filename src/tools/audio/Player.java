@@ -74,7 +74,7 @@ public class Player {
 		}
 		public void run(){
 			//Remplissage du buffer
-			byte[] frame = new byte[2];
+			byte[] frame = new byte[200];
 
 			//on continue à la remplir
 			try {
