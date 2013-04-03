@@ -1007,6 +1007,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 				// ajouter un silence devant
 				// TODO: est-ce que le prochain alignement auto, lorsqu'il verra qu'il n'y a aucune mot
 				// de deja aligne, prendra en compte le premier silence qui est aligne ?
+				
 				JTransAPI.setSilenceSegment(0f, sec);
 			}
 			return;
