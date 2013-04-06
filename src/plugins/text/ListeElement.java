@@ -147,7 +147,7 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 	}
 	
 	public void load(BufferedReader f, JTextPane textarea) {
-		JTransAPI.elts=this;
+		JTransAPI.setElts(this);
 		try {
 			String s = f.readLine();
 			assert s.startsWith("listeelements ");

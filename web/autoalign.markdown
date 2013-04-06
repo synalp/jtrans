@@ -1,3 +1,8 @@
+---
+categories: Doc générale
+date: 2013/04/06 15:25:00
+title: Comment faire un alignement automatique
+---
 Tout commence par le bouton "AutoAlign", qui se trouve dans une instance
 de la classe "ControlBox", instanciée dans la classe principale Aligneur.java
 

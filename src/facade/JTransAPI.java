@@ -38,7 +38,6 @@ public class JTransAPI {
 				curendfr = alignementWords.getSegmentEndFrame(prevseg)+frdelta;
 				for (int i=mot0+1;i<mot;i++) {
 					if (frdeb>=0&&curendfr>frdeb) curendfr=frdeb;
-System.out.println("LLLLLLLLLLLLLLLLLLLLLLLL "+curdebfr+" "+curendfr);
 					int nnewseg = alignementWords.addRecognizedSegment(mots.get(i).getWordString(), (int)curdebfr, (int)curendfr, null, null);
 					mots.get(i).posInAlign=nnewseg;
 					prevseg=nnewseg;
@@ -54,12 +53,12 @@ System.out.println("LLLLLLLLLLLLLLLLLLLLLLLL "+curdebfr+" "+curendfr);
 		
 		// aligne le dernier mot
 		if (frdeb<0) frdeb=(int)curendfr;
-System.out.println("KKKKKKKKKKKKKKK "+frdeb+" "+frfin+" "+mot0);
 		int newseg = alignementWords.addRecognizedSegment(elts.getMot(mot).getWordString(), frdeb, frfin, null, null);
 		alignementWords.setSegmentSourceManu(newseg);
 		elts.getMot(mot).posInAlign=newseg;
-
-
+		
+		// TODO: phonetiser et aligner auto les phonemes !!
+		
 		if (edit!=null) edit.repaint();
 	}
 	public static void setAlignWord(int mot, float secdeb, float secfin) {
@@ -67,16 +66,14 @@ System.out.println("KKKKKKKKKKKKKKK "+frdeb+" "+frfin+" "+mot0);
 		int curendfr = SpectroControl.second2frame(secfin);
 		setAlignWord(mot, curdebfr, curendfr);
 	}
-	public static void setSilenceSegment(float secdeb, float secfin) {
-		int curdebfr = SpectroControl.second2frame(secdeb);
-		int curendfr = SpectroControl.second2frame(secfin);
+	private static void setSilenceSegment(int curdebfr, int curendfr, AlignementEtat al) {
 		// detruit tous les segments existants deja a cet endroit
 		ArrayList<Integer> todel = new ArrayList<Integer>();
 		clearAlignFromFrame(curdebfr);
-		for (int i=0;i<alignementWords.getNbSegments();i++) {
-			int d=alignementWords.getSegmentDebFrame(i);
+		for (int i=0;i<al.getNbSegments();i++) {
+			int d=al.getSegmentDebFrame(i);
 			if (d>=curendfr) break;
-			int f=alignementWords.getSegmentEndFrame(i);
+			int f=al.getSegmentEndFrame(i);
 			if (f<curdebfr) continue;
 			// il y a intersection
 			if (d>=curdebfr&&f<=curendfr) {
@@ -86,9 +83,15 @@ System.out.println("KKKKKKKKKKKKKKK "+frdeb+" "+frfin+" "+mot0);
 				// TODO: faire les autres cas d'intersection
 			}
 		}
-		for (int i=todel.size()-1;i>=0;i--) alignementWords.delSegment(todel.get(i));
-		int newseg=alignementWords.addRecognizedSegment("SIL", curdebfr, curendfr, null, null);
-		alignementWords.setSegmentSourceManu(newseg);
+		for (int i=todel.size()-1;i>=0;i--) al.delSegment(todel.get(i));
+		int newseg=al.addRecognizedSegment("SIL", curdebfr, curendfr, null, null);
+		al.setSegmentSourceManu(newseg);
+	}
+	public static void setSilenceSegment(float secdeb, float secfin) {
+		int curdebfr = SpectroControl.second2frame(secdeb);
+		int curendfr = SpectroControl.second2frame(secfin);
+		setSilenceSegment(curdebfr, curendfr, alignementWords);
+		setSilenceSegment(curdebfr, curendfr, alignementPhones);
 	}
 	public static void clearAlignFromFrame(int fr) {
 		// TODO
@@ -96,9 +99,15 @@ System.out.println("KKKKKKKKKKKKKKK "+frdeb+" "+frfin+" "+mot0);
 	
 	// =========================
 	// variables below are duplicate (point to) of variables in the mess of the rest of the code...
-	public static ListeElement elts =  null;
+	private static ListeElement elts =  null;
 	public static AlignementEtat alignementWords = null;
+	public static AlignementEtat alignementPhones = null;
 	public static TexteEditor edit = null;
+	
+	public static void setElts(ListeElement e) {
+		elts=e;
+		mots = elts.getMots();
+	}
 	
 	// =========================
 	private static List<Element_Mot> mots = null;

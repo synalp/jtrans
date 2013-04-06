@@ -608,6 +608,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 			alignement = AlignementEtat.load(f);
 			JTransAPI.alignementWords=alignement;
 			alignementPhones = AlignementEtat.load(f);
+			JTransAPI.alignementPhones=alignementPhones;
 			System.out.println("align loaded "+alignement.getNbSegments());
 			// ici, on affiche les segments sur le spectro
 			sigpan.setAlign(alignement);
@@ -701,6 +702,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 	public Aligneur() {
 		JTransAPI.alignementWords=alignement;
+		JTransAPI.alignementPhones=alignementPhones;
 		withgui=true;
 		initPanel();
 		createJFrame();
@@ -960,6 +962,9 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 	public void clearAlign() {
 		clearAlignFrom(0);
+		// pour supprimer les SIL en debut de fichier
+		alignement.clear();
+		alignementPhones.clear();
 	}
 	void clearAlignFrom(int mot) {
 		if (autoAligner!=null) autoAligner.stopAutoAlign();
@@ -1006,7 +1011,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 				JTransAPI.setAlignWord(0, 0f, sec);
 			} else {
 				// ajouter un silence devant
-				// TODO: est-ce que le prochain alignement auto, lorsqu'il verra qu'il n'y a aucune mot
+				// TODO: est-ce que le prochain alignement auto, lorsqu'il verra qu'il n'y a aucun mot
 				// de deja aligne, prendra en compte le premier silence qui est aligne ?
 				JTransAPI.setSilenceSegment(0f, sec);
 			}

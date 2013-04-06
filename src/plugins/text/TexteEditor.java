@@ -205,7 +205,7 @@ public class TexteEditor extends JTextPane {
 	 * et on aura donc des objets-mots  dupliques ! (cf. fin de la fonction)
 	 */
 	public void reparse(){
-		JTransAPI.elts=listeElement;
+		JTransAPI.setElts(listeElement);
 		int caretPosition = getCaretPosition();
 		nbMot = 0;
 		

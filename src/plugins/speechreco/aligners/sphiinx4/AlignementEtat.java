@@ -89,8 +89,6 @@ public class AlignementEtat {
 	}
 
 	public void save(PrintWriter f) {
-		if (this==JTransAPI.alignementWords) System.out.println("saving align same");
-		else System.out.println("saving diff");
 		f.println(firstFrame);
 		segs.save(f);
 	}
