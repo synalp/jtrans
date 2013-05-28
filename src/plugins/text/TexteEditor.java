@@ -123,6 +123,11 @@ public class TexteEditor extends JTextPane {
 	public final PriorityBlockingQueue<ColoriageEvent> colorOrders = new PriorityBlockingQueue<ColoriageEvent>();
 	private final JTextPane textpane = this;
 	
+	private static TexteEditor singleton = null;
+	public static TexteEditor getTextEditor() {
+		return singleton;
+	}
+	
 	//----------------------------------------------------------------
 	//------------------ Constructor --------------------------------
 	//---------------------------------------------------------------
@@ -134,6 +139,7 @@ public class TexteEditor extends JTextPane {
 		textChanged = false;
 		colorieur = new Coloriage();
 		colorieur.start();
+		singleton=this;
 	}//Constructor
 
 	public void fontSize(int size) {
@@ -205,7 +211,9 @@ public class TexteEditor extends JTextPane {
 	 * et on aura donc des objets-mots  dupliques ! (cf. fin de la fonction)
 	 */
 	public void reparse(){
-		JTransAPI.setElts(listeElement);
+		reparse(true);
+	}
+	public void reparse(boolean modifytxt) {
 		int caretPosition = getCaretPosition();
 		nbMot = 0;
 		
@@ -221,19 +229,22 @@ public class TexteEditor extends JTextPane {
 		
 		String texte = getText();
 		
-		// pour remplacer les apostrophes "Unicodes" venant d'un copier/coller depuis Word
-		texte = texte.replace(winApos, '\'');
+		if (modifytxt) {
+			// pour remplacer les apostrophes "Unicodes" venant d'un copier/coller depuis Word
+			texte = texte.replace(winApos, '\'');
+
+			// pour supprimer les carriage return specifiques a Windows...
+			texte = texte.replace('\r', ' ');
+
+			// pour supprimer les espaces ins�cables ainsi que la ponctuation non d�sir�e
+			texte = texte.replaceAll("[\\xA0\"=]"," ");
+
+			//On ne rajoute un espace derri�re la virgule que si un caractere de mot le suit imm�diatement
+			texte = texte.replaceAll("\'(\\S)", "\' $1"); 
+
+			setText(texte);
+		}
 		
-		// pour supprimer les carriage return specifiques a Windows...
-		texte = texte.replace('\r', ' ');
-		
-		// pour supprimer les espaces ins�cables ainsi que la ponctuation non d�sir�e
-		texte = texte.replaceAll("[\\xA0\"=]"," ");
-		
-		//On ne rajoute un espace derri�re la virgule que si un caractere de mot le suit imm�diatement
-		texte = texte.replaceAll("\'(\\S)", "\' $1"); 
-		
-		setText(texte);
 		selectAll();
 		// on annule tout precedent formatage
 		AttributeSet att = styler.getEmptySet();
@@ -365,6 +376,7 @@ public class TexteEditor extends JTextPane {
 		
 		// on ecrase l'ancienne liste d'elements avec la nouvelle
 		listeElement = listeElts;
+		JTransAPI.setElts(listeElement);
 		
 		setIgnoreRepaint(false);
 		setVisible(true);

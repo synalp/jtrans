@@ -1,8 +1,14 @@
 package facade;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
+import plugins.applis.SimpleAligneur.Aligneur;
 import plugins.signalViewers.spectroPanel.SpectroControl;
 import plugins.speechreco.aligners.sphiinx4.AlignementEtat;
 import plugins.text.ListeElement;
@@ -21,6 +27,14 @@ public class JTransAPI {
 		Element_Mot m = elts.getMot(mot);
 		return m.isBruit;
 	}
+	/**
+	 * 
+	 * This function automatically align all the words until mot
+	 * 
+	 * @param mot
+	 * @param frdeb can be <0, in which case use the last aligned word.
+	 * @param frfin
+	 */
 	public static void setAlignWord(int mot, int frdeb, int frfin) {
 		// TODO: detruit les segments recouvrants
 
@@ -48,8 +62,13 @@ public class JTransAPI {
 			} else {
 				// TODO: tous les mots avants ne sont pas alignes
 			}
-		} else
+		} else {
+			if (mot0>=0) {
+				int mot0seg = mots.get(mot0).posInAlign;
+				curendfr = alignementWords.getSegmentEndFrame(mot0seg);
+			} else curendfr=0;
 			if (edit!=null) edit.colorizeAlignedWords(mot, mot);
+		}
 		
 		// aligne le dernier mot
 		if (frdeb<0) frdeb=(int)curendfr;
@@ -103,6 +122,7 @@ public class JTransAPI {
 	public static AlignementEtat alignementWords = null;
 	public static AlignementEtat alignementPhones = null;
 	public static TexteEditor edit = null;
+	public static Aligneur aligneur = null;
 	
 	public static void setElts(ListeElement e) {
 		elts=e;
@@ -122,9 +142,104 @@ public class JTransAPI {
 	private static int getLastMotPrecAligned(int midx) {
 		initmots();
 		for (int i=midx;i>=0;i--) {
-System.out.println("ZZZZZZZZZ "+i+" "+mots.get(i).posInAlign);
+//System.out.println("ZZZZZZZZZ "+i+" "+mots.get(i).posInAlign);
 			if (mots.get(i).posInAlign>=0) return i;
 		}
 		return -1;
+	}
+	
+	private static ArrayList<Integer> charpos = null;
+	private static ArrayList<Float> secpos = null;
+	private static StringBuffer alltext = new StringBuffer();
+	private static int debturn=0,endturn=-1;
+	private static boolean handleLine(String s, boolean speech) {
+		int i=s.indexOf("<Turn ");
+		if (i>=0) {
+			// TODO: deb/end turn
+			if (speech) handleLine(s.substring(0, i), true);
+			int j=s.indexOf(">", i);
+			return handleLine(s.substring(j+1),true);
+		}
+		i=s.indexOf("<Sync time=");
+		if (i>=0) {
+			int j=s.indexOf('"',i)+1;
+			int k=s.indexOf('"',j);
+			float sec = Float.parseFloat(s.substring(j,k));
+			if (secpos.size()==0||secpos.get(secpos.size()-1)<sec) {
+				secpos.add(sec);
+				charpos.add(alltext.length());
+			}
+			j=s.indexOf("/>", k);
+			return handleLine(s.substring(j+2),true);
+		}
+		i=s.indexOf("</Turn>");
+		if (i>=0) {
+			if (speech) {
+				handleLine(s.substring(0, i), true);
+				alltext.append('\n');
+			}
+			return handleLine(s.substring(i+7), false);
+		}
+		if (speech) {
+			s=s.trim();
+			if (s.length()>0) {
+				if (alltext.length()>0) alltext.append(' ');
+				alltext.append(s);
+				alltext.append(' ');
+			}
+		}
+		return speech;
+	}
+	public static void loadTRS(String trsfile) {
+		// extract all the texts into the text window + keeps time pointers to (the preceding) char
+		// Then parse
+		// Then, the user MUST PARSE MANUALLY with the menus; this will run setElts(), which will check whether
+		// time pointers have been defined
+		charpos = new ArrayList<Integer>();
+		secpos = new ArrayList<Float>();
+		alltext = new StringBuffer();
+		try {
+			BufferedReader f = new BufferedReader(new InputStreamReader(new FileInputStream(trsfile),Charset.forName("ISO-8859-1")));
+			boolean speech=false;
+			for (;;) {
+				String s=f.readLine();
+				if (s==null) break;
+				speech=handleLine(s,speech);
+			}
+			f.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		// charpos et secpos ont ete bien lus (CHECKED)
+		
+		TexteEditor zonetexte = TexteEditor.getTextEditor();
+		String ss = alltext.toString();
+		zonetexte.setText(ss);
+		zonetexte.setEditable(false);
+		// TODO est-ce que reparse modifie le texte ??????
+		zonetexte.reparse(false);
+		System.out.println("apres parsing: nelts="+elts.size()+" ancres="+secpos.size());
+		// Now that the listElts is known, maps the time pointers to the elts in the liste
+		for (int i=0;i<secpos.size();i++) {
+			int caretPos = charpos.get(i);
+			while (caretPos>0&&(alltext.charAt(caretPos)==' '||alltext.charAt(caretPos)=='\n')) caretPos--;
+			int mot = edit.getListeElement().getIndiceMotAtTextPosi(caretPos);
+			while (caretPos>0&&mot<0) {
+				// TODO: pourquoi "euh" n'est pas un mot ?
+				mot = edit.getListeElement().getIndiceMotAtTextPosi(--caretPos);
+			}
+			setAlignWord(mot, -1, secpos.get(i));
+		}
+		
+		aligneur.caretSensible = true;
+
+		// force la construction de l'index
+		alignementWords.clearIndex();
+		alignementWords.getSegmentAtFrame(0);
+		System.out.println("align index built");
+		alignementPhones.clearIndex();
+		alignementPhones.getSegmentAtFrame(0);
+		edit.getListeElement().refreshIndex();
 	}
 }

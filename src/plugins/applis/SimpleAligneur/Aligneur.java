@@ -596,7 +596,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 			InputStream in = FileUtils.findFileOrUrl(sourceTxtfile);
 			loadtxt(in);
-			in = FileUtils.findFileOrUrl(wavname);
+//			in = FileUtils.findFileOrUrl(wavname);
 			updateViewers();
 
 			System.out.println("loadproject source "+sourceTxtfile);
@@ -703,6 +703,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 	public Aligneur() {
 		JTransAPI.alignementWords=alignement;
 		JTransAPI.alignementPhones=alignementPhones;
+		JTransAPI.aligneur=this;
 		withgui=true;
 		initPanel();
 		createJFrame();
@@ -1534,7 +1535,24 @@ public class Aligneur extends JPanel implements PrintLogger {
 	public static void main(String args[]) {
 		Aligneur m = new Aligneur();
 		m.inputControls();
-		if (args.length>0) m.loadProject(args[0]);
+		if (args.length>0) {
+			if (args[0].endsWith(".jtr")) m.loadProject(args[0]);
+			else if (args[0].endsWith(".wav")) {
+				m.wavname=args[0]; // on a juste besoin de faire ca pour que ca se charge ???
+				if (args.length>1) {
+					if (args[1].endsWith(".trs")) {
+						JTransAPI.loadTRS(args[1]);
+					} else {
+						m.sourceTxtfile=args[1];
+						InputStream in = FileUtils.findFileOrUrl(m.sourceTxtfile);
+						m.loadtxt(in);
+						m.updateViewers();
+					}
+				}
+			} else {
+				System.out.println("args error: dont know what to do with "+args[0]);
+			}
+		}
 		m.repaint();
 	}
 }
