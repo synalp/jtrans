@@ -172,6 +172,12 @@ public class JTransAPI {
 			j=s.indexOf("/>", k);
 			return handleLine(s.substring(j+2),true);
 		}
+		i=s.indexOf("<Event");
+		if (i>=0) {
+			if (speech) handleLine(s.substring(0, i), true);
+			int j=s.indexOf(">", i);
+			return handleLine(s.substring(j+1),speech);
+		}
 		i=s.indexOf("</Turn>");
 		if (i>=0) {
 			if (speech) {
@@ -217,7 +223,7 @@ public class JTransAPI {
 		String ss = alltext.toString();
 		zonetexte.setText(ss);
 		zonetexte.setEditable(false);
-		// TODO est-ce que reparse modifie le texte ??????
+		// il ne faut pas que reparse modifie le texte !!!
 		zonetexte.reparse(false);
 		System.out.println("apres parsing: nelts="+elts.size()+" ancres="+secpos.size());
 		// Now that the listElts is known, maps the time pointers to the elts in the liste
