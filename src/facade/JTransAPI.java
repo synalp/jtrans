@@ -6,11 +6,16 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import plugins.applis.SimpleAligneur.Aligneur;
 import plugins.signalViewers.spectroPanel.SpectroControl;
 import plugins.speechreco.aligners.sphiinx4.AlignementEtat;
+import plugins.speechreco.aligners.sphiinx4.S4AlignOrder;
+import plugins.speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
+import plugins.speechreco.confidenceMeasure.CMStats;
 import plugins.text.ListeElement;
 import plugins.text.TexteEditor;
 import plugins.text.elements.Element_Mot;
@@ -27,6 +32,60 @@ public class JTransAPI {
 		Element_Mot m = elts.getMot(mot);
 		return m.isBruit;
 	}
+	
+	public static void batchAlign(int motdeb, int trdeb, int motfin, int trfin) {
+		System.out.println("batch align "+motdeb+"-"+motfin+" "+trdeb+":"+trfin);
+		if (s4blocViterbi==null) {
+			String[] amots = new String[mots.size()];
+			for (int i=0;i<mots.size();i++) {
+				amots[i] = mots.get(i).getWordString();
+			}
+			s4blocViterbi = S4ForceAlignBlocViterbi.getS4Aligner(aligneur.wavname);
+			s4blocViterbi.setMots(amots);
+		}
+		
+		S4AlignOrder order = new S4AlignOrder(motdeb, trdeb, motfin, trfin);
+		try {
+			s4blocViterbi.input2process.put(order);
+			synchronized(order) {
+				order.wait();
+			}
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		if (order.alignWords!=null) {
+			order.alignWords.adjustOffset(trdeb);
+			order.alignPhones.adjustOffset(trdeb);
+			order.alignStates.adjustOffset(trdeb);
+			System.out.println("================================= ALIGN FOUND");
+			System.out.println(order.alignWords.toString());
+			String[] wordsThatShouldBeAligned = new String[1+motfin-motdeb];
+			for (int i=motdeb, j=0;i<=motfin;i++,j++) {
+				wordsThatShouldBeAligned[j]=mots.get(i).getWordString();
+			}
+			System.out.println("wordsthatshouldbealigned "+Arrays.toString(wordsThatShouldBeAligned));
+			int[] locmots2segidx = order.alignWords.matchWithText(wordsThatShouldBeAligned);
+			int nsegsbefore = aligneur.alignement.merge(order.alignWords);
+			int[] mots2segidx = Arrays.copyOf(locmots2segidx,locmots2segidx.length);
+			for (int i=0;i<locmots2segidx.length;i++) {
+				if (locmots2segidx[i]>=0)
+					mots2segidx[i]+=nsegsbefore;
+			}
+			System.out.println("mots2segs "+locmots2segidx.length+" "+Arrays.toString(mots2segidx));
+			if (edit!=null) {
+				for (int i=motdeb, j=0;i<=motfin;i++,j++) {
+					System.out.println("posinalign "+i+" "+mots2segidx[j]);
+					mots.get(i).posInAlign=mots2segidx[j];
+				}
+				edit.getListeElement().refreshIndex();
+			}
+			alignementPhones.merge(order.alignPhones);
+		} else {
+			System.out.println("================================= ALIGN FOUND null");
+			// TODO
+		}
+	}
+	
 	/**
 	 * 
 	 * This function automatically align all the words until mot
@@ -36,45 +95,64 @@ public class JTransAPI {
 	 * @param frfin
 	 */
 	public static void setAlignWord(int mot, int frdeb, int frfin) {
+		final boolean equialign=false;
 		// TODO: detruit les segments recouvrants
 
-		// equi-aligne les mots precedents
 		float curendfr=-1;
 		int mot0 = getLastMotPrecAligned(mot);
+		System.out.println("setalign "+mot+" "+frdeb+" "+frfin+" "+mot0);
 		if (mot0<mot-1) {
 			// il y a des mots non alignes avant
 			if (mot0>=0) {
 				int mot0seg = mots.get(mot0).posInAlign;
 				int mot0endfr = alignementWords.getSegmentEndFrame(mot0seg);
-				float frdelta = ((float)(frfin-mot0endfr))/(float)(mot+1-mot0);
-				int prevseg = mot0seg;
-				float curdebfr = alignementWords.getSegmentEndFrame(prevseg);
-				curendfr = alignementWords.getSegmentEndFrame(prevseg)+frdelta;
-				for (int i=mot0+1;i<mot;i++) {
-					if (frdeb>=0&&curendfr>frdeb) curendfr=frdeb;
-					int nnewseg = alignementWords.addRecognizedSegment(mots.get(i).getWordString(), (int)curdebfr, (int)curendfr, null, null);
-					mots.get(i).posInAlign=nnewseg;
-					prevseg=nnewseg;
-					curdebfr = curendfr;
-					curendfr+=frdelta;
+				if (equialign) {
+					// equi-aligne les mots precedents
+					float frdelta = ((float)(frfin-mot0endfr))/(float)(mot+1-mot0);
+					int prevseg = mot0seg;
+					float curdebfr = alignementWords.getSegmentEndFrame(prevseg);
+					curendfr = alignementWords.getSegmentEndFrame(prevseg)+frdelta;
+					for (int i=mot0+1;i<mot;i++) {
+						if (frdeb>=0&&curendfr>frdeb) curendfr=frdeb;
+						int nnewseg = alignementWords.addRecognizedSegment(mots.get(i).getWordString(), (int)curdebfr, (int)curendfr, null, null);
+						mots.get(i).posInAlign=nnewseg;
+						prevseg=nnewseg;
+						curdebfr = curendfr;
+						curendfr+=frdelta;
+					}
+				} else {
+					// auto-align les mots precedents
+					if (frdeb>=0) mot0endfr=frdeb;
+					batchAlign(mot0+1, mot0endfr, mot, frfin);
 				}
 				if (edit!=null) edit.colorizeAlignedWords(mot0, mot);
 			} else {
-				// TODO: tous les mots avants ne sont pas alignes
+				// aucun mot avant aligne
+				batchAlign(0, 0, mot, frfin);
+				if (edit!=null) edit.colorizeAlignedWords(0, mot);
 			}
 		} else {
+			// il y a un seul mot a aligner
 			if (mot0>=0) {
 				int mot0seg = mots.get(mot0).posInAlign;
 				curendfr = alignementWords.getSegmentEndFrame(mot0seg);
 			} else curendfr=0;
+			if (!equialign) {
+				if (frdeb<0) frdeb=(int)curendfr;
+				int newseg = alignementWords.addRecognizedSegment(elts.getMot(mot).getWordString(), frdeb, frfin, null, null);
+				alignementWords.setSegmentSourceManu(newseg);
+				elts.getMot(mot).posInAlign=newseg;
+			}
 			if (edit!=null) edit.colorizeAlignedWords(mot, mot);
 		}
 		
-		// aligne le dernier mot
-		if (frdeb<0) frdeb=(int)curendfr;
-		int newseg = alignementWords.addRecognizedSegment(elts.getMot(mot).getWordString(), frdeb, frfin, null, null);
-		alignementWords.setSegmentSourceManu(newseg);
-		elts.getMot(mot).posInAlign=newseg;
+		if (equialign) {
+			// aligne le dernier mot
+			if (frdeb<0) frdeb=(int)curendfr;
+			int newseg = alignementWords.addRecognizedSegment(elts.getMot(mot).getWordString(), frdeb, frfin, null, null);
+			alignementWords.setSegmentSourceManu(newseg);
+			elts.getMot(mot).posInAlign=newseg;
+		}
 		
 		// TODO: phonetiser et aligner auto les phonemes !!
 		
@@ -123,6 +201,7 @@ public class JTransAPI {
 	public static AlignementEtat alignementPhones = null;
 	public static TexteEditor edit = null;
 	public static Aligneur aligneur = null;
+	public static S4ForceAlignBlocViterbi s4blocViterbi = null;
 	
 	public static void setElts(ListeElement e) {
 		elts=e;
@@ -165,9 +244,11 @@ public class JTransAPI {
 			int j=s.indexOf('"',i)+1;
 			int k=s.indexOf('"',j);
 			float sec = Float.parseFloat(s.substring(j,k));
-			if (secpos.size()==0||secpos.get(secpos.size()-1)<sec) {
-				secpos.add(sec);
-				charpos.add(alltext.length());
+			if (sec>0) {
+				if (secpos.size()==0||secpos.get(secpos.size()-1)<sec) {
+					secpos.add(sec);
+					charpos.add(alltext.length());
+				}
 			}
 			j=s.indexOf("/>", k);
 			return handleLine(s.substring(j+2),true);
@@ -235,7 +316,9 @@ public class JTransAPI {
 				// TODO: pourquoi "euh" n'est pas un mot ?
 				mot = edit.getListeElement().getIndiceMotAtTextPosi(--caretPos);
 			}
-			setAlignWord(mot, -1, secpos.get(i));
+			if (i==0) setAlignWord(mot, -1, secpos.get(i));
+			else setAlignWord(mot, secpos.get(i-1), secpos.get(i));
+//			if (i>=3) break;
 		}
 		
 		aligneur.caretSensible = true;
