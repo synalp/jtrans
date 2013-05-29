@@ -164,7 +164,7 @@ public class JTrans {
 
 	public static void main(String args[]) throws Exception {
 		boolean isiso=false;
-		String txtfich = null, wavfich=null;
+		String txtfich = null, trsfich = null, wavfich=null;
 		for (int i=0;i<args.length;i++) {
 			if (args[i].equals("-txt")) {
 				txtfich = args[++i];
@@ -172,9 +172,12 @@ public class JTrans {
 			if (args[i].equals("-wav")) {
 				wavfich = args[++i];
 			}
+			if (args[i].equals("-trs")) {
+				trsfich = args[++i];
+			}
 			if (args[i].equals("-iso")) isiso=true;
 		}
-		if (txtfich==null||wavfich==null) {
+		if ((txtfich==null&&trsfich==null)||wavfich==null) {
 			System.out.println("usage: java main.JTrans [-iso] -txt <textfileutf8> -wav <wavfile>");
 			return;
 		}

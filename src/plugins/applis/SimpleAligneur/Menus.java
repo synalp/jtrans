@@ -26,6 +26,7 @@ import javax.swing.JScrollPane;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import edu.cmu.sphinx.result.Result;
+import facade.JTransAPI;
 
 import main.JTrans;
 import main.LiveSpeechReco;
@@ -79,8 +80,21 @@ public class Menus {
 		file.add(save);
 		JMenuItem loadp = new JMenuItem("load project");
 		file.add(loadp);
-		//		JMenuItem loadtrs = new JMenuItem("load ref TRS");
-		//		file.add(loadtrs);
+		JMenuItem loadtrs = new JMenuItem("load ref TRS");
+		file.add(loadtrs);
+		loadtrs.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				JFileChooser filechooser = new JFileChooser(new File("."));
+				filechooser.validate();
+				filechooser.setApproveButtonText("Load TRS");
+				int returnVal = filechooser.showOpenDialog(null);
+				if (returnVal == filechooser.APPROVE_OPTION) {
+					File file = filechooser.getSelectedFile();
+					JTransAPI.loadTRS(file.getAbsolutePath());
+				}
+			}
+		});
 		//		JMenuItem loadstm = new JMenuItem("load STM");
 		//		file.add(loadstm);
 		//		JMenuItem savetrs = new JMenuItem("save TRS");

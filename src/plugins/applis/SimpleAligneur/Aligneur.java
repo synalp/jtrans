@@ -596,7 +596,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 			InputStream in = FileUtils.findFileOrUrl(sourceTxtfile);
 			loadtxt(in);
-			in = FileUtils.findFileOrUrl(wavname);
+//			in = FileUtils.findFileOrUrl(wavname);
 			updateViewers();
 
 			System.out.println("loadproject source "+sourceTxtfile);
@@ -608,6 +608,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 			alignement = AlignementEtat.load(f);
 			JTransAPI.alignementWords=alignement;
 			alignementPhones = AlignementEtat.load(f);
+			JTransAPI.alignementPhones=alignementPhones;
 			System.out.println("align loaded "+alignement.getNbSegments());
 			// ici, on affiche les segments sur le spectro
 			sigpan.setAlign(alignement);
@@ -701,6 +702,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 	public Aligneur() {
 		JTransAPI.alignementWords=alignement;
+		JTransAPI.alignementPhones=alignementPhones;
+		JTransAPI.aligneur=this;
 		withgui=true;
 		initPanel();
 		createJFrame();
@@ -960,6 +963,9 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 	public void clearAlign() {
 		clearAlignFrom(0);
+		// pour supprimer les SIL en debut de fichier
+		alignement.clear();
+		alignementPhones.clear();
 	}
 	void clearAlignFrom(int mot) {
 		if (autoAligner!=null) autoAligner.stopAutoAlign();
@@ -1006,7 +1012,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 				JTransAPI.setAlignWord(0, 0f, sec);
 			} else {
 				// ajouter un silence devant
-				// TODO: est-ce que le prochain alignement auto, lorsqu'il verra qu'il n'y a aucune mot
+				// TODO: est-ce que le prochain alignement auto, lorsqu'il verra qu'il n'y a aucun mot
 				// de deja aligne, prendra en compte le premier silence qui est aligne ?
 				
 				JTransAPI.setSilenceSegment(0f, sec);
@@ -1530,7 +1536,24 @@ public class Aligneur extends JPanel implements PrintLogger {
 	public static void main(String args[]) {
 		Aligneur m = new Aligneur();
 		m.inputControls();
-		if (args.length>0) m.loadProject(args[0]);
+		if (args.length>0) {
+			if (args[0].endsWith(".jtr")) m.loadProject(args[0]);
+			else if (args[0].endsWith(".wav")) {
+				m.wavname=args[0]; // on a juste besoin de faire ca pour que ca se charge ???
+				if (args.length>1) {
+					if (args[1].endsWith(".trs")) {
+						JTransAPI.loadTRS(args[1]);
+					} else {
+						m.sourceTxtfile=args[1];
+						InputStream in = FileUtils.findFileOrUrl(m.sourceTxtfile);
+						m.loadtxt(in);
+						m.updateViewers();
+					}
+				}
+			} else {
+				System.out.println("args error: dont know what to do with "+args[0]);
+			}
+		}
 		m.repaint();
 	}
 }

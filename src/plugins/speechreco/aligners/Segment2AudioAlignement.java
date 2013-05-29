@@ -143,7 +143,7 @@ public class Segment2AudioAlignement {
 				segmentsDeb.add(Integer.parseInt(ss[0]));
 				segmentsFin.add(Integer.parseInt(ss[1]));
 				byte src=0;
-				if (ss.length>2) src=Byte.parseByte(ss[1]);
+				if (ss.length>2) src=Byte.parseByte(ss[2]);
 				segmentsSource.add(src);
 			}
 		} catch (IOException e) {
