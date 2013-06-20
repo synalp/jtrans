@@ -9,7 +9,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.StringTokenizer;
 
 import plugins.speechreco.aligners.sphiinx4.HMMModels;
 import plugins.utils.DET;
@@ -43,10 +45,14 @@ import edu.cmu.sphinx.frontend.transform.DiscreteFourierTransform;
 import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
 import edu.cmu.sphinx.frontend.window.RaisedCosineWindower;
 import edu.cmu.sphinx.linguist.Linguist;
+import edu.cmu.sphinx.linguist.WordSequence;
 import edu.cmu.sphinx.linguist.acoustic.AcousticModel;
+import edu.cmu.sphinx.linguist.acoustic.UnitManager;
 import edu.cmu.sphinx.linguist.dictionary.Dictionary;
 import edu.cmu.sphinx.linguist.dictionary.FastDictionary;
+import edu.cmu.sphinx.linguist.dictionary.Word;
 import edu.cmu.sphinx.linguist.language.ngram.LanguageModel;
+import edu.cmu.sphinx.linguist.language.ngram.large.LargeNGramModel;
 import edu.cmu.sphinx.linguist.language.ngram.large.LargeTrigramModel;
 import edu.cmu.sphinx.linguist.lextree.LexTreeLinguist;
 import edu.cmu.sphinx.result.ConfidenceResult;
@@ -192,6 +198,9 @@ public class S4ASR implements SignalListener {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+		} else if (args[0].equals("-pp")) {
+			computePerplexity();
+			return;
 		} else wavfiles.add(args[0]);
 		S4ASR m = new S4ASR();
 		SpeechRecoAccuracy acc = new SpeechRecoAccuracy();
@@ -204,6 +213,61 @@ public class S4ASR implements SignalListener {
 		acc.printAccuracy();
 	}
 
+	private static void computePerplexity() {
+	   	double wip = 0;
+    	float lw = 1;
+    	int n = 3;
+    	String bp = "/home/xtof/git/jtrans2/res/";
+    	LogMath logMath = new LogMath(1.0001f,true);
+    	try {
+    		Dictionary dico = new FastDictionary("file://"+bp+"/Lex_phon.africain.dic_sans_hh.utf8", "file://"+bp+"/ESTER2_Train_373f_s01.f04_align.filler", null, false, null, false, false, new UnitManager());
+    		dico.allocate();
+    		System.out.println("dico loaded");
+    		// LargeNGramModel lm = new LargeNGramModel("arpa", new URL("file://"+bp+"LM_africain_3g.sorted.arpa.utf8.dmp"), null, 100000, 50000, false, n, logMath, dico, false, lw, wip, 0.5f, false);
+    		LargeNGramModel lm = new LargeNGramModel("arpa", new URL("file://"+bp+"LM_africain_3g.sorted.arpa.utf8.dmp"), null, 100000, false, n, logMath, dico, false, lw, wip, 0.5f, false);
+    		lm.allocate();
+    		//    			LargeTrigramModel lm = new LargeTrigramModel("dmp",new URL("file://"+bp+"LM_africain_3g.sorted.arpa.utf8.dmp"),null,100000,50000,false,-1,logMath,dico,false,lw,wip,0.5f,false);
+    		System.out.println("lm loaded");
+
+    		String txt = "<s> le président de la république est venu en visite officielle à paris </s>";
+
+    		StringTokenizer st = new StringTokenizer(txt);
+    		ArrayList<String> wtxt = new ArrayList<String>();
+    		while (st.hasMoreTokens()) {
+    			wtxt.add(st.nextToken());
+    		}
+    		String[] txts = wtxt.toArray(new String[wtxt.size()]);
+    		System.out.println("txt "+Arrays.toString(txts));
+
+    		String[] ws = new String[n];
+    		float logProbability=0;
+    		int totalcount=0;
+    		for (int k=0;k<txts.length;k++) {
+    			int j;
+    			for (j=0;j<ws.length&&k+j<txts.length;j++) ws[j]=txts[k+j];
+
+    			Word[] wds = new Word[j];
+    			for (int i=0;i<wds.length;i++) wds[i] = new Word(ws[i], null, false);
+    			WordSequence words = new WordSequence(wds);
+    			float logp = lm.getProbability(words);
+    			logp = logMath.logToLn(logp);
+    			logProbability += logp;
+    			totalcount++;
+    			// est-ce que c'est un log en base EXP ou en base 2 ?
+    			// je ne sais pas, mais ARPA est en base 10
+    			// Mais Sphinx4 appelle  logMath.log10ToLog
+    			// donc c'est plutot en base e
+    		}
+    		float templog = logProbability/(float)totalcount;
+    		System.out.println("logprob per word "+templog);
+    		float pp = (float)Math.exp(-templog);
+
+    		System.out.println(pp);
+    	} catch (Exception e) {
+    		e.printStackTrace();
+    	}
+	}
+	
 	private void initS4() {
 		LogMath logMath = HMMModels.getLogMath();
 		AcousticModel mods = HMMModels.getAcousticModels();

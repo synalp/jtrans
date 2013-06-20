@@ -27,6 +27,7 @@ import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
+import javax.swing.JOptionPane;
 
 import plugins.speechreco.aligners.sphiinx4.AlignementEtat;
 import plugins.utils.FileUtils;
@@ -220,7 +221,7 @@ public class SpeechReco {
 			for (;;) {
 				String s=f.readLine();
 				if (s==null) break;
-				s=s.replace("file:///xtof/libs/sphinx4/", "file:///"+wd+"/../jtrans/res/");
+				s=s.replace("file:///xtof/libs/sphinx4/", "file:///"+wd+"/../jtrans2/res/");
 				ff.println(s);
 			}
 			ff.close();
@@ -414,18 +415,37 @@ public class SpeechReco {
 				wordInConflict++;
 			if (wordInConflict<resRecoPublic.size()) {
 				int middlefr = (resRecoPublic.get(wordInConflict).frameDeb+resRecoPublic.get(resRecoPublic.size()-1).frameEnd)/2;
+				
+				// TODO: il faudrait faire un alignement des mots pour chercher une zone "commune" vers le milieu !
+				
 				// on supprime les anciens mots apres middlefr
 				for (int i=resRecoPublic.size()-1;i>=0;i--) {
 					if (resRecoPublic.get(i).frameEnd>middlefr) resRecoPublic.remove(i);
 					else break;
 				}
-				// et on ajoute les nouveaux mots apres middlefr
-				for (int i=0;i<curres.size();i++) {
-					if (curres.get(i).frameEnd>=middlefr) resRecoPublic.add(curres.get(i));
+				{
+					int i=0;
+					// et on ajoute les nouveaux mots apres middlefr
+					for (;i<curres.size();i++) {
+						if (curres.get(i).frameEnd>=middlefr) {
+							RecoWord w = curres.get(i);
+							if (resRecoPublic.size()>0)
+								w.frameDeb=resRecoPublic.get(resRecoPublic.size()-1).frameEnd+1;
+							resRecoPublic.add(w);
+							++i;
+							break;
+						}
+					}
+					for (;i<curres.size();i++) {
+						resRecoPublic.add(curres.get(i));
+					}
 				}
 			} else
 				resRecoPublic.addAll(curres);
 		}
+
+		System.out.println("MERGE "+curres);
+		System.out.println("GOT "+resRecoPublic);
 	}
 
 	void fixExtremes(Sausage s) {
@@ -1920,6 +1940,12 @@ public class SpeechReco {
 		String s1 = s.replace('_', ' ');
 		return s1;
 	}
+	
+	// ne sert a rien pour le moment; sera utile pour post-processer le resultat de la reco afin de pouvoir calculer un WER
+	public static String postProcess(String transcription) {
+		return null;
+	}
+	
 
 	public static void main(String args[]) throws Exception {
 		File f = new File(".");
