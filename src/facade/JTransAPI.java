@@ -268,6 +268,14 @@ public class JTransAPI {
 			return handleLine(s.substring(i+7), false);
 		}
 		if (speech) {
+			// remove comment from speech line
+			i = s.indexOf("<Comment");
+			if (i >= 0) {
+				int j = s.indexOf("/>", i);
+				s = s.substring(0, i) + s.substring(j + "/>".length());
+				System.out.println(s.trim());
+			}
+
 			s=s.trim();
 			if (s.length()>0) {
 				if (alltext.length()>0) alltext.append(' ');
