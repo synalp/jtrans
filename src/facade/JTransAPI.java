@@ -76,79 +76,85 @@ public class JTransAPI {
 			// TODO
 		}
 	}
-	
+
 	/**
+	 * Align all words until `word`.
 	 * 
-	 * This function automatically align all the words until mot
-	 * 
-	 * @param mot
-	 * @param frdeb can be <0, in which case use the last aligned word.
-	 * @param frfin
+	 * @param word number of the last word to align
+	 * @param startFrame can be < 0, in which case use the last aligned word.
+	 * @param endFrame
 	 */
-	public static void setAlignWord(int mot, int frdeb, int frfin) {
-		final boolean equialign=false;
+	public static void setAlignWord(int word, int startFrame, int endFrame) {
+		final boolean linearInterpolation = true; // equialign
 		// TODO: detruit les segments recouvrants
 
-		float curendfr=-1;
-		int mot0 = getLastMotPrecAligned(mot);
-		System.out.println("setalign "+mot+" "+frdeb+" "+frfin+" "+mot0);
-		if (mot0<mot-1) {
-			// il y a des mots non alignes avant
-			if (mot0>=0) {
-				int mot0seg = mots.get(mot0).posInAlign;
-				int mot0endfr = alignementWords.getSegmentEndFrame(mot0seg);
-				if (equialign) {
+		int lastAlignedWord = getLastMotPrecAligned(word);
+
+		System.out.println("setalign "+word+" "+startFrame+" "+endFrame+" "+lastAlignedWord);
+
+		if (lastAlignedWord < word-1) {
+			if (lastAlignedWord >= 0) {
+				// il y a des mots non alignes avant
+				int prevWordSeg = mots.get(lastAlignedWord).posInAlign;
+				int prevWordEndFrame = alignementWords.getSegmentEndFrame(prevWordSeg);
+
+				if (linearInterpolation) {
 					// equi-aligne les mots precedents
-					float frdelta = ((float)(frfin-mot0endfr))/(float)(mot+1-mot0);
-					int prevseg = mot0seg;
-					float curdebfr = alignementWords.getSegmentEndFrame(prevseg);
-					curendfr = alignementWords.getSegmentEndFrame(prevseg)+frdelta;
-					for (int i=mot0+1;i<mot;i++) {
-						if (frdeb>=0&&curendfr>frdeb) curendfr=frdeb;
-						int nnewseg = alignementWords.addRecognizedSegment(mots.get(i).getWordString(), (int)curdebfr, (int)curendfr, null, null);
-						mots.get(i).posInAlign=nnewseg;
-						prevseg=nnewseg;
-						curdebfr = curendfr;
-						curendfr+=frdelta;
+					float frameDelta = ((float)(endFrame-prevWordEndFrame))/((float)(word+1-lastAlignedWord));
+					startFrame = alignementWords.getSegmentEndFrame(prevWordSeg);
+					float currEndFrame = alignementWords.getSegmentEndFrame(prevWordSeg)+frameDelta;
+
+					for (int i = lastAlignedWord+1; i <= word; i++) {
+						if (startFrame >= 0 && currEndFrame < startFrame)
+							currEndFrame = startFrame;
+
+						int newseg = alignementWords.addRecognizedSegment(
+								mots.get(i).getWordString(), startFrame, (int)currEndFrame, null, null);
+
+						alignementWords.setSegmentSourceEqui(newseg);
+						mots.get(i).posInAlign = newseg;
+
+						startFrame = (int)currEndFrame;
+						currEndFrame += frameDelta;
 					}
 				} else {
 					// auto-align les mots precedents
-					if (frdeb>=0) mot0endfr=frdeb;
-					batchAlign(mot0+1, mot0endfr, mot, frfin);
+					if (startFrame >= 0)
+						prevWordEndFrame = startFrame;
+
+					batchAlign(lastAlignedWord+1, prevWordEndFrame, word, endFrame);
 				}
-				if (edit!=null) edit.colorizeAlignedWords(mot0, mot);
+
+				if (edit!=null) edit.colorizeAlignedWords(lastAlignedWord, word);
 			} else {
 				// aucun mot avant aligne
-				batchAlign(0, 0, mot, frfin);
-				if (edit!=null) edit.colorizeAlignedWords(0, mot);
+				batchAlign(0, 0, word, endFrame);
+				if (edit!=null) edit.colorizeAlignedWords(0, word);
 			}
 		} else {
 			// il y a un seul mot a aligner
-			if (mot0>=0) {
-				int mot0seg = mots.get(mot0).posInAlign;
-				curendfr = alignementWords.getSegmentEndFrame(mot0seg);
-			} else curendfr=0;
-			if (!equialign) {
-				if (frdeb<0) frdeb=(int)curendfr;
-				int newseg = alignementWords.addRecognizedSegment(elts.getMot(mot).getWordString(), frdeb, frfin, null, null);
-				alignementWords.setSegmentSourceManu(newseg);
-				elts.getMot(mot).posInAlign=newseg;
+			if (lastAlignedWord >= 0) {
+				int lastAlignedWordSeg = mots.get(lastAlignedWord).posInAlign;
+				endFrame = alignementWords.getSegmentEndFrame(lastAlignedWordSeg);
 			}
-			if (edit!=null) edit.colorizeAlignedWords(mot, mot);
-		}
-		
-		if (equialign) {
-			// aligne le dernier mot
-			if (frdeb<0) frdeb=(int)curendfr;
-			int newseg = alignementWords.addRecognizedSegment(elts.getMot(mot).getWordString(), frdeb, frfin, null, null);
+				else endFrame = 0;
+
+			if (startFrame < 0)
+				startFrame = endFrame;
+
+			int newseg = alignementWords.addRecognizedSegment(
+					elts.getMot(word).getWordString(), startFrame, endFrame, null, null);
 			alignementWords.setSegmentSourceManu(newseg);
-			elts.getMot(mot).posInAlign=newseg;
+			elts.getMot(word).posInAlign=newseg;
+
+			if (edit!=null) edit.colorizeAlignedWords(word, word);
 		}
-		
+
 		// TODO: phonetiser et aligner auto les phonemes !!
 		
 		if (edit!=null) edit.repaint();
 	}
+
 	public static void setAlignWord(int mot, float secdeb, float secfin) {
 		int curdebfr = SpectroControl.second2frame(secdeb);
 		int curendfr = SpectroControl.second2frame(secfin);
