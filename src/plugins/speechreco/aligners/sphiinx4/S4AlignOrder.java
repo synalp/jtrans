@@ -7,7 +7,9 @@ http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html
 
 package plugins.speechreco.aligners.sphiinx4;
 
-public class S4AlignOrder {
+import java.io.Serializable;
+
+public class S4AlignOrder implements Serializable {
 	final public static S4AlignOrder terminationOrder = new S4AlignOrder(-1, -1);
 	
 	boolean isBlocViterbi;

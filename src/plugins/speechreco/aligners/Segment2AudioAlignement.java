@@ -3,6 +3,7 @@ package plugins.speechreco.aligners;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,7 +13,7 @@ import java.util.List;
  * @author xtof
  *
  */
-public class Segment2AudioAlignement {
+public class Segment2AudioAlignement implements Serializable {
 	private int firstSegmentModified=-1;
 	
 	public int getFirstSegmentAltered() {return firstSegmentModified;}

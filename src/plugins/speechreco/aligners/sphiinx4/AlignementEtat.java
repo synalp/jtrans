@@ -10,6 +10,7 @@ package plugins.speechreco.aligners.sphiinx4;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -32,7 +33,7 @@ import plugins.utils.ProgressDialog;
  * @author cerisara
  *
  */
-public class AlignementEtat {
+public class AlignementEtat implements Serializable {
 
 	public AlignementEtat() {
 		System.out.println("============================= CREATION ALIGN");

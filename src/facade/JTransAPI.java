@@ -23,8 +23,27 @@ public class JTransAPI {
 		Element_Mot m = elts.getMot(mot);
 		return m.isBruit;
 	}
+
+	public static final Object cachedObject(String objectName, Cache.Factory factory) {
+		return Cache.cachedObject(aligneur.wavname, edit.getText().toString(), objectName, factory);
+	}
+
+	private static S4AlignOrder createS4AlignOrder(int motdeb, int trdeb, int motfin, int trfin) {
+		S4AlignOrder order = new S4AlignOrder(motdeb, trdeb, motfin, trfin);
+		try {
+			s4blocViterbi.input2process.put(order);
+			synchronized(order) {
+				order.wait();
+				// TODO ce thread ne sort jamais d'ici si sphinx plante
+			}
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		return order;
+	}
 	
-	public static void batchAlign(int motdeb, int trdeb, int motfin, int trfin) {
+	public static void batchAlign(final int motdeb, final int trdeb, final int motfin, final int trfin) {
 		System.out.println("batch align "+motdeb+"-"+motfin+" "+trdeb+":"+trfin);
 		if (s4blocViterbi==null) {
 			String[] amots = new String[mots.size()];
@@ -34,16 +53,13 @@ public class JTransAPI {
 			s4blocViterbi = S4ForceAlignBlocViterbi.getS4Aligner(aligneur.wavname);
 			s4blocViterbi.setMots(amots);
 		}
-		
-		S4AlignOrder order = new S4AlignOrder(motdeb, trdeb, motfin, trfin);
-		try {
-			s4blocViterbi.input2process.put(order);
-			synchronized(order) {
-				order.wait();
-			}
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+
+		S4AlignOrder order = (S4AlignOrder)cachedObject(
+				String.format("%04d_%04d_%04d_%04d.order", motdeb, trdeb, motfin, trfin),
+				new Cache.Factory() {
+					public Object make() { return createS4AlignOrder(motdeb, trdeb, motfin, trfin); }
+				});
+
 		if (order.alignWords!=null) {
 			order.alignWords.adjustOffset(trdeb);
 			order.alignPhones.adjustOffset(trdeb);
@@ -85,7 +101,7 @@ public class JTransAPI {
 	 * @param endFrame
 	 */
 	public static void setAlignWord(int word, int startFrame, int endFrame) {
-		final boolean linearInterpolation = true; // equialign
+		final boolean linearInterpolation = false; // equialign
 		// TODO: detruit les segments recouvrants
 
 		int lastAlignedWord = getLastMotPrecAligned(word);
@@ -245,12 +261,8 @@ public class JTransAPI {
 		// Now that the listElts is known, maps the time pointers to the elts in the liste
 		TRSLoader.Anchor prevAnchor = null;
 		for (TRSLoader.Anchor anchor: trs.anchors) {
-			System.out.println("Anchor: " + anchor.character + " " + anchor.seconds);
-
 			int character = anchor.character;
-
 			int mot = edit.getListeElement().getIndiceMotAtTextPosi(character);
-			System.out.println(elts.getIndiceMotAtTextPosi(character));
 
 			while (mot < 0 && character > 0) {
 				mot = edit.getListeElement().getIndiceMotAtTextPosi(--character);
