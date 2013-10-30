@@ -1,21 +1,12 @@
 package facade;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import plugins.applis.SimpleAligneur.Aligneur;
 import plugins.signalViewers.spectroPanel.SpectroControl;
 import plugins.speechreco.aligners.sphiinx4.AlignementEtat;
 import plugins.speechreco.aligners.sphiinx4.S4AlignOrder;
 import plugins.speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
-import plugins.speechreco.confidenceMeasure.CMStats;
 import plugins.text.ListeElement;
 import plugins.text.TexteEditor;
 import plugins.text.elements.Element_Mot;
@@ -226,109 +217,46 @@ public class JTransAPI {
 		}
 		return -1;
 	}
-	
-	private static ArrayList<Integer> charpos = null;
-	private static ArrayList<Float> secpos = null;
-	private static StringBuffer alltext = new StringBuffer();
-	private static int debturn=0,endturn=-1;
-	private static boolean handleLine(String s, boolean speech) {
-		int i=s.indexOf("<Turn ");
-		if (i>=0) {
-			// TODO: deb/end turn
-			if (speech) handleLine(s.substring(0, i), true);
-			int j=s.indexOf(">", i);
-			return handleLine(s.substring(j+1),true);
-		}
-		i=s.indexOf("<Sync time=");
-		if (i>=0) {
-			int j=s.indexOf('"',i)+1;
-			int k=s.indexOf('"',j);
-			float sec = Float.parseFloat(s.substring(j,k));
-			if (sec>0) {
-				if (secpos.size()==0||secpos.get(secpos.size()-1)<sec) {
-					secpos.add(sec);
-					charpos.add(alltext.length());
-				}
-			}
-			j=s.indexOf("/>", k);
-			return handleLine(s.substring(j+2),true);
-		}
-		i=s.indexOf("<Event");
-		if (i>=0) {
-			if (speech) handleLine(s.substring(0, i), true);
-			int j=s.indexOf(">", i);
-			return handleLine(s.substring(j+1),speech);
-		}
-		i=s.indexOf("</Turn>");
-		if (i>=0) {
-			if (speech) {
-				handleLine(s.substring(0, i), true);
-				alltext.append('\n');
-			}
-			return handleLine(s.substring(i+7), false);
-		}
-		if (speech) {
-			// remove comment from speech line
-			i = s.indexOf("<Comment");
-			if (i >= 0) {
-				int j = s.indexOf("/>", i);
-				s = s.substring(0, i) + s.substring(j + "/>".length());
-				System.out.println(s.trim());
-			}
 
-			s=s.trim();
-			if (s.length()>0) {
-				if (alltext.length()>0) alltext.append(' ');
-				alltext.append(s);
-				alltext.append(' ');
-			}
-		}
-		return speech;
-	}
 	public static void loadTRS(String trsfile) {
-		// extract all the texts into the text window + keeps time pointers to (the preceding) char
-		// Then parse
-		// Then, the user MUST PARSE MANUALLY with the menus; this will run setElts(), which will check whether
-		// time pointers have been defined
-		charpos = new ArrayList<Integer>();
-		secpos = new ArrayList<Float>();
-		alltext = new StringBuffer();
+		TRSLoader trs = null;
 		try {
-			BufferedReader f = new BufferedReader(new InputStreamReader(new FileInputStream(trsfile),Charset.forName("ISO-8859-1")));
-			boolean speech=false;
-			for (;;) {
-				String s=f.readLine();
-				if (s==null) break;
-				speech=handleLine(s,speech);
-			}
-			f.close();
-		} catch (IOException e) {
+			trs = new TRSLoader(trsfile);
+		} catch (Exception e) {
+			System.err.println("TRS loader failed!");
 			e.printStackTrace();
+			// TODO handle failure gracefully -IJ
 		}
-		
-		// charpos et secpos ont ete bien lus (CHECKED)
-		
+
 		TexteEditor zonetexte = TexteEditor.getTextEditor();
-		String ss = alltext.toString();
-		zonetexte.setText(ss);
+		zonetexte.setText(trs.text);
 		zonetexte.setEditable(false);
+
 		// il ne faut pas que reparse modifie le texte !!!
 		zonetexte.reparse(false);
-		System.out.println("apres parsing: nelts="+elts.size()+" ancres="+secpos.size());
+		System.out.println("apres parsing: nelts=" + elts.size() + " ancres=" + trs.anchors);
+
 		// Now that the listElts is known, maps the time pointers to the elts in the liste
-		for (int i=0;i<secpos.size();i++) {
-			int caretPos = charpos.get(i);
-			while (caretPos>0&&(alltext.charAt(caretPos)==' '||alltext.charAt(caretPos)=='\n')) caretPos--;
-			int mot = edit.getListeElement().getIndiceMotAtTextPosi(caretPos);
-			while (caretPos>0&&mot<0) {
-				// TODO: pourquoi "euh" n'est pas un mot ?
-				mot = edit.getListeElement().getIndiceMotAtTextPosi(--caretPos);
+		TRSLoader.Anchor prevAnchor = null;
+		for (TRSLoader.Anchor anchor: trs.anchors) {
+			System.out.println("Anchor: " + anchor.character + " " + anchor.seconds);
+
+			int character = anchor.character;
+
+			int mot = edit.getListeElement().getIndiceMotAtTextPosi(character);
+			System.out.println(elts.getIndiceMotAtTextPosi(character));
+
+			while (mot < 0 && character > 0) {
+				mot = edit.getListeElement().getIndiceMotAtTextPosi(--character);
 			}
-			if (i==0) setAlignWord(mot, -1, secpos.get(i));
-			else setAlignWord(mot, secpos.get(i-1), secpos.get(i));
-//			if (i>=3) break;
+
+			if (null == prevAnchor) {
+				setAlignWord(mot, -1, anchor.seconds);
+				prevAnchor = anchor;
+			} else
+				setAlignWord(mot, prevAnchor.seconds, anchor.seconds);
 		}
-		
+
 		aligneur.caretSensible = true;
 
 		// force la construction de l'index
