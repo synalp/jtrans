@@ -17,7 +17,7 @@ public class JTransAPI {
 	 * "equialign") instead of proper Sphinx alignment (batchAlign).
 	 * Setting this flag to `true` yields very fast albeit inaccurate results.
 	 */
-	private static final boolean USE_LINEAR_ALIGNMENT = true;
+	private static final boolean USE_LINEAR_ALIGNMENT = false;
 	
 	public static int getNbWords() {
 		if (elts==null) return 0;
@@ -136,42 +136,37 @@ public class JTransAPI {
 		// TODO: detruit les segments recouvrants
 
 		int lastAlignedWord = getLastMotPrecAligned(word);
+		int startWord; // will be used to colorize
 
 		System.out.println("setalign "+word+" "+startFrame+" "+endFrame+" "+lastAlignedWord);
 
 		if (lastAlignedWord < word-1) {
-			if (lastAlignedWord >= 0) {
-				// il y a des mots non alignes avant
+			// there are unaligned words before `word`
+			// prepare startWord and startFrame before aligning them
 
+			if (lastAlignedWord >= 0) {
+				startWord = lastAlignedWord + 1;
 				if (startFrame < 0) {
 					// start at the end frame of the last aligned word
-					int prevWordSeg = mots.get(lastAlignedWord).posInAlign;
-					int prevWordEndFrame = alignementWords.getSegmentEndFrame(prevWordSeg);
-					startFrame = prevWordEndFrame;
+					int lastAlignedWordSeg = mots.get(lastAlignedWord).posInAlign;
+					startFrame = alignementWords.getSegmentEndFrame(lastAlignedWordSeg);
 				}
-
-				if (USE_LINEAR_ALIGNMENT) {
-					// equi-aligne les mots precedents
-					linearAlign(lastAlignedWord+1, startFrame, word, endFrame);
-				} else {
-					// auto-align les mots precedents
-					batchAlign(lastAlignedWord+1, startFrame, word, endFrame);
-				}
-
-				if (edit!=null) edit.colorizeAlignedWords(lastAlignedWord, word);
 			} else {
-				// aucun mot avant aligne
+				// nothing is aligned yet; align from the beginning
+				startWord = 0;
+				startFrame = 0;
+			}
 
-				if (USE_LINEAR_ALIGNMENT) {
-					linearAlign(0, 0, word, endFrame);
-				} else {
-					batchAlign(0, 0, word, endFrame);
-				}
-
-				if (edit!=null) edit.colorizeAlignedWords(0, word);
+			// align till `word`
+			if (USE_LINEAR_ALIGNMENT) {
+				linearAlign(startWord, startFrame, word, endFrame);
+			} else {
+				batchAlign(startWord, startFrame, word, endFrame);
 			}
 		} else {
-			// il y a un seul mot a aligner
+			// only one word to align
+			startWord = word;
+
 			if (lastAlignedWord >= 0) {
 				int lastAlignedWordSeg = mots.get(lastAlignedWord).posInAlign;
 				endFrame = alignementWords.getSegmentEndFrame(lastAlignedWordSeg);
@@ -185,13 +180,14 @@ public class JTransAPI {
 					elts.getMot(word).getWordString(), startFrame, endFrame, null, null);
 			alignementWords.setSegmentSourceManu(newseg);
 			elts.getMot(word).posInAlign=newseg;
-
-			if (edit!=null) edit.colorizeAlignedWords(word, word);
 		}
 
 		// TODO: phonetiser et aligner auto les phonemes !!
 		
-		if (edit!=null) edit.repaint();
+		if (edit != null) {
+			edit.colorizeAlignedWords(startWord, word);
+			edit.repaint();
+		}
 	}
 
 	public static void setAlignWord(int mot, float secdeb, float secfin) {
