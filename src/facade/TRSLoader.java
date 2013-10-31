@@ -52,11 +52,19 @@ class TRSLoader {
 		StringBuffer buffer = new StringBuffer();
 		ArrayList<Anchor> anchorList = new ArrayList<Anchor>();
 
+		// end time of last turn
+		float lastEnd = -1f;
+
 		// Extract relevant information (speech text, Sync tags...) from Turn tags.
 		NodeList turnList = doc.getElementsByTagName("Turn");
 
 		for (int i = 0; i < turnList.getLength(); i++) {
-			Node child = turnList.item(i).getFirstChild();
+			Element turn = (Element)turnList.item(i);
+			Node child = turn.getFirstChild();
+
+			float endTime = Float.parseFloat(turn.getAttribute("endTime"));
+			if (endTime > lastEnd)
+				lastEnd = endTime;
 
 			while (null != child) {
 				String name = child.getNodeName();
@@ -84,6 +92,9 @@ class TRSLoader {
 				child = child.getNextSibling();
 			}
 		}
+
+		// Fake anchor after last turn so that the whole speech gets aligned
+		anchorList.add(new Anchor(buffer.length(), lastEnd));
 
 		text = buffer.toString();
 		anchors = anchorList;
