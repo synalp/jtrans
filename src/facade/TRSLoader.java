@@ -71,16 +71,15 @@ class TRSLoader {
 
 				// Speech text
 				if (name.equals("#text")) {
-					String content = child.getTextContent().trim();
-					if (!content.isEmpty()) {
-						buffer.append(content).append("\n");
-					}
+					buffer.append(child.getTextContent().trim());
 				}
 
-				// Anchor
+				// Anchor. Placed on the last character in the word *PRECEDING* the sync point
 				else if (name.equals("Sync")) {
 					Float f = Float.parseFloat(((Element)child).getAttribute("time"));
 					anchorList.add(new Anchor(buffer.length(), f));
+					if (buffer.length() > 0)
+						buffer.append('\n');
 				}
 
 				// Ignore unknown tag
