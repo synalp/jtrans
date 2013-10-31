@@ -133,6 +133,7 @@ public class JTransAPI {
 	 * @param endFrame
 	 */
 	public static void setAlignWord(int word, int startFrame, int endFrame) {
+		assert endFrame >= 0;
 		// TODO: detruit les segments recouvrants
 
 		int lastAlignedWord = getLastMotPrecAligned(word);
@@ -168,13 +169,13 @@ public class JTransAPI {
 			startWord = word;
 
 			if (lastAlignedWord >= 0) {
-				int lastAlignedWordSeg = mots.get(lastAlignedWord).posInAlign;
-				endFrame = alignementWords.getSegmentEndFrame(lastAlignedWordSeg);
+				if (startFrame < 0) {
+					int lastAlignedWordSeg = mots.get(lastAlignedWord).posInAlign;
+					startFrame = alignementWords.getSegmentEndFrame(lastAlignedWordSeg);
+				}
+			} else {
+				startFrame = 0;
 			}
-				else endFrame = 0;
-
-			if (startFrame < 0)
-				startFrame = endFrame;
 
 			int newseg = alignementWords.addRecognizedSegment(
 					elts.getMot(word).getWordString(), startFrame, endFrame, null, null);
