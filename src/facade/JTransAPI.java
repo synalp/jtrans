@@ -72,7 +72,7 @@ public class JTransAPI {
 			}
 			System.out.println("wordsthatshouldbealigned "+Arrays.toString(wordsThatShouldBeAligned));
 			int[] locmots2segidx = order.alignWords.matchWithText(wordsThatShouldBeAligned);
-			int nsegsbefore = aligneur.alignement.merge(order.alignWords);
+			int nsegsbefore = alignementWords.merge(order.alignWords);
 			int[] mots2segidx = Arrays.copyOf(locmots2segidx,locmots2segidx.length);
 			for (int i=0;i<locmots2segidx.length;i++) {
 				if (locmots2segidx[i]>=0)
@@ -262,17 +262,20 @@ public class JTransAPI {
 		TRSLoader.Anchor prevAnchor = null;
 		for (TRSLoader.Anchor anchor: trs.anchors) {
 			int character = anchor.character;
-			int mot = edit.getListeElement().getIndiceMotAtTextPosi(character);
+			int word = edit.getListeElement().getIndiceMotAtTextPosi(character);
 
-			while (mot < 0 && character > 0) {
-				mot = edit.getListeElement().getIndiceMotAtTextPosi(--character);
+			while (word < 0 && character > 0) {
+				word = edit.getListeElement().getIndiceMotAtTextPosi(--character);
 			}
 
-			if (null == prevAnchor) {
-				setAlignWord(mot, -1, anchor.seconds);
-				prevAnchor = anchor;
-			} else
-				setAlignWord(mot, prevAnchor.seconds, anchor.seconds);
+			// Align words between the previous anchor and the current one. All
+			// TRS files specify an anchor at time 0, so don't align on the
+			// first anchor.
+			if (null != prevAnchor) {
+				setAlignWord(word, prevAnchor.seconds, anchor.seconds);
+			}
+
+			prevAnchor = anchor;
 		}
 
 		aligneur.caretSensible = true;
