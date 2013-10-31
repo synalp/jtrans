@@ -12,6 +12,12 @@ import plugins.text.TexteEditor;
 import plugins.text.elements.Element_Mot;
 
 public class JTransAPI {
+	/**
+	 * Align words between anchors using linear interpolation (a.k.a.
+	 * "equialign") instead of proper Sphinx alignment (batchAlign).
+	 * Setting this flag to `true` yields very fast albeit inaccurate results.
+	 */
+	private static final boolean USE_LINEAR_ALIGNMENT = true;
 	
 	public static int getNbWords() {
 		if (elts==null) return 0;
@@ -42,9 +48,15 @@ public class JTransAPI {
 
 		return order;
 	}
-	
-	public static void batchAlign(final int motdeb, final int trdeb, final int motfin, final int trfin) {
-		System.out.println("batch align "+motdeb+"-"+motfin+" "+trdeb+":"+trfin);
+
+	/**
+	 * Align words between startWord and endWord using Sphinx.
+	 * Slow, but accurate.
+	 *
+	 * The resulting S4AlignOrder objects may be cached to save time.
+	 */
+	public static void batchAlign(final int startWord, final int startFrame, final int endWord, final int endFrame) {
+		System.out.println("batch align "+startWord+"-"+endWord+" "+startFrame+":"+endFrame);
 		if (s4blocViterbi==null) {
 			String[] amots = new String[mots.size()];
 			for (int i=0;i<mots.size();i++) {
@@ -55,19 +67,19 @@ public class JTransAPI {
 		}
 
 		S4AlignOrder order = (S4AlignOrder)cachedObject(
-				String.format("%04d_%04d_%04d_%04d.order", motdeb, trdeb, motfin, trfin),
+				String.format("%05d_%05d_%05d_%05d.order", startWord, startFrame, endWord, endFrame),
 				new Cache.Factory() {
-					public Object make() { return createS4AlignOrder(motdeb, trdeb, motfin, trfin); }
+					public Object make() { return createS4AlignOrder(startWord, startFrame, endWord, endFrame); }
 				});
 
 		if (order.alignWords!=null) {
-			order.alignWords.adjustOffset(trdeb);
-			order.alignPhones.adjustOffset(trdeb);
-			order.alignStates.adjustOffset(trdeb);
+			order.alignWords.adjustOffset(startFrame);
+			order.alignPhones.adjustOffset(startFrame);
+			order.alignStates.adjustOffset(startFrame);
 			System.out.println("================================= ALIGN FOUND");
 			System.out.println(order.alignWords.toString());
-			String[] wordsThatShouldBeAligned = new String[1+motfin-motdeb];
-			for (int i=motdeb, j=0;i<=motfin;i++,j++) {
+			String[] wordsThatShouldBeAligned = new String[1+endWord-startWord];
+			for (int i=startWord, j=0;i<=endWord;i++,j++) {
 				wordsThatShouldBeAligned[j]=mots.get(i).getWordString();
 			}
 			System.out.println("wordsthatshouldbealigned "+Arrays.toString(wordsThatShouldBeAligned));
@@ -80,7 +92,7 @@ public class JTransAPI {
 			}
 			System.out.println("mots2segs "+locmots2segidx.length+" "+Arrays.toString(mots2segidx));
 			if (edit!=null) {
-				for (int i=motdeb, j=0;i<=motfin;i++,j++) {
+				for (int i=startWord, j=0;i<=endWord;i++,j++) {
 					System.out.println("posinalign "+i+" "+mots2segidx[j]);
 					mots.get(i).posInAlign=mots2segidx[j];
 				}
@@ -94,6 +106,26 @@ public class JTransAPI {
 	}
 
 	/**
+	 * Align words between startWord and endWord using linear interpolation.
+	 * Very fast, but inaccurate.
+	 */
+	public static void linearAlign(int startWord, int startFrame, int endWord, int endFrame) {
+		float frameDelta = ((float)(endFrame-startFrame))/((float)(endWord-startWord+1));
+		float currEndFrame = startFrame + frameDelta;
+
+		for (int i = startWord; i <= endWord; i++) {
+			int newseg = alignementWords.addRecognizedSegment(
+					mots.get(i).getWordString(), startFrame, (int)currEndFrame, null, null);
+
+			alignementWords.setSegmentSourceEqui(newseg);
+			mots.get(i).posInAlign = newseg;
+
+			startFrame = (int)currEndFrame;
+			currEndFrame += frameDelta;
+		}
+	}
+
+	/**
 	 * Align all words until `word`.
 	 * 
 	 * @param word number of the last word to align
@@ -101,7 +133,6 @@ public class JTransAPI {
 	 * @param endFrame
 	 */
 	public static void setAlignWord(int word, int startFrame, int endFrame) {
-		final boolean linearInterpolation = false; // equialign
 		// TODO: detruit les segments recouvrants
 
 		int lastAlignedWord = getLastMotPrecAligned(word);
@@ -111,40 +142,32 @@ public class JTransAPI {
 		if (lastAlignedWord < word-1) {
 			if (lastAlignedWord >= 0) {
 				// il y a des mots non alignes avant
-				int prevWordSeg = mots.get(lastAlignedWord).posInAlign;
-				int prevWordEndFrame = alignementWords.getSegmentEndFrame(prevWordSeg);
 
-				if (linearInterpolation) {
+				if (startFrame < 0) {
+					// start at the end frame of the last aligned word
+					int prevWordSeg = mots.get(lastAlignedWord).posInAlign;
+					int prevWordEndFrame = alignementWords.getSegmentEndFrame(prevWordSeg);
+					startFrame = prevWordEndFrame;
+				}
+
+				if (USE_LINEAR_ALIGNMENT) {
 					// equi-aligne les mots precedents
-					float frameDelta = ((float)(endFrame-prevWordEndFrame))/((float)(word+1-lastAlignedWord));
-					startFrame = alignementWords.getSegmentEndFrame(prevWordSeg);
-					float currEndFrame = alignementWords.getSegmentEndFrame(prevWordSeg)+frameDelta;
-
-					for (int i = lastAlignedWord+1; i <= word; i++) {
-						if (startFrame >= 0 && currEndFrame < startFrame)
-							currEndFrame = startFrame;
-
-						int newseg = alignementWords.addRecognizedSegment(
-								mots.get(i).getWordString(), startFrame, (int)currEndFrame, null, null);
-
-						alignementWords.setSegmentSourceEqui(newseg);
-						mots.get(i).posInAlign = newseg;
-
-						startFrame = (int)currEndFrame;
-						currEndFrame += frameDelta;
-					}
+					linearAlign(lastAlignedWord+1, startFrame, word, endFrame);
 				} else {
 					// auto-align les mots precedents
-					if (startFrame >= 0)
-						prevWordEndFrame = startFrame;
-
-					batchAlign(lastAlignedWord+1, prevWordEndFrame, word, endFrame);
+					batchAlign(lastAlignedWord+1, startFrame, word, endFrame);
 				}
 
 				if (edit!=null) edit.colorizeAlignedWords(lastAlignedWord, word);
 			} else {
 				// aucun mot avant aligne
-				batchAlign(0, 0, word, endFrame);
+
+				if (USE_LINEAR_ALIGNMENT) {
+					linearAlign(0, 0, word, endFrame);
+				} else {
+					batchAlign(0, 0, word, endFrame);
+				}
+
 				if (edit!=null) edit.colorizeAlignedWords(0, word);
 			}
 		} else {
