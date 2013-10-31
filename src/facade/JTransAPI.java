@@ -137,54 +137,45 @@ public class JTransAPI {
 		// TODO: detruit les segments recouvrants
 
 		int lastAlignedWord = getLastMotPrecAligned(word);
-		int startWord; // will be used to colorize
+		int startWord;
 
 		System.out.println("setalign "+word+" "+startFrame+" "+endFrame+" "+lastAlignedWord);
 
-		if (lastAlignedWord < word-1) {
-			// there are unaligned words before `word`
-			// prepare startWord and startFrame before aligning them
-
-			if (lastAlignedWord >= 0) {
-				startWord = lastAlignedWord + 1;
-				if (startFrame < 0) {
-					// start at the end frame of the last aligned word
-					int lastAlignedWordSeg = mots.get(lastAlignedWord).posInAlign;
-					startFrame = alignementWords.getSegmentEndFrame(lastAlignedWordSeg);
-				}
-			} else {
-				// nothing is aligned yet; align from the beginning
-				startWord = 0;
-				startFrame = 0;
+		// Find first word to align (startWord) and adjust startFrame if needed.
+		if (lastAlignedWord >= 0) {
+			startWord = lastAlignedWord + 1;
+			if (startFrame < 0) {
+				// Start aligning at the end frame of the last aligned word.
+				int lastAlignedWordSeg = mots.get(lastAlignedWord).posInAlign;
+				startFrame = alignementWords.getSegmentEndFrame(lastAlignedWordSeg);
 			}
+		} else {
+			// Nothing is aligned yet; start aligning from the beginning.
+			startWord = 0;
+			startFrame = 0;
+		}
 
-			// align till `word`
+		assert startWord <= word :
+				String.format("start#%d <= word#%d ?? word:'%s'", startWord, word, elts.getMot(word).getWordString());
+
+		if (startWord < word) {
+			// There are unaligned words before `word`; align them.
 			if (USE_LINEAR_ALIGNMENT) {
 				linearAlign(startWord, startFrame, word, endFrame);
 			} else {
 				batchAlign(startWord, startFrame, word, endFrame);
 			}
 		} else {
-			// only one word to align
-			startWord = word;
-
-			if (lastAlignedWord >= 0) {
-				if (startFrame < 0) {
-					int lastAlignedWordSeg = mots.get(lastAlignedWord).posInAlign;
-					startFrame = alignementWords.getSegmentEndFrame(lastAlignedWordSeg);
-				}
-			} else {
-				startFrame = 0;
-			}
-
+			// Only one word to align; create a new manual segment.
 			int newseg = alignementWords.addRecognizedSegment(
 					elts.getMot(word).getWordString(), startFrame, endFrame, null, null);
 			alignementWords.setSegmentSourceManu(newseg);
-			elts.getMot(word).posInAlign=newseg;
+			elts.getMot(word).posInAlign = newseg;
 		}
 
 		// TODO: phonetiser et aligner auto les phonemes !!
-		
+
+		// Update GUI
 		if (edit != null) {
 			edit.colorizeAlignedWords(startWord, word);
 			edit.repaint();
@@ -278,9 +269,13 @@ public class JTransAPI {
 		zonetexte.reparse(false);
 		System.out.println("apres parsing: nelts=" + elts.size() + " ancres=" + trs.anchors);
 
-		// Now that the listElts is known, maps the time pointers to the elts in the liste
-		TRSLoader.Anchor prevAnchor = null;
-		for (TRSLoader.Anchor anchor: trs.anchors) {
+		// Align words between the previous anchor and the current one. All
+		// TRS files specify an anchor at time 0, so don't align on the
+		// first anchor.
+		TRSLoader.Anchor prevAnchor = trs.anchors.get(0);
+		for (int i = 1; i < trs.anchors.size(); i++) {
+			TRSLoader.Anchor anchor = trs.anchors.get(i);
+
 			int character = anchor.character;
 			int word = edit.getListeElement().getIndiceMotAtTextPosi(character);
 
@@ -288,13 +283,7 @@ public class JTransAPI {
 				word = edit.getListeElement().getIndiceMotAtTextPosi(--character);
 			}
 
-			// Align words between the previous anchor and the current one. All
-			// TRS files specify an anchor at time 0, so don't align on the
-			// first anchor.
-			if (null != prevAnchor) {
-				setAlignWord(word, prevAnchor.seconds, anchor.seconds);
-			}
-
+			setAlignWord(word, prevAnchor.seconds, anchor.seconds);
 			prevAnchor = anchor;
 		}
 
