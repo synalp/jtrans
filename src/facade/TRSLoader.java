@@ -52,6 +52,12 @@ class TRSLoader {
 		StringBuffer buffer = new StringBuffer();
 		ArrayList<Anchor> anchorList = new ArrayList<Anchor>();
 
+		// current last anchor
+		Anchor lastAnchor = null;
+
+		// prefixed to the contents of a new text node
+		String prefixWhitespace = "";
+
 		// end time of last turn
 		float lastEnd = -1f;
 
@@ -71,20 +77,36 @@ class TRSLoader {
 
 				// Speech text
 				if (name.equals("#text")) {
-					buffer.append(child.getTextContent().trim());
+					String text = child.getTextContent().trim();
+					if (!text.isEmpty()) {
+						if (buffer.length() > 0)
+							buffer.append(prefixWhitespace);
+						buffer.append(text);
+					}
+					prefixWhitespace = " ";
 				}
 
 				// Anchor. Placed on the last character in the word *PRECEDING* the sync point
 				else if (name.equals("Sync")) {
-					Float f = Float.parseFloat(((Element)child).getAttribute("time"));
-					anchorList.add(new Anchor(buffer.length(), f));
-					if (buffer.length() > 0)
-						buffer.append('\n');
+					int character = buffer.length();
+					float second = Float.parseFloat(((Element)child).getAttribute("time"));
+
+					if (null != lastAnchor && character == lastAnchor.character) {
+						// No text added between two anchors.
+						// Adjust last anchor instead of adding a new one
+						lastAnchor.character = character;
+					} else {
+						lastAnchor = new Anchor(character, second);
+						anchorList.add(lastAnchor);
+					}
+
+					prefixWhitespace = "\n";
 				}
 
 				// Ignore unknown tag
 				else {
 					System.out.println("TRS WARNING: Ignoring inknown tag " + name);
+					prefixWhitespace = " ";
 				}
 
 				// Onto next Turn child
