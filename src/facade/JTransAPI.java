@@ -178,6 +178,23 @@ public class JTransAPI {
 			elts.getMot(word).posInAlign = newseg;
 		}
 
+		// Ensure everything has been aligned
+		lastAlignedWord = getLastMotPrecAligned(word);
+		if (lastAlignedWord < word) {
+			// Incomplete alignment. Avoid offsetting the entire track by
+			// force-aligning missing words onto the last successful alignment.
+
+			System.out.println("setalign: incomplete alignment! last: "
+					+ lastAlignedWord + ", word: " + word);
+
+			int fakeAlign = mots.get(lastAlignedWord).posInAlign;
+			for (int w = lastAlignedWord+1; w <= word; w++)
+				mots.get(w).posInAlign = fakeAlign;
+
+			// Don't underline the parts we just forced
+			word = lastAlignedWord;
+		}
+
 		// TODO: phonetiser et aligner auto les phonemes !!
 
 		// Update GUI
