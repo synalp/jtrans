@@ -147,6 +147,11 @@ public class JTransAPI {
 		// Find first word to align (startWord) and adjust startFrame if needed.
 		if (lastAlignedWord >= 0) {
 			startWord = lastAlignedWord + 1;
+
+			// Lagging behind the alignment - wait for a couple more words
+			if (startWord > word)
+				return;
+
 			if (startFrame < 0) {
 				// Start aligning at the end frame of the last aligned word.
 				int lastAlignedWordSeg = mots.get(lastAlignedWord).posInAlign;
@@ -157,9 +162,6 @@ public class JTransAPI {
 			startWord = 0;
 			startFrame = 0;
 		}
-
-		assert startWord <= word :
-				String.format("start#%d <= word#%d ?? word:'%s'", startWord, word, elts.getMot(word).getWordString());
 
 		if (startWord < word) {
 			// There are unaligned words before `word`; align them.

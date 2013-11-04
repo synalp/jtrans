@@ -52,9 +52,6 @@ class TRSLoader {
 		StringBuffer buffer = new StringBuffer();
 		ArrayList<Anchor> anchorList = new ArrayList<Anchor>();
 
-		// current last anchor
-		Anchor lastAnchor = null;
-
 		// prefixed to the contents of a new text node
 		String prefixWhitespace = "";
 
@@ -90,16 +87,7 @@ class TRSLoader {
 				else if (name.equals("Sync")) {
 					int character = buffer.length();
 					float second = Float.parseFloat(((Element)child).getAttribute("time"));
-
-					if (null != lastAnchor && character == lastAnchor.character) {
-						// No text added between two anchors.
-						// Adjust last anchor instead of adding a new one
-						lastAnchor.character = character;
-					} else {
-						lastAnchor = new Anchor(character, second);
-						anchorList.add(lastAnchor);
-					}
-
+					anchorList.add(new Anchor(character, second));
 					prefixWhitespace = "\n";
 				}
 
