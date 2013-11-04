@@ -113,6 +113,9 @@ public class JTransAPI {
 		float frameDelta = ((float)(endFrame-startFrame))/((float)(endWord-startWord+1));
 		float currEndFrame = startFrame + frameDelta;
 
+		assert frameDelta >= 1f:
+				"can't align on fractions of frames! (frameDelta=" + frameDelta + ")";
+
 		for (int i = startWord; i <= endWord; i++) {
 			int newseg = alignementWords.addRecognizedSegment(
 					mots.get(i).getWordString(), startFrame, (int)currEndFrame, null, null);
