@@ -10,6 +10,7 @@ import plugins.speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
 import plugins.text.ListeElement;
 import plugins.text.TexteEditor;
 import plugins.text.elements.Element_Mot;
+import utils.ProgressDialog;
 
 public class JTransAPI {
 	/**
@@ -273,7 +274,9 @@ public class JTransAPI {
 		return -1;
 	}
 
-	public static void loadTRS(String trsfile) {
+	public static void loadTRS(String trsfile, ProgressDialog progress) {
+		progress.setMessage("Parsing TRS markup...");
+
 		TRSLoader trs = null;
 		try {
 			trs = new TRSLoader(trsfile);
@@ -288,6 +291,7 @@ public class JTransAPI {
 		zonetexte.setEditable(false);
 
 		// il ne faut pas que reparse modifie le texte !!!
+		progress.setMessage("Reparsing text...");
 		zonetexte.reparse(false);
 		System.out.println("apres parsing: nelts=" + elts.size() + " ancres=" + trs.anchors);
 
@@ -295,6 +299,7 @@ public class JTransAPI {
 		// TRS files specify an anchor at time 0, so don't align on the
 		// first anchor.
 		TRSLoader.Anchor prevAnchor = trs.anchors.get(0);
+		progress.setMessage("Aligning...");
 		for (int i = 1; i < trs.anchors.size(); i++) {
 			TRSLoader.Anchor anchor = trs.anchors.get(i);
 
@@ -307,7 +312,12 @@ public class JTransAPI {
 
 			setAlignWord(word, prevAnchor.seconds, anchor.seconds);
 			prevAnchor = anchor;
+
+			progress.setProgress((i+1) / (float)trs.anchors.size());
 		}
+
+		progress.setMessage("Finishing up...");
+		progress.setIndeterminate(true);
 
 		aligneur.caretSensible = true;
 

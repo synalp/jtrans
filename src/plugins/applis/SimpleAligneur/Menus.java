@@ -91,7 +91,7 @@ public class Menus {
 				int returnVal = filechooser.showOpenDialog(null);
 				if (returnVal == filechooser.APPROVE_OPTION) {
 					File file = filechooser.getSelectedFile();
-					JTransAPI.loadTRS(file.getAbsolutePath());
+					aligneur.loadTRSWithProgress(file.getAbsolutePath());
 				}
 			}
 		});

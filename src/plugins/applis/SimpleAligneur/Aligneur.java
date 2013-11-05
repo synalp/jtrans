@@ -1539,7 +1539,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 				m.wavname=args[0]; // on a juste besoin de faire ca pour que ca se charge ???
 				if (args.length>1) {
 					if (args[1].endsWith(".trs")) {
-						JTransAPI.loadTRS(args[1]);
+						m.loadTRSWithProgress(args[1]);
 					} else {
 						m.sourceTxtfile=args[1];
 						InputStream in = FileUtils.findFileOrUrl(m.sourceTxtfile);
@@ -1552,5 +1552,12 @@ public class Aligneur extends JPanel implements PrintLogger {
 			}
 		}
 		m.repaint();
+	}
+
+	public void loadTRSWithProgress(final String trsfile) {
+		final ProgressDialog progress = new ProgressDialog(jf, null, "Loading TRS");
+		progress.setRunnable(new Runnable() {
+			public void run() { JTransAPI.loadTRS(trsfile, progress); }});
+		progress.setVisible(true);
 	}
 }
