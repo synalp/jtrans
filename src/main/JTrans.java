@@ -58,29 +58,58 @@ public class JTrans {
 		return (int)((ms-12)/10);
 	}
 
-	public static void savePraat(String textgridout, AlignementEtat al) {
+	private static void savePraatHeader(PrintWriter f, AlignementEtat longestTier, int tiers) throws IOException {
+		int finalFrame = longestTier.getSegmentEndFrame(longestTier.getNbSegments()-1);
+		f.println("File type = \"ooTextFile\"");
+		f.println("Object class = \"TextGrid\"");
+		f.println();
+		f.println("xmin = 0");
+		f.println("xmax = " + frame2sec(finalFrame));
+		f.println("tiers? <exists>");
+		f.println("size = " + tiers);
+		f.println("item []:");
+	}
+
+	private static void savePraatTier(PrintWriter f, AlignementEtat al, int tierId, String tierName) {
+		f.println("\titem [" + tierId + "]:");
+		f.println("\t\tclass = \"IntervalTier\"");
+		f.println("\t\tname = \"" + tierName + "\"");
+		f.println("\t\txmin = 0");
+		f.println("\t\txmax = "+frame2sec(al.getSegmentEndFrame(al.getNbSegments()-1)));
+		f.println("\t\tintervals: size = "+al.getNbSegments());
+		for (int i=0;i<al.getNbSegments();i++) {
+			f.println("\t\tintervals ["+(i+1)+"]:");
+			f.println("\t\t\txmin = "+frame2sec(al.getSegmentDebFrame(i)));
+			f.println("\t\t\txmax = "+frame2sec(al.getSegmentEndFrame(i)));
+			f.println("\t\t\ttext = \""+al.getSegmentLabel(i)+"\"");
+		}
+	}
+
+	public static void savePraatSingleTier(String textgridout, AlignementEtat al) {
 		try {
+			// TODO iso8859-1 ou utf8? -IJ
 			PrintWriter f = FileUtils.writeFileISO(textgridout);
-			f.println("File type = \"ooTextFile\"");
-			f.println("Object class = \"TextGrid\"");
-			f.println();
-			f.println("xmin = 0");
-			f.println("xmax = "+frame2sec(al.getSegmentEndFrame(al.getNbSegments()-1)));
-			f.println("tiers? <exists>");
-			f.println("size = 1");
-			f.println("item []:");
-			f.println("\titem [1]:");
-			f.println("\t\tclass = \"IntervalTier\"");
-			f.println("\t\tname = \"mots\"");
-			f.println("\t\txmin = 0");
-			f.println("\t\txmax = "+frame2sec(al.getSegmentEndFrame(al.getNbSegments()-1)));
-			f.println("\t\tintervals: size = "+al.getNbSegments());
-			for (int i=0;i<al.getNbSegments();i++) {
-				f.println("\t\tintervals ["+(i+1)+"]:");
-				f.println("\t\t\txmin = "+frame2sec(al.getSegmentDebFrame(i)));
-				f.println("\t\t\txmax = "+frame2sec(al.getSegmentEndFrame(i)));
-				f.println("\t\t\ttext = \""+al.getSegmentLabel(i)+"\"");
-			}
+			savePraatHeader(f, al, 1);
+			savePraatTier(f, al, 1, "mots");
+			f.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Saves the phone and word alignments as two tiers in a
+	 * Praat text grid file.
+	 * @param textgridout output file name
+	 * @param aligneur
+	 */
+	public static void savePraat2Tiers(String textgridout, Aligneur aligneur) {
+		try {
+			// TODO iso8859-1 ou utf8? -IJ
+			PrintWriter f = FileUtils.writeFileISO(textgridout);
+			savePraatHeader(f, aligneur.alignementPhones, 2);
+			savePraatTier(f, aligneur.alignementPhones, 1, "PhonTier");
+			savePraatTier(f, aligneur.alignement, 2, "WordTier");
 			f.close();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -140,7 +169,7 @@ public class JTrans {
 
 		// on peut l'appeler plusieurs fois ensuite
 		if (alignement!=null) {
-			savePraat("out.TextGrid", alignement);
+			savePraatSingleTier("out.TextGrid", alignement);
 			System.err.println("Alignment saved in Praat format in out.TextGrid");
 			Aligneur.saveProject(listeElts, "out.jtr", txtfile, wavfile, order.alignWords, order.alignPhones, "");
 			System.err.println("Alignment saved in JTrans format in out.jtr");
