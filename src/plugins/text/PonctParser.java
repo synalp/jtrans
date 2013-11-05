@@ -5,7 +5,6 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.util.Arrays;
 
-import javax.swing.JTextPane;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
@@ -34,14 +33,12 @@ public class PonctParser {
 	}
 
 	void creeMot(int deb, int finExclue, ListeElement le, Aligneur aligneur) {
-		Element_Mot elmot;
+		String fullText;
 		if (aligneur==null)
-			elmot = new Element_Mot(texte);
+			fullText = texte;
 		else
-			elmot = new Element_Mot(aligneur.edit);
-		elmot.posDebInTextPanel= deb;
-		elmot.posFinInTextPanel= finExclue;
-		le.add(elmot);
+			fullText = aligneur.edit.getText();
+		le.add(Element_Mot.fromSubstring(fullText, deb, finExclue, false));
 	}
 
 	private final static byte[] winAposbytes = {32,25};
@@ -126,7 +123,7 @@ public class PonctParser {
 					npcts++;
 					break;
 				case mot:
-					Element_Mot mot = new Element_Mot(utt.getSegment(j),(int)utt.getSegmentStartPos(j),(int)utt.getSegmentEndPos(j));
+					Element_Mot mot = new Element_Mot(utt.getSegment(j),(int)utt.getSegmentStartPos(j),(int)utt.getSegmentEndPos(j), false);
 					lst.add(mot);
 					nmots++;
 					break;

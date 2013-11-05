@@ -43,64 +43,41 @@ termes.
 
 package plugins.text.elements;
 
-import javax.swing.JTextPane;
-
-
 /**
  * Classe repr�sentant un mot : 
  * le mot en lui m�me et le sample de fin.
  */
 public class Element_Mot implements Element {
 	public static final long serialVersionUID = 1;
-	
-	public boolean isBruit=false;
 
-	//----------- Private Fields --------------
-	// c'est l'un ou l'autre:
-	private transient JTextPane textPane=null;
-	private String txt=null;
-	private boolean containsOnlyWord = false;
-	
-	public int posDebInTextPanel,posFinInTextPanel;
+	public final boolean isBruit;
+	public final String word;
+	public int posDebInTextPanel, posFinInTextPanel;
+
 	/**
 	 * contient le segment du mot dans alignement
 	 */
 	public int posInAlign=-1;
-	
+
 	public String getWordString() {
-		if (txt==null)
-			return textPane.getText().substring(posDebInTextPanel, posFinInTextPanel);
-		else {
-			if (containsOnlyWord)
-				return txt;
-			else
-				return txt.substring(posDebInTextPanel, posFinInTextPanel);
-		}
+		return word;
 	}
-	public String getWordInString(String txt) {
-		return txt.substring(posDebInTextPanel, posFinInTextPanel);
-	}
-	
+
 	//------------ Constructors ------------
-	public Element_Mot(String mot, int posdeb, int posfin) {
-		txt=mot;
-		posDebInTextPanel=posdeb;
-		posFinInTextPanel=posfin;
-		containsOnlyWord=true;
+
+	public Element_Mot(String word, int posdeb, int posfin, boolean isBruit) {
+		this.word = word;
+		this.posDebInTextPanel = posdeb;
+		this.posFinInTextPanel = posfin;
+		this.isBruit = isBruit;
 	}
-	public Element_Mot(String texte) {
-		txt=texte;
-	}
-	public Element_Mot(JTextPane texteEdit) {
-		textPane = texteEdit;
-	}
-	
-	public Element_Mot(String mot, JTextPane texteEdit) {
-		textPane = texteEdit;
-	}
-	
-	public void setTextPane(JTextPane textPane) {
-		this.textPane = textPane;
+
+	/**
+	 * Returns an Element_Mot whose word is created from a substring of
+	 * bigString, beginning at posdeb and ending at posfin-1.
+	 */
+	public static Element_Mot fromSubstring(String bigString, int posdeb, int posfin, boolean isBruit) {
+		return new Element_Mot(bigString.substring(posdeb, posfin), posdeb, posfin, isBruit);
 	}
 
 }//classe Element_Mot

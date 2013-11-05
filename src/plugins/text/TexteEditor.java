@@ -46,7 +46,6 @@ import javax.swing.text.LayeredHighlighter.LayerPainter;
 import facade.JTransAPI;
 
 import plugins.speechreco.aligners.sphiinx4.AutoAligner;
-import plugins.text.ListeElement;
 import plugins.text.elements.Element_Mot;
 import plugins.text.elements.Element_Commentaire;
 import plugins.text.elements.Element_DebutChevauchement;
@@ -337,11 +336,7 @@ public class TexteEditor extends JTextPane {
 						listeElts.add(new Element_Commentaire(this,deb,fin));
 						break;
 					case 2: // BRUIT
-						Element_Mot elmot = new Element_Mot(this);
-						elmot.isBruit=true;
-						elmot.posDebInTextPanel=deb;
-						elmot.posFinInTextPanel=fin;
-						listeElts.add(elmot);
+						listeElts.add(Element_Mot.fromSubstring(getText(), deb, fin, true));
 						break;
 					case 3 : //Debut chevauchement
 						listeElts.add(new Element_DebutChevauchement());
@@ -482,10 +477,7 @@ public class TexteEditor extends JTextPane {
 						listeElts.add(new Element_Commentaire((JTextPane)null,deb,fin));
 						break;
 					case 2: // BRUIT
-						Element_Mot elmot = new Element_Mot((JTextPane)null);
-						elmot.posDebInTextPanel=deb;
-						elmot.posFinInTextPanel=fin;
-						listeElts.add(elmot);
+						listeElts.add(new Element_Mot(null, deb, fin, true));
 						break;
 					case 3 : //Debut chevauchement
 						listeElts.add(new Element_DebutChevauchement());
@@ -539,10 +531,8 @@ public class TexteEditor extends JTextPane {
 			}
 			
 			if(index > debutMot){
-				Element_Mot elmot = new Element_Mot((JTextPane)this);
-				elmot.posDebInTextPanel= debutMot+precfin;
-				elmot.posFinInTextPanel= index+precfin;
-				listeElts.add(elmot);
+				listeElts.add(Element_Mot.fromSubstring(
+						getText(), debutMot + precfin, index + precfin, false));
 			}
 		}//while(index < ligne.length)
 		

@@ -1403,10 +1403,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 			lmots.add(word.word);
 			//    		alignement.wordsIdx.add(alignement.words.size()-1);
 			int posfininpanel = sb.length();
-			Element_Mot elmot = new Element_Mot(word.word, edit);
-			elmot.posDebInTextPanel=posdebinpanel;
-			elmot.posFinInTextPanel=posfininpanel;
-			elts.add(elmot);
+			elts.add(new Element_Mot(word.word, posdebinpanel, posfininpanel, false));
 			frdebs.add(word.frameDeb);
 			frfins.add(word.frameEnd);
 		}

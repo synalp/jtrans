@@ -161,11 +161,7 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 					int pfin = Integer.parseInt(ss[2]);
 					boolean bruit = false;
 					if (ss.length>3) bruit=Boolean.parseBoolean(ss[3]);
-					Element_Mot mot = new Element_Mot(textarea);
-					mot.isBruit=bruit;
-					mot.posDebInTextPanel=pdeb;
-					mot.posFinInTextPanel=pfin;
-					add(mot);
+					add(Element_Mot.fromSubstring(textarea.getText(), pdeb, pfin, bruit));
 				} else if (s.startsWith("loc")) {
 					int k=s.indexOf(' ')+1;
 					int j=s.indexOf(' ',k);
@@ -214,10 +210,7 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 					int pdeb = Integer.parseInt(s.substring(k,j)); k=j+1; j=s.indexOf(' ',k);
 					int pfin = Integer.parseInt(s.substring(k,j)); k=j+1; j=s.indexOf(' ',k);
 					int samp = Integer.parseInt(s.substring(k,j)); k=j+1; j=s.indexOf(' ',k);
-					Element_Mot mot = new Element_Mot(textarea);
-					mot.posDebInTextPanel=pdeb;
-					mot.posFinInTextPanel=pfin;
-					add(mot);
+					add(Element_Mot.fromSubstring(textarea.getText(), pdeb, pfin, false));
 				} else if (s.startsWith("loc")) {
 					int k=s.indexOf(' ')+1;
 					int j=s.indexOf(' ',k);
