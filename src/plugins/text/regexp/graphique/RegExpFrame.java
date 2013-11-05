@@ -184,8 +184,7 @@ public class RegExpFrame extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser filechooser = new JFileChooser();
 				filechooser.setFileFilter(filterXML);
-				filechooser.setApproveButtonText("Sauvegarder");
-				int returnVal = filechooser.showOpenDialog(null);
+				int returnVal = filechooser.showSaveDialog(null);
 				if(returnVal == JFileChooser.APPROVE_OPTION) {
 					File file = filechooser.getSelectedFile();
 					try {
@@ -204,8 +203,6 @@ public class RegExpFrame extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser filechooser = new JFileChooser();
 				filechooser.setFileFilter(filterXML);
-				
-				filechooser.setApproveButtonText("Ouvrir");
 				int returnVal = filechooser.showOpenDialog(null);
 				if(returnVal == JFileChooser.APPROVE_OPTION) {
 					File file = filechooser.getSelectedFile();

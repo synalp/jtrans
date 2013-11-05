@@ -512,25 +512,22 @@ public class Aligneur extends JPanel implements PrintLogger {
 	}
 
 	void loadProject() {
-		String nom = "jtransalign.txt";
-		JFileChooser filechooser = new JFileChooser(new File("."));
-		filechooser.validate();
-		filechooser.setApproveButtonText("Ouvrir");
+		JFileChooser filechooser = new JFileChooser();
+		filechooser.setDialogTitle("Load JTrans project...");
 		int returnVal = filechooser.showOpenDialog(null);
 		if (returnVal == JFileChooser.APPROVE_OPTION) {
 			File file = filechooser.getSelectedFile();
 			if (file.exists()) {
-				nom=file.getAbsolutePath();
-			} else return;
+				loadProject(file.getAbsolutePath());
+			}
 		}
-		loadProject(nom);
 	}
 
 	void saveProject() {
-		JFileChooser filechooser = new JFileChooser(new File("."));
-		filechooser.validate();
-		filechooser.setApproveButtonText("Sauver");
-		int returnVal = filechooser.showOpenDialog(null);
+		JFileChooser filechooser = new JFileChooser();
+		filechooser.setDialogTitle("Save JTrans project...");
+		filechooser.setSelectedFile(new File("out.jtr"));
+		int returnVal = filechooser.showSaveDialog(jf);
 		if (returnVal == JFileChooser.APPROVE_OPTION) {
 			File file = filechooser.getSelectedFile();
 			String regexp="";

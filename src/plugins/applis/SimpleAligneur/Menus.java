@@ -34,6 +34,7 @@ import main.LiveSpeechReco;
 import plugins.sourceSignals.Mike2wav;
 import plugins.speechreco.RecoListener;
 import plugins.speechreco.adaptation.BiaisAdapt;
+import plugins.speechreco.aligners.sphiinx4.AlignementEtat;
 import plugins.speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
 import plugins.speechreco.grammaire.Grammatiseur;
 import plugins.utils.TextInputWindow;
@@ -53,22 +54,39 @@ public class Menus {
 		final JMenuBar menubar = new JMenuBar();
 
 		// //////////////////////////////////////////////////////////////
-		JMenu file = new JMenu("file");
+		JMenu file = new JMenu("File");
+
+		JMenuItem loadwav = new JMenuItem("Load .WAV...");
+		JMenuItem loadtxt = new JMenuItem("Load .TXT...");
+		JMenuItem loadjtr = new JMenuItem("Load JTrans project...");
+		JMenuItem loadtrs = new JMenuItem("Load ref TRS...");
+		JMenuItem savewav = new JMenuItem("Save .WAV as...");
+		JMenuItem savetxt = new JMenuItem("Save .TXT as...");
+		JMenuItem savejtr = new JMenuItem("Save JTrans project as...");
+		JMenuItem savepho = new JMenuItem("Save align.pho");
+		JMenuItem savepraat1 = new JMenuItem("Save as Praat 1-tier text grid...");
+		JMenuItem quit = new JMenuItem("Quit");
+
 		menubar.add(file);
-		JMenuItem loadwav = new JMenuItem("load wav");
 		file.add(loadwav);
-		JMenuItem loadtxt = new JMenuItem("load txt");
 		file.add(loadtxt);
-		JMenuItem savewav = new JMenuItem("save wav as...");
+		file.add(loadjtr);
+		file.add(loadtrs);
+		file.addSeparator();
 		file.add(savewav);
-		JMenuItem savetxt = new JMenuItem("save text as...");
 		file.add(savetxt);
+		file.add(savejtr);
+		file.add(savepho);
+		file.add(savepraat1);
+		file.addSeparator();
+		file.add(quit);
+
 		savetxt.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				JFileChooser filechooser = new JFileChooser(new File("."));
-				filechooser.validate();
-				filechooser.setApproveButtonText("Save");
-				int returnVal = filechooser.showOpenDialog(null);
+				JFileChooser filechooser = new JFileChooser();
+				filechooser.setDialogTitle("Save .TXT...");
+				filechooser.setSelectedFile(new File("out.txt"));
+				int returnVal = filechooser.showSaveDialog(aligneur.jf);
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					File file = filechooser.getSelectedFile();
 					aligneur.savetxt(file);
@@ -76,19 +94,12 @@ public class Menus {
 			}
 		});
 
-		JMenuItem save = new JMenuItem("save project");
-		file.add(save);
-		JMenuItem loadp = new JMenuItem("load project");
-		file.add(loadp);
-		JMenuItem loadtrs = new JMenuItem("load ref TRS");
-		file.add(loadtrs);
 		loadtrs.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				JFileChooser filechooser = new JFileChooser(new File("."));
-				filechooser.validate();
-				filechooser.setApproveButtonText("Load TRS");
-				int returnVal = filechooser.showOpenDialog(null);
+				JFileChooser filechooser = new JFileChooser();
+				filechooser.setDialogTitle("Load TRS...");
+				int returnVal = filechooser.showOpenDialog(aligneur.jf);
 				if (returnVal == filechooser.APPROVE_OPTION) {
 					File file = filechooser.getSelectedFile();
 					aligneur.loadTRSWithProgress(file.getAbsolutePath());
@@ -99,7 +110,7 @@ public class Menus {
 		//		file.add(loadstm);
 		//		JMenuItem savetrs = new JMenuItem("save TRS");
 		//		file.add(savetrs);
-		JMenuItem savepho = new JMenuItem("save .pho");
+
 		savepho.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -107,44 +118,74 @@ public class Menus {
 				System.out.println("saving: "+(new File("align.pho")).getAbsolutePath());
 			}
 		});
-		file.add(savepho);
-		JMenuItem savepraat = new JMenuItem("save for Praat");
-		savepraat.addActionListener(new ActionListener() {
+
+		savepraat1.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				AlignementEtat al;
+				String description;
+
 				if (aligneur.showPhones) {
-					JTrans.savePraat("out.textGrid", aligneur.alignementPhones);
-					System.out.println("saving phones: "+(new File("out.textGrid")).getAbsolutePath());
+					al = aligneur.alignementPhones;
+					description = "phones";
 				} else {
-					JTrans.savePraat("out.textGrid", aligneur.alignement);
-					System.out.println("saving words: "+(new File("out.textGrid")).getAbsolutePath());
+					al = aligneur.alignement;
+					description = "words";
+				}
+
+				JFileChooser fc = new JFileChooser();
+				fc.setDialogTitle("Save " + description + " as Praat 1-tier text grid...");
+				fc.setSelectedFile(new File("out_" + description + ".textGrid"));
+				int returnVal = fc.showSaveDialog(aligneur.jf);
+
+				if (returnVal == fc.APPROVE_OPTION) {
+					File file = fc.getSelectedFile();
+					JTrans.savePraat(file.getAbsolutePath(), al);
 				}
 			}
 		});
-		file.add(savepraat);
-		JMenuItem quit = new JMenuItem("quit");
-		file.add(quit);
+
 
 		// //////////////////////////////////////////////////////////////
-		JMenu actionsm = new JMenu("edit");
+		JMenu actionsm = new JMenu("Edit");
+		JMenuItem parsestd = new JMenuItem("Parse text standard");
+		JMenuItem parse = new JMenuItem("Parse text regexp");
+		JMenuItem editb = new JMenuItem("Edit text");
+		JMenuItem regexp = new JMenuItem("Regexps");
+		JMenuItem gototime = new JMenuItem("Go to time [sec]");
 		menubar.add(actionsm);
-		JMenuItem parsestd = new JMenuItem("parse text standard");
 		actionsm.add(parsestd);
-		JMenuItem parse = new JMenuItem("parse text regexp");
 		actionsm.add(parse);
-		JMenuItem editb = new JMenuItem("edit text");
 		actionsm.add(editb);
-		JMenuItem regexp = new JMenuItem("regexps");
 		actionsm.add(regexp);
-		JMenuItem gototime = new JMenuItem("goto time [sec]");
 		actionsm.add(gototime);
 
 		// //////////////////////////////////////////////////////////////
 		JMenu sig = new JMenu("Process");
+		JMenuItem bias = new JMenuItem("Bias adapt");
+		JMenuItem map = new JMenuItem("MAP adapt");
+		JMenuItem mapload = new JMenuItem("Load adapted models");
+		JMenuItem clear = new JMenuItem("Clear all align");
+		JMenuItem clearfrom = new JMenuItem("Clear align from selected word");
+		JMenuItem asr= new JMenuItem("Automatic Speech Recognition");
+		JMenuItem asrJSAPI= new JMenuItem("JSAPI Speech Recognition");
+		JMenuItem batch= new JMenuItem("Batch align all");
+		JMenuItem beam= new JMenuItem("Set beam");
+		JMenuItem playfrom = new JMenuItem("Play from");
+
 		menubar.add(sig);
 
-		JMenuItem bias = new JMenuItem("biasAdapt");
 		sig.add(bias);
+		sig.add(map);
+		sig.add(mapload);
+		sig.add(clear);
+		sig.add(clearfrom);
+		sig.add(asr);
+		sig.add(asrJSAPI);
+		sig.add(batch);
+		sig.add(beam);
+		sig.addSeparator();
+		sig.add(playfrom);
 
 		bias.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -152,16 +193,13 @@ public class Menus {
 			}
 		});
 
-		JMenuItem map = new JMenuItem("MAP adapt");
-		sig.add(map);
 		map.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				BiaisAdapt a = new BiaisAdapt(aligneur);
 				a.adaptMAP(aligneur.alignementPhones);
 			}
 		});
-		JMenuItem mapload = new JMenuItem("load Adapted models");
-		sig.add(mapload);
+
 		mapload.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				BiaisAdapt a = new BiaisAdapt(aligneur);
@@ -169,33 +207,21 @@ public class Menus {
 			}
 		});
 
-		JMenuItem clear = new JMenuItem("clear all align");
-		sig.add(clear);
-		JMenuItem clearfrom = new JMenuItem("clear align from selected word");
-		sig.add(clearfrom);
+
 		//		JMenuItem batchalign= new JMenuItem("batch align between anchors");
 		//		actionsm.add(batchalign);
-		JMenuItem asr= new JMenuItem("Automatic Speech Recognition");
-		sig.add(asr);
-		JMenuItem asrJSAPI= new JMenuItem("JSAPI Speech Recognition");
-		sig.add(asrJSAPI);
-		JMenuItem batch= new JMenuItem("batch align all");
-		sig.add(batch);
-		JMenuItem beam= new JMenuItem("set beam");
-		sig.add(beam);
+
+
 		beam.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				String s = JOptionPane.showInputDialog("beam value (0=no beam)");
+				String s = JOptionPane.showInputDialog("Beam value (0=no beam)");
 				if (s==null) return;
 				s=s.trim();
 				S4ForceAlignBlocViterbi.beamwidth=Integer.parseInt(s);
 			}
 		});
 
-		sig.addSeparator();
-		JMenuItem playfrom = new JMenuItem("play from");
-		sig.add(playfrom);
 		playfrom.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				TextInputWindow tt = new TextInputWindow("position en secondes:",new UserInputProcessor() {
@@ -208,16 +234,21 @@ public class Menus {
 		});
 
 		// //////////////////////////////////////////////////////////////
-		JMenu prefs = new JMenu("options");
+		JMenu prefs = new JMenu("Options");
+		JMenuItem mixers = new JMenuItem("Audio mixers");
+		JMenuItem mikerec = new JMenuItem("Record from mic");
+		JMenuItem liveasr = new JMenuItem("Live ASR");
+		JMenuItem gui3 = new JMenuItem("GUI: toggle words/phones");
+		JMenuItem font = new JMenuItem("Font size");
 		menubar.add(prefs);
 		//		JMenuItem mots = new JMenuItem("forward mots");
 		//		prefs.add(mots);
-		JMenuItem mixers = new JMenuItem("audio mixers");
 		prefs.add(mixers);
-		JMenuItem mikerec = new JMenuItem("record from mike");
 		prefs.add(mikerec);
-		JMenuItem liveasr = new JMenuItem("live ASR");
 		prefs.add(liveasr);
+		prefs.add(gui3);
+		prefs.add(font);
+
 		liveasr.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -226,48 +257,12 @@ public class Menus {
 				// TODO: wait for the user press the ESC key, then stop the reco and put the result in the text panel 
 			}
 		});
+
 		//		JMenuItem gui1 = new JMenuItem("GUI: view text only");
 		//		prefs.add(gui1);
 		//		JMenuItem gui2 = new JMenuItem("GUI: view signal");
 		//		prefs.add(gui2);
-		JMenuItem gui3 = new JMenuItem("GUI: toggle words/phones");
-		prefs.add(gui3);
-		JMenuItem font = new JMenuItem("font size");
-		prefs.add(font);
 
-		// //////////////////////////////////////////////////////////////
-		JMenu help = new JMenu("help");
-		menubar.add(help);
-		JMenuItem tuto = new JMenuItem("Tutorial");
-		help.add(tuto);
-		tuto.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-
-				try {
-					JEditorPane pane = new JEditorPane((new File("tutorial.html")).toURI().toURL());
-					pane.setEditable(false);
-					pane.setSize(800, 800);
-					JFrame helpframe = new JFrame("Help JTrans");
-					JScrollPane hh = new JScrollPane(pane);
-					helpframe.getContentPane().add(hh);
-					helpframe.setSize(600, 800);
-					helpframe.setVisible(true);
-				} catch (MalformedURLException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-				//				HTMLEditorKit helpwin = new HTMLEditorKit();
-				//				helpwin.in
-				//				View v = helpwin.getViewFactory().create(helpwin.createDefaultDocument().getDefaultRootElement());
-			}
-		});
-
-		// //////////////////////////////////////////////////////////////
-		// //////////////////////////////////////////////////////////////
 		//		gui1.addActionListener(new ActionListener() {
 		//			public void actionPerformed(ActionEvent e) {
 		//				aligneur.GUIfast();
@@ -302,6 +297,41 @@ public class Menus {
 				fl.setVisible(true);
 			}
 		});
+
+		// //////////////////////////////////////////////////////////////
+		JMenu help = new JMenu("Help");
+		menubar.add(help);
+		JMenuItem tuto = new JMenuItem("Tutorial");
+		help.add(tuto);
+		tuto.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+
+				try {
+					JEditorPane pane = new JEditorPane((new File("tutorial.html")).toURI().toURL());
+					pane.setEditable(false);
+					pane.setSize(800, 800);
+					JFrame helpframe = new JFrame("Help JTrans");
+					JScrollPane hh = new JScrollPane(pane);
+					helpframe.getContentPane().add(hh);
+					helpframe.setSize(600, 800);
+					helpframe.setVisible(true);
+				} catch (MalformedURLException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				//				HTMLEditorKit helpwin = new HTMLEditorKit();
+				//				helpwin.in
+				//				View v = helpwin.getViewFactory().create(helpwin.createDefaultDocument().getDefaultRootElement());
+			}
+		});
+
+		// //////////////////////////////////////////////////////////////
+		// //////////////////////////////////////////////////////////////
+
 
 		mixers.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -474,12 +504,12 @@ public class Menus {
 		aligneur.playerController = new PlayerListener(aligneur, 100);
 
 
-		save.addActionListener(new ActionListener() {
+		savejtr.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				aligneur.saveProject();
 			}
 		});
-		loadp.addActionListener(new ActionListener() {
+		loadjtr.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				aligneur.loadProject();
 			}
@@ -517,9 +547,8 @@ public class Menus {
 		});
 		loadwav.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				JFileChooser filechooser = new JFileChooser(new File("."));
-				filechooser.validate();
-				filechooser.setApproveButtonText("Ouvrir");
+				JFileChooser filechooser = new JFileChooser();
+				filechooser.setDialogTitle("Load .WAV...");
 				int returnVal = filechooser.showOpenDialog(null);
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					File file = filechooser.getSelectedFile();
@@ -535,10 +564,10 @@ public class Menus {
 		});
 		savewav.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				JFileChooser filechooser = new JFileChooser(new File("."));
-				filechooser.validate();
-				filechooser.setApproveButtonText("Sauver");
-				int returnVal = filechooser.showOpenDialog(null);
+				JFileChooser filechooser = new JFileChooser();
+				filechooser.setDialogTitle("Save .WAV...");
+				filechooser.setSelectedFile(new File("out.wav"));
+				int returnVal = filechooser.showSaveDialog(aligneur.jf);
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					File file = filechooser.getSelectedFile();
 					aligneur.savewav(file);
@@ -547,10 +576,8 @@ public class Menus {
 		});
 		loadtxt.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				JFileChooser filechooser = new JFileChooser(new File("."));
-				filechooser.validate();
-				filechooser.setApproveButtonText("Ouvrir");
-				int returnVal = filechooser.showOpenDialog(null);
+				JFileChooser filechooser = new JFileChooser();
+				int returnVal = filechooser.showOpenDialog(aligneur.jf);
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					File file = filechooser.getSelectedFile();
 					if (file.exists()) {
