@@ -62,7 +62,6 @@ import plugins.speechreco.aligners.ForceAlignBlocViterbi;
 import plugins.speechreco.aligners.sphiinx4.AlignementEtat;
 import plugins.speechreco.aligners.sphiinx4.AutoAligner;
 import plugins.speechreco.aligners.sphiinx4.ControlBox;
-import plugins.speechreco.aligners.sphiinx4.ProgressDialog;
 import plugins.speechreco.aligners.sphiinx4.S4AlignOrder;
 import plugins.speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
 import plugins.speechreco.confidenceMeasure.AcousticCM;
@@ -79,6 +78,7 @@ import plugins.utils.FileUtils;
 import plugins.utils.PrintLogger;
 import speechreco.RecoWord;
 import tools.audio.PlayerGUI;
+import utils.ProgressDialog;
 
 /**
  * Classe principale de JTrans
@@ -1433,7 +1433,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 	}
 
 	public void asr() {
-		ProgressDialog waiting = new ProgressDialog((JFrame)null, new Runnable() {
+		ProgressDialog waiting = new ProgressDialog(jf, new Runnable() {
 			@Override
 			public void run() {
 				final SpeechReco asr = SpeechReco.getSpeechReco();

@@ -25,7 +25,7 @@ import edu.cmu.sphinx.linguist.lextree.LexTreeLinguist.LexTreeHMMState;
 import facade.JTransAPI;
 import plugins.speechreco.aligners.Segment2AudioAlignement;
 import plugins.text.elements.Element_Mot;
-import plugins.utils.ProgressDialog;
+import utils.ProgressDialog;
 
 /**
  * contient un alignement complet: N° des etats, triphone, GMM, mot

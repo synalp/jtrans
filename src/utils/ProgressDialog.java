@@ -1,3 +1,4 @@
+package utils;
 /*
 This source code is copyrighted by Christophe Cerisara, CNRS, France.
 
@@ -5,7 +6,7 @@ It is licensed under the terms of the INRIA Cecill-C licence, as described in:
 http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html
 */
 
-package plugins.utils;
+
 
 /*
 This library is free software; you can redistribute it and/or
@@ -19,6 +20,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 
 /**
 Dialog which displays indeterminate progress.
@@ -40,6 +43,11 @@ public class ProgressDialog extends JDialog {
 	public void setProgress(float v) {
 		progressBar.setValue((int)(v*100f));
 		progressBar.setIndeterminate(false);
+		repaint();
+	}
+
+	public void setIndeterminate(boolean value) {
+		progressBar.setIndeterminate(value);
 		repaint();
 	}
 	
@@ -126,6 +134,19 @@ public class ProgressDialog extends JDialog {
 		setModal(true);
 		pack();
 
+		addKeyListener(new KeyListener() {
+			@Override
+			public void keyTyped(KeyEvent e) {
+			}
+			@Override
+			public void keyReleased(KeyEvent e) {
+			}
+			@Override
+			public void keyPressed(KeyEvent e) {
+				if (e.getKeyCode()==KeyEvent.VK_ESCAPE)
+					dispose();
+			}
+		});
 	}
 
 	private void setupEventHandlers() {

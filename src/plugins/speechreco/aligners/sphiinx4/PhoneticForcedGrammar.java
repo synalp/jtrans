@@ -32,6 +32,7 @@ import edu.cmu.sphinx.linguist.language.grammar.GrammarNode;
 import edu.cmu.sphinx.util.LogMath;
 import edu.cmu.sphinx.util.props.PropertyException;
 import edu.cmu.sphinx.util.props.PropertySheet;
+import utils.ProgressDialog;
 
 public class PhoneticForcedGrammar extends JSGFGrammar {
 	List<String> words0 = null;

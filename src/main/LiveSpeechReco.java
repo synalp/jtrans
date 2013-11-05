@@ -58,10 +58,10 @@ import plugins.speechreco.adaptation.BiaisAdapt;
 import plugins.speechreco.aligners.sphiinx4.AlignementEtat;
 import plugins.speechreco.aligners.sphiinx4.HMMModels;
 import plugins.speechreco.aligners.sphiinx4.PhoneticForcedGrammar;
-import plugins.speechreco.aligners.sphiinx4.ProgressDialog;
 import plugins.speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
 import plugins.speechreco.aligners.sphiinx4.S4mfccBuffer;
 import plugins.speechreco.grammaire.Grammatiseur;
+import utils.ProgressDialog;
 
 public class LiveSpeechReco extends PhoneticForcedGrammar {
 	public static LiveSpeechReco gram=null;

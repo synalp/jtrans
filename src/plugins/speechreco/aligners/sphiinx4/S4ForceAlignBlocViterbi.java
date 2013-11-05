@@ -90,6 +90,8 @@ import edu.cmu.sphinx.linguist.SearchStateArc;
 import edu.cmu.sphinx.linguist.acoustic.AcousticModel;
 import edu.cmu.sphinx.linguist.flat.FlatLinguist;
 import edu.cmu.sphinx.util.LogMath;
+import utils.ProgressDialog;
+
 /**
  * utiliser Sphinx4 pour aligner et pour n'avoir qu'un seul ensemble de HMMs
  * en memoire...
