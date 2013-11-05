@@ -43,6 +43,9 @@ public class AlignementEtat implements Serializable {
 	private Segment2AudioAlignement segs = new Segment2AudioAlignement();
 	private int firstFrame = 0;
 
+	/**
+	 * Map word indices to segment indices.
+	 */
 	public int[] matchWithText(String[] mots) {
 		int[] mots2segidx = new int[mots.length];
 		Arrays.fill(mots2segidx, -1);

@@ -715,6 +715,10 @@ public class Aligneur extends JPanel implements PrintLogger {
 	}
 
 	private void createJFrame() {
+		// Use OS X menu bar if possible
+		if (System.getProperty("os.name").toLowerCase().contains("mac"))
+			System.setProperty("apple.laf.useScreenMenuBar", "true");
+
 		jf = new JFrame("jtrans 1.2");
 		JMenuBar menubar = (new Menus(this)).menus();
 		jf.setJMenuBar(menubar);

@@ -50,7 +50,6 @@ import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import javax.swing.JTextPane;
 
@@ -110,6 +109,10 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 	
 	private Element_Mot[] seg2mot = null;
 	// TODO: il faut mettre a jour l'index a la moindre modification !
+
+	/**
+	 * Refresh reverse index (segment indices to word indices).
+	 */
 	public void refreshIndex() {
 		List<Element_Mot> mots = getMots();
 		if (mots.size()==0) return;
@@ -120,7 +123,6 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 		}
 		System.out.println("indexmots lastseg "+lastseg);
 		seg2mot = new Element_Mot[lastseg+1];
-		Arrays.fill(seg2mot, null);
 		for (Element_Mot m : mots) {
 			if (m.posInAlign>=0) seg2mot[m.posInAlign]=m;
 		}

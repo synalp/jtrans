@@ -32,7 +32,7 @@ public class JTransAPI {
 	}
 
 	public static final Object cachedObject(String objectName, Cache.Factory factory) {
-		return Cache.cachedObject(aligneur.wavname, edit.getText().toString(), objectName, factory);
+		return Cache.cachedObject(aligneur.wavname, edit.getText(), objectName, factory);
 	}
 
 	private static S4AlignOrder createS4AlignOrder(int motdeb, int trdeb, int motfin, int trfin) {

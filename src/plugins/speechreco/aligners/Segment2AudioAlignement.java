@@ -81,10 +81,8 @@ public class Segment2AudioAlignement implements Serializable {
 					if (firstSegmentModified<0) firstSegmentModified=i;
 					return i;
 				} else {
-					System.out.println("ERREUR ADD SEGMENT "+deb+" "+fin+" prev: "+i+" "+segmentsDeb.get(i)+"--"+segmentsFin.get(i));
-					String h = null;
-					h.charAt(0);
-					return -1;
+					throw new Error("ERREUR ADD SEGMENT "+deb+" "+fin+
+							" prev: "+i+" "+segmentsDeb.get(i)+"--"+segmentsFin.get(i));
 				}
 			}
 		}
