@@ -194,57 +194,6 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 			e.printStackTrace();
 		}
 	}
-	/**
-	 * @deprecated
-	 * @param f
-	 * @param textarea
-	 */
-	public void loadXML(ObjectInputStream f, JTextPane textarea) {
-		try {
-			locuteursInfo = (ArrayList<Locuteur_Info>)f.readObject();
-			String s = f.readUTF();
-			int n = Integer.parseInt(s.substring(12));
-			for (int i=0;i<n;i++) {
-				s = f.readUTF();
-				if (s.startsWith("mot")) {
-					int k=s.indexOf(' ')+1;
-					int j=s.indexOf(' ',k);
-					int pdeb = Integer.parseInt(s.substring(k,j)); k=j+1; j=s.indexOf(' ',k);
-					int pfin = Integer.parseInt(s.substring(k,j)); k=j+1; j=s.indexOf(' ',k);
-					int samp = Integer.parseInt(s.substring(k,j)); k=j+1; j=s.indexOf(' ',k);
-					add(Element_Mot.fromSubstring(textarea.getText(), pdeb, pfin, false));
-				} else if (s.startsWith("loc")) {
-					int k=s.indexOf(' ')+1;
-					int j=s.indexOf(' ',k);
-					int id = Integer.parseInt(s.substring(k,j)); k=j+1; j=s.indexOf(' ',k);
-					int num = Integer.parseInt(s.substring(k));
-					Element_Locuteur loc = new Element_Locuteur((byte)id,num);
-					add(loc);
-				} else if (s.startsWith("dchev")) {
-					Element_DebutChevauchement ee = new Element_DebutChevauchement();
-					add(ee);
-				} else if (s.startsWith("fchev")) {
-					Element_FinChevauchement ee = new Element_FinChevauchement();
-					add(ee);
-				} else if (s.startsWith("cmt")) {
-					int k=s.indexOf(' ')+1;
-					int j=s.indexOf(' ',k);
-					int pdeb = Integer.parseInt(s.substring(k,j)); k=j+1; j=s.indexOf(' ',k);
-					int pfin = Integer.parseInt(s.substring(k));
-					Element_Commentaire mot = new Element_Commentaire(textarea,pdeb,pfin);
-					add(mot);
-				} else if (s.startsWith("pun")) {
-					int k=s.indexOf(' ')+1;
-					char p = s.charAt(k);
-					Element_Ponctuation ee = new Element_Ponctuation(p);
-					add(ee);
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		// il faut regenerer le texte pour l'aligneur ! c'est fait dans le reparse ensuite...
-	}
 	
 	public void save(PrintWriter f) {
 		f.println("listeelements "+size());
@@ -269,39 +218,7 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 			}
 		}
 	}
-	/**
-	 * @deprecated
-	 * @param f
-	 */
-	public void saveXML(ObjectOutputStream f) {
-		try {
-			f.writeObject(locuteursInfo);
-			f.writeUTF("texte nelts "+size());
-			for (int i=0;i<size();i++) {
-				Element e = get(i);
-				if (e instanceof Element_Mot) {
-					Element_Mot mot = (Element_Mot) e;
-					f.writeUTF("mot "+mot.posDebInTextPanel+" "+mot.posFinInTextPanel);
-				} else if (e instanceof Element_Locuteur) {
-					Element_Locuteur loc = (Element_Locuteur) e;
-					f.writeUTF("loc "+loc.getLocuteurID()+" "+loc.getNumeroParole());
-				} else if (e instanceof Element_DebutChevauchement) {
-					f.writeUTF("dchev");
-				} else if (e instanceof Element_FinChevauchement) {
-					f.writeUTF("fchev");
-				} else if (e instanceof Element_Commentaire) {
-					Element_Commentaire mot = (Element_Commentaire) e;
-					f.writeUTF("cmt "+mot.posDebInTextPanel+" "+mot.posFinInTextPanel);
-				} else if (e instanceof Element_Ponctuation) {
-					Element_Ponctuation p = (Element_Ponctuation)e;
-					f.writeUTF("pun "+p.getPonctuation());
-				}
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	
+
 	//----------- Constructeur ---------
 	public ListeElement(){
 		locuteursInfo = new ArrayList<Locuteur_Info>();
@@ -357,11 +274,7 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 		}
 		return null;
 	}//getLocuteurName
-	
-	public ArrayList<Locuteur_Info> getLocuteursInfo(){
-		return this.locuteursInfo;
-	}
-	
+
 	/**
 	 * Fonction permettant de r�cup�rer une ArrayList
 	 * contenant uniquement les �l�ments Element_Mot de la liste globale.
@@ -617,116 +530,6 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 	
 	
 	//------------- Anciennes Fonctions stock�es ici, au cas o� elles serviraient un jour
-	/*
-	public ArrayList<Element_Mot> getMotsLocuteurs(String locuteur){
-		ArrayList<Element_Mot> res = new ArrayList<Element_Mot>();
-		
-		//recherche de l'id
-		int i = 0;
-		boolean trouve = false;
-		byte id = -1;
-		while(!trouve && (i < locuteursInfo.size())){
-			if(locuteursInfo.get(i).getName().equals(locuteur)) {
-				id = locuteursInfo.get(i).getId();
-				trouve = true;
-			}
-			i++;
-		}
-		
-		if(trouve){
-			boolean bonLocuteur = false;
-			for(Element element:this){
-				if(bonLocuteur && (element instanceof Element_Mot) ) res.add((Element_Mot)element);
-				else if(element instanceof Element_Locuteur) {
-					if(((Element_Locuteur)element).getLocuteurID() == id) bonLocuteur = true;
-				}
-			}//for elements
-		}
-		
-		return res;
-	}//getMotsLocuteurs
-	*/
-	
-	
-	
-	
-	/**
-	 * Fonction permettant de r�cup�rer le mot prononc� par le locuteur donn�,
-	 * juste avant l'indice donn�.
-	 * @param locuteur
-	 * @param indiceMax
-	 * @return
-	 */
-	/*
-	public Element_Mot getDernierMotLocuteur(int locuteurID, int indiceMax){
-		int indiceMaximum = indiceMax;
-		Element element;
-		int indiceNextLocuteur = indiceMax-1;
-		int iter;
-		//on parcourt en arriere jusqu'� trouver le locuteur voulu.
-		parcourtArriere:for(iter = indiceMaximum-2; iter >= 0; iter--){
-			element = get(iter);
-			if(element instanceof Element_Locuteur) {
-				if(((Element_Locuteur)element).getLocuteurID() == locuteurID){
-					break parcourtArriere;
-				}
-				//sinon on memorise l'indice de ce locuteur, qui sera donc le locuteur suivant
-				else {
-					indiceNextLocuteur = iter;
-				}
-			}
-		}//for
-		//une fois ce locuteur trouv�, on repart en arri�re � partir du locuteur suivant
-		//et on renvoit l'indice du premier mot trouv�.
-		int valeurMin = Math.max(0, iter);
-		for(int i = indiceNextLocuteur; i >= valeurMin ; i-- ){
-			element = get(i);
-			if(element instanceof Element_Mot) return (Element_Mot) element;
-		}
-		return null;
-	}//getDernierMotLocuteur
-	*/
-	
-	/**
-	 * Fonction permettant de r�cup�rer le mot suivant prononc� par le locuteur donn�,
-	 * juste apr�s l'indice donn�.
-	 * @param locuteur
-	 * @param indiceMin
-	 * @return
-	 *//*
-	public Element_Mot getMotSuivantLocuteur(int locuteurID, int indiceMin){
-		
-		Element element;
-		boolean bonLocuteur = false;
-		
-		//parcour en arri�re pour savoir si on est avec le bon locuteur
-		parcourArriere:for(int i = indiceMin; i >= 0; i--){
-			element = get(i);
-			if(element instanceof Element_Locuteur) {
-				if(((Element_Locuteur)element).getLocuteurID() == locuteurID){
-					bonLocuteur = true;
-				}
-				break parcourArriere;
-			}
-		}//for:parcourArriere
-		
-		
-		//on parcourt en avant jusqu'� trouver un mot du bon locuteur
-		for(int iter = indiceMin+1; iter < size(); iter++){
-			element = get(iter);
-			if (element instanceof Element_Mot){
-				if(bonLocuteur) return (Element_Mot)element;
-			}
-			else if(element instanceof Element_Locuteur) {
-					bonLocuteur = ((Element_Locuteur)element).getLocuteurID() == locuteurID;
-			}
-		}
-		return null;
-	}//getDernierMotLocuteur
-	*/
-	
-
-	
 	/**
 	 * ajoute un element avant le Nieme mot (attention: N ne correspond pas a une
 	 * position dans la liste, mais a la position dans la liste des mots seulement
