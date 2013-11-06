@@ -87,8 +87,7 @@ public class JTrans {
 
 	public static void savePraatSingleTier(String textgridout, AlignementEtat al) {
 		try {
-			// TODO iso8859-1 ou utf8? -IJ
-			PrintWriter f = FileUtils.writeFileISO(textgridout);
+			PrintWriter f = FileUtils.writeFileUTF(textgridout);
 			savePraatHeader(f, al, 1);
 			savePraatTier(f, al, 1, "mots");
 			f.close();
@@ -105,8 +104,7 @@ public class JTrans {
 	 */
 	public static void savePraat2Tiers(String textgridout, Aligneur aligneur) {
 		try {
-			// TODO iso8859-1 ou utf8? -IJ
-			PrintWriter f = FileUtils.writeFileISO(textgridout);
+			PrintWriter f = FileUtils.writeFileUTF(textgridout);
 			savePraatHeader(f, aligneur.alignementPhones, 2);
 			savePraatTier(f, aligneur.alignementPhones, 1, "PhonTier");
 			savePraatTier(f, aligneur.alignement, 2, "WordTier");
