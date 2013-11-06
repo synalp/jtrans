@@ -7,22 +7,17 @@ http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html
 
 package plugins.applis.SimpleAligneur;
 
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Mixer;
-import javax.swing.JEditorPane;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JList;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JScrollPane;
+import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import edu.cmu.sphinx.result.Result;
@@ -64,8 +59,7 @@ public class Menus {
 		JMenuItem savetxt = new JMenuItem("Save .TXT as...");
 		JMenuItem savejtr = new JMenuItem("Save JTrans project as...");
 		JMenuItem savepho = new JMenuItem("Save align.pho");
-		JMenuItem savepraat1 = new JMenuItem("Save as Praat 1-tier text grid...");
-		JMenuItem savepraat3 = new JMenuItem("Save as Praat 3-tier text grid...");
+		JMenuItem savepraat = new JMenuItem("Save as Praat text grid...");
 		JMenuItem quit = new JMenuItem("Quit");
 
 		menubar.add(file);
@@ -78,8 +72,7 @@ public class Menus {
 		file.add(savetxt);
 		file.add(savejtr);
 		file.add(savepho);
-		file.add(savepraat1);
-		file.add(savepraat3);
+		file.add(savepraat);
 		file.addSeparator();
 		file.add(quit);
 
@@ -121,43 +114,46 @@ public class Menus {
 			}
 		});
 
-		savepraat1.addActionListener(new ActionListener() {
+		savepraat.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				AlignementEtat al;
-				String description;
+				JPanel choicePane = new JPanel();
+				choicePane.setLayout(new GridLayout(3, 1));
 
-				if (aligneur.showPhones) {
-					al = aligneur.alignementPhones;
-					description = "phones";
-				} else {
-					al = aligneur.alignement;
-					description = "words";
-				}
+				JCheckBox jcbPhonemes = new JCheckBox("Phonemes", true);
+				JCheckBox jcbWords = new JCheckBox("Words", true);
+				JCheckBox jcbSpeakers = new JCheckBox("Speakers", true);
+
+				choicePane.add(jcbPhonemes);
+				choicePane.add(jcbWords);
+				choicePane.add(jcbSpeakers);
+
+				int rc = JOptionPane.showConfirmDialog(aligneur.jf, choicePane,
+						"Select tiers to export",
+						JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE);
+
+				if (rc != JOptionPane.OK_OPTION)
+					return;
+
+				LinkedHashMap<String, AlignementEtat> tiers = new LinkedHashMap<String, AlignementEtat>();
+				if (jcbPhonemes.isSelected())
+					tiers.put("Phonemes", aligneur.alignementPhones);
+				if (jcbWords.isSelected())
+					tiers.put("Words", aligneur.alignement);
+				if (jcbSpeakers.isSelected())
+					tiers.put("Speakers", aligneur.generateSpeakerAlignment());
+
+				if (tiers.isEmpty())
+					return;
 
 				JFileChooser fc = new JFileChooser();
-				fc.setDialogTitle("Save " + description + " as Praat 1-tier text grid...");
-				fc.setSelectedFile(new File("out_" + description + ".textGrid"));
-				int returnVal = fc.showSaveDialog(aligneur.jf);
-
-				if (returnVal == fc.APPROVE_OPTION) {
-					File file = fc.getSelectedFile();
-					JTrans.savePraatSingleTier(file.getAbsolutePath(), al);
-				}
-			}
-		});
-
-		savepraat3.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				JFileChooser fc = new JFileChooser();
-				fc.setDialogTitle("Save as Praat 3-tier text grid...");
+				fc.setDialogTitle("Save to Praat text grid...");
 				fc.setSelectedFile(new File("out.textGrid"));
 				int returnVal = fc.showSaveDialog(aligneur.jf);
 
 				if (returnVal == fc.APPROVE_OPTION) {
 					File file = fc.getSelectedFile();
-					JTrans.savePraat3Tiers(file.getAbsolutePath(), aligneur);
+					JTrans.savePraat(file.getAbsolutePath(), tiers);
 				}
 			}
 		});
