@@ -70,10 +70,7 @@ import plugins.text.GriserWhilePlaying;
 import plugins.text.ListeElement;
 import plugins.text.PonctParser;
 import plugins.text.TexteEditor;
-import plugins.text.elements.Element;
-import plugins.text.elements.Element_Commentaire;
-import plugins.text.elements.Element_Mot;
-import plugins.text.elements.Element_Ponctuation;
+import plugins.text.elements.*;
 import plugins.utils.FileUtils;
 import plugins.utils.PrintLogger;
 import speechreco.RecoWord;
@@ -1560,5 +1557,63 @@ public class Aligneur extends JPanel implements PrintLogger {
 		progress.setRunnable(new Runnable() {
 			public void run() { JTransAPI.loadTRS(trsfile, progress); }});
 		progress.setVisible(true);
+	}
+
+	public AlignementEtat generateSpeakerAlignment() {
+		ListeElement lst = edit.getListeElement();
+		Element_Locuteur currSpeaker = null;
+		AlignementEtat speakers = new AlignementEtat();
+
+		int segStart   = -1;
+		int segEnd     = -1;
+		int prevSegEnd = -1;
+
+		for (int i = 0; i < lst.size(); i++) {
+			Element el = lst.get(i);
+
+			if (i == lst.size()-1 || el instanceof Element_Locuteur) {
+				// Add speaker segment
+				if (currSpeaker != null && segStart >= 0) {
+					int overlapLength = prevSegEnd - segStart;
+
+					// Overlap
+					if (overlapLength > 0) {
+						int overlapEnd = segStart + overlapLength;
+						int prevSeg = speakers.getNbSegments()-1;
+						System.out.println(String.format("Overlap! ...~%d %d-%d %d-...",
+								segStart, segStart, overlapEnd, overlapEnd));
+						// Shorten previous segment to make room for overlap segment
+						speakers.setSegmentEndFrame(prevSeg, segStart);
+						// Insert overlap segment
+						speakers.addRecognizedSegment(
+								speakers.getSegmentLabel(prevSeg) + "+L" + currSpeaker.getNumeroParole(),
+								segStart, overlapEnd, null, null);
+						// Shorten current segment
+						segStart = overlapEnd;
+					}
+
+					// Ensure the new segment isn't fully overlapped
+					if (segStart < segEnd) {
+						speakers.addRecognizedSegment("L" + currSpeaker.getNumeroParole(),
+								segStart, segEnd, null, null);
+					}
+				}
+
+				prevSegEnd = segEnd;
+				segStart = -1;
+
+				if (i < lst.size()-1)
+					currSpeaker = (Element_Locuteur)el;
+			}
+
+			if (el instanceof Element_Mot) {
+				int seg = ((Element_Mot)el).posInAlign;
+				segEnd = alignement.getSegmentEndFrame(seg);
+				if (segStart < 0)
+					segStart = alignement.getSegmentDebFrame(seg);
+			}
+		}
+
+		return speakers;
 	}
 }

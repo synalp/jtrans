@@ -65,7 +65,7 @@ public class Menus {
 		JMenuItem savejtr = new JMenuItem("Save JTrans project as...");
 		JMenuItem savepho = new JMenuItem("Save align.pho");
 		JMenuItem savepraat1 = new JMenuItem("Save as Praat 1-tier text grid...");
-		JMenuItem savepraat2 = new JMenuItem("Save as Praat 2-tier text grid...");
+		JMenuItem savepraat3 = new JMenuItem("Save as Praat 3-tier text grid...");
 		JMenuItem quit = new JMenuItem("Quit");
 
 		menubar.add(file);
@@ -79,7 +79,7 @@ public class Menus {
 		file.add(savejtr);
 		file.add(savepho);
 		file.add(savepraat1);
-		file.add(savepraat2);
+		file.add(savepraat3);
 		file.addSeparator();
 		file.add(quit);
 
@@ -147,17 +147,17 @@ public class Menus {
 			}
 		});
 
-		savepraat2.addActionListener(new ActionListener() {
+		savepraat3.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser fc = new JFileChooser();
-				fc.setDialogTitle("Save as Praat 2-tier text grid...");
+				fc.setDialogTitle("Save as Praat 3-tier text grid...");
 				fc.setSelectedFile(new File("out.textGrid"));
 				int returnVal = fc.showSaveDialog(aligneur.jf);
 
 				if (returnVal == fc.APPROVE_OPTION) {
 					File file = fc.getSelectedFile();
-					JTrans.savePraat2Tiers(file.getAbsolutePath(), aligneur);
+					JTrans.savePraat3Tiers(file.getAbsolutePath(), aligneur);
 				}
 			}
 		});

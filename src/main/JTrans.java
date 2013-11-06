@@ -70,7 +70,7 @@ public class JTrans {
 		f.println("item []:");
 	}
 
-	private static void savePraatTier(PrintWriter f, AlignementEtat al, int tierId, String tierName) {
+	private static void savePraatTier(PrintWriter f, int tierId, String tierName, AlignementEtat al) {
 		f.println("\titem [" + tierId + "]:");
 		f.println("\t\tclass = \"IntervalTier\"");
 		f.println("\t\tname = \"" + tierName + "\"");
@@ -89,7 +89,7 @@ public class JTrans {
 		try {
 			PrintWriter f = FileUtils.writeFileUTF(textgridout);
 			savePraatHeader(f, al, 1);
-			savePraatTier(f, al, 1, "mots");
+			savePraatTier(f, 1, "WordTier", al);
 			f.close();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -97,17 +97,18 @@ public class JTrans {
 	}
 
 	/**
-	 * Saves the phone and word alignments as two tiers in a
-	 * Praat text grid file.
+	 * Saves the phone and word alignments as tiers, plus an extra speaker tier,
+	 * in a Praat text grid file.
 	 * @param textgridout output file name
 	 * @param aligneur
 	 */
-	public static void savePraat2Tiers(String textgridout, Aligneur aligneur) {
+	public static void savePraat3Tiers(String textgridout, Aligneur aligneur) {
 		try {
 			PrintWriter f = FileUtils.writeFileUTF(textgridout);
-			savePraatHeader(f, aligneur.alignementPhones, 2);
-			savePraatTier(f, aligneur.alignementPhones, 1, "PhonTier");
-			savePraatTier(f, aligneur.alignement, 2, "WordTier");
+			savePraatHeader(f, aligneur.alignement, 3);
+			savePraatTier(f, 1, "PhonTier", aligneur.alignementPhones);
+			savePraatTier(f, 2, "WordTier", aligneur.alignement);
+			savePraatTier(f, 3, "SpkTier", aligneur.generateSpeakerAlignment());
 			f.close();
 		} catch (IOException e) {
 			e.printStackTrace();
