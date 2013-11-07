@@ -200,42 +200,21 @@ public class TexteEditor extends JTextPane {
 			texte = normtext(texte);
 			setText(texte);
 		}
-		
-		selectAll();
-		// on annule tout precedent formatage
-		AttributeSet att = styler.getEmptySet();
-		setCharacterAttributes(att, true);
 
 		//-- Pour tous les types d�finis, on highlight le texte --
 		ArrayList<Segment> nonText = new ArrayList<Segment>();		
 		for (int type = 0; type < listeTypes.size(); type++) {
 			TypeElement typeElement = listeTypes.get(type);
-			AttributeSet att2 =
-				styler.addAttribute(att, 
-									StyleConstants.ColorConstants.Background,
-									typeElement.getColor());
 			for (Pattern pat: typeElement.getPatterns()) {
 				Matcher mat = pat.matcher(texte);
 				while (mat.find()) {
 					int deb = mat.start();
 					int fin = mat.end();
 					nonText.add(new Segment(deb,fin,type));
-					
-					if(type == 0){
-						//pour tenter de trim la selection
-						while(Character.isWhitespace(getText().charAt(deb))){
-							++deb;
-						}
-						fin = deb;
-						while(!Character.isWhitespace(getText().charAt(fin))){
-							fin++;
-						}
-					}
-					select(deb,fin);
-					setCharacterAttributes(att2, true);
 				}
 			}
-		}//for
+		}
+		highlightNonTextSegments(nonText);
 		
 		int nonTextSize = nonText.size();
 		
@@ -355,20 +334,7 @@ public class TexteEditor extends JTextPane {
 			for (Pattern pat: listeTypes.get(type).getPatterns()) {
 				Matcher mat = pat.matcher(normedTexte);
 				while (mat.find()) {
-					int deb = mat.start();
-					int fin = mat.end();
-					nonText.add(new Segment(deb,fin,type));
-					
-					if(type == 0){
-						//pour tenter de trim la selection
-						while(Character.isWhitespace(normedTexte.charAt(deb))){
-							++deb;
-						}
-						fin = deb;
-						while(!Character.isWhitespace(normedTexte.charAt(fin))){
-							fin++;
-						}
-					}
+					nonText.add(new Segment(mat.start(), mat.end(), type));
 				}
 			}
 		}//for
@@ -543,6 +509,54 @@ public class TexteEditor extends JTextPane {
 	//---------------------------------------------------------------------
 	//----------------- M�thode de mise � jour ----------------------------
 	//---------------------------------------------------------------------
+
+	/**
+	 * Highlight non-text segments according to the color defined in their
+	 * respective types.
+	 */
+	private void highlightNonTextSegments(ArrayList<Segment> nonTextSegments) {
+		String text = getText();
+		int textLength = text.length();
+
+		// Clear all existing formatting
+		selectAll();
+		AttributeSet attr = styler.getEmptySet();
+		setCharacterAttributes(attr, true);
+
+		// Create a new style for each type
+		AttributeSet[] attr2 = new AttributeSet[listeTypes.size()];
+		for (int i = 0; i < listeTypes.size(); i++) {
+			attr2[i] = styler.addAttribute(attr,
+					StyleConstants.ColorConstants.Background,
+					listeTypes.get(i).getColor());
+		}
+
+		// Highlight segments
+		for (Segment seg: nonTextSegments) {
+			int start = seg.deb;
+			int end = seg.fin;
+
+			while (start < end &&
+					start < textLength &&
+					Character.isWhitespace(text.charAt(start)))
+			{
+				start++;
+			}
+
+			while (start < end &&
+					end < textLength &&
+					!Character.isWhitespace(text.charAt(end)))
+			{
+				end--;
+			}
+
+			if (start < end && start < text.length()) {
+				select(start, end);
+				setCharacterAttributes(attr2[seg.type], true);
+			}
+		}
+	}
+
 	/**
 	 * @deprecated use Highlighter instead
 	 */
