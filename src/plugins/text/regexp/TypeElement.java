@@ -45,7 +45,10 @@ package plugins.text.regexp;
 
 import java.awt.Color;
 import java.io.Serializable;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * Classe utilisee pour stocker un type : 
@@ -54,37 +57,53 @@ import java.util.Vector;
  */
 public class TypeElement implements Serializable {
 	
-	public static final long serialVersionUID = 1;
+	public static final long serialVersionUID = 2;
 	
 	//------ Private fields --------
-	private String nom;
-	private Vector<String> regexp;
+	private String name;
 	private Color color;
-	
+	private List<Pattern> patterns;
+
 	//------ Constructor ------
-	public TypeElement(String nom, Vector<String> regexp, Color color) {
-		super();
-		this.nom = nom;
-		this.regexp = regexp;
+	public TypeElement(String name, Color color, String... regexps) {
+		this.name = name ;
 		this.color = color;
+
+		patterns = new ArrayList<Pattern>();
+		for (String s: regexps) {
+			patterns.add(Pattern.compile(s));
+		}
+	}
+
+	public TypeElement(String name, Color color, List<String> regexps) {
+		this(name, color, regexps.toArray(new String[regexps.size()]));
 	}
 	//------ Getters & Setters ------
 	public Color getColor() {
 		return color;
 	}
+
 	public void setColor(Color color) {
 		this.color = color;
 	}
-	public String getNom() {
-		return nom;
+
+	public String getName() {
+		return name;
 	}
-	public void setNom(String nom) {
-		this.nom = nom;
+
+	public void setName(String nom) {
+		this.name = nom;
 	}
-	public Vector<String> getRegexp() {
-		return regexp;
+
+	public Pattern[] getPatterns() {
+		return patterns.toArray(new Pattern[patterns.size()]);
 	}
-	public void setRegexp(Vector<String> regexp) {
-		this.regexp = regexp;
+
+	public void addRegexp(String regexp) throws PatternSyntaxException {
+		patterns.add(Pattern.compile(regexp));
+	}
+
+	public void removePattern(int index) {
+		patterns.remove(index);
 	}
 }//class TypeElement

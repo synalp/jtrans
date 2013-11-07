@@ -45,9 +45,11 @@ package plugins.text.regexp.controler;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
-import javax.swing.JList;
-import javax.swing.JOptionPane;
+import javax.swing.*;
+import javax.swing.event.ListDataListener;
 
 import plugins.text.regexp.TypeElement;
 
@@ -58,9 +60,10 @@ public class ActionAddRegexp implements ActionListener {
 	
 	//------ Private Fields --------
 	private TypeElement typeElement;
-	private JList liste;
+	private JList<Pattern> liste;
+
 	//---------- Constructor ---------
-	public ActionAddRegexp(TypeElement typeElement, JList liste) {
+	public ActionAddRegexp(TypeElement typeElement, JList<Pattern> liste) {
 		super();
 		this.typeElement = typeElement;
 		this.liste = liste;
@@ -69,10 +72,15 @@ public class ActionAddRegexp implements ActionListener {
 	//------- Action associee ------
 	public void actionPerformed(ActionEvent e){
 		String str = 
-			JOptionPane.showInputDialog(null, "Entrez l'expression reguliere associee e ce type");
+			JOptionPane.showInputDialog(null,
+					"Entrez l'expression regulière associée à ce type :");
 		if (str != null){
-			typeElement.getRegexp().add(str);
-			liste.updateUI();
+			try {
+				typeElement.addRegexp(str);
+				liste.setListData(typeElement.getPatterns());
+			} catch (PatternSyntaxException ex) {
+				JOptionPane.showMessageDialog(liste, "Illegal regexp");
+			}
 		}
 	}//actionPerformed
 }//class ActionAdd

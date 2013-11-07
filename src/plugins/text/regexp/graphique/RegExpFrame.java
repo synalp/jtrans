@@ -49,6 +49,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
+import java.util.regex.Pattern;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -126,13 +127,13 @@ public class RegExpFrame extends JFrame {
 		tabbedPane.add(creerPanelOptions(),"Options");
 		
 		JPanel pan;
-		JList liste;
+		JList<Pattern> liste;
 		//Un panel pour chaque element defini.
 		for(TypeElement typeElement : texteEditor.getListeTypes()){
 			pan = new JPanel();
 			pan.setLayout(new BorderLayout());
 			
-			liste = new JList(typeElement.getRegexp());
+			liste = new JList<Pattern>(typeElement.getPatterns());
 			pan.add(liste,BorderLayout.CENTER);
 			
 			//---- Creation du panel des boutons ----------
@@ -152,7 +153,7 @@ public class RegExpFrame extends JFrame {
 			
 			pan.add(panBoutons,BorderLayout.SOUTH);
 			
-			tabbedPane.add(pan,typeElement.getNom());
+			tabbedPane.add(pan,typeElement.getName());
 		}//for
 		
 	}//remplirTabbedPane

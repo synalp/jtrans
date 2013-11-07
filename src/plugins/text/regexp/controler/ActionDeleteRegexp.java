@@ -45,6 +45,7 @@ package plugins.text.regexp.controler;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.regex.Pattern;
 
 import javax.swing.JList;
 
@@ -56,9 +57,9 @@ import plugins.text.regexp.TypeElement;
 public class ActionDeleteRegexp implements ActionListener {
 	//------ Private Fields --------
 	private TypeElement typeElement;
-	private JList liste;
+	private JList<Pattern> liste;
 	//---------- Constructor ---------
-	public ActionDeleteRegexp(TypeElement typeElement, JList liste) {
+	public ActionDeleteRegexp(TypeElement typeElement, JList<Pattern> liste) {
 		super();
 		this.typeElement = typeElement;
 		this.liste = liste;
@@ -68,8 +69,8 @@ public class ActionDeleteRegexp implements ActionListener {
 	public void actionPerformed(ActionEvent e){
 		int indice = liste.getSelectedIndex();
 		if(indice != -1){
-			typeElement.getRegexp().remove(indice);
-			liste.updateUI();
+			typeElement.removePattern(indice);
+			liste.setListData(typeElement.getPatterns());
 		}
 	}//actionPerformed
 }//class ActionDelete

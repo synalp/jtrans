@@ -22,10 +22,7 @@ import java.io.PrintWriter;
 import java.io.StringReader;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Vector;
+import java.util.*;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -75,7 +72,35 @@ public class TexteEditor extends JTextPane {
 	private ListeElement listeElement;
 	
 	//----------- Composants ----------
-	private List<TypeElement> listeTypes;
+	private ArrayList<TypeElement> listeTypes;
+	private static final TypeElement DEFAULT_TYPES[] = {
+			new TypeElement("Locuteur", Color.GREEN,
+					"(^|\\n)(\\s)*\\w\\d+\\s"),
+
+			new TypeElement("Commentaire", Color.YELLOW,
+					"\\{[^\\}]*\\}",
+					"\\[[^\\]]*\\]",
+					"\\+"),
+
+			new TypeElement("Bruit", Color.CYAN,
+					"(\\w)*\\((\\w)*\\)(\\w)*",
+					"\\s\\*\\*\\*\\s",
+					"\\s\\*\\s"),
+
+			new TypeElement("Début de chevauchement", Color.PINK,
+					"<"),
+
+			new TypeElement("Fin de chevauchement", Color.PINK,
+					">"),
+
+			new TypeElement("Ponctuation", Color.ORANGE,
+					"\\?",
+					"\\:",
+					"\\;",
+					"\\,",
+					"\\.",
+					"\\!"),
+	};
 	
 	//---------- State Flag ---------------
 	public boolean textChanged;
@@ -133,7 +158,7 @@ public class TexteEditor extends JTextPane {
 	public TexteEditor() {
 		super();
 		listeElement = new ListeElement();
-		listeTypes=initListeTypes();
+		listeTypes = new ArrayList<TypeElement>(Arrays.asList(DEFAULT_TYPES));
 		
 		textChanged = false;
 		colorieur = new Coloriage();
@@ -153,50 +178,6 @@ public class TexteEditor extends JTextPane {
 	public void scrollRectToVisible(Rectangle aRect){
 		return;
 	}
-
-	public static List<TypeElement> initListeTypes(){
-		List<TypeElement> listeTypes = new ArrayList<TypeElement>();
-		
-		
-		Vector<String> listeLoc = new Vector<String>();
-		listeLoc.add("(^|\\n)(\\s)*\\w\\d+\\s");//lettre + chiffres
-		listeTypes.add(new TypeElement("Locuteur",listeLoc,Color.GREEN));
-		
-		Vector<String> listeCom = new Vector<String>();
-		listeCom.add("\\{[^\\}]*\\}");// tout ce qui est entre {}
-		listeCom.add("\\[[^\\]]*\\]");// tout ce qui est entre []
-		listeCom.add("\\+");
-		listeTypes.add(new TypeElement("Commentaires",listeCom,Color.YELLOW));
-		
-		
-		Vector<String> listeBruit = new Vector<String>();
-		listeBruit.add("(\\w)*\\((\\w)*\\)(\\w)*");
-		listeBruit.add("\\s\\*\\*\\*\\s");
-		listeBruit.add("\\s\\*\\s");
-		listeTypes.add(new TypeElement("Bruits",listeBruit,Color.CYAN));
-		
-		
-		
-		Vector<String> listeDebutChevauchement = new Vector<String>();
-		listeDebutChevauchement.add("<");
-		listeTypes.add(new TypeElement("D�but de chevauchement",listeDebutChevauchement,Color.PINK));
-		
-		Vector<String> listeFinChevauchement = new Vector<String>();
-		listeFinChevauchement.add(">");
-		listeTypes.add(new TypeElement("Fin de chevauchement",listeFinChevauchement,Color.PINK));
-		
-		Vector<String> listePonctuation = new Vector<String>();
-		listePonctuation.add("\\?");
-		listePonctuation.add("\\:");
-		listePonctuation.add("\\;");
-		listePonctuation.add("\\,");
-		listePonctuation.add("\\.");
-		listePonctuation.add("\\!");
-		listeTypes.add(new TypeElement("Ponctuation",listePonctuation,Color.ORANGE));
-		return listeTypes;
-	}//initListeTypes()
-	
-	
 	
 	
 	//------------------------------------------------------------------------------------
@@ -248,21 +229,16 @@ public class TexteEditor extends JTextPane {
 		// on annule tout precedent formatage
 		AttributeSet att = styler.getEmptySet();
 		setCharacterAttributes(att, true);
-		
-		int listeTypesSize = listeTypes.size();
+
 		//-- Pour tous les types d�finis, on highlight le texte --
 		ArrayList<Segment> nonText = new ArrayList<Segment>();		
-		Vector<String> regexps = null;
-		TypeElement typeElement;
-		for(int type = 0; type < listeTypesSize; ++type){
-			typeElement = listeTypes.get(type);
-			regexps = typeElement.getRegexp();
-			AttributeSet att2 = 
+		for (int type = 0; type < listeTypes.size(); type++) {
+			TypeElement typeElement = listeTypes.get(type);
+			AttributeSet att2 =
 				styler.addAttribute(att, 
 									StyleConstants.ColorConstants.Background,
 									typeElement.getColor());
-			for (int i=0;i<regexps.size();i++) {
-				Pattern pat = Pattern.compile(regexps.get(i));
+			for (Pattern pat: typeElement.getPatterns()) {
 				Matcher mat = pat.matcher(texte);
 				while (mat.find()) {
 					int deb = mat.start();
@@ -398,15 +374,9 @@ public class TexteEditor extends JTextPane {
 		ArrayList<Element_Mot> listeMot = new ArrayList<Element_Mot>();
 		ListeElement listeElts = new ListeElement();
 
-		int listeTypesSize = listeTypes.size();
-		ArrayList<Segment> nonText = new ArrayList<Segment>();		
-		Vector<String> regexps = null;
-		TypeElement typeElement;
-		for(int type = 0; type < listeTypesSize; ++type){
-			typeElement = listeTypes.get(type);
-			regexps = typeElement.getRegexp();
-			for (int i=0;i<regexps.size();i++) {
-				Pattern pat = Pattern.compile(regexps.get(i));
+		ArrayList<Segment> nonText = new ArrayList<Segment>();
+		for (int type = 0; type < listeTypes.size(); type++) {
+			for (Pattern pat: listeTypes.get(type).getPatterns()) {
 				Matcher mat = pat.matcher(normedTexte);
 				while (mat.find()) {
 					int deb = mat.start();
@@ -840,9 +810,9 @@ public class TexteEditor extends JTextPane {
 		final String doubleTab = "\t\t";
 		final char backSlashN = '\n';
 		
-		for(TypeElement type : listeTypes){
+		for (TypeElement type: listeTypes) {
 			strBuilder.append(debutType);
-			strBuilder.append(type.getNom());
+			strBuilder.append(type.getName());
 			strBuilder.append(finBalise);
 			
 			strBuilder.append(debutColor);
@@ -850,9 +820,9 @@ public class TexteEditor extends JTextPane {
 			strBuilder.append(finBalise);
 			
 			strBuilder.append(debutRegexp);
-			for(String regexp : type.getRegexp()){
+			for (Pattern pattern: type.getPatterns()) {
 				strBuilder.append(doubleTab);
-				strBuilder.append(regexp);
+				strBuilder.append(pattern.pattern());
 				strBuilder.append(backSlashN);
 			}
 			strBuilder.append(finRegexp);
@@ -887,8 +857,9 @@ public class TexteEditor extends JTextPane {
 			//pour toutes les autres lignes.
 			while ((ligne = bufferRead.readLine()) != null){
 				if(ligne.length() != 0){
-					type = new TypeElement(null,new Vector<String>(),null);
-	
+					String name = null;
+					Color color = null;
+					ArrayList<String> regexps = new ArrayList<String>();
 	
 					//-----------------------------------------
 					//------ R�cup�ration du nom du type ------
@@ -908,7 +879,7 @@ public class TexteEditor extends JTextPane {
 						System.err.println("Erreur de parsing du fichier : \n Nom de type manquant : \n"+ligne);
 						return;
 					}
-					type.setNom(ligne.substring(premierQuote+1, secondQuote));
+					name = ligne.substring(premierQuote+1, secondQuote);
 					//-------------------------------------
 					//------ R�cup�ration de la couleur ----
 					//-----------------------------------------
@@ -936,7 +907,8 @@ public class TexteEditor extends JTextPane {
 					}
 	
 					try {
-						type.setColor(new Color(Integer.parseInt(ligne.substring(premierQuote+1,secondQuote))));
+						color = new Color(Integer.parseInt(
+								ligne.substring(premierQuote+1, secondQuote)));
 					}
 					catch (NumberFormatException nfe){
 						System.err.println("Erreur de parsing du fichier : \n Num�ro de couleur manquant, ce n'est pas un chiffre : \n"+ligne);
@@ -962,8 +934,8 @@ public class TexteEditor extends JTextPane {
 							System.err.println("Erreur de parsing du fichier : \n Fin de fichier non attendue \n il manque les regexp !");
 							return;
 						}
-	
-						type.getRegexp().add(ligne.trim());
+
+						regexps.add(ligne.trim());
 					}//whileREGEXP
 	
 	
@@ -982,7 +954,7 @@ public class TexteEditor extends JTextPane {
 						return;
 					}
 	
-					listeTypes.add(type);
+					listeTypes.add(new TypeElement(name, color, regexps));
 				}
 			}//while
 		} catch (IOException e){
