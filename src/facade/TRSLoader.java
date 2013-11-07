@@ -106,6 +106,12 @@ class TRSLoader {
 					anchorList.add(new Anchor(character, second));
 				}
 
+				else if (name.equals("Comment")) {
+					buffer.append(" {")
+							.append(((Element)child).getAttribute("desc"))
+							.append("}");
+				}
+
 				// Ignore unknown tag
 				else {
 					System.out.println("TRS WARNING: Ignoring inknown tag " + name);
