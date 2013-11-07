@@ -17,11 +17,22 @@ import java.io.*;
 public class Cache {
 
 	/**
-	 * This abstract factory is invoked when no valid cached object was found.
+	 * Factory invoked by cachedObject() when the cached object needs to be
+	 * created or re-created.
 	 */
-	public interface Factory {
+	public interface ObjectFactory {
 		public Object make();
 	}
+
+
+	/**
+	 * Factory invoked by cachedFile() when the cached file needs to be
+	 * created or re-created.
+	 */
+	public interface FileFactory {
+		public void write(File f) throws IOException;
+	}
+
 
 	/**
 	 * Flag indicating whether to try to read objects from the cache.
@@ -35,29 +46,35 @@ public class Cache {
 
 
 	/**
-	 * Generate a unique hash for a combination of a WAVE file and a text.
-	 * @param wave WAVE file name
-	 * @param text speech text
+	 * Generates a unique path for a combination of several objects.
+	 *
+	 * Each object in hashableComponents triggers the creation of a new cache
+	 * subdirectory named after a hash of the object. If any of the objects is
+	 * a file, its modification date is also accounted for in the hash.
 	 */
-	public static final int comboHash(String wave, String text) {
-		return (int)(text.hashCode() + wave.hashCode() + new File(wave).lastModified());
+	public static File getCacheDir(Object... hashableComponents) {
+		File f = CACHE_DIR;
+		for (Object c: hashableComponents) {
+			int hash = c.hashCode();
+			if (c instanceof File)
+				hash = (int)(hash * 31 + ((File)c).lastModified());
+			f = new File(f, String.format("%08x.cache", hash));
+		}
+		return f;
 	}
 
 
 	/**
-	 * Return a cached object matching objectId or create a new object if the
-	 * cache is invalid.
+	 * Returns a cached object. If the requested object hasn't been cached yet,
+	 * it is created, written to the cache, and returned.
 	 *
-	 * When a new object is created, it is written to the cache.
-	 *
-	 * @param wave WAVE file name
-	 * @param text speech text
 	 * @param objectName custom identifier for the requested object
 	 * @param factory factory to create a new object if the cache is invalid
+	 * @param hashableComponents objects that will be hashed to find the
+	 *                           correct cache file
 	 */
-	public static final Object cachedObject(String wave, String text, String objectName, Factory factory) {
-		File cacheSubdir = new File(CACHE_DIR, String.format("combo_%08x", comboHash(wave, text)));
-		File cacheFile = new File(cacheSubdir, objectName);
+	public static Object cachedObject(String objectName, ObjectFactory factory, Object... hashableComponents) {
+		File cacheFile = new File(getCacheDir(hashableComponents), objectName);
 
 		// Try to read object from cache
 		if (READ_FROM_CACHE && cacheFile.exists()) {
@@ -72,12 +89,12 @@ public class Cache {
 			}
 		}
 
-		// Compute object
+		// Create object
 		Object object = factory.make();
 
 		// Dump computed object to cache
 		try {
-			cacheSubdir.mkdirs();
+			cacheFile.getParentFile().mkdirs();
 			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(cacheFile));
 			oos.writeObject(object);
 			oos.flush();
@@ -88,5 +105,31 @@ public class Cache {
 		}
 
 		return object;
+	}
+
+
+	/**
+	 * Returns a cached file. If the requested file hasn't been cached yet,
+	 * it is created, written to the cache, and returned.
+	 *
+	 * @param fileName custom identifier for the requested file
+	 * @param factory factory to create a new file if the cache is invalid
+	 * @param hashableComponents objects that will be hashed to find the
+	 *                           correct cache file
+	 */
+	public static File cachedFile(String fileName, FileFactory factory, Object... hashableComponents) {
+		File cacheFile = new File(getCacheDir(hashableComponents), fileName);
+
+		if (!READ_FROM_CACHE || !cacheFile.exists()) {
+			cacheFile.getParentFile().mkdirs();
+			try {
+				factory.write(cacheFile);
+			} catch (IOException ex) {
+				System.err.println("Couldn't write cache file!");
+				ex.printStackTrace();
+			}
+		}
+
+		return cacheFile;
 	}
 }

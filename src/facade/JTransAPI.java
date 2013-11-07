@@ -1,5 +1,6 @@
 package facade;
 
+import java.io.File;
 import java.util.*;
 
 import plugins.applis.SimpleAligneur.Aligneur;
@@ -31,9 +32,6 @@ public class JTransAPI {
 		return m.isBruit;
 	}
 
-	public static final Object cachedObject(String objectName, Cache.Factory factory) {
-		return Cache.cachedObject(aligneur.wavname, edit.getText(), objectName, factory);
-	}
 
 	private static S4AlignOrder createS4AlignOrder(int motdeb, int trdeb, int motfin, int trfin) {
 		S4AlignOrder order = new S4AlignOrder(motdeb, trdeb, motfin, trfin);
@@ -67,11 +65,15 @@ public class JTransAPI {
 			s4blocViterbi.setMots(amots);
 		}
 
-		S4AlignOrder order = (S4AlignOrder)cachedObject(
+		S4AlignOrder order = (S4AlignOrder)Cache.cachedObject(
 				String.format("%05d_%05d_%05d_%05d.order", startWord, startFrame, endWord, endFrame),
-				new Cache.Factory() {
-					public Object make() { return createS4AlignOrder(startWord, startFrame, endWord, endFrame); }
-				});
+				new Cache.ObjectFactory() {
+					public Object make() {
+						return createS4AlignOrder(startWord, startFrame, endWord, endFrame);
+					}
+				},
+				new File(aligneur.wavname),
+				edit.getText());
 
 		if (order.alignWords!=null) {
 			order.alignWords.adjustOffset(startFrame);
