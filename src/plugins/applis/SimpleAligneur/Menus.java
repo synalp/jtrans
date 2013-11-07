@@ -376,7 +376,7 @@ public class Menus {
 					public void actionPerformed(ActionEvent e) {
 						String wavnom = e.getActionCommand().split(" ")[1];
 						System.out.println("wavsource for mike : "+wavnom);
-						aligneur.setWavSource(wavnom);
+						aligneur.setAudioSource(wavnom);
 						aligneur.setCurPosInSec(0);
 						aligneur.repaint();
 					}
@@ -458,7 +458,7 @@ public class Menus {
 					Grammatiseur.fastLoading=true;
 					Grammatiseur.grammatiseur=null;
 					gram = new LiveSpeechReco();
-					gram.wavfile=aligneur.wavname;
+					gram.wavfile = aligneur.convertedAudioFile.getAbsolutePath();
 					gram.loadVoc(vocfile);
 					gram.initGrammar();
 					gram.gram=gram;
@@ -565,8 +565,7 @@ public class Menus {
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					File file = filechooser.getSelectedFile();
 					if (file.exists()) {
-						aligneur.setWavSource(file.getAbsolutePath());
-						System.out.println("wav set");
+						aligneur.setAudioSource(file.getAbsolutePath());
 						aligneur.setCurPosInSec(0);
 						return;
 					}
@@ -580,9 +579,18 @@ public class Menus {
 				filechooser.setDialogTitle("Save .WAV...");
 				filechooser.setSelectedFile(new File("out.wav"));
 				int returnVal = filechooser.showSaveDialog(aligneur.jf);
-				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					File file = filechooser.getSelectedFile();
-					aligneur.savewav(file);
+				if (returnVal != JFileChooser.APPROVE_OPTION)
+					return;
+
+				File file = filechooser.getSelectedFile();
+				try {
+					aligneur.saveWave(file);
+				} catch (IOException ex) {
+					ex.printStackTrace();
+					JOptionPane.showMessageDialog(aligneur.jf,
+							"I/O error when saving WAVE file",
+							"Error",
+							JOptionPane.ERROR_MESSAGE);
 				}
 			}
 		});

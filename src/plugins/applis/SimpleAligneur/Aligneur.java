@@ -14,24 +14,12 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.URL;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.UnsupportedAudioFileException;
+import javax.sound.sampled.*;
 import javax.swing.Box;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -111,7 +99,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 	public AutoAligner autoAligner = null;
 	public TexteEditor edit;
 	//	public Player player;
-	public AudioFormat audioFormat = null;
 	public TemporalSigPanel sigPanel = null;
 	public ToolBarTemporalSig toolbar = null;
 	public KeysManager kmgr = null;
@@ -119,7 +106,12 @@ public class Aligneur extends JPanel implements PrintLogger {
 	JScrollPane scrollPane;
 	JSplitPane splitPane = null;
 	Box textBox, sigBox;
-	public String wavname=null;
+
+	/** Original audio file, format may not be suitable for processing */
+	public File originalAudioFile = null;
+	/** Audio file in a suitable format for processing */
+	public File convertedAudioFile = null;
+
 	public RoundBuffer audiobuf = new RoundBuffer(this, 10000000);
 	public RoundBufferFrontEnd mfccbuf;
 	TemporalSigFromWavFile wavForMFCC;
@@ -216,35 +208,72 @@ public class Aligneur extends JPanel implements PrintLogger {
 			e.printStackTrace();
 		}
 	}
-	public void savewav(File wavout) {
-		File f = new File(wavname);
-		boolean res = f.renameTo(wavout);
-		System.out.println("renaming done "+res);
+
+	/**
+	 * Saves a copy of the converted audio file.
+	 */
+	public void saveWave(File outFile) throws IOException {
+		byte[] buf = new byte[1024];
+		int len;
+
+		InputStream in = new FileInputStream(convertedAudioFile);
+		OutputStream out = new FileOutputStream(outFile);
+
+		while ((len = in.read(buf)) > 0) {
+			out.write(buf, 0, len);
+		}
+
+		in.close();
+		out.close();
 	}
 
-	public void setWavSource(String url) {
-		wavname=url;
+	/**
+	 * Sets the sound source file and converts it to a suitable format for
+	 * JTrans if needed.
+	 * @param path path to the sound file
+	 */
+	public void setAudioSource(String path) {
+		originalAudioFile = new File(path);
+		convertedAudioFile = JTransAPI.suitableAudioFile(originalAudioFile);
 	}
 	
 	public AudioInputStream getAudioStreamFromSec(float sec) {
-		if (wavname==null) return null;
+		if (convertedAudioFile == null)
+			return null;
+
+		AudioInputStream ais;
+
 		try {
-			AudioInputStream ais = FileUtils.findAudioFileOrUrl(wavname);
-			if (ais==null) {
-				JOptionPane.showMessageDialog(null, "ERROR no audiostream from "+wavname);
-				return null;
-			}
-			AudioFormat format = ais.getFormat();
-			float frPerSec = format.getFrameRate();
-			int byPerFr = format.getFrameSize();
-			float fr2skip = frPerSec*sec;
-			long by2skip = (long)(fr2skip*(float)byPerFr);
+			ais = AudioSystem.getAudioInputStream(convertedAudioFile);
+		} catch (UnsupportedAudioFileException ex) {
+			ex.printStackTrace();
+			ais = null;
+		} catch (IOException ex) {
+			ex.printStackTrace();
+			ais = null;
+		}
+
+		if (ais == null) {
+			JOptionPane.showMessageDialog(jf,
+					"No audio stream from " + convertedAudioFile,
+					"Error",
+					JOptionPane.ERROR_MESSAGE);
+			return null;
+		}
+
+		AudioFormat format = ais.getFormat();
+		float frPerSec = format.getFrameRate();
+		int byPerFr = format.getFrameSize();
+		float fr2skip = frPerSec*sec;
+		long by2skip = (long)(fr2skip*(float)byPerFr);
+
+		try {
 			ais.skip(by2skip);
 			return ais;
 		} catch (IOException e) {
 			e.printStackTrace();
+			return null;
 		}
-		return null;
 	}
 
 	/*
@@ -358,11 +387,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 		}
 	}
 
-	public AudioInputStream getWavSourceFromStart() {
-		AudioInputStream in = FileUtils.findAudioFileOrUrl(wavname);
-		return in;
-	}
-
 	public void griseSelectedWord() {
 		caretSensible = false;
 		Element_Mot mot = edit.getListeElement().getWordElement(wordSelectedIdx);
@@ -377,7 +401,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 	private AutoAligner getAutoAligner() {
 		// TODO: support for URL !!
-		return AutoAligner.getAutoAligner(wavname,null,edit,alignement,alignementPhones);
+		return AutoAligner.getAutoAligner(convertedAudioFile.getAbsolutePath(), null, edit, alignement, alignementPhones);
 	}
 
 	public void batch() {
@@ -532,7 +556,18 @@ public class Aligneur extends JPanel implements PrintLogger {
 				regexp=edit.exportRegexpAsTxt();
 			}
 			if (sourceTxtfile==null) saveCurrentTextInSourcefile();
-			saveProject(edit.getListeElement(),file.getAbsolutePath(),sourceTxtfile,wavname,alignement,alignementPhones,regexp);
+			try {
+				saveProject(edit.getListeElement(),
+						file.getAbsolutePath(),
+						sourceTxtfile,
+						originalAudioFile.getCanonicalPath(),
+						alignement,
+						alignementPhones,
+						regexp);
+			} catch(IOException ex) {
+				System.err.println("Couldn't save project!");
+				ex.printStackTrace();
+			}
 		}
 	}
 
@@ -577,7 +612,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 			BufferedReader f = FileUtils.openFileOrURL(nom);
 			String s = f.readLine();
 			assert s.startsWith("wavname= ");
-			wavname = s.substring(9);
+			setAudioSource(s.substring(9));
 			s = f.readLine();
 			assert s.startsWith("txtname= ");
 			sourceTxtfile = s.substring(9);
@@ -1441,7 +1476,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 						getRecoResult(asr);
 					}
 				};
-				asr.doReco(wavname, "");
+				asr.doReco(convertedAudioFile.getAbsolutePath(), "");
 				getRecoResult(asr);
 			}
 		}, "please wait: transcribing...");
@@ -1451,7 +1486,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 	String[] mots;
 	public S4ForceAlignBlocViterbi getS4aligner() {
 		// TODO: support for URL !!
-		S4ForceAlignBlocViterbi s4aligner = S4ForceAlignBlocViterbi.getS4Aligner(wavname);
+		S4ForceAlignBlocViterbi s4aligner = S4ForceAlignBlocViterbi.getS4Aligner(convertedAudioFile.getAbsolutePath());
 		List<Element_Mot>  lmots = edit.getListeElement().getMots();
 		mots = new String[lmots.size()];
 		for (int i=0;i<lmots.size();i++) {
@@ -1529,12 +1564,13 @@ public class Aligneur extends JPanel implements PrintLogger {
 	}
 	
 	public static void main(String args[]) {
+		// TODO rendre les options plus propres
 		Aligneur m = new Aligneur();
 		m.inputControls();
 		if (args.length>0) {
 			if (args[0].endsWith(".jtr")) m.loadProject(args[0]);
 			else if (args[0].endsWith(".wav")) {
-				m.wavname=args[0]; // on a juste besoin de faire ca pour que ca se charge ???
+				m.setAudioSource(args[0]);
 				if (args.length>1) {
 					if (args[1].endsWith(".trs")) {
 						m.loadTRSWithProgress(args[1]);

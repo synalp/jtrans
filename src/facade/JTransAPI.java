@@ -1,6 +1,6 @@
 package facade;
 
-import java.io.File;
+import java.io.*;
 import java.util.*;
 
 import plugins.applis.SimpleAligneur.Aligneur;
@@ -13,6 +13,8 @@ import plugins.text.TexteEditor;
 import plugins.text.elements.Element_Mot;
 import utils.ProgressDialog;
 
+import javax.sound.sampled.*;
+
 public class JTransAPI {
 	/**
 	 * Align words between anchors using linear interpolation (a.k.a.
@@ -20,6 +22,13 @@ public class JTransAPI {
 	 * Setting this flag to `true` yields very fast albeit inaccurate results.
 	 */
 	private static final boolean USE_LINEAR_ALIGNMENT = false;
+
+	/**
+	 * Target audio format. Any input audio files that do not match this format
+	 * will be converted to it before being processed.
+	 */
+	private static final AudioFormat SUITABLE_AUDIO_FORMAT =
+			new AudioFormat(16000, 16, 1, true, false);
 	
 	public static int getNbWords() {
 		if (elts==null) return 0;
@@ -32,6 +41,51 @@ public class JTransAPI {
 		return m.isBruit;
 	}
 
+	/**
+	 * Return an audio file in a suitable format for JTrans. If the original
+	 * file isn't in the right format, convert it and cache it.
+	 */
+	public static File suitableAudioFile(final File original) {
+		AudioFormat af;
+
+		try {
+			 af = AudioSystem.getAudioFileFormat(original).getFormat();
+		} catch (UnsupportedAudioFileException ex) {
+			ex.printStackTrace();
+			return original;
+		} catch (IOException ex) {
+			ex.printStackTrace();
+			return original;
+		}
+
+		if (af.matches(SUITABLE_AUDIO_FORMAT)) {
+			System.out.println("suitableAudioFile: no conversion needed!");
+			return original;
+		}
+
+		System.out.println("suitableAudioFile: need conversion, trying to get one from the cache");
+
+		Cache.FileFactory factory = new Cache.FileFactory() {
+			public void write(File f) throws IOException {
+				System.out.println("suitableAudioFile: no cache found... creating one");
+
+				AudioInputStream originalStream;
+				try {
+					 originalStream = AudioSystem.getAudioInputStream(original);
+				} catch (UnsupportedAudioFileException ex) {
+					ex.printStackTrace();
+					throw new Error("Unsupported audio file; should've been caught above!");
+				}
+
+				AudioSystem.write(
+						AudioSystem.getAudioInputStream(SUITABLE_AUDIO_FORMAT, originalStream),
+						AudioFileFormat.Type.WAVE,
+						f);
+			}
+		};
+
+		return Cache.cachedFile("converted.wav", factory, original);
+	}
 
 	private static S4AlignOrder createS4AlignOrder(int motdeb, int trdeb, int motfin, int trfin) {
 		S4AlignOrder order = new S4AlignOrder(motdeb, trdeb, motfin, trfin);
@@ -61,7 +115,7 @@ public class JTransAPI {
 			for (int i=0;i<mots.size();i++) {
 				amots[i] = mots.get(i).getWordString();
 			}
-			s4blocViterbi = S4ForceAlignBlocViterbi.getS4Aligner(aligneur.wavname);
+			s4blocViterbi = S4ForceAlignBlocViterbi.getS4Aligner(aligneur.convertedAudioFile.getAbsolutePath());
 			s4blocViterbi.setMots(amots);
 		}
 
@@ -72,7 +126,7 @@ public class JTransAPI {
 						return createS4AlignOrder(startWord, startFrame, endWord, endFrame);
 					}
 				},
-				new File(aligneur.wavname),
+				aligneur.originalAudioFile,
 				edit.getText());
 
 		if (order.alignWords!=null) {

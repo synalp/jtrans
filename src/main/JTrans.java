@@ -7,13 +7,7 @@ import java.io.PrintWriter;
 import java.util.List;
 import java.util.Map;
 
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.UnsupportedAudioFileException;
-import javax.sound.sampled.AudioFileFormat.Type;
-import javax.sound.sampled.AudioFormat.Encoding;
-
+import facade.JTransAPI;
 import plugins.applis.SimpleAligneur.Aligneur;
 import plugins.speechreco.aligners.sphiinx4.AlignementEtat;
 import plugins.speechreco.aligners.sphiinx4.AutoAligner;
@@ -119,22 +113,8 @@ public class JTrans {
 
 	public static void align(String wavfile, String txtfile) {
 		// conversion du fichier WAV si besoin
-		try {
-			AudioFormat fileAudioFormat = AudioSystem.getAudioFileFormat(new File(wavfile)).getFormat();
-			if (fileAudioFormat.getSampleRate()==16000 && fileAudioFormat.getChannels()==1 && fileAudioFormat.getEncoding()==Encoding.PCM_SIGNED && fileAudioFormat.getSampleSizeInBits()==16) {
-				System.out.println("wave file format OK : pas besoin de conversion !");
-			} else {
-				System.out.println("WARNING: wav format not in PMC signed 16kHz 16 bits mono ! Converting...");
-				AudioInputStream sonFormatOrigine = AudioSystem.getAudioInputStream(new File(wavfile));
-				AudioInputStream son = AudioSystem.getAudioInputStream(new AudioFormat(16000,16,1,true,false),sonFormatOrigine);
-				wavfile = "tmptcwav.wav";
-				AudioSystem.write(son, Type.WAVE, new File(wavfile));
-			}
-		} catch (UnsupportedAudioFileException e1) {
-			e1.printStackTrace();
-		} catch (IOException e1) {
-			e1.printStackTrace();
-		}
+		File wf = JTransAPI.suitableAudioFile(new File(wavfile));
+		wavfile = wf.getAbsolutePath();
 
 		PonctParser parser = new PonctParser(null);
 		ListeElement listeElts = parser.parseimmutable(txtfile);
