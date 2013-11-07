@@ -188,122 +188,21 @@ public class TexteEditor extends JTextPane {
 		setIgnoreRepaint(true);
 		setVisible(false);
 		//pour d�sactiver le d�filement automatique du texte quand il est pars�
-		 
-		List<Element_Mot> listeMot = listeElement.getMots();
-		int listeMotSize = listeMot.size();
 
-		
-		ListeElement listeElts = new ListeElement();
-		
-		String texte = getText();
+		String normedText = getText();
 		if (modifytxt) {
-			texte = normtext(texte);
-			setText(texte);
+			normedText = normtext(normedText);
+			setText(normedText);
 		}
 
-		//-- Pour tous les types d�finis, on highlight le texte --
-		ArrayList<Segment> nonText = new ArrayList<Segment>();		
-		for (int type = 0; type < listeTypes.size(); type++) {
-			TypeElement typeElement = listeTypes.get(type);
-			for (Pattern pat: typeElement.getPatterns()) {
-				Matcher mat = pat.matcher(texte);
-				while (mat.find()) {
-					int deb = mat.start();
-					int fin = mat.end();
-					nonText.add(new Segment(deb,fin,type));
-				}
-			}
-		}
-		highlightNonTextSegments(nonText);
-		
-		int nonTextSize = nonText.size();
-		
-		// on transforme les elements obtenus par ce parsing en elements pour jtrans
-		Collections.sort(nonText);
-		int precfin = 0;
-		boolean parserCettePartie;
-		for(int i = 0; i < nonTextSize; ++i){
-			parserCettePartie = true;
-			int deb = nonText.get(i).deb;
-			int fin = nonText.get(i).fin;
-			if (precfin > deb) {
-					//cas entrecrois� : {-----------[---}-------]
-					//on deplace de facon � avoir : {--------------}[-------]
-					if (fin > precfin) deb = precfin;
-					
-					//cas imbriqu� : {------[---]----------}
-					//on ne parse pas l'imbriqu�
-					else parserCettePartie = false;
-			}//if (precfin > deb)
-			
-			if(parserCettePartie){
-				
-				// ligne de texte situ�e avant
-				if (deb-precfin>0) {
-					String ligne = texte.substring(precfin,deb);
-					
-					parserListeMot(ligne, precfin, listeElts, listeMot, listeMotSize);
-					
-				}//if (deb-precfin>0) 
-				
-				//l'�lement en lui m�me
-				switch (nonText.get(i).type) {
-					case 0: // LOCUTEUR
-						int num=0;
-						String loc = texte.substring(deb,fin);
-						Matcher p = Pattern.compile("\\d").matcher(loc);
-						if (p.find()) {
-							int posnum = p.start();
-							try {
-								num=Integer.parseInt(loc.substring(posnum).trim());
-								loc=loc.substring(0,posnum).trim();
-							} catch (NumberFormatException e) {
-								// e.printStackTrace();
-							}
-						}
-						listeElts.addLocuteurElement(loc, num);
-						break;
-					case 1: // COMMENT
-						listeElts.add(new Element_Commentaire(this,deb,fin));
-						break;
-					case 2: // BRUIT
-						listeElts.add(Element_Mot.fromSubstring(texte, deb, fin, true));
-						break;
-					case 3 : //Debut chevauchement
-						listeElts.add(new Element_DebutChevauchement());
-						break;
-					case 4 : //Fin de chevauchement
-						listeElts.add(new Element_FinChevauchement());
-						break;
-					case 5 : // ponctuation
-						listeElts.add(new Element_Ponctuation(texte.substring(deb,fin).charAt(0)));
-						break;
-					default : System.err.println("HOUSTON, ON A UN PROBLEME ! TYPE PARSE INCONNU");
-				}
-				precfin = fin;
-				
-
-			}//if (parserCettePartie)
-
-			//setChanged();
-			//notifyObservers(i);
-		}//for
-		//ligne de texte situ�e apr�s le dernier �l�ment
-		if (texte.length()-precfin>0) {
-			String ligne = texte.substring(precfin);
-			parserListeMot(ligne, precfin, listeElts, listeMot, listeMotSize);
-			
-		}
+		listeElement = parseString(normedText, true);
+		JTransAPI.setElts(listeElement);
 		
 		lastSelectedWord = lastSelectedWord2 = null;
 		setCaretPosition(caretPosition);
 		
 		textChanged = false;
-		
-		// on ecrase l'ancienne liste d'elements avec la nouvelle
-		listeElement = listeElts;
-		JTransAPI.setElts(listeElement);
-		
+
 		setIgnoreRepaint(false);
 		setVisible(true);
 	}//reparse
@@ -324,31 +223,30 @@ public class TexteEditor extends JTextPane {
 		return texte;
 	}
 	
-	public ListeElement parseString(String normedTexte, List<TypeElement> listeTypes){
-		// doit contenir les mots avant le reparsing (?)
-		ArrayList<Element_Mot> listeMot = new ArrayList<Element_Mot>();
+	public ListeElement parseString(String normedText, boolean highlightNonText){
 		ListeElement listeElts = new ListeElement();
 
 		ArrayList<Segment> nonText = new ArrayList<Segment>();
 		for (int type = 0; type < listeTypes.size(); type++) {
 			for (Pattern pat: listeTypes.get(type).getPatterns()) {
-				Matcher mat = pat.matcher(normedTexte);
+				Matcher mat = pat.matcher(normedText);
 				while (mat.find()) {
 					nonText.add(new Segment(mat.start(), mat.end(), type));
 				}
 			}
-		}//for
-		
-		int nonTextSize = nonText.size();
+		}
+
+		if (highlightNonText)
+			highlightNonTextSegments(nonText);
 		
 		// on transforme les elements obtenus par ce parsing en elements pour jtrans
 		Collections.sort(nonText);
 		int precfin = 0;
 		boolean parserCettePartie;
-		for(int i = 0; i < nonTextSize; ++i){
+		for (Segment seg: nonText){
 			parserCettePartie = true;
-			int deb = nonText.get(i).deb;
-			int fin = nonText.get(i).fin;
+			int deb = seg.deb;
+			int fin = seg.fin;
 			if (precfin > deb) {
 					//cas entrecrois� : {-----------[---}-------]
 					//on deplace de facon � avoir : {--------------}[-------]
@@ -363,16 +261,15 @@ public class TexteEditor extends JTextPane {
 				
 				// ligne de texte situ�e avant
 				if (deb-precfin>0) {
-					String ligne = normedTexte.substring(precfin,deb);
-					parserListeMot(ligne, precfin, listeElts, listeMot, 0);
-					
-				}//if (deb-precfin>0) 
+					String ligne = normedText.substring(precfin,deb);
+					parserListeMot(ligne, precfin, listeElts, normedText);
+				}//if (deb-precfin>0)
 				
 				//l'�lement en lui m�me
-				switch (nonText.get(i).type) {
+				switch (seg.type) {
 					case 0: // LOCUTEUR
 						int num=0;
-						String loc = normedTexte.substring(deb,fin);
+						String loc = normedText.substring(deb,fin);
 						Matcher p = Pattern.compile("\\d").matcher(loc);
 						if (p.find()) {
 							int posnum = p.start();
@@ -389,7 +286,7 @@ public class TexteEditor extends JTextPane {
 						listeElts.add(new Element_Commentaire(this, deb, fin));
 						break;
 					case 2: // BRUIT
-						listeElts.add(Element_Mot.fromSubstring(normedTexte, deb, fin, true));
+						listeElts.add(Element_Mot.fromSubstring(normedText, deb, fin, true));
 						break;
 					case 3 : //Debut chevauchement
 						listeElts.add(new Element_DebutChevauchement());
@@ -398,32 +295,24 @@ public class TexteEditor extends JTextPane {
 						listeElts.add(new Element_FinChevauchement());
 						break;
 					case 5 : // ponctuation
-						listeElts.add(new Element_Ponctuation(normedTexte.substring(deb,fin).charAt(0)));
+						listeElts.add(new Element_Ponctuation(normedText.substring(deb, fin).charAt(0)));
 						break;
 					default : System.err.println("HOUSTON, ON A UN PROBLEME ! TYPE PARSE INCONNU");
 				}
 				precfin = fin;
-				
+			}
+		}
 
-			}//if (parserCettePartie)
-
-			//setChanged();
-			//notifyObservers(i);
-		}//for
 		//ligne de texte situ�e apr�s le dernier �l�ment
-		if (normedTexte.length()-precfin>0) {
-			String ligne = normedTexte.substring(precfin);
-			parserListeMot(ligne, precfin, listeElts, listeMot, 0);
-			
+		if (normedText.length()-precfin>0) {
+			String ligne = normedText.substring(precfin);
+			parserListeMot(ligne, precfin, listeElts, normedText);
 		}
 		return listeElts;
 	}//reparse
 
 	
-	private void parserListeMot(String ligne, int precfin, 
-								ListeElement listeElts, 
-								List<Element_Mot> listeMot,
-								int listeMotSize){
+	private static void parserListeMot(String ligne, int precfin, ListeElement listeElts, String text) {
 		int index = 0;
 		int debutMot;
 		//on parcourt toute la ligne
@@ -444,11 +333,10 @@ public class TexteEditor extends JTextPane {
 			
 			if(index > debutMot){
 				listeElts.add(Element_Mot.fromSubstring(
-						getText(), debutMot + precfin, index + precfin, false));
+						text, debutMot + precfin, index + precfin, false));
 			}
-		}//while(index < ligne.length)
-		
-	}//parserListeMot
+		}
+	}
 	
 	
 	public void openTextFile(File textFile){
