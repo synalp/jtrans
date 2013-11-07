@@ -509,7 +509,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 						else sav.add(oldmots.get(i).posInAlign);
 					Integer[] savealign = sav.toArray(new Integer[sav.size()]);
 					*/
-					edit.reparse();
+					edit.reparse(true);
 					/*
 					int i=0;
 					for (Element_Mot m : edit.getListeElement().getMots()) {

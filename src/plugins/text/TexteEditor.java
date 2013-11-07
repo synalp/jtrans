@@ -113,14 +113,6 @@ public class TexteEditor extends JTextPane {
 	public Element_Mot lastSelectedWord=null;
 	public Element_Mot lastSelectedWord2=null;
 	
-	//ces 4 lignes simplement pour pouvoir 
-	//stocker le caractere apostrophe UTF, meme
-	// dans un fichier encode en Latin !
-	private final static byte[] winAposbytes = {32,25};
-	private final static ByteBuffer winAposb = ByteBuffer.wrap(winAposbytes);
-	private final static CharBuffer winApost = winAposb.asCharBuffer();
-	private final static char winApos = winApost.get();
-	
 	private File openedTextFile;
 	
 	StyleContext styler = StyleContext.getDefaultStyleContext();
@@ -184,15 +176,11 @@ public class TexteEditor extends JTextPane {
 	//------------------------- M�thode de parsing ---------------------------------------
 	//-----------------------------------------------------------------------------------
 
-	//On effectue une reparsing 
 	/*
 	 * Attention ! reparse() detruit la liste actuelle des elements,
 	 * or il y a des ancres dans ListeAlignement qui pointaient vers l'ancienne liste,
 	 * et on aura donc des objets-mots  dupliques ! (cf. fin de la fonction)
 	 */
-	public void reparse(){
-		reparse(true);
-	}
 	public void reparse(boolean modifytxt) {
 		int caretPosition = getCaretPosition();
 		nbMot = 0;
@@ -208,20 +196,8 @@ public class TexteEditor extends JTextPane {
 		ListeElement listeElts = new ListeElement();
 		
 		String texte = getText();
-		
 		if (modifytxt) {
-			// pour remplacer les apostrophes "Unicodes" venant d'un copier/coller depuis Word
-			texte = texte.replace(winApos, '\'');
-
-			// pour supprimer les carriage return specifiques a Windows...
-			texte = texte.replace('\r', ' ');
-
-			// pour supprimer les espaces ins�cables ainsi que la ponctuation non d�sir�e
-			texte = texte.replaceAll("[\\xA0\"=]"," ");
-
-			//On ne rajoute un espace derri�re la virgule que si un caractere de mot le suit imm�diatement
-			texte = texte.replaceAll("\'(\\S)", "\' $1"); 
-
+			texte = normtext(texte);
 			setText(texte);
 		}
 		
@@ -312,7 +288,7 @@ public class TexteEditor extends JTextPane {
 						listeElts.add(new Element_Commentaire(this,deb,fin));
 						break;
 					case 2: // BRUIT
-						listeElts.add(Element_Mot.fromSubstring(getText(), deb, fin, true));
+						listeElts.add(Element_Mot.fromSubstring(texte, deb, fin, true));
 						break;
 					case 3 : //Debut chevauchement
 						listeElts.add(new Element_DebutChevauchement());
@@ -355,7 +331,7 @@ public class TexteEditor extends JTextPane {
 
 	public static String normtext(String texte) {
 		// pour remplacer les apostrophes "Unicodes" venant d'un copier/coller depuis Word
-		texte = texte.replace(winApos, '\'');
+		texte = texte.replace('\u2019', '\'');
 		
 		// pour supprimer les carriage return specifiques a Windows...
 		texte = texte.replace('\r', ' ');
@@ -444,10 +420,10 @@ public class TexteEditor extends JTextPane {
 						listeElts.addLocuteurElement(loc, num);
 						break;
 					case 1: // COMMENT
-						listeElts.add(new Element_Commentaire((JTextPane)null,deb,fin));
+						listeElts.add(new Element_Commentaire(this, deb, fin));
 						break;
 					case 2: // BRUIT
-						listeElts.add(new Element_Mot(null, deb, fin, true));
+						listeElts.add(Element_Mot.fromSubstring(normedTexte, deb, fin, true));
 						break;
 					case 3 : //Debut chevauchement
 						listeElts.add(new Element_DebutChevauchement());
@@ -528,7 +504,7 @@ public class TexteEditor extends JTextPane {
 			bufferRead.close();
 			
 			setText(strBuilder.toString());
-			reparse();
+			reparse(true);
 		} catch (FileNotFoundException e) {
 			System.err.println("Fichier introuvable : "+textFile.getAbsolutePath());
 		} catch (IOException e) {
@@ -583,14 +559,14 @@ public class TexteEditor extends JTextPane {
 	public void souligne(Element_Mot mot) {
 		setCaretPosition((mot.posDebInTextPanel+mot.posFinInTextPanel)/2);
 		AttributeSet a = getCharacterAttributes();
-		AttributeSet b = styler.addAttribute(a, StyleConstants.Underline, new Boolean(true));
+		AttributeSet b = styler.addAttribute(a, StyleConstants.Underline, true);
 		select(mot.posDebInTextPanel,mot.posFinInTextPanel);
 		setCharacterAttributes(b, true);
 	}
 	public void unsouligne(Element_Mot mot) {
 		setCaretPosition((mot.posDebInTextPanel+mot.posFinInTextPanel)/2);
 		AttributeSet a = getCharacterAttributes();
-		AttributeSet b = styler.addAttribute(a, StyleConstants.Underline, new Boolean(false));
+		AttributeSet b = styler.addAttribute(a, StyleConstants.Underline, false);
 		select(mot.posDebInTextPanel,mot.posFinInTextPanel);
 		setCharacterAttributes(b, true);
 	}

@@ -45,7 +45,7 @@ public class TextGUI extends JFrame {
 		parse.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				edit.setEditable(false);
-				edit.reparse();
+				edit.reparse(true);
 			}
 		});
 		editb.addActionListener(new ActionListener() {

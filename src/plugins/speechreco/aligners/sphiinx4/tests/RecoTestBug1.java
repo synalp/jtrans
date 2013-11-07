@@ -96,7 +96,7 @@ public class RecoTestBug1 {
 
     public void parse() {
     	editor.setEditable(false);
-    	editor.reparse();
+    	editor.reparse(true);
         Alignement oldalign = alignement;
         creeAlignement();
         if (oldalign != null) {
