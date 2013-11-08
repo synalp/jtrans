@@ -42,6 +42,7 @@ import javax.swing.text.LayeredHighlighter.LayerPainter;
 
 import facade.JTransAPI;
 
+import facade.TextParser;
 import plugins.speechreco.aligners.sphiinx4.AutoAligner;
 import plugins.text.elements.Element_Mot;
 import plugins.text.elements.Element_Commentaire;
@@ -191,11 +192,13 @@ public class TexteEditor extends JTextPane {
 
 		String normedText = getText();
 		if (modifytxt) {
-			normedText = normtext(normedText);
+			normedText = TextParser.normalizeText(normedText);
 			setText(normedText);
 		}
 
-		listeElement = parseString(normedText, true);
+		List<Segment> nonText = TextParser.findNonTextSegments(normedText, listeTypes);
+		listeElement = TextParser.parseString(normedText, nonText);
+		highlightNonTextSegments(nonText);
 		JTransAPI.setElts(listeElement);
 		
 		lastSelectedWord = lastSelectedWord2 = null;
@@ -207,138 +210,7 @@ public class TexteEditor extends JTextPane {
 		setVisible(true);
 	}//reparse
 
-	public static String normtext(String texte) {
-		// pour remplacer les apostrophes "Unicodes" venant d'un copier/coller depuis Word
-		texte = texte.replace('\u2019', '\'');
-		
-		// pour supprimer les carriage return specifiques a Windows...
-		texte = texte.replace('\r', ' ');
-		
-		// pour supprimer les espaces ins�cables ainsi que la ponctuation non d�sir�e
-		texte = texte.replaceAll("[\\xA0\"=/]"," ");
-		
-		//On ne rajoute un espace derri�re la virgule que si un caractere de mot le suit imm�diatement
-		texte = texte.replaceAll("\'(\\S)", "\' $1"); 
-		
-		return texte;
-	}
-	
-	public ListeElement parseString(String normedText, boolean highlightNonText){
-		ListeElement listeElts = new ListeElement();
 
-		ArrayList<Segment> nonText = new ArrayList<Segment>();
-		for (int type = 0; type < listeTypes.size(); type++) {
-			for (Pattern pat: listeTypes.get(type).getPatterns()) {
-				Matcher mat = pat.matcher(normedText);
-				while (mat.find()) {
-					nonText.add(new Segment(mat.start(), mat.end(), type));
-				}
-			}
-		}
-
-		if (highlightNonText)
-			highlightNonTextSegments(nonText);
-		
-		// on transforme les elements obtenus par ce parsing en elements pour jtrans
-		Collections.sort(nonText);
-		int precfin = 0;
-		boolean parserCettePartie;
-		for (Segment seg: nonText){
-			parserCettePartie = true;
-			int deb = seg.deb;
-			int fin = seg.fin;
-			if (precfin > deb) {
-					//cas entrecrois� : {-----------[---}-------]
-					//on deplace de facon � avoir : {--------------}[-------]
-					if (fin > precfin) deb = precfin;
-					
-					//cas imbriqu� : {------[---]----------}
-					//on ne parse pas l'imbriqu�
-					else parserCettePartie = false;
-			}//if (precfin > deb)
-			
-			if(parserCettePartie){
-				
-				// ligne de texte situ�e avant
-				if (deb-precfin>0) {
-					String ligne = normedText.substring(precfin,deb);
-					parserListeMot(ligne, precfin, listeElts, normedText);
-				}//if (deb-precfin>0)
-				
-				//l'�lement en lui m�me
-				switch (seg.type) {
-					case 0: // LOCUTEUR
-						int num=0;
-						String loc = normedText.substring(deb,fin);
-						Matcher p = Pattern.compile("\\d").matcher(loc);
-						if (p.find()) {
-							int posnum = p.start();
-							try {
-								num=Integer.parseInt(loc.substring(posnum).trim());
-								loc=loc.substring(0,posnum).trim();
-							} catch (NumberFormatException e) {
-								// e.printStackTrace();
-							}
-						}
-						listeElts.addLocuteurElement(loc, num);
-						break;
-					case 1: // COMMENT
-						listeElts.add(Element_Commentaire.fromSubstring(normedText, deb, fin));
-						break;
-					case 2: // BRUIT
-						listeElts.add(Element_Mot.fromSubstring(normedText, deb, fin, true));
-						break;
-					case 3 : //Debut chevauchement
-						listeElts.add(new Element_DebutChevauchement());
-						break;
-					case 4 : //Fin de chevauchement
-						listeElts.add(new Element_FinChevauchement());
-						break;
-					case 5 : // ponctuation
-						listeElts.add(new Element_Ponctuation(normedText.substring(deb, fin).charAt(0)));
-						break;
-					default : System.err.println("HOUSTON, ON A UN PROBLEME ! TYPE PARSE INCONNU");
-				}
-				precfin = fin;
-			}
-		}
-
-		//ligne de texte situ�e apr�s le dernier �l�ment
-		if (normedText.length()-precfin>0) {
-			String ligne = normedText.substring(precfin);
-			parserListeMot(ligne, precfin, listeElts, normedText);
-		}
-		return listeElts;
-	}//reparse
-
-	
-	private static void parserListeMot(String ligne, int precfin, ListeElement listeElts, String text) {
-		int index = 0;
-		int debutMot;
-		//on parcourt toute la ligne
-		while(index < ligne.length()){
-			
-			//on saute les espaces
-			while(index < ligne.length() && 
-					Character.isWhitespace(ligne.charAt(index))){
-				index++;
-			}
-			
-			debutMot =  index;
-			//on avance jusqu'au prochain espace
-			
-			while((index < ligne.length()) && (!Character.isWhitespace(ligne.charAt(index)))){
-					index++;	
-			}
-			
-			if(index > debutMot){
-				listeElts.add(Element_Mot.fromSubstring(
-						text, debutMot + precfin, index + precfin, false));
-			}
-		}
-	}
-	
-	
 	public void openTextFile(File textFile){
 		try {
 			this.openedTextFile = textFile;
@@ -402,7 +274,7 @@ public class TexteEditor extends JTextPane {
 	 * Highlight non-text segments according to the color defined in their
 	 * respective types.
 	 */
-	private void highlightNonTextSegments(ArrayList<Segment> nonTextSegments) {
+	private void highlightNonTextSegments(List<Segment> nonTextSegments) {
 		String text = getText();
 		int textLength = text.length();
 
