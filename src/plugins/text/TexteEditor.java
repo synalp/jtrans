@@ -283,7 +283,7 @@ public class TexteEditor extends JTextPane {
 						listeElts.addLocuteurElement(loc, num);
 						break;
 					case 1: // COMMENT
-						listeElts.add(new Element_Commentaire(this, deb, fin));
+						listeElts.add(Element_Commentaire.fromSubstring(normedText, deb, fin));
 						break;
 					case 2: // BRUIT
 						listeElts.add(Element_Mot.fromSubstring(normedText, deb, fin, true));

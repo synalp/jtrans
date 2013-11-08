@@ -181,7 +181,7 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 					String[] ss = s.split(" ");
 					int pdeb = Integer.parseInt(ss[1]);
 					int pfin = Integer.parseInt(ss[2]);
-					Element_Commentaire mot = new Element_Commentaire(textarea,pdeb,pfin);
+					Element_Commentaire mot = Element_Commentaire.fromSubstring(textarea.getText(), pdeb, pfin);
 					add(mot);
 				} else if (s.startsWith("pun")) {
 					int k=s.indexOf(' ')+1;

@@ -43,51 +43,26 @@ termes.
 
 package plugins.text.elements;
 
-import javax.swing.JTextPane;
-
-
 /**
  * Wrapper autour d'un commentaire
  */
 public class Element_Commentaire implements Element {
-	
-	public static final long serialVersionUID = 1;
-	
-	//---------- Private Fields --------
-	private transient JTextPane textPane=null;
-	private String cmt = null;
+	public static final long serialVersionUID = 2;
+
+	public final String comment;
 	public int posDebInTextPanel,posFinInTextPanel;
 
-	//----------- Constructor -------------
-	public Element_Commentaire(String commentaire, int posDebInTextPanel, int posFinInTextPanel) {
-		cmt=commentaire;
-		this.posDebInTextPanel = posDebInTextPanel;
-		this.posFinInTextPanel = posFinInTextPanel;
-	}
-	public Element_Commentaire(JTextPane textPane, int posDebInTextPanel, int posFinInTextPanel) {
-		super();
-		this.textPane = textPane;
-		this.posDebInTextPanel = posDebInTextPanel;
-		this.posFinInTextPanel = posFinInTextPanel;
-	}//constructor
-
-	//--------- Getters & Setters -----------
-	public String getCommentaire() {
-		if (cmt!=null) return cmt;
-		if(posDebInTextPanel < 0 || posFinInTextPanel < posDebInTextPanel) return "";
-		
-		String texte = textPane.getText();
-		
-		if(posFinInTextPanel > texte.length()) return "";
-		
-		return texte.substring(posDebInTextPanel, posFinInTextPanel);
-	}//getCommentaire
-
-	public void setTextPane(JTextPane textPane) {
-		this.textPane = textPane;
+	public Element_Commentaire(String comment, int posdeb, int posfin) {
+		this.comment = comment;
+		this.posDebInTextPanel = posdeb;
+		this.posFinInTextPanel = posfin;
 	}
 
-	
-	
-	
+	/**
+	 * Returns an Element_Mot whose word is created from a substring of
+	 * bigString, beginning at posdeb and ending at posfin-1.
+	 */
+	public static Element_Commentaire fromSubstring(String bigString, int posdeb, int posfin) {
+		return new Element_Commentaire(bigString.substring(posdeb, posfin), posdeb, posfin);
+	}
 }//class Element_Commentaire
