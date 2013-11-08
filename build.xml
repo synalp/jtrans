@@ -9,7 +9,6 @@
 	<path id="my.classpath">
 		<pathelement location="${libs}/basicplayer3.0.jar"/>
 		<pathelement location="${libs}/commons-logging-api.jar"/>
-		<pathelement location="${libs}/JHTK.jar"/>
 		<pathelement location="${libs}/jl1.0.jar"/>
 		<pathelement location="${libs}/jogg-0.0.7.jar"/>
 		<pathelement location="${libs}/jorbis-0.0.15.jar"/>
@@ -37,7 +36,7 @@
     <target name="jar" depends="compile" description="generate the distribution" >
     	<mkdir dir="${dist}"/>
 	<manifest file="${dist}/MANIFEST.MF">
-		<attribute name="Class-Path" value="libs/basicplayer3.0.jar libs/commons-logging-api.jar libs/JHTK.jar libs/jl1.0.jar libs/jogg-0.0.7.jar libs/jorbis-0.0.15.jar libs/jsafran.jar libs/jspeex0.9.7.jar libs/JUNG.jar libs/junit-4.5.jar libs/mp3spi1.9.4.jar libs/sphinx4.jar libs/tritonus_gsm-0.3.6.jar libs/tritonus_remaining.jar libs/tritonus_share.jar libs/vorbisspi1.0.2.jar libs/weka.jar"/>
+		<attribute name="Class-Path" value="libs/basicplayer3.0.jar libs/commons-logging-api.jar libs/jl1.0.jar libs/jogg-0.0.7.jar libs/jorbis-0.0.15.jar libs/jsafran.jar libs/jspeex0.9.7.jar libs/JUNG.jar libs/junit-4.5.jar libs/mp3spi1.9.4.jar libs/sphinx4.jar libs/tritonus_gsm-0.3.6.jar libs/tritonus_remaining.jar libs/tritonus_share.jar libs/vorbisspi1.0.2.jar libs/weka.jar"/>
 		<attribute name="Main-Class" value="utils.installer.JTransInstall"/>
 		<attribute name="Implementation-Title" value="JTrans"/>
 		<attribute name="Implementation-Version" value="${version}"/>
