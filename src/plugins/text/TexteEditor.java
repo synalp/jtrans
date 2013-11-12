@@ -74,7 +74,7 @@ public class TexteEditor extends JTextPane {
 	
 	//----------- Composants ----------
 	private ArrayList<TypeElement> listeTypes;
-	private static final TypeElement DEFAULT_TYPES[] = {
+	public static final TypeElement DEFAULT_TYPES[] = {
 			new TypeElement("Locuteur", Color.GREEN,
 					"(^|\\n)(\\s)*\\w\\d+\\s"),
 
@@ -197,9 +197,8 @@ public class TexteEditor extends JTextPane {
 		}
 
 		List<Segment> nonText = TextParser.findNonTextSegments(normedText, listeTypes);
-		listeElement = TextParser.parseString(normedText, nonText);
+		setListeElement(TextParser.parseString(normedText, nonText));
 		highlightNonTextSegments(nonText);
-		JTransAPI.setElts(listeElement);
 		
 		lastSelectedWord = lastSelectedWord2 = null;
 		setCaretPosition(caretPosition);
@@ -274,7 +273,7 @@ public class TexteEditor extends JTextPane {
 	 * Highlight non-text segments according to the color defined in their
 	 * respective types.
 	 */
-	private void highlightNonTextSegments(List<Segment> nonTextSegments) {
+	public void highlightNonTextSegments(List<Segment> nonTextSegments) {
 		String text = getText();
 		int textLength = text.length();
 
@@ -746,6 +745,7 @@ public class TexteEditor extends JTextPane {
 
 	public void setListeElement(ListeElement listeElement) {
 		this.listeElement = listeElement;
+		JTransAPI.setElts(listeElement);
 	}
 
 	public void setListeTypes(ArrayList<TypeElement> listeTypes) {

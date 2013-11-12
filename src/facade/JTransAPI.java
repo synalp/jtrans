@@ -343,12 +343,10 @@ public class JTransAPI {
 		}
 
 		TexteEditor zonetexte = TexteEditor.getTextEditor();
-		zonetexte.setText(trs.text);
 		zonetexte.setEditable(false);
-
-		// il ne faut pas que reparse modifie le texte !!!
-		progress.setMessage("Reparsing text...");
-		zonetexte.reparse(false);
+		zonetexte.setText(trs.text);
+		zonetexte.setListeElement(trs.elements);
+		zonetexte.highlightNonTextSegments(trs.nonText);
 		System.out.println("apres parsing: nelts=" + elts.size() + " ancres=" + trs.anchors);
 
 		// Align words between the previous anchor and the current one. All
