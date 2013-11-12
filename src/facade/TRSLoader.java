@@ -1,13 +1,11 @@
 package facade;
 
 import org.w3c.dom.*;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 import plugins.text.ListeElement;
 import plugins.text.TexteEditor;
-import plugins.text.elements.Element_Commentaire;
-import plugins.text.elements.Element_Locuteur;
-import plugins.text.elements.Locuteur_Info;
-import plugins.text.elements.Segment;
+import plugins.text.elements.*;
 
 import javax.xml.parsers.*;
 import java.io.IOException;
@@ -147,6 +145,13 @@ class TRSLoader {
 					int character = buffer.length();
 					float second = Float.parseFloat(((Element)child).getAttribute("time"));
 					anchorList.add(new Anchor(character, second));
+
+					String ancText = String.format("%d'%02d\"%03d",
+							(int)(second/60f), (int)(second%60f), Math.round(second%1f * 1000f));
+					buffer.append(' ');
+					int pos = buffer.length();
+					buffer.append(ancText);
+					allNonText.add(new Segment(pos, pos + ancText.length(), 6));
 				}
 
 				else if (name.equals("Comment")) {

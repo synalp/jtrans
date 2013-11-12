@@ -101,6 +101,8 @@ public class TexteEditor extends JTextPane {
 					"\\,",
 					"\\.",
 					"\\!"),
+
+			new TypeElement("Ancre", new Color(0xddffaa)),
 	};
 	
 	//---------- State Flag ---------------
