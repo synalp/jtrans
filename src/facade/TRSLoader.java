@@ -4,6 +4,7 @@ import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 import plugins.text.ListeElement;
 import plugins.text.TexteEditor;
+import plugins.text.elements.Element_Commentaire;
 import plugins.text.elements.Element_Locuteur;
 import plugins.text.elements.Locuteur_Info;
 import plugins.text.elements.Segment;
@@ -148,13 +149,14 @@ class TRSLoader {
 					anchorList.add(new Anchor(character, second));
 				}
 
-				/* TODO
 				else if (name.equals("Comment")) {
-					buffer.append(" {")
-							.append(((Element)child).getAttribute("desc"))
-							.append("}");
+					buffer.append(' ');
+					int pos = buffer.length();
+					String comment = "{" + ((Element)child).getAttribute("desc") + "}";
+					buffer.append(comment);
+					allElements.add(new Element_Commentaire(comment, pos));
+					allNonText.add(new Segment(pos, pos + comment.length(), 1)); // Type 1 = comment
 				}
-				*/
 
 				// Ignore unknown tag
 				else {

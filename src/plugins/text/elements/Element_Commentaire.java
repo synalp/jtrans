@@ -52,6 +52,12 @@ public class Element_Commentaire implements Element {
 	public final String comment;
 	public int posDebInTextPanel,posFinInTextPanel;
 
+	public Element_Commentaire(String comment, int posdeb) {
+		this.comment = comment;
+		this.posDebInTextPanel = posdeb;
+		this.posFinInTextPanel = posdeb + comment.length();
+	}
+
 	public Element_Commentaire(String comment, int posdeb, int posfin) {
 		this.comment = comment;
 		this.posDebInTextPanel = posdeb;
