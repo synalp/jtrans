@@ -109,20 +109,19 @@ class TRSLoader {
 				if (name.equals("#text")) {
 					String text = TextParser.normalizeText(child.getTextContent().trim());
 					if (!text.isEmpty()) {
-						// Introduce current speaker with a line break and their
-						// name so that reparse() can pick it up
-						/* TODO
+						// Introduce current speaker with a line break and their name
 						if (!currentSpeakerIntroduced) {
 							if (buffer.length() > 0)
 								buffer.append("\n");
+							int pos = buffer.length();
 							buffer.append(currentSpeaker.getName());
 							currentSpeakerIntroduced = true;
-							elts.add(new Element_Locuteur(......));
+							allElements.add(new Element_Locuteur(currentSpeaker.getId(), currentSpeaker.getId()));
+							allNonText.add(new Segment(
+									pos, pos + currentSpeaker.getName().length(), 0)); // Type 0 = speaker
 						}
-						buffer.append(" ").append(text);
-						*/
 
-						buffer.append(" ");
+						buffer.append(' ');
 
 						List<Segment> nonText = TextParser.findNonTextSegments(text,
 								Arrays.asList(TexteEditor.DEFAULT_TYPES));
