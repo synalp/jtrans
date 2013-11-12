@@ -10,6 +10,8 @@ import plugins.speechreco.aligners.sphiinx4.S4AlignOrder;
 import plugins.speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
 import plugins.text.ListeElement;
 import plugins.text.TexteEditor;
+import plugins.text.elements.Element;
+import plugins.text.elements.Element_Ancre;
 import plugins.text.elements.Element_Mot;
 import utils.ProgressDialog;
 
@@ -347,28 +349,29 @@ public class JTransAPI {
 		zonetexte.setText(trs.text);
 		zonetexte.setListeElement(trs.elements);
 		zonetexte.highlightNonTextSegments(trs.nonText);
-		System.out.println("apres parsing: nelts=" + elts.size() + " ancres=" + trs.anchors);
 
-		// Align words between the previous anchor and the current one. All
-		// TRS files specify an anchor at time 0, so don't align on the
-		// first anchor.
-		TRSLoader.Anchor prevAnchor = trs.anchors.get(0);
+		// Align words between the previous anchor and the current one.
 		progress.setMessage("Aligning...");
-		for (int i = 1; i < trs.anchors.size(); i++) {
-			TRSLoader.Anchor anchor = trs.anchors.get(i);
+		float alignFrom = 0;
+		int word = -1;
+		for (int i = 0; i < elts.size(); i++) {
+			Element e = elts.get(i);
 
-			int character = anchor.character;
-			int word = elts.getIndiceMotAtTextPosi(character);
-
-			while (word < 0 && character > 0) {
-				word = elts.getIndiceMotAtTextPosi(--character);
+			if (e instanceof Element_Mot) {
+				word++;
+			} else if (e instanceof Element_Ancre) {
+				Element_Ancre anchor = (Element_Ancre)e;
+				if (word >= 0)
+					setAlignWord(word, alignFrom, anchor.seconds);
+				alignFrom = anchor.seconds;
 			}
 
-			setAlignWord(word, prevAnchor.seconds, anchor.seconds);
-			prevAnchor = anchor;
-
-			progress.setProgress((i+1) / (float)trs.anchors.size());
+			progress.setProgress((i+1) / (float)elts.size());
 		}
+
+		// Align end of file.
+		if (word >= 0)
+			setAlignWord(word, alignFrom, trs.lastEnd);
 
 		progress.setMessage("Finishing up...");
 		progress.setIndeterminate(true);

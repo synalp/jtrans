@@ -21,34 +21,10 @@ import java.util.List;
  * can be retrieved through the public final attributes.
  */
 class TRSLoader {
-
-	/**
-	 * Time anchor. Matches a "Sync" tag in TRS files.
-	 */
-	class Anchor {
-		/** Position of the anchor in the text. */
-		int character;
-
-		/** Time */
-		float seconds;
-
-		private Anchor(int c, float s) {
-			character = c;
-			seconds = s;
-		}
-	}
-
-
 	/**
 	 * Raw text contained in the Turn tags.
 	 */
 	public final String text;
-
-
-	/**
-	 * Time anchors ("Sync" tags) contained in the Turn tags.
-	 */
-	public final ArrayList<Anchor> anchors;
 
 
 	/**
@@ -71,6 +47,12 @@ class TRSLoader {
 
 
 	/**
+	 * End time of last turn.
+	 */
+	public final float lastEnd;
+
+
+	/**
 	 * Parse a TRS file.
 	 */
 	public TRSLoader(String path)
@@ -78,7 +60,6 @@ class TRSLoader {
 	{
 		Document doc = newXMLDocumentBuilder().parse(path);
 		StringBuilder buffer = new StringBuilder();
-		ArrayList<Anchor> anchorList = new ArrayList<Anchor>();
 		ListeElement allElements = new ListeElement();
 		ArrayList<Segment> allNonText = new ArrayList<Segment>();
 
@@ -142,20 +123,22 @@ class TRSLoader {
 
 				// Anchor. Placed on the last character in the word *PRECEDING* the sync point
 				else if (name.equals("Sync")) {
-					int character = buffer.length();
 					float second = Float.parseFloat(((Element)child).getAttribute("time"));
-					anchorList.add(new Anchor(character, second));
 
 					String ancText = String.format("%d'%02d\"%03d",
 							(int)(second/60f), (int)(second%60f), Math.round(second%1f * 1000f));
-					buffer.append(' ');
+
+					if (buffer.length() > 0)
+						buffer.append(' ');
 					int pos = buffer.length();
 					buffer.append(ancText);
 					allNonText.add(new Segment(pos, pos + ancText.length(), 6));
+					allElements.add(new Element_Ancre(second));
 				}
 
 				else if (name.equals("Comment")) {
-					buffer.append(' ');
+					if (buffer.length() > 0)
+						buffer.append(' ');
 					int pos = buffer.length();
 					String comment = "{" + ((Element)child).getAttribute("desc") + "}";
 					buffer.append(comment);
@@ -173,13 +156,10 @@ class TRSLoader {
 			}
 		}
 
-		// Fake anchor after last turn so that the whole speech gets aligned
-		anchorList.add(new Anchor(buffer.length(), lastEnd));
-
 		text = buffer.toString();
-		anchors = anchorList;
 		elements = allElements;
 		nonText = allNonText;
+		this.lastEnd = lastEnd;
 	}
 
 
