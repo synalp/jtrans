@@ -153,7 +153,7 @@ public class JTransAPI {
 					System.out.println("posinalign "+i+" "+mots2segidx[j]);
 					mots.get(i).posInAlign=mots2segidx[j];
 				}
-				edit.getListeElement().refreshIndex();
+				elts.refreshIndex();
 			}
 			alignementPhones.merge(order.alignPhones);
 		} else {
@@ -295,6 +295,7 @@ public class JTransAPI {
 	}
 	public static void clearAlignFromFrame(int fr) {
 		// TODO
+		throw new Error("clearAlignFromFrame: IMPLEMENT ME!");
 	}
 	
 	// =========================
@@ -324,7 +325,6 @@ public class JTransAPI {
 	private static int getLastMotPrecAligned(int midx) {
 		initmots();
 		for (int i=midx;i>=0;i--) {
-//System.out.println("ZZZZZZZZZ "+i+" "+mots.get(i).posInAlign);
 			if (mots.get(i).posInAlign>=0) return i;
 		}
 		return -1;
@@ -360,10 +360,10 @@ public class JTransAPI {
 			TRSLoader.Anchor anchor = trs.anchors.get(i);
 
 			int character = anchor.character;
-			int word = edit.getListeElement().getIndiceMotAtTextPosi(character);
+			int word = elts.getIndiceMotAtTextPosi(character);
 
 			while (word < 0 && character > 0) {
-				word = edit.getListeElement().getIndiceMotAtTextPosi(--character);
+				word = elts.getIndiceMotAtTextPosi(--character);
 			}
 
 			setAlignWord(word, prevAnchor.seconds, anchor.seconds);
@@ -383,6 +383,6 @@ public class JTransAPI {
 		System.out.println("align index built");
 		alignementPhones.clearIndex();
 		alignementPhones.getSegmentAtFrame(0);
-		edit.getListeElement().refreshIndex();
+		elts.refreshIndex();
 	}
 }

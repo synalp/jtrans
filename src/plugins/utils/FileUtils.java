@@ -247,8 +247,7 @@ public class FileUtils {
 	int nextChar = -1;
 	public FileUtils(String textfile, boolean isUTF) {
 		utf=isUTF;
-		String enc = "IOS-8859-1";
-		if (utf) enc = "UTF-8";
+		String enc = utf? "UTF-8": "ISO-8859-1";
 		try {
 			InputStream is = findFileOrUrl(textfile);
 			f = new BufferedReader(new InputStreamReader(is, Charset.forName(enc)));

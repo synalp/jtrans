@@ -56,9 +56,11 @@ class TRSLoader {
 	/**
 	 * Parse a TRS file.
 	 */
-	public TRSLoader(String path) throws ParserConfigurationException, IOException, SAXException {
+	public TRSLoader(String path)
+			throws ParserConfigurationException, IOException, SAXException
+	{
 		Document doc = newXMLDocumentBuilder().parse(path);
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder buffer = new StringBuilder();
 		ArrayList<Anchor> anchorList = new ArrayList<Anchor>();
 
 		// end time of last turn
@@ -85,7 +87,7 @@ class TRSLoader {
 
 				// Speech text
 				if (name.equals("#text")) {
-					String text = child.getTextContent().trim();
+					String text = TextParser.normalizeText(child.getTextContent().trim());
 					if (!text.isEmpty()) {
 						// Introduce current speaker with a line break and their
 						// name so that reparse() can pick it up

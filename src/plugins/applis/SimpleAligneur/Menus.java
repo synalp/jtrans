@@ -13,7 +13,6 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Mixer;
@@ -21,7 +20,6 @@ import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import edu.cmu.sphinx.result.Result;
-import facade.JTransAPI;
 
 import main.JTrans;
 import main.LiveSpeechReco;
