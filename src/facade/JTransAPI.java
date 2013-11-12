@@ -346,7 +346,7 @@ public class JTransAPI {
 
 		TexteEditor zonetexte = TexteEditor.getTextEditor();
 		zonetexte.setEditable(false);
-		zonetexte.setText(trs.text);
+		zonetexte.setText(trs.buffer.toString());
 		zonetexte.setListeElement(trs.elements);
 		zonetexte.highlightNonTextSegments(trs.nonText);
 

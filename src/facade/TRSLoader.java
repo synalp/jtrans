@@ -15,16 +15,13 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
- * TRS Loader.
- *
- * The constructor parses a TRS file. If parsing was successful, text and anchor info
- * can be retrieved through the public final attributes.
+ * Parser for the Transcriber file format.
  */
 class TRSLoader {
 	/**
-	 * Raw text contained in the Turn tags.
+	 * Raw text.
 	 */
-	public final String text;
+	public final StringBuilder buffer;
 
 
 	/**
@@ -49,7 +46,7 @@ class TRSLoader {
 	/**
 	 * End time of last turn.
 	 */
-	public final float lastEnd;
+	public float lastEnd;
 
 
 	/**
@@ -59,22 +56,20 @@ class TRSLoader {
 			throws ParserConfigurationException, IOException, SAXException
 	{
 		Document doc = newXMLDocumentBuilder().parse(path);
-		StringBuilder buffer = new StringBuilder();
-		ListeElement allElements = new ListeElement();
-		ArrayList<Segment> allNonText = new ArrayList<Segment>();
+		buffer = new StringBuilder();
+		elements  = new ListeElement();
+		nonText = new ArrayList<Segment>();
 
 		// end time of last turn
-		float lastEnd = -1f;
+		lastEnd = -1f;
 
 		speakers = loadSpeakers(doc.getElementsByTagName("Speakers").item(0));
 
 		// Extract relevant information (speech text, Sync tags...) from Turn tags.
 		NodeList turnList = doc.getElementsByTagName("Turn");
-
 		for (int i = 0; i < turnList.getLength(); i++) {
 			Element turn = (Element)turnList.item(i);
 			Node child = turn.getFirstChild();
-
 			Locuteur_Info currentSpeaker = speakers.get(turn.getAttribute("speaker"));
 			boolean currentSpeakerIntroduced = false;
 
@@ -91,33 +86,27 @@ class TRSLoader {
 					if (!text.isEmpty()) {
 						// Introduce current speaker with a line break and their name
 						if (!currentSpeakerIntroduced) {
-							if (buffer.length() > 0)
-								buffer.append("\n");
-							int pos = buffer.length();
-							buffer.append(currentSpeaker.getName());
+							int pos = append('\n', currentSpeaker.getName());
 							currentSpeakerIntroduced = true;
-							allElements.add(new Element_Locuteur(currentSpeaker.getId(), currentSpeaker.getId()));
-							allNonText.add(new Segment(
-									pos, pos + currentSpeaker.getName().length(), 0)); // Type 0 = speaker
+							elements.add(new Element_Locuteur(currentSpeaker.getId(), currentSpeaker.getId()));
+							nonText.add(new Segment(pos, pos + currentSpeaker.getName().length(), 0)); // Type 0 = speaker
 						}
 
-						buffer.append(' ');
+						int pos = append(' ' , text);
 
-						List<Segment> nonText = TextParser.findNonTextSegments(text,
+						List<Segment> subNonText = TextParser.findNonTextSegments(text,
 								Arrays.asList(TexteEditor.DEFAULT_TYPES));
-						ListeElement textElts = TextParser.parseString(text, nonText);
+						ListeElement subElements = TextParser.parseString(text, subNonText);
 
 						// Offset this part before inserting it into the aggregate lists
-						textElts.decalerTextPosi(buffer.length(), 0);
-						for (Segment seg: nonText) {
-							seg.deb += buffer.length();
-							seg.fin += buffer.length();
+						subElements.decalerTextPosi(pos, 0);
+						for (Segment seg: subNonText) {
+							seg.deb += pos;
+							seg.fin += pos;
 						}
 
-						allElements.addAll(textElts);
-						allNonText.addAll(nonText);
-
-						buffer.append(text);
+						elements.addAll(subElements);
+						nonText.addAll(subNonText);
 					}
 				}
 
@@ -128,22 +117,16 @@ class TRSLoader {
 					String ancText = String.format("%d'%02d\"%03d",
 							(int)(second/60f), (int)(second%60f), Math.round(second%1f * 1000f));
 
-					if (buffer.length() > 0)
-						buffer.append(' ');
-					int pos = buffer.length();
-					buffer.append(ancText);
-					allNonText.add(new Segment(pos, pos + ancText.length(), 6));
-					allElements.add(new Element_Ancre(second));
+					int pos = append(' ', ancText);
+					elements.add(new Element_Ancre(second));
+					nonText.add(new Segment(pos, pos + ancText.length(), 6));
 				}
 
 				else if (name.equals("Comment")) {
-					if (buffer.length() > 0)
-						buffer.append(' ');
-					int pos = buffer.length();
 					String comment = "{" + ((Element)child).getAttribute("desc") + "}";
-					buffer.append(comment);
-					allElements.add(new Element_Commentaire(comment, pos));
-					allNonText.add(new Segment(pos, pos + comment.length(), 1)); // Type 1 = comment
+					int pos = append(' ', comment);
+					elements.add(new Element_Commentaire(comment, pos));
+					nonText.add(new Segment(pos, pos + comment.length(), 1)); // Type 1 = comment
 				}
 
 				// Ignore unknown tag
@@ -155,11 +138,6 @@ class TRSLoader {
 				child = child.getNextSibling();
 			}
 		}
-
-		text = buffer.toString();
-		elements = allElements;
-		nonText = allNonText;
-		this.lastEnd = lastEnd;
 	}
 
 
@@ -186,6 +164,21 @@ class TRSLoader {
 		}
 
 		return info;
+	}
+
+
+	/**
+	 * Appends a string to the text buffer, preceded by a prefix if the buffer
+	 * isn't empty.
+	 * @return Position at which the start of the string was appended
+	 * (excluding the prefix)
+	 */
+	private int append(char prefix, String string) {
+		if (buffer.length() > 0)
+			buffer.append(prefix);
+		int pos = buffer.length();
+		buffer.append(string);
+		return pos;
 	}
 
 
