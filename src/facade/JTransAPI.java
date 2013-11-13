@@ -12,6 +12,7 @@ import plugins.text.ListeElement;
 import plugins.text.TexteEditor;
 import plugins.text.elements.Element;
 import plugins.text.elements.Element_Ancre;
+import plugins.text.elements.Element_DebutChevauchement;
 import plugins.text.elements.Element_Mot;
 import utils.ProgressDialog;
 
@@ -200,37 +201,35 @@ public class JTransAPI {
 
 	/**
 	 * Align all words until `word`.
-	 * 
+	 *
+	 * @param startWord number of the first word to align. If < 0, use last aligned word before `word`.
 	 * @param word number of the last word to align
 	 * @param startFrame can be < 0, in which case use the last aligned word.
 	 * @param endFrame
 	 */
-	public static void setAlignWord(int word, int startFrame, int endFrame) {
+	public static void setAlignWord(int startWord, int word, int startFrame, int endFrame) {
 		assert endFrame >= 0;
-		// TODO: detruit les segments recouvrants
 
-		int lastAlignedWord = getLastMotPrecAligned(word);
-		int startWord;
+		if (startWord < 0) {
+			int lastAlignedWord = getLastMotPrecAligned(word);
 
-		System.out.println("setalign "+word+" "+startFrame+" "+endFrame+" "+lastAlignedWord);
+			if (lastAlignedWord <= 0) {
+				// Nothing is aligned yet; start aligning from the beginning.
+				startWord = 0;
+				startFrame = 0;
+			} else {
+				startWord = lastAlignedWord + 1;
 
-		// Find first word to align (startWord) and adjust startFrame if needed.
-		if (lastAlignedWord >= 0) {
-			startWord = lastAlignedWord + 1;
+				// Lagging behind the alignment - wait for a couple more words
+				if (startWord > word)
+					return;
 
-			// Lagging behind the alignment - wait for a couple more words
-			if (startWord > word)
-				return;
-
-			if (startFrame < 0) {
-				// Start aligning at the end frame of the last aligned word.
-				int lastAlignedWordSeg = mots.get(lastAlignedWord).posInAlign;
-				startFrame = alignementWords.getSegmentEndFrame(lastAlignedWordSeg);
+				if (startFrame < 0) {
+					// Start aligning at the end frame of the last aligned word.
+					int lastAlignedWordSeg = mots.get(lastAlignedWord).posInAlign;
+					startFrame = alignementWords.getSegmentEndFrame(lastAlignedWordSeg);
+				}
 			}
-		} else {
-			// Nothing is aligned yet; start aligning from the beginning.
-			startWord = 0;
-			startFrame = 0;
 		}
 
 		if (startWord < word) {
@@ -249,23 +248,6 @@ public class JTransAPI {
 			elts.getMot(word).posInAlign = newseg;
 		}
 
-		// Ensure everything has been aligned
-		lastAlignedWord = getLastMotPrecAligned(word);
-		if (lastAlignedWord < word) {
-			// Incomplete alignment. Avoid offsetting the entire track by
-			// force-aligning missing words onto the last successful alignment.
-
-			System.out.println("setalign: incomplete alignment! last: "
-					+ lastAlignedWord + ", word: " + word);
-
-			int fakeAlign = mots.get(lastAlignedWord).posInAlign;
-			for (int w = lastAlignedWord+1; w <= word; w++)
-				mots.get(w).posInAlign = fakeAlign;
-
-			// Don't underline the parts we just forced
-			word = lastAlignedWord;
-		}
-
 		// TODO: phonetiser et aligner auto les phonemes !!
 
 		// Update GUI
@@ -275,11 +257,12 @@ public class JTransAPI {
 		}
 	}
 
-	public static void setAlignWord(int mot, float secdeb, float secfin) {
-		int curdebfr = SpectroControl.second2frame(secdeb);
-		int curendfr = SpectroControl.second2frame(secfin);
-		setAlignWord(mot, curdebfr, curendfr);
+	public static void setAlignWord(int startWord, int endWord, float startSecond, float endSecond) {
+		int startFrame = SpectroControl.second2frame(startSecond);
+		int endFrame   = SpectroControl.second2frame(endSecond);
+		setAlignWord(startWord, endWord, startFrame, endFrame);
 	}
+
 	private static void setSilenceSegment(int curdebfr, int curendfr, AlignementEtat al) {
 		// detruit tous les segments existants deja a cet endroit
 		ArrayList<Integer> todel = new ArrayList<Integer>();
@@ -364,18 +347,41 @@ public class JTransAPI {
 
 		// Align words between the previous anchor and the current one.
 		progress.setMessage("Aligning...");
+
 		float alignFrom = 0;
+		int startWord = 0;
 		int word = -1;
+
 		for (int i = 0; i < elts.size(); i++) {
 			Element e = elts.get(i);
 
 			if (e instanceof Element_Mot) {
 				word++;
 			} else if (e instanceof Element_Ancre) {
-				Element_Ancre anchor = (Element_Ancre)e;
-				if (word >= 0)
-					setAlignWord(word, alignFrom, anchor.seconds);
-				alignFrom = anchor.seconds;
+				float alignTo = ((Element_Ancre) e).seconds;
+				if (word >= 0 && word > startWord)
+					setAlignWord(startWord, word, alignFrom, alignTo);
+				alignFrom = alignTo;
+				startWord = word + 1;
+			} else if (e instanceof Element_DebutChevauchement) {
+				// Skip straight to next speaker, i.e. skip current speaker's
+				// overlapped speech until next anchor
+				float alignTo = -1;
+				int nextWord = word;
+				for (; i < elts.size(); i++) {
+					Element e2 = elts.get(i);
+					if (e2 instanceof Element_Ancre) {
+						alignTo = ((Element_Ancre) e2).seconds;
+						// TODO c'est plutôt la next-next-anchor plutôt qu'il faudrait prendre ?
+						break;
+					} else if (e2 instanceof Element_Mot) {
+						nextWord++;
+					}
+				}
+				setAlignWord(startWord, word, alignFrom, alignTo);
+				alignFrom = alignTo;
+				word = nextWord;
+				startWord = word + 1;
 			}
 
 			progress.setProgress((i+1) / (float)elts.size());
@@ -383,7 +389,7 @@ public class JTransAPI {
 
 		// Align end of file.
 		if (word >= 0)
-			setAlignWord(word, alignFrom, trs.lastEnd);
+			setAlignWord(startWord, word, alignFrom, trs.lastEnd);
 
 		progress.setMessage("Finishing up...");
 		progress.setIndeterminate(true);

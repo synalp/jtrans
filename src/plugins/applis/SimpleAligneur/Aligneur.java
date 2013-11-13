@@ -1042,7 +1042,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 			// donc, il faut ajouter un silence au debut du fichier jusqu'a cet offset
 			if (JTransAPI.isBruit(0)) {
 				// TODO: verifier que le mot suivant est bien un mot, et non un bruit ou silence
-				JTransAPI.setAlignWord(0, 0f, sec);
+				JTransAPI.setAlignWord(-1, 0, 0f, sec);
 			} else {
 				// ajouter un silence devant
 				// TODO: est-ce que le prochain alignement auto, lorsqu'il verra qu'il n'y a aucun mot
@@ -1053,7 +1053,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 			return;
 		}
 		// TODO: refaire la suite avec JTransAPI
-		JTransAPI.setAlignWord(mot, -1, sec);
+		JTransAPI.setAlignWord(-1, mot, -1, sec);
 	}
 	
 	void clicAtCaretPosition(int caretPos, int button) {
