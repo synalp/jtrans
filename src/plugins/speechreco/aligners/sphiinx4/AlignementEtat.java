@@ -15,33 +15,59 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.swing.JFrame;
-
 import edu.cmu.sphinx.decoder.search.Token;
 import edu.cmu.sphinx.linguist.SearchState;
 import edu.cmu.sphinx.linguist.acoustic.HMMState;
 import edu.cmu.sphinx.linguist.flat.HMMStateState;
 import edu.cmu.sphinx.linguist.lextree.LexTreeLinguist.LexTreeHMMState;
-import facade.JTransAPI;
-import plugins.speechreco.aligners.Segment2AudioAlignement;
-import plugins.text.elements.Element_Mot;
-import utils.ProgressDialog;
 
 /**
- * contient un alignement complet: N° des etats, triphone, GMM, mot
+ * Contient des segments, représentés par des strings, alignés avec de l'audio
+ * (en frames).
  * 
  * @author cerisara
- *
  */
 public class AlignementEtat implements Serializable {
 
-	public AlignementEtat() {
-		System.out.println("============================= CREATION ALIGN");
-	}
-	
+	// Type codes for alignment sources
+	public static final byte ALIGNMENT_SOURCE_AUTOMATIC = 0;
+	public static final byte ALIGNMENT_SOURCE_MANUAL = 1;
+	public static final byte ALIGNMENT_SOURCE_LINEAR = 2;
+
+	/**
+	 * First frame.
+	 * The values contained in segmentsDeb/segmentsFin start from 0, therefore
+	 * they must be offset by frameOffset to be meaningful.
+	 */
+	private int frameOffset;
+
+	private int firstSegmentModified;
+
 	// ne contient QUE des segments alignés
-	private Segment2AudioAlignement segs = new Segment2AudioAlignement();
-	private int firstFrame = 0;
+	private List<String> segments;
+	private List<Integer> segmentsDeb;
+	private List<Integer> segmentsFin;
+	private List<Byte> segmentsSource;
+
+	/**
+	 * L'index contient les limites des segments EN RELATIF par rapport au
+	 * début du fichier !!!
+ 	 */
+	private int[] segEndFrames = null;
+
+	public AlignementEtat() {
+		clear();
+	}
+
+	public void clear() {
+		frameOffset = 0;
+		firstSegmentModified = -1;
+		segments = new ArrayList<String>();
+		segmentsDeb = new ArrayList<Integer>();
+		segmentsFin = new ArrayList<Integer>();
+		segmentsSource = new ArrayList<Byte>();
+		clearIndex();
+	}
 
 	/**
 	 * Map word indices to segment indices.
@@ -60,7 +86,7 @@ public class AlignementEtat implements Serializable {
 				break;
 			}
 			// si le mot ne correspond pas, alors on suppose que c'est un mot optionnel
-			int walidx=-1;
+			int walidx;
 			if (getSegmentLabel(segidx).trim().equals(mots[motidx].trim())) {
 //				System.out.println("matchWithtext: pronunced token ["+mots[motidx]+"] ["+getSegmentLabel(segidx)+"] "+segidx+" "+getSegmentDebFrame(segidx)+" "+getSegmentEndFrame(segidx));
 				walidx=segidx++;
@@ -75,65 +101,94 @@ public class AlignementEtat implements Serializable {
 		return mots2segidx;
 	}
 
+	public String toString() {
+		StringBuilder buf = new StringBuilder();
+		for (int i = 0; i < segments.size(); i++)
+			buf.append(String.format("%d : %d-%d:%s\n",
+					i,
+					segmentsDeb.get(i) + frameOffset,
+					segmentsFin.get(i) + frameOffset,
+					segments.get(i)));
+		return buf.toString();
+	}
+
 	public static AlignementEtat load(BufferedReader f) {
 		AlignementEtat a = new AlignementEtat();
 		try {
 			String s = f.readLine();
 			if (s==null || s.trim().length()==0) return null;
-			a.firstFrame=Integer.parseInt(s);
+			a.frameOffset = Integer.parseInt(s);
+			// ------
+			s = f.readLine();
+			int n = Integer.parseInt(s);
+			for (int i=0;i<n;i++) {
+				s = f.readLine();
+				if (a.firstSegmentModified<0) a.firstSegmentModified=a.segments.size();
+				a.segments.add(s);
+				s = f.readLine();
+				String[] ss = s.split(" ");
+				a.segmentsDeb.add(Integer.parseInt(ss[0]));
+				a.segmentsFin.add(Integer.parseInt(ss[1]));
+				byte src=0;
+				if (ss.length>2) src=Byte.parseByte(ss[2]);
+				a.segmentsSource.add(src);
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		a.segs.load(f);
 		return a;
 	}
 
-	public String toString() {
-		return segs.toString(firstFrame);
-	}
-
 	public void save(PrintWriter f) {
-		f.println(firstFrame);
-		segs.save(f);
+		f.println(frameOffset);
+		f.println(segments.size());
+		for (int i=0;i<segments.size();i++) {
+			f.println(segments.get(i));
+			f.println(segmentsDeb.get(i)+" "+segmentsFin.get(i)+" "+segmentsSource.get(i));
+		}
 	}
 
 	/**
 	 * suppose que le nouvel align commence juste apres un segment precedent
-	 * 
-	 * @param al
-	 * @return Insertion index of first segment
+	 *
+	 * @return Index at which the first segment was inserted
 	 */
 	public int merge(AlignementEtat al) {
 		int nsegsConservesDuPremier=getNbSegments();
-		System.out.println("merging "+nsegsConservesDuPremier+" "+firstFrame+" "+al.firstFrame);
-		if (firstFrame<al.firstFrame) {
+		System.out.println("merging "+nsegsConservesDuPremier+" "+ frameOffset +" "+al.frameOffset);
+		if (frameOffset < al.frameOffset) {
 			// il ne faut plus ajuster, car on l'a deja fait et on utilise les methodes de haut niveau pour acceder aux limites temporelles !
-			//			al.segs.addTimeOffset(al.firstFrame-firstFrame);
+			//			al.segs.addTimeOffset(al.frameOffset-frameOffset);
 		} else {
 			System.out.println("WARNING: merge alignement plus ancien !!");
-			segs.addTimeOffset(firstFrame-al.firstFrame);
-			firstFrame=al.firstFrame;
+			// move segments
+			int deltat = frameOffset - al.frameOffset;
+			for (int i = 0; i < segments.size(); i++) {
+				segmentsDeb.set(i, segmentsDeb.get(i) + deltat);
+				segmentsFin.set(i, segmentsFin.get(i) + deltat);
+			}
+			frameOffset = al.frameOffset;
 		}
 		if (al.getNbSegments()<=0) return nsegsConservesDuPremier;
 		if (getNbSegments()>0&&al.getSegmentDebFrame(0)<getSegmentEndFrame(getNbSegments()-1)) {
 			// recouvrant
-			int lastSeg2keep = getSegmentAtFrame(al.firstFrame-1);
-			if (getSegmentEndFrame(lastSeg2keep)!=al.firstFrame) {
+			int lastSeg2keep = getSegmentAtFrame(al.frameOffset - 1);
+			if (getSegmentEndFrame(lastSeg2keep) != al.frameOffset) {
 				// on n'a pas les memes segments dans le vieux et nouvel alignements
 				// ce qui ne devrait jamais arriver, car on commence toujours l'alignement suivant à la fin d'un
 				// segment de l'alignement précédent !
 				// mais on peut avoir "sauté" des segments ??
-				System.out.println("PB MERGE "+al.firstFrame+" "+firstFrame+" "+lastSeg2keep+" "+getSegmentEndFrame(lastSeg2keep));
+				System.out.println("PB MERGE "+al.frameOffset +" "+ frameOffset +" "+lastSeg2keep+" "+getSegmentEndFrame(lastSeg2keep));
 				System.out.println("debug segments\n"+toString());
 			}
 			// pas de probleme
-			cutAfterFrame(al.firstFrame);
+			cutAfterFrame(al.frameOffset);
 			nsegsConservesDuPremier=getNbSegments();
 		}
 		for (int i=0;i<al.getNbSegments();i++) {
-			addRecognizedSegment(al.getSegmentLabel(i), al.getSegmentDebFrame(i)-firstFrame, al.getSegmentEndFrame(i)-firstFrame, null, null);
+			addRecognizedSegment(al.getSegmentLabel(i), al.getSegmentDebFrame(i) - frameOffset, al.getSegmentEndFrame(i)- frameOffset, null, null);
 		}
-		segs.setFirstSegmentAltered(nsegsConservesDuPremier);
+		setFirstSegmentAltered(nsegsConservesDuPremier);
 
 		return nsegsConservesDuPremier;
 	}
@@ -142,134 +197,146 @@ public class AlignementEtat implements Serializable {
 		segEndFrames=null;
 	}
 
-	// nouvelle version de l'index
-	// l'index contient les limites des segments EN RELATIF par rapport au debut du fichier !!!
-	private int[] segEndFrames = null;
 	public void buildIndex() {
 		System.out.println("building index");
-		segEndFrames = new int[segs.getNbSegments()];
+		segEndFrames = new int[getNbSegments()];
 		for (int i=0;i<segEndFrames.length;i++) {
-			segEndFrames[i]=segs.getSegmentFinFrame(i);
+			segEndFrames[i]=getSegmentEndFrame(i);
 		}
 		if (segEndFrames.length>0)
 			System.out.println("index updated "+segEndFrames.length+" "+segEndFrames[segEndFrames.length-1]);
-		segs.setFirstSegmentAltered(-1);
+		setFirstSegmentAltered(-1);
 	}
+
 	/**
 	 * @param fr trame ABSOLUE
-	 * @return
 	 */
 	public int getSegmentAtFrame(int fr) {
-		if (segEndFrames==null || segs.getFirstSegmentAltered()>=0)
+		if (segEndFrames==null || getFirstSegmentAltered()>=0)
 			buildIndex();
-		int s = Arrays.binarySearch(segEndFrames, fr-firstFrame);
+		int s = Arrays.binarySearch(segEndFrames, fr - frameOffset);
 		if (s>=0) return s+1;
 		return -s-1;
 	}
 
-	// premiere version de l'index: tres long a charger au debut
-	private int[] fr2seg = null;
-	public int getSegmentAtFrame1(int fr) {
-		// TODO: il faut mettre a jour l'index a la moindre modif !
-		final Boolean isDone=false;
-		if (fr2seg==null) {
-			final ProgressDialog pd = new ProgressDialog((JFrame)null,null,"indexing...");
-			pd.isDeterminate=true;
-			pd.setRunnable(new Runnable() {
-				@Override
-				public void run() {
-					int nfrs = segs.getSegmentFinFrame(segs.getNbSegments()-1);
-					fr2seg = new int[nfrs];
-					Arrays.fill(fr2seg,-1);
-					int curseg=0;
-					for (int i=0;i<fr2seg.length;i++) {
-						pd.setProgress((float)i/(float)fr2seg.length);
-						while (curseg<getNbSegments()&&i>=getSegmentEndFrame(curseg)) curseg++;
-						// on avance les segments jusqu'a depasser la trame i
-						if (curseg<getNbSegments()) {
-							if (i>=getSegmentDebFrame(curseg)) fr2seg[i]=curseg;
-						} else break;
-					}
-					synchronized (isDone) {
-						isDone.notifyAll();
-					}
-				}
-			});
-			pd.setVisible(true);
-			synchronized (isDone) {
-				try {
-					isDone.wait();
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-					return -1;
-				}
-			}
-			return fr2seg[fr-firstFrame];
-		} else return fr2seg[fr-firstFrame];
-	}
+	public int getFirstSegmentAltered() {return firstSegmentModified;}
+	public void setFirstSegmentAltered(int seg) {firstSegmentModified=seg;}
 
 	public int getNbSegments() {
-		return segs.getNbSegments();
+		return segments.size();
 	}
 
 	public String getSegmentLabel(int segidx) {
-		if (segidx<0||segidx>=segs.getNbSegments()) return null;
-		String s = segs.getSegmentLabel(segidx);
-		return s;
+		if (segidx<0||segidx>=getNbSegments()) return null;
+		assert segidx>=0;
+		assert segidx<segments.size();
+		return segments.get(segidx);
 	}
 
 	public void setSegmentDebFrame(int segidx, int frame) {
-		if (segidx<0||segidx>=segs.getNbSegments()) return;
-		segs.setSegmentDebFrame(segidx, frame);
+		if (segidx<0||segidx>=getNbSegments()) return;
+		segmentsDeb.set(segidx, frame);
 	}
+
 	public void setSegmentEndFrame(int segidx, int frame) {
-		if (segidx<0||segidx>=segs.getNbSegments()) return;
-		segs.setSegmentFinFrame(segidx, frame);
+		if (segidx<0||segidx>=getNbSegments()) return;
+		segmentsFin.set(segidx, frame);
 	}
-	public void setSegmentSourceManu(int segidx) {segs.setSegmentSourceManu(segidx);}
-	public void setSegmentSourceEqui(int segidx) {segs.setSegmentSourceEqui(segidx);}
+
+	public void setSegmentSourceManu(int segidx) {
+		segmentsSource.set(segidx, ALIGNMENT_SOURCE_MANUAL);
+	}
+
+	public void setSegmentSourceEqui(int segidx) {
+		segmentsSource.set(segidx, ALIGNMENT_SOURCE_LINEAR);
+	}
+
 	public int getSegmentEndFrame(int segidx) {
-		if (segidx<0||segidx>=segs.getNbSegments()) return -1;
-		return segs.getSegmentFinFrame(segidx)+firstFrame;
+		if (segidx<0||segidx>=getNbSegments()) return -1;
+		return segmentsFin.get(segidx) + frameOffset;
 	}
+
 	public int getSegmentDebFrame(int segidx) {
-		if (segidx<0||segidx>=segs.getNbSegments()) return -1;
-		return segs.getSegmentDebFrame(segidx)+firstFrame;
+		if (segidx<0||segidx>=getNbSegments()) return -1;
+		return segmentsDeb.get(segidx) + frameOffset;
 	}
+
 	public void delSegment(int segidx) {
-		segs.delSeg(segidx);
+		segments.remove(segidx);
+		segmentsDeb.remove(segidx);
+		segmentsFin.remove(segidx);
+		segmentsSource.remove(segidx);
 	}
 
 	public void adjustOffset(int tr) {
-		firstFrame=tr;
+		frameOffset =tr;
 	}
 
+	/**
+	 * @return new segment ID
+	 */
 	public int addRecognizedSegment(String mot, int framedeb, int frameend, String[] phones, int[] states) {
 		assert framedeb>=0;
 		assert frameend>framedeb;
-		int segidx = segs.addSegment(mot, framedeb, frameend);
-		return segidx;
+
+		for (int i=0;i<segments.size();i++) {
+			if (framedeb<segmentsFin.get(i)) {
+				if (frameend<segmentsDeb.get(i)) {
+					segments.add(i, mot);
+					segmentsDeb.add(i, framedeb);
+					segmentsFin.add(i, frameend);
+					segmentsSource.add(i, ALIGNMENT_SOURCE_AUTOMATIC);
+					if (firstSegmentModified<0) firstSegmentModified=i;
+					return i;
+				} else {
+					throw new Error("ERREUR ADD SEGMENT "+framedeb+" "+frameend+
+							" prev: "+i+" "+segmentsDeb.get(i)+"--"+segmentsFin.get(i));
+				}
+			}
+		}
+		if (firstSegmentModified<0) firstSegmentModified=segments.size();
+		segments.add(mot);
+		segmentsDeb.add(framedeb);
+		segmentsFin.add(frameend);
+		segmentsSource.add(ALIGNMENT_SOURCE_AUTOMATIC);
+		return segments.size()-1;
 	}
 
 	public void setSegmentLabel(int segidx, String newlabel) {
-		segs.setSegmentLabel(segidx,newlabel);
+		assert segidx<segments.size();
+		segments.set(segidx, newlabel);
 	}
 
-	public int getStartFrame() {return firstFrame;}
-
-	public void clear() {
-		segs = new Segment2AudioAlignement();
-		clearIndex();
-	}
+	public int getStartFrame() {return frameOffset;}
 
 	/**
 	 * @param lastFrameAcceptable = der trame a conserver, en absolu !
 	 */
 	public void cutAfterFrame(int lastFrameAcceptable) {
-		segs.cutAfterFrame(lastFrameAcceptable-firstFrame);
+		for (int i=0;i<segments.size();i++) {
+			if (segmentsFin.get(i) > lastFrameAcceptable - frameOffset) {
+				if (firstSegmentModified<0) firstSegmentModified=i;
+				segments = segments.subList(0, i);
+				segmentsDeb = segmentsDeb.subList(0, i);
+				segmentsFin = segmentsFin.subList(0, i);
+				segmentsSource =  segmentsSource.subList(0, i);
+				break;
+			}
+		}
 	}
+
 	public void cutBeforeFrame(int fr) {
-		segs.cutBeforeFrame(fr);
+		for (int i=segments.size()-1;i>=0;i--) {
+			if (segmentsDeb.get(i) < fr - frameOffset) {
+				i++;
+				int z = segments.size();
+				segments = segments.subList(i,z);
+				segmentsDeb = segmentsDeb.subList(i,z);
+				segmentsFin = segmentsFin.subList(i,z);
+				segmentsSource =  segmentsSource.subList(i, z);
+				break;
+			}
+		}
 	}
 
 	public static String getInfoOneFrame(Token tok) {
@@ -294,7 +361,9 @@ public class AlignementEtat implements Serializable {
 		return w+":"+p+":"+s;
 	}
 
-	// TODO: il faut retourner 3 alignements: pour les mots, les phones et les etats
+	/**
+	 * @return An array of three alignments (words, phonemes, states)
+	 */
 	public static AlignementEtat[] backtrack(Token tok) {
 		try {
 			if (tok==null) {
@@ -397,8 +466,7 @@ public class AlignementEtat implements Serializable {
 
 			System.out.println("debug align after backtrack "+alignMots);
 
-			AlignementEtat[] res = {alignMots,alignPhones,alignStates};
-			return res;
+			return new AlignementEtat[] {alignMots,alignPhones,alignStates};
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
