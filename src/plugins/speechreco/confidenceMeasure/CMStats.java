@@ -1,6 +1,6 @@
 package plugins.speechreco.confidenceMeasure;
 
-import plugins.speechreco.aligners.sphiinx4.AlignementEtat;
+import plugins.speechreco.aligners.sphiinx4.Alignment;
 
 /**
  * cette classe sert à calculer des stats pendant l'alignement pour détecter les décalages 
@@ -9,7 +9,7 @@ import plugins.speechreco.aligners.sphiinx4.AlignementEtat;
  *
  */
 public class CMStats {
-	public static void newAlignedSegment(int motdeb, int motfin, AlignementEtat alwords, int nmots) {
+	public static void newAlignedSegment(int motdeb, int motfin, Alignment alwords, int nmots) {
 		int nsegs = alwords.getNbSegments();
 		int firstfr = alwords.getSegmentDebFrame(0);
 		int lastfr = alwords.getSegmentEndFrame(nsegs-1);

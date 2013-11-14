@@ -1,19 +1,12 @@
 package plugins.speechreco.adaptation;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.UnsupportedAudioFileException;
-
-import plugins.speechreco.aligners.sphiinx4.AlignementEtat;
+import plugins.speechreco.aligners.sphiinx4.Alignment;
 import plugins.speechreco.aligners.sphiinx4.S4mfccBuffer;
 import edu.cmu.sphinx.frontend.Data;
 import edu.cmu.sphinx.frontend.DoubleData;
@@ -162,7 +155,7 @@ public class NewGaussAdaptation {
 	 * @param segfin inclus !
 	 * @param mfccs
 	 */
-	public void adapt(AlignementEtat alignPhones, AlignementEtat alignStates, int segdeb, int segfin, S4mfccBuffer mfccs) {
+	public void adapt(Alignment alignPhones, Alignment alignStates, int segdeb, int segfin, S4mfccBuffer mfccs) {
 		// on recupere la trame MFCC de debut
 		int frdeb = alignStates.getSegmentDebFrame(segdeb);
 		int frfin = alignStates.getSegmentEndFrame(segfin);

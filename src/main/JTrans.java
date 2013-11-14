@@ -9,7 +9,7 @@ import java.util.Map;
 
 import facade.JTransAPI;
 import plugins.applis.SimpleAligneur.Aligneur;
-import plugins.speechreco.aligners.sphiinx4.AlignementEtat;
+import plugins.speechreco.aligners.sphiinx4.Alignment;
 import plugins.speechreco.aligners.sphiinx4.AutoAligner;
 import plugins.speechreco.aligners.sphiinx4.S4AlignOrder;
 import plugins.speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
@@ -29,7 +29,7 @@ import plugins.utils.FileUtils;
  */
 public class JTrans {
 
-	public static AlignementEtat[] forceAlign(String[] mots, String wavfile) throws Exception {
+	public static Alignment[] forceAlign(String[] mots, String wavfile) throws Exception {
 		if (jtransnogui==null) {
 			jtransnogui = new JTrans();
 		}
@@ -58,9 +58,9 @@ public class JTrans {
 	 * @param textgridout output file path
 	 * @param tiers map of tier names to alignments
 	 */
-	public static void savePraat(String textgridout, Map<String, AlignementEtat> tiers) {
+	public static void savePraat(String textgridout, Map<String, Alignment> tiers) {
 		int finalFrame = 0;
-		for (AlignementEtat al: tiers.values()) {
+		for (Alignment al: tiers.values()) {
 			int tierFinalFrame = al.getSegmentEndFrame(al.getNbSegments()-1);
 			if (tierFinalFrame > finalFrame)
 				finalFrame = tierFinalFrame;
@@ -80,8 +80,8 @@ public class JTrans {
 			f.println("item []:");
 
 			int tierId = 1;
-			for (Map.Entry<String, AlignementEtat> entry: tiers.entrySet()) {
-				AlignementEtat al = entry.getValue();
+			for (Map.Entry<String, Alignment> entry: tiers.entrySet()) {
+				Alignment al = entry.getValue();
 				f.println("\titem [" + tierId + "]:");
 				f.println("\t\tclass = \"IntervalTier\"");
 				f.println("\t\tname = \"" + entry.getKey() + "\"");
@@ -106,7 +106,7 @@ public class JTrans {
 	/**
 	 * Il vaut mieux utiliser une tokenization exterieure, car celle realisee ici est basique !
 	 */
-	public static AlignementEtat[] forceAlign(String phrase, String wavfile) throws Exception {
+	public static Alignment[] forceAlign(String phrase, String wavfile) throws Exception {
 		String[] mots = phrase.split(" ");
 		return forceAlign(mots, wavfile);
 	}
@@ -128,7 +128,7 @@ public class JTrans {
 		s4aligner.setMots(mots);
 
 		S4AlignOrder order = new S4AlignOrder(0, 0, mots.length, -1);
-		AlignementEtat alignement=null;
+		Alignment alignement=null;
 		try {
 			s4aligner.input2process.put(order);
 			synchronized (order) {
@@ -192,7 +192,7 @@ public class JTrans {
 		BufferedReader f = new BufferedReader(new FileReader(txtfich));
 		String s = f.readLine();
 		f.close();
-		AlignementEtat al = forceAlign(s, wavfich)[0];
+		Alignment al = forceAlign(s, wavfich)[0];
 		System.out.println(al);
 		 */
 	}
@@ -230,7 +230,7 @@ public class JTrans {
 	}
 
 
-	private AlignementEtat[] batchForceAlign(String[] mots, String wavfile) throws Exception {
+	private Alignment[] batchForceAlign(String[] mots, String wavfile) throws Exception {
 		/*
         // determine la taille du buffer MFCC
 		int nframes=0;
@@ -265,8 +265,8 @@ public class JTrans {
         }
 		 */
 
-		AlignementEtat alignementMots = new AlignementEtat();
-		AlignementEtat alignementPhones = new AlignementEtat();
+		Alignment alignementMots = new Alignment();
+		Alignment alignementPhones = new Alignment();
 		//		alignement.setSegments(mots);
 
 		AutoAligner.batch=true;
@@ -282,10 +282,10 @@ public class JTrans {
 		// et enfin: l'aligneur !
 		//        SimpleForceAlign batch = new SimpleForceAlign(hmms, mfccbuf, null, null);
 		//        batch.pruning = 3000;
-		//        Alignement al = batch.align(gramstring.toString(), nframes);
+		//        OldAlignment al = batch.align(gramstring.toString(), nframes);
 		//        return al;
 
-		AlignementEtat[] res = {alignementMots,alignementPhones};
+		Alignment[] res = {alignementMots,alignementPhones};
 		return res;
 	}
 	public static AutoAligner autoaligner=null;

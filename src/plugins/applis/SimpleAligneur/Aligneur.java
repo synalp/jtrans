@@ -43,13 +43,10 @@ import plugins.signalViewers.temporalSigPanel.ToolBarTemporalSig;
 import plugins.sourceSignals.TemporalSigFromWavFile;
 import plugins.speechreco.acousticModels.HMM.LogMath;
 import plugins.speechreco.adaptation.BiaisAdapt;
-import plugins.speechreco.aligners.Alignement;
+import plugins.speechreco.aligners.OldAlignment;
 import plugins.speechreco.aligners.ForceAlignBlocViterbi;
-import plugins.speechreco.aligners.sphiinx4.AlignementEtat;
-import plugins.speechreco.aligners.sphiinx4.AutoAligner;
-import plugins.speechreco.aligners.sphiinx4.ControlBox;
-import plugins.speechreco.aligners.sphiinx4.S4AlignOrder;
-import plugins.speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
+import plugins.speechreco.aligners.sphiinx4.*;
+import plugins.speechreco.aligners.sphiinx4.Alignment;
 import plugins.speechreco.confidenceMeasure.AcousticCM;
 import plugins.text.ColoriageEvent;
 import plugins.text.GriserWhilePlaying;
@@ -118,8 +115,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 	// position lue pour la derniere fois dans le flux audio
 	long currentSample = 0;
 	int nFrames = -1;
-	public AlignementEtat alignement = new AlignementEtat();
-	public AlignementEtat alignementPhones = new AlignementEtat();
+	public Alignment alignement = new Alignment();
+	public Alignment alignementPhones = new Alignment();
 	int wordSelectedIdx = -1;
 	public boolean caretSensible = false;
 	int state = 0;
@@ -128,7 +125,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 	 * ces variables ne sont utilisees que avec un "User simulator": elles contiennent la reference
 	 */
 	String stmfile = null, trsfile = null;
-	Alignement refAlign = null;
+	OldAlignment refAlign = null;
 	/**
 	 * mesure de confiance
 	 */
@@ -573,14 +570,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 	 * les regexp peuvent être vides: les regexp par defaut sont alors chargees dans jtrans
 	 * 
 	 * J'ai besoin d'une methode static car je sauve des projets depuis l'exterieur
-	 * 
-	 * @param outfile
-	 * @param wavname
-	 * @param alWords
-	 * @param texte
-	 * @param regexp
 	 */
-	public static void saveProject(ListeElement elts, String outfile, String txtfile, String wavname, AlignementEtat alWords, AlignementEtat alPhones, String regexp) {
+	public static void saveProject(ListeElement elts, String outfile, String txtfile, String wavname, Alignment alWords, Alignment alPhones, String regexp) {
 		try {
 			PrintWriter f = FileUtils.writeFileUTF(outfile);
 			f.println("wavname= " + wavname);
@@ -632,9 +623,9 @@ public class Aligneur extends JPanel implements PrintLogger {
 			// ici, on charge les elements et on les met en correspondance avec le textArea, MAIS PAS AVEC l'ALIGNEMENT !
 			edit.getListeElement().load(f, edit);
 			// ici, on charge les segments, mais ils ne sont toujours pas mis en correspondance avec les elements !
-			alignement = AlignementEtat.load(f);
+			alignement = Alignment.load(f);
 			JTransAPI.alignementWords=alignement;
-			alignementPhones = AlignementEtat.load(f);
+			alignementPhones = Alignment.load(f);
 			JTransAPI.alignementPhones=alignementPhones;
 			System.out.println("align loaded "+alignement.getNbSegments());
 			// ici, on affiche les segments sur le spectro
@@ -685,7 +676,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 	private float lastSecClickedOnSpectro = 0;
 	public void clicOnSpectro(float frf) {
 		float prevsec = getCurPosInSec();
-		float sec = Alignement.frame2second((int)frf);
+		float sec = OldAlignment.frame2second((int) frf);
 		sec += prevsec;
 		// on lit une seconde avant la pos
 		setCurPosInSec(sec-1);
@@ -933,10 +924,10 @@ public class Aligneur extends JPanel implements PrintLogger {
 			//                if (lastAlignedWord < 0) {
 			//                    currentSample = 0;
 			//                } else {
-			//                    currentSample = Alignement.frame2sample(alignement.getFrameFin(lastAlignedWord));
+			//                    currentSample = OldAlignment.frame2sample(alignement.getFrameFin(lastAlignedWord));
 			//                }
 			//            } else {
-			//                currentSample = Alignement.frame2sample(alignement.getFrameFin(wordSelectedIdx));
+			//                currentSample = OldAlignment.frame2sample(alignement.getFrameFin(wordSelectedIdx));
 			//            }
 		} else {
 			//            currentSample = 0;
@@ -969,7 +960,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 	public void startPlayingFrom(float nsec) {
 		/*
-		currentSample = Alignement.second2sample(nsec);
+		currentSample = OldAlignment.second2sample(nsec);
 		caretSensible = true;
 
 		if (currentSample < 0) {
@@ -977,7 +968,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 		}
 		// positionne l'audio buffer
 		audiobuf.samplePosition = currentSample;
-		System.err.println("play from " + Alignement.sample2second(currentSample));
+		System.err.println("play from " + OldAlignment.sample2second(currentSample));
 		// relance le thread qui grise les mots
 		if (alignement != null) {
 			playerController.unpause();
@@ -1123,8 +1114,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 				int segidx = emot.posInAlign;
 				if (segidx>=0) {
 					int frame = alignement.getSegmentDebFrame(segidx);
-					cursec = Alignement.frame2second(frame);
-					long currentSample = Alignement.frame2sample(frame);
+					cursec = OldAlignment.frame2second(frame);
+					long currentSample = OldAlignment.frame2sample(frame);
 					if (currentSample<0) currentSample=0;
 					edit.griseMot(emot);
 					// vieux panel
@@ -1195,8 +1186,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 			int segidx = emot.posInAlign;
 			if (segidx>=0) {
 				int frame = alignement.getSegmentDebFrame(segidx);
-				cursec = Alignement.frame2second(frame);
-				long currentSample = Alignement.frame2sample(frame);
+				cursec = OldAlignment.frame2second(frame);
+				long currentSample = OldAlignment.frame2sample(frame);
 				if (currentSample<0) currentSample=0;
 				edit.griseMot(emot);
 				// vieux panel
@@ -1367,13 +1358,13 @@ public class Aligneur extends JPanel implements PrintLogger {
 				// aligne auto les mots suivants
 				// s4fastAutoAlign();
 				// relance le player
-				//		        startPlayingFrom(Alignement.frame2second(lastFrame)-2);
+				//		        startPlayingFrom(OldAlignment.frame2second(lastFrame)-2);
 				repaint();
 			}
 		}).start();
 
 		/*
-		final int lastFrame = Alignement.sample2frame(player.getLastSamplePlayed());
+		final int lastFrame = OldAlignment.sample2frame(player.getLastSamplePlayed());
 		player.stopPlaying();
 
 		// c'est le AWT event thread qui appelle cette fonction: il ne faut pas le bloquer !
@@ -1386,7 +1377,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 				// aligne auto les mots suivants
 				s4fastAutoAlign();
 				// relance le player
-				//		        startPlayingFrom(Alignement.frame2second(lastFrame)-2);
+				//		        startPlayingFrom(OldAlignment.frame2second(lastFrame)-2);
 			}
 		}).start();
 		 */
@@ -1516,8 +1507,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 				clearAlignFrom(mot1);
 				System.out.println("REALIGN BEFORE");
 				if (mot1-1>=0)
-					realignBeforeAnchor(mot1-1, Alignement.sample2frame(sdeb)-1);
-				S4AlignOrder order = new S4AlignOrder(mot1, Alignement.sample2frame(sdeb), mot2, Alignement.sample2frame(send));
+					realignBeforeAnchor(mot1-1, OldAlignment.sample2frame(sdeb)-1);
+				S4AlignOrder order = new S4AlignOrder(mot1, OldAlignment.sample2frame(sdeb), mot2, OldAlignment.sample2frame(send));
 				try {
 					S4ForceAlignBlocViterbi s4aligner = getS4aligner();
 					System.out.println("ALIGN SELECTED SEGMENT "+mots[mot1]+" ... "+mots[mot2]);
@@ -1534,7 +1525,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 					stopAlign();
 
 					// quand on selectionne une zone du signal, on suppose qu'il n'y a pas de silence aux bouts !
-					//					alignement.setEndFrameForWord(mot2, Alignement.sample2frame(send));
+					//					alignement.setEndFrameForWord(mot2, OldAlignment.sample2frame(send));
 
 					edit.griseMotsRed(edit.getListeElement().getMot(mot1), edit.getListeElement().getMot(mot2));
 					edit.setSelectedTextColor(null);
@@ -1593,10 +1584,10 @@ public class Aligneur extends JPanel implements PrintLogger {
 		progress.setVisible(true);
 	}
 
-	public AlignementEtat generateSpeakerAlignment() {
+	public Alignment generateSpeakerAlignment() {
 		ListeElement lst = edit.getListeElement();
 		Element_Locuteur currSpeaker = null;
-		AlignementEtat speakers = new AlignementEtat();
+		Alignment speakers = new Alignment();
 
 		int segStart   = -1;
 		int segEnd     = -1;

@@ -27,7 +27,7 @@ import edu.cmu.sphinx.linguist.lextree.LexTreeLinguist.LexTreeHMMState;
  * 
  * @author cerisara
  */
-public class AlignementEtat implements Serializable {
+public class Alignment implements Serializable {
 
 	// Type codes for alignment sources
 	public static final byte ALIGNMENT_SOURCE_AUTOMATIC = 0;
@@ -55,7 +55,7 @@ public class AlignementEtat implements Serializable {
  	 */
 	private int[] segEndFrames = null;
 
-	public AlignementEtat() {
+	public Alignment() {
 		clear();
 	}
 
@@ -112,8 +112,8 @@ public class AlignementEtat implements Serializable {
 		return buf.toString();
 	}
 
-	public static AlignementEtat load(BufferedReader f) {
-		AlignementEtat a = new AlignementEtat();
+	public static Alignment load(BufferedReader f) {
+		Alignment a = new Alignment();
 		try {
 			String s = f.readLine();
 			if (s==null || s.trim().length()==0) return null;
@@ -153,7 +153,7 @@ public class AlignementEtat implements Serializable {
 	 *
 	 * @return Index at which the first segment was inserted
 	 */
-	public int merge(AlignementEtat al) {
+	public int merge(Alignment al) {
 		int nsegsConservesDuPremier=getNbSegments();
 		System.out.println("merging "+nsegsConservesDuPremier+" "+ frameOffset +" "+al.frameOffset);
 		if (frameOffset < al.frameOffset) {
@@ -364,7 +364,7 @@ public class AlignementEtat implements Serializable {
 	/**
 	 * @return An array of three alignments (words, phonemes, states)
 	 */
-	public static AlignementEtat[] backtrack(Token tok) {
+	public static Alignment[] backtrack(Token tok) {
 		try {
 			if (tok==null) {
 				System.out.println("ERROR: no best token !");
@@ -416,9 +416,9 @@ public class AlignementEtat implements Serializable {
 			}
 
 			// creation alignement
-			AlignementEtat alignMots = new AlignementEtat();
-			AlignementEtat alignPhones = new AlignementEtat();
-			AlignementEtat alignStates = new AlignementEtat();
+			Alignment alignMots = new Alignment();
+			Alignment alignPhones = new Alignment();
+			Alignment alignStates = new Alignment();
 			for (int i=labs.size()-1;i>=0;i--) {
 				String[] phs = new String[labsphones.get(i).size()];
 				phs = labsphones.get(i).toArray(phs);
@@ -466,7 +466,7 @@ public class AlignementEtat implements Serializable {
 
 			System.out.println("debug align after backtrack "+alignMots);
 
-			return new AlignementEtat[] {alignMots,alignPhones,alignStates};
+			return new Alignment[] {alignMots,alignPhones,alignStates};
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;

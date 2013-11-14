@@ -6,7 +6,7 @@ import java.awt.event.ActionListener;
 import javax.swing.Timer;
 
 import plugins.applis.SimpleAligneur.PlayerListener;
-import plugins.speechreco.aligners.sphiinx4.AlignementEtat;
+import plugins.speechreco.aligners.sphiinx4.Alignment;
 import plugins.text.elements.Element_Mot;
 import tools.audio.PlayerGUI;
 
@@ -20,7 +20,7 @@ public class GriserWhilePlaying {
 	private PlayerGUI player;
 	private boolean stop=false;
 	private TexteEditor edit;
-	private AlignementEtat align=null;
+	private Alignment align=null;
 	Timer timer=null;
 
 	public GriserWhilePlaying(PlayerGUI p, TexteEditor editor) {
@@ -28,7 +28,7 @@ public class GriserWhilePlaying {
 		player=p;
 	}
 
-	public void setAlignement(AlignementEtat al) {
+	public void setAlignement(Alignment al) {
 		align=al;
 		initthread();
 	}

@@ -45,7 +45,6 @@ package plugins.speechreco.aligners;
 
 import java.util.ArrayList;
 import java.util.StringTokenizer;
-import java.util.concurrent.ArrayBlockingQueue;
 
 import plugins.buffer.RoundBufferFrontEnd;
 import plugins.speechreco.acousticModels.HMM.HMMSet;
@@ -71,14 +70,14 @@ public class ForceAlignBlocViterbi extends Thread {
 	AlignGram agram;
 	int nFrames;
 	public AlignListener alignListener=null;
-	Alignement align0;
+	OldAlignment align0;
 
 	// variables indiquant la trame de debut et le mot de debut de la reco
 	int firstMotidx;
 	int firstframe;
 	Element_Mot firstmot;
 	
-	public ForceAlignBlocViterbi(HMMSet hmms, RoundBufferFrontEnd mfcc, Alignement align0) {
+	public ForceAlignBlocViterbi(HMMSet hmms, RoundBufferFrontEnd mfcc, OldAlignment align0) {
 		this.hmms = hmms;
 		this.bufmfcc = mfcc;
 		this.align0=align0;
@@ -164,7 +163,7 @@ public class ForceAlignBlocViterbi extends Thread {
 			}
 			String ress = dec.backtrackFromBest();
 			loglikebest = dec.getLogLikeBest();
-			Alignement newal;
+			OldAlignment newal;
 			if (t<nFrames) {
 				// on a atteint la fin du fichier: il faut garder l'alinement complet !
 System.out.println("resdebug "+ress);
@@ -257,7 +256,7 @@ System.out.println("resdebug "+ress);
 	 * @param align0
 	 * @return
 	 */
-	public Alignement getHalfStateAlign(String align0) {
+	public OldAlignment getHalfStateAlign(String align0) {
 		// System.out.println("getHalfStateAligne : "+align0);
 		StringTokenizer align = new StringTokenizer(align0);
 
@@ -343,7 +342,7 @@ System.out.println("resdebug "+ress);
 		 * if (idxEtatFin>=words.size()) { // aucun mot n'a ete trouve ! return
 		 * null; }
 		 */
-		Alignement res = new Alignement(idxEtatFin + 1);
+		OldAlignment res = new OldAlignment(idxEtatFin + 1);
 		for (i = 0; i <= idxEtatFin; i++) {
 			res.labels[i] = etats.get(i).toString();
 			if (words.get(i) != null) {
@@ -356,7 +355,7 @@ System.out.println("resdebug "+ress);
 		}
 		return res;
 	}
-	public Alignement getAllStateAlign(String align0) {
+	public OldAlignment getAllStateAlign(String align0) {
 		// System.out.println("getHalfStateAligne : "+align0);
 		StringTokenizer align = new StringTokenizer(align0);
 
@@ -442,7 +441,7 @@ System.out.println("resdebug "+ress);
 		 * if (idxEtatFin>=words.size()) { // aucun mot n'a ete trouve ! return
 		 * null; }
 		 */
-		Alignement res = new Alignement(idxEtatFin + 1);
+		OldAlignment res = new OldAlignment(idxEtatFin + 1);
 		for (i = 0; i <= idxEtatFin; i++) {
 			res.labels[i] = etats.get(i).toString();
 			if (words.get(i) != null) {

@@ -19,22 +19,22 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.Vector;
 
-import plugins.speechreco.aligners.sphiinx4.AlignementEtat;
+import plugins.speechreco.aligners.sphiinx4.Alignment;
 
 import utils.SuiteDeMots;
 
 /**
- * @deprecated utiliser plutot AlignementEtat
+ * @deprecated utiliser plutot Alignment
  * @author xtof
  *
  */
-public class Alignement {
+public class OldAlignment {
 	public String[] labels;
 	public int[] tramesDeb;
 	public int[] tramesFin;
 	public float loglike;
 	
-	public AlignementEtat fullalign=null;
+	public Alignment fullalign=null;
 	
 	// on ne peut pas stocker le loglike des mots, car cette info disparait
 	// avec les tokens intermediaires !
@@ -101,7 +101,7 @@ public class Alignement {
 		}
 	}
 	
-	public void importAlign(Alignement old) {
+	public void importAlign(OldAlignment old) {
 		for (int i=0;i<getNbMots();i++) {
 			wordsDeb[i]=wordsFin[i]=-1;
 		}
@@ -260,10 +260,10 @@ public class Alignement {
 	
 	String[] wordStates; // contient le nb de trames dans chaque etat
 	
-	public Alignement() {
+	public OldAlignment() {
 		
 	}
-	public Alignement(int nbTrames) {
+	public OldAlignment(int nbTrames) {
 		labels = new String[nbTrames];
 		tramesDeb = new int[nbTrames];
 		tramesFin = new int[nbTrames];
@@ -340,7 +340,7 @@ public class Alignement {
 		}
 	}
 	
-	public static Alignement load(String nom) {
+	public static OldAlignment load(String nom) {
 		try {
 			BufferedReader bf = new BufferedReader(new FileReader(nom));
 			int n=0;
@@ -350,7 +350,7 @@ public class Alignement {
 				n++;
 			}
 			bf.close();
-			Alignement align = new Alignement(n);
+			OldAlignment align = new OldAlignment(n);
 			bf = new BufferedReader(new FileReader(nom));
 			for (int i=0;i<n;i++) {
 				String s = bf.readLine();

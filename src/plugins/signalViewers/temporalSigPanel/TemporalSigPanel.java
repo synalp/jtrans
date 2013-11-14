@@ -63,7 +63,7 @@ import javax.swing.SwingUtilities;
 import plugins.applis.SimpleAligneur.Aligneur;
 import plugins.applis.SimpleAligneur.PlayerListener;
 import plugins.buffer.RoundBuffer;
-import plugins.speechreco.aligners.Alignement;
+import plugins.speechreco.aligners.OldAlignment;
 import plugins.text.ListeElement;
 import plugins.text.TexteEditor;
 import plugins.text.elements.Element;
@@ -435,7 +435,7 @@ public class TemporalSigPanel extends JComponent {
 				motidx++;
 				if (showPhones) {
 				} else {
-					long lastSample = Alignement.frame2sample(aligneur.alignement.getSegmentEndFrame(elm.posInAlign));
+					long lastSample = OldAlignment.frame2sample(aligneur.alignement.getSegmentEndFrame(elm.posInAlign));
 					Element_Mot elementAvecDuree = (Element_Mot)element;
 					posiLine = (int) ((lastSample-offsetStart)/hZoom);
 					
@@ -505,12 +505,12 @@ public class TemporalSigPanel extends JComponent {
 		// affichage des phones
 		if (showPhones) {
 			g.setColor(Color.black);
-			int frdeb = Alignement.sample2frame(offsetStart);
+			int frdeb = OldAlignment.sample2frame(offsetStart);
 			int segidx = aligneur.alignementPhones.getSegmentAtFrame(frdeb);
 System.out.println("debugsegtoprint "+segidx);
 			if (segidx>=0) {
 				int endFrOfSeg = aligneur.alignementPhones.getSegmentEndFrame(segidx);
-				long endSampleOfSeg = Alignement.frame2sample(endFrOfSeg);
+				long endSampleOfSeg = OldAlignment.frame2sample(endFrOfSeg);
 				posiLine = (int) ((endSampleOfSeg-offsetStart)/hZoom);
 				if(posiLine > 0){
 					g.drawLine(posiLine, lineBase, posiLine, lineMax);
@@ -518,7 +518,7 @@ System.out.println("debugsegtoprint "+segidx);
 					// afficher la fin du premier segment visible ? bof...
 					for (int k=segidx+1;k<aligneur.alignementPhones.getNbSegments();k++) {
 						endFrOfSeg = aligneur.alignementPhones.getSegmentEndFrame(k);
-						endSampleOfSeg = Alignement.frame2sample(endFrOfSeg);
+						endSampleOfSeg = OldAlignment.frame2sample(endFrOfSeg);
 						posiLine = (int) ((endSampleOfSeg-offsetStart)/hZoom);
 						if(posiLine > 0){
 							//pour sortir de la boucle si on sort de l'écran
@@ -774,7 +774,7 @@ System.out.println("debugsegtoprint "+segidx);
 	public boolean setProgressBar(long readedShort){
 		int widthFoisHZoom = getWidth()*hZoom;
 		if (readedShort<offsetStart) return setProgressBar(readedShort,0.5f);
-		aligneur.toolbar.setPos(TraducteurTime.getTimeHMinSFromSeconds(Alignement.sample2second(readedShort)));
+		aligneur.toolbar.setPos(TraducteurTime.getTimeHMinSFromSeconds(OldAlignment.sample2second(readedShort)));
 		if(Math.abs(readedShort - offsetStart) > widthFoisHZoom){
 			offsetStart = (readedShort/widthFoisHZoom)*widthFoisHZoom;
 			checkOffsetStart();
@@ -799,7 +799,7 @@ System.out.println("debugsegtoprint "+segidx);
 		return false;
 	}
 	public boolean setProgressBar(long sample, float posPB){
-		aligneur.toolbar.setPos(TraducteurTime.getTimeHMinSFromSeconds(Alignement.sample2second(sample)));
+		aligneur.toolbar.setPos(TraducteurTime.getTimeHMinSFromSeconds(OldAlignment.sample2second(sample)));
 		int widthFoisHZoom = getWidth()*hZoom;
 		// on force le repaint dans ce cas !
 		offsetStart = sample - (long)(posPB * (float)widthFoisHZoom);
@@ -1266,7 +1266,7 @@ System.out.println("debugsegtoprint "+segidx);
 			} else if (selectedWordIndice != -1) {
 				/*
 					int valeurDeplacement = (int) ((e.getX()-indiceDebutDeplacement)*hZoom);
-					int deltafr = Alignement.sample2frame(valeurDeplacement);
+					int deltafr = OldAlignment.sample2frame(valeurDeplacement);
 					int oldfr = aligneur.alignement.getWordEndFrame(selectedWordIndice);
 					int newfr = oldfr+deltafr;
 					int minfr = aligneur.alignement.getWordFirstFrame(selectedWordIndice)+1;
@@ -1441,7 +1441,7 @@ System.out.println("debugsegtoprint "+segidx);
 	}
 	BarProgresserThread barProgresser = null;
 	public void moveAtFrame(int fr) {
-		long sa = Alignement.frame2sample(fr);
+		long sa = OldAlignment.frame2sample(fr);
 		setProgressBar(sa);
 	}
 	public void replayFrom(long startSample) {

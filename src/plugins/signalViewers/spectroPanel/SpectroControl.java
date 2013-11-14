@@ -18,7 +18,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import plugins.applis.SimpleAligneur.Aligneur;
-import plugins.speechreco.aligners.sphiinx4.AlignementEtat;
+import plugins.speechreco.aligners.sphiinx4.Alignment;
 
 /**
  * "wrap" un SpectroPanel dans un autre Panel, et
@@ -44,7 +44,7 @@ public class SpectroControl extends JPanel {
 		spectro.aligneur=aligneur;
 	}
 
-	public void setAlign(AlignementEtat al) {
+	public void setAlign(Alignment al) {
 		words.setAlign(al);
 		words.repaint();
 	}

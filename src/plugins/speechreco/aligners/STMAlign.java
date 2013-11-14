@@ -15,9 +15,9 @@ import plugins.text.elements.Element_Mot;
 import plugins.utils.FileUtils;
 
 public class STMAlign {
-	public static Alignement loadAlign(String stmfile, Alignement parsedTextAlign, Aligneur aligneur) {
+	public static OldAlignment loadAlign(String stmfile, OldAlignment parsedTextAlign, Aligneur aligneur) {
 		try {
-			Alignement align = new Alignement();
+			OldAlignment align = new OldAlignment();
 			align.allocateForWords(parsedTextAlign.wordLabels.length);
 
 			int posMotInEditor=0;

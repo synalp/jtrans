@@ -46,5 +46,5 @@ package plugins.speechreco.aligners;
 import plugins.text.elements.Element_Mot;
 
 public interface BlocViterbiConsumer {
-	public void newMot(Alignement mot, Element_Mot motDepart);
+	public void newMot(OldAlignment mot, Element_Mot motDepart);
 }

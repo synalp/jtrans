@@ -1,16 +1,15 @@
 package plugins.signalViewers.spectroPanel;
 
-import java.awt.Dimension;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
-import plugins.speechreco.aligners.sphiinx4.AlignementEtat;
+import plugins.speechreco.aligners.sphiinx4.Alignment;
 
 public class TimelineWords extends JPanel {
-	private AlignementEtat align;
+	private Alignment align;
 	// on peut indiquer soit une trame de debut, soit directement un segment a afficher
 	private int firstFrame;
 	private int firstSeg=-1;
@@ -21,7 +20,7 @@ public class TimelineWords extends JPanel {
 //    	return dim;
 //    }
     
-	public void setAlign(AlignementEtat al) {align=al;}
+	public void setAlign(Alignment al) {align=al;}
 	public void setFirstSeg(int seg) {
 		firstSeg=seg;
 		repaint();

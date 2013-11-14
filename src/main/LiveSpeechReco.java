@@ -55,11 +55,7 @@ import edu.cmu.sphinx.util.props.PropertySheet;
 
 import plugins.speechreco.RecoListener;
 import plugins.speechreco.adaptation.BiaisAdapt;
-import plugins.speechreco.aligners.sphiinx4.AlignementEtat;
-import plugins.speechreco.aligners.sphiinx4.HMMModels;
-import plugins.speechreco.aligners.sphiinx4.PhoneticForcedGrammar;
-import plugins.speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
-import plugins.speechreco.aligners.sphiinx4.S4mfccBuffer;
+import plugins.speechreco.aligners.sphiinx4.*;
 import plugins.speechreco.grammaire.Grammatiseur;
 import utils.ProgressDialog;
 
@@ -95,7 +91,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 	SimpleBreadthFirstSearchManager searchManager=null;
 	AcousticModel mods=null;
 	Microphone mikeSource=null;
-	public AlignementEtat resWords=null, resPhones=null, resStates=null;
+	public Alignment resWords=null, resPhones=null, resStates=null;
 	private RecoListener listener=null;
 	ArrayList<String> voc = new ArrayList<String>();
 
@@ -301,7 +297,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 			System.err.println("ERROR: meme pas de best token !");
 			resPhones=resStates=resWords=null;
 		} else {
-			AlignementEtat[] bestaligns = AlignementEtat.backtrack(besttok);
+			Alignment[] bestaligns = Alignment.backtrack(besttok);
 			if (bestaligns!=null) {
 				resPhones = bestaligns[0];
 				resWords = S4ForceAlignBlocViterbi.segmentePhonesEnMots(gram.resPhones);
@@ -397,7 +393,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 			System.err.println("ERROR: meme pas de best token !");
 			resPhones=resStates=resWords=null;
 		} else {
-			AlignementEtat[] bestaligns = AlignementEtat.backtrack(besttok);
+			Alignment[] bestaligns = Alignment.backtrack(besttok);
 			if (bestaligns!=null) {
 				resPhones = bestaligns[0];
 				resWords = S4ForceAlignBlocViterbi.segmentePhonesEnMots(gram.resPhones);

@@ -6,7 +6,7 @@ import java.util.*;
 import main.JTrans;
 import plugins.applis.SimpleAligneur.Aligneur;
 import plugins.signalViewers.spectroPanel.SpectroControl;
-import plugins.speechreco.aligners.sphiinx4.AlignementEtat;
+import plugins.speechreco.aligners.sphiinx4.Alignment;
 import plugins.speechreco.aligners.sphiinx4.S4AlignOrder;
 import plugins.speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
 import plugins.text.ListeElement;
@@ -261,7 +261,7 @@ public class JTransAPI {
 		setAlignWord(startWord, endWord, startFrame, endFrame);
 	}
 
-	private static void setSilenceSegment(int curdebfr, int curendfr, AlignementEtat al) {
+	private static void setSilenceSegment(int curdebfr, int curendfr, Alignment al) {
 		// detruit tous les segments existants deja a cet endroit
 		ArrayList<Integer> todel = new ArrayList<Integer>();
 		clearAlignFromFrame(curdebfr);
@@ -296,8 +296,8 @@ public class JTransAPI {
 	// =========================
 	// variables below are duplicate (point to) of variables in the mess of the rest of the code...
 	private static ListeElement elts =  null;
-	public static AlignementEtat alignementWords = null;
-	public static AlignementEtat alignementPhones = null;
+	public static Alignment alignementWords = null;
+	public static Alignment alignementPhones = null;
 	public static ArrayList<S4AlignOrder> overlaps = new ArrayList<S4AlignOrder>();
 	public static TexteEditor edit = null;
 	public static Aligneur aligneur = null;

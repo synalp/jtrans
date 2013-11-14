@@ -12,7 +12,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
 
-import plugins.speechreco.aligners.Alignement;
+import plugins.speechreco.aligners.OldAlignment;
 import plugins.speechreco.aligners.sphiinx4.S4AlignOrder;
 import plugins.speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
 import plugins.text.TexteEditor;
@@ -27,7 +27,7 @@ import plugins.text.elements.Element_Mot;
  */
 public class RecoTestBug1 {
 	TexteEditor editor = new TexteEditor();
-	Alignement alignement;
+	OldAlignment alignement;
 	
     void loadProject() {
         try {
@@ -37,7 +37,7 @@ public class RecoTestBug1 {
             int nmots = Integer.parseInt(s.substring(8));
             s = f.readLine();
             int nancres = Integer.parseInt(s.substring(9));
-            alignement = new Alignement();
+            alignement = new OldAlignment();
             alignement.allocateForWords(nmots);
             // mots
             for (int i = 0; i < nmots; i++) {
@@ -85,7 +85,7 @@ public class RecoTestBug1 {
     }
     public void creeAlignement() {
         System.err.println("cree alignement");
-        alignement = new Alignement();
+        alignement = new OldAlignment();
         int nmots = editor.getListeElement().getMots().size();
         alignement.allocateForWords(nmots);
         // 2eme passe pour remplir
@@ -97,7 +97,7 @@ public class RecoTestBug1 {
     public void parse() {
     	editor.setEditable(false);
     	editor.reparse(true);
-        Alignement oldalign = alignement;
+        OldAlignment oldalign = alignement;
         creeAlignement();
         if (oldalign != null) {
             // reporte les anciens alignements

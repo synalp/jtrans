@@ -21,7 +21,7 @@ import plugins.text.elements.Element_Mot;
  * - merge le resultat dans l'alignement global
  * - recalcule le nouveau debut et itere
  * 
- * Attention : AlignementEtat ne contient QUE les mots prononcés (et alignés) et les silences
+ * Attention : La classe Alignment ne contient QUE les mots prononcés (et alignés) et les silences.
  * AutoAligner fait le lien entre ces mots prononcés et la liste de mots affichée, qui peut contenir des
  * mots optionnels non prononcés.
  * 
@@ -33,7 +33,7 @@ public class AutoAligner extends Thread {
 	S4ForceAlignBlocViterbi s4blocViterbi = null;
 	String wavname;
 	TexteEditor editor=null;
-	AlignementEtat alignementMots, alignementPhones, alignementEtats;
+	Alignment alignementMots, alignementPhones, alignementEtats;
 	private boolean killthread = false;
 	final private Thread autoalignerthread = this;
 
@@ -52,10 +52,10 @@ public class AutoAligner extends Thread {
 		return s4blocViterbi;
 	}
 
-	private AutoAligner(String wavfile, String[] xmots, TexteEditor edit, AlignementEtat alignement, AlignementEtat alPhones){
+	private AutoAligner(String wavfile, String[] xmots, TexteEditor edit, Alignment alignement, Alignment alPhones){
 		this(wavfile,xmots,edit,alignement,alPhones,null);
 	}
-	private AutoAligner(String wavfile, String[] xmots, TexteEditor edit, AlignementEtat alignement, AlignementEtat alPhones, AlignementEtat alStates){
+	private AutoAligner(String wavfile, String[] xmots, TexteEditor edit, Alignment alignement, Alignment alPhones, Alignment alStates){
 		super("AutoAligner");
 		wavname=wavfile;
 		editor=edit;
@@ -78,7 +78,7 @@ public class AutoAligner extends Thread {
 		mots2segidx = alignement.matchWithText(mots);
 	}
 	private static AutoAligner unik = null;
-	public static AutoAligner getAutoAligner(String wavfile, String[] mots, TexteEditor edit, AlignementEtat alignement, AlignementEtat alPhones) {
+	public static AutoAligner getAutoAligner(String wavfile, String[] mots, TexteEditor edit, Alignment alignement, Alignment alPhones) {
 		if (unik==null) {
 			unik = new AutoAligner(wavfile, mots, edit, alignement, alPhones);
 		} else {
@@ -223,36 +223,6 @@ public class AutoAligner extends Thread {
 			System.out.println("autoaligner thread killed");
 		} catch (InterruptedException e) {
 			e.printStackTrace();
-		}
-	}
-	
-	// cette fonction n'est plus appelle depuis nulle part: cf. AlignementEtat.matchWithText
-	public void checkWithText(AlignementEtat align, int premierMotDuTexte) {
-		int segidx=0;
-		List<Element_Mot> lmots=null;
-		if (editor!=null)
-			lmots = editor.getListeElement().getMots();
-		for (int motidx=premierMotDuTexte;motidx<mots.length;motidx++) {
-			// on se positionne au prochain mot prononcé
-			while (segidx<align.getNbSegments() && align.getSegmentLabel(segidx).equals("SIL")) {
-				segidx++;
-			}
-			if (segidx>=align.getNbSegments()) {
-				// l'alignement s'arrete au milieu des mots avec bloc-viterbi
-				break;
-			}
-			// si le mot ne correspond pas, alors on suppose que c'est un mot optionnel
-			int walidx=-1;
-			if (align.getSegmentLabel(segidx).equals(mots[motidx])) {
-				System.out.println("checkwithtext: pronunced token "+mots[motidx]+" "+segidx);
-				walidx=segidx++;
-			} else {
-				System.out.println("checkwithtext: optional token "+mots[motidx]);
-			}
-			mots2segidx[motidx]=walidx;
-			if (editor!=null) {
-				lmots.get(motidx).posInAlign=walidx;
-			}
 		}
 	}
 }

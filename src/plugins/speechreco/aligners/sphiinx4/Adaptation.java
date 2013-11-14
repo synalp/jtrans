@@ -33,7 +33,7 @@ public class Adaptation {
 	public float ratio = 0.1f;
 	
 	/*
-	public void adapt(AlignementEtat align, S4mfccBuffer mfccs) {
+	public void adapt(Alignment align, S4mfccBuffer mfccs) {
 		for (int tr=align.getStartFrame();tr<align.getStartFrame()+align.getNbFrames();tr++) {
 			mfccs.gotoFrame(tr);
 			Data obs = mfccs.getData();

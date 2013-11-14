@@ -28,7 +28,7 @@ import main.LiveSpeechReco;
 import plugins.sourceSignals.Mike2wav;
 import plugins.speechreco.RecoListener;
 import plugins.speechreco.adaptation.BiaisAdapt;
-import plugins.speechreco.aligners.sphiinx4.AlignementEtat;
+import plugins.speechreco.aligners.sphiinx4.Alignment;
 import plugins.speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
 import plugins.speechreco.grammaire.Grammatiseur;
 import plugins.utils.TextInputWindow;
@@ -136,7 +136,7 @@ public class Menus {
 				if (rc != JOptionPane.OK_OPTION)
 					return;
 
-				LinkedHashMap<String, AlignementEtat> tiers = new LinkedHashMap<String, AlignementEtat>();
+				LinkedHashMap<String, Alignment> tiers = new LinkedHashMap<String, Alignment>();
 				if (jcbPhonemes.isSelected())
 					tiers.put("Phonemes", aligneur.alignementPhones);
 				if (jcbWords.isSelected())

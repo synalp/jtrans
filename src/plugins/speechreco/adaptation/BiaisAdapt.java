@@ -25,9 +25,8 @@ import edu.cmu.sphinx.linguist.acoustic.tiedstate.MixtureComponent;
 import edu.cmu.sphinx.linguist.acoustic.tiedstate.Senone;
 import edu.cmu.sphinx.linguist.acoustic.tiedstate.SenoneHMM;
 import edu.cmu.sphinx.linguist.acoustic.tiedstate.SenoneHMMState;
-import edu.cmu.sphinx.linguist.acoustic.tiedstate.Sphinx3Loader;
 import plugins.applis.SimpleAligneur.Aligneur;
-import plugins.speechreco.aligners.sphiinx4.AlignementEtat;
+import plugins.speechreco.aligners.sphiinx4.Alignment;
 import plugins.speechreco.aligners.sphiinx4.HMMModels;
 
 public class BiaisAdapt
@@ -51,7 +50,7 @@ public class BiaisAdapt
 		this.aligneur = aligneur;
 	}
 
-	public void adaptMAP(AlignementEtat alignPhones) {
+	public void adaptMAP(Alignment alignPhones) {
 		// TODO: 1- equi-split phone segments into state segments
 		// 2- compute the "weights" of each Gaussian in the state by Mahalanobis
 		// 3- adapt based on the weight

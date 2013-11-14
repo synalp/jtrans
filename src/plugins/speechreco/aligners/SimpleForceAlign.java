@@ -7,17 +7,8 @@ http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html
 
 package plugins.speechreco.aligners;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.StringTokenizer;
-import java.util.Vector;
 
 import plugins.buffer.RoundBufferFrontEnd;
 import plugins.speechreco.acousticModels.HMM.HMMSet;
@@ -25,8 +16,6 @@ import plugins.speechreco.acousticModels.HMM.HMMState;
 import plugins.speechreco.acousticModels.HMM.SingleHMM;
 import plugins.speechreco.decoder.Network;
 import plugins.speechreco.decoder.TokenPassing;
-import plugins.speechreco.frontEnd.FrontEnd;
-import plugins.speechreco.frontEnd.HTKFile;
 import plugins.speechreco.grammaire.AlignGram;
 import plugins.text.elements.Element_Mot;
 
@@ -51,9 +40,9 @@ public class SimpleForceAlign {
 	 */
 	public boolean keepOnlyGoodPhones=false;
 	RoundBufferFrontEnd mfccbuf;
-	Alignement align0;
+	OldAlignment align0;
 	
-	public SimpleForceAlign(HMMSet hmms, RoundBufferFrontEnd mfcc, Alignement align0) {
+	public SimpleForceAlign(HMMSet hmms, RoundBufferFrontEnd mfcc, OldAlignment align0) {
 		this.hmms=hmms;
 		mfccbuf=mfcc;
 		this.align0=align0;
@@ -61,7 +50,7 @@ public class SimpleForceAlign {
 
 	public boolean killReco=false;
 	
-	public Alignement getAllStateAlign(String align0) {
+	public OldAlignment getAllStateAlign(String align0) {
 		StringTokenizer align = new StringTokenizer(align0);
 
 		HMMState prev = null;
@@ -146,7 +135,7 @@ public class SimpleForceAlign {
 		 * if (idxEtatFin>=words.size()) { // aucun mot n'a ete trouve ! return
 		 * null; }
 		 */
-		Alignement res = new Alignement(idxEtatFin + 1);
+		OldAlignment res = new OldAlignment(idxEtatFin + 1);
 		for (i = 0; i <= idxEtatFin; i++) {
 			res.labels[i] = etats.get(i).toString();
 			if (words.get(i) != null) {
@@ -160,7 +149,7 @@ public class SimpleForceAlign {
 		return res;
 	}
 
-	public Alignement align(String rule, int nFrames) {
+	public OldAlignment align(String rule, int nFrames) {
 		AlignGram agram = new AlignGram(rule);
 		Network net = agram.expand2monophones(hmms);
 		// TODO: il ne faudrait pas recreer le token passing a chaque fois, mais
@@ -180,7 +169,7 @@ public class SimpleForceAlign {
 			dec.nextObs(x);
 		}
 		String ress = dec.backtrack();
-		Alignement newal;
+		OldAlignment newal;
 		newal = getAllStateAlign(ress);
 		newal.loglike=dec.getLogLike();
 		return newal;
@@ -196,7 +185,7 @@ public class SimpleForceAlign {
 		// on ajoute un silence final optionnel
 		// rule += " [ sil ] ";
 		System.err.println("ruledebug "+rule);
-		Alignement newal = align(rule,nFrames);
+		OldAlignment newal = align(rule,nFrames);
 		if (newal==null) {
 			// pas de mots trouves:
 			System.err.println("ERROR batch align at frame "+firstFrame);
@@ -224,7 +213,7 @@ public class SimpleForceAlign {
 			}
 		}
 	}
-	public Alignement getStateAlign(String align0) {
+	public OldAlignment getStateAlign(String align0) {
 		StringTokenizer align = new StringTokenizer(align0);
 
 		HMMState prev = null;
@@ -244,7 +233,7 @@ public class SimpleForceAlign {
 		}
 		if (prev!=null) nstates++;
 		
-		Alignement res = new Alignement(nstates);
+		OldAlignment res = new OldAlignment(nstates);
 		prev = null;
 		String prevnom="", curnom;
 		int tdeb=0,curstate=0;

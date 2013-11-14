@@ -27,9 +27,8 @@ import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
-import javax.swing.JOptionPane;
 
-import plugins.speechreco.aligners.sphiinx4.AlignementEtat;
+import plugins.speechreco.aligners.sphiinx4.Alignment;
 import plugins.utils.FileUtils;
 
 import speechreco.AlignTokenPassing;
@@ -45,14 +44,8 @@ import edu.cmu.sphinx.frontend.util.StreamCepstrumSource;
 import edu.cmu.sphinx.instrumentation.AccuracyTracker;
 import edu.cmu.sphinx.linguist.SearchState;
 import edu.cmu.sphinx.linguist.WordSearchState;
-import edu.cmu.sphinx.linguist.acoustic.AcousticModel;
-import edu.cmu.sphinx.linguist.acoustic.Context;
-import edu.cmu.sphinx.linguist.acoustic.HMM;
-import edu.cmu.sphinx.linguist.acoustic.HMMPosition;
 import edu.cmu.sphinx.linguist.acoustic.HMMState;
-import edu.cmu.sphinx.linguist.acoustic.LeftRightContext;
 import edu.cmu.sphinx.linguist.acoustic.Unit;
-import edu.cmu.sphinx.linguist.acoustic.UnitManager;
 import edu.cmu.sphinx.linguist.acoustic.tiedstate.GaussianMixture;
 import edu.cmu.sphinx.linguist.acoustic.tiedstate.Senone;
 import edu.cmu.sphinx.linguist.acoustic.tiedstate.SenoneHMMState;
@@ -62,7 +55,6 @@ import edu.cmu.sphinx.linguist.flat.HMMStateState;
 import edu.cmu.sphinx.linguist.lextree.LexTreeLinguist.LexTreeHMMState;
 import edu.cmu.sphinx.recognizer.Recognizer;
 import edu.cmu.sphinx.result.ConfidenceResult;
-import edu.cmu.sphinx.result.ConfidenceScorer;
 import edu.cmu.sphinx.result.ConfusionSet;
 import edu.cmu.sphinx.result.Lattice;
 import edu.cmu.sphinx.result.LatticeOptimizer;
@@ -114,7 +106,7 @@ public class SpeechReco {
 	 * (par ex. lorsqu'il est obtenu apres une reco ou un load)
 	 */
 /*
-	public List<GaussianMixture> getGMMs(AlignementEtat align) {
+	public List<GaussianMixture> getGMMs(Alignment align) {
 		if (align.alignedGMMs!=null&&align.alignedGMMs.size()==align.states.size())
 			return align.alignedGMMs;
 		AcousticModel acmods = (AcousticModel)cm.lookup("acousticModel");
@@ -1395,10 +1387,10 @@ public class SpeechReco {
 		}
 	}
 
-	private AlignementEtat getFullAlign(Result result) {
+	private Alignment getFullAlign(Result result) {
 		Token tok = result.getBestToken();
 
-		AlignementEtat al = AlignementEtat.backtrack(tok)[0];
+		Alignment al = Alignment.backtrack(tok)[0];
 		try {
 			PrintWriter f = FileUtils.writeFileUTF("debug.tok");
 //			al.save(f);
@@ -1604,7 +1596,7 @@ public class SpeechReco {
 	}
 	
 	
-	public AlignementEtat fullalign=null;
+	public Alignment fullalign=null;
 	
 	private List<RecoWord> convertResult2RecoWords(Result result) {
 		ArrayList<RecoWord> curres = new ArrayList<RecoWord>();
@@ -1719,7 +1711,7 @@ public class SpeechReco {
 					// backtrack pour avoir les phones
 					ArrayList<String> phst = new ArrayList<String>();
 					while (tok!=null&&!tok.isWord()) {
-						String s = AlignementEtat.getInfoOneFrame(tok);
+						String s = Alignment.getInfoOneFrame(tok);
 						String[] ss = s.split(":");
 						
 						if (ss[0].length()>0) {
