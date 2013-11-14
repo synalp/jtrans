@@ -3,6 +3,7 @@ package facade;
 import java.io.*;
 import java.util.*;
 
+import main.JTrans;
 import plugins.applis.SimpleAligneur.Aligneur;
 import plugins.signalViewers.spectroPanel.SpectroControl;
 import plugins.speechreco.aligners.sphiinx4.AlignementEtat;
@@ -10,10 +11,7 @@ import plugins.speechreco.aligners.sphiinx4.S4AlignOrder;
 import plugins.speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
 import plugins.text.ListeElement;
 import plugins.text.TexteEditor;
-import plugins.text.elements.Element;
-import plugins.text.elements.Element_Ancre;
-import plugins.text.elements.Element_DebutChevauchement;
-import plugins.text.elements.Element_Mot;
+import plugins.text.elements.*;
 import utils.ProgressDialog;
 
 import javax.sound.sampled.*;
@@ -353,6 +351,37 @@ public class JTransAPI {
 		int startWord = 0;
 		int word = -1;
 
+		class Overlap {
+			// speaker 1 word indices
+			int s1FirstWord = -1;
+			int s1LastNonOverlappedWord = -1;
+			int s1LastWord = -1;
+
+			// speaker 2 word indices
+			int s2FirstWord = -1;
+			int s2LastOverlappedWord = -1;
+
+			// seconds
+			/**
+			 * When speaker #1 starts speaking alone.
+			 */
+			float s1StartsSpeaking = -1;
+
+			/**
+			 * When speaker #2 starts speaking (while speaker #1 is still
+			 * speaking). Start of overlapped speech.
+			 */
+			float overlapStart = -1;
+
+			/**
+			 * When speaker #1 stops speaking (while speaker #2 is still
+			 * speaking). End of overlapped speech.
+			 */
+			float overlapEnd = -1;
+		}
+
+		Overlap currentOverlap = null;
+
 		for (int i = 0; i < elts.size(); i++) {
 			Element e = elts.get(i);
 
@@ -360,8 +389,27 @@ public class JTransAPI {
 				word++;
 			} else if (e instanceof Element_Ancre) {
 				float alignTo = ((Element_Ancre) e).seconds;
-				if (word >= 0 && word > startWord)
+
+				if (word >= 0 && word > startWord) {
 					setAlignWord(startWord, word, alignFrom, alignTo);
+
+					if (currentOverlap != null) {
+						// Find when the overlapped speech ends.
+						int seg = mots.get(currentOverlap.s2LastOverlappedWord).posInAlign;
+						currentOverlap.overlapEnd = JTrans.frame2sec(
+								alignementWords.getSegmentEndFrame(seg));
+
+						System.out.println("Overlap: previous speaker starts speaking @"
+								+ currentOverlap.s1StartsSpeaking
+								+ ", gets overlapped @"
+								+ currentOverlap.overlapStart
+								+ ", stops speaking @"
+								+ currentOverlap.overlapEnd);
+
+						currentOverlap = null;
+					}
+				}
+
 				alignFrom = alignTo;
 				startWord = word + 1;
 			} else if (e instanceof Element_DebutChevauchement) {
@@ -381,6 +429,19 @@ public class JTransAPI {
 				}
 				setAlignWord(startWord, word, alignFrom, alignTo);
 
+				assert currentOverlap == null:
+						"an overlap was already ongoing!";
+
+				currentOverlap = new Overlap();
+
+				currentOverlap.s1FirstWord = startWord;
+				currentOverlap.s1LastNonOverlappedWord = word;
+				currentOverlap.s1LastWord = nextWord;
+
+				currentOverlap.s1StartsSpeaking = alignFrom;
+				currentOverlap.overlapStart = alignTo;
+
+				/*
 				S4AlignOrder spk1Overlap = partialBatchAlign(startWord,
 						SpectroControl.second2frame(alignFrom),
 						nextWord,
@@ -388,10 +449,17 @@ public class JTransAPI {
 
 				if (!spk1Overlap.isEmpty())
 					overlaps.add(spk1Overlap);
+				*/
 
 				alignFrom = alignTo;
 				word = nextWord;
 				startWord = word + 1;
+			} else if (e instanceof Element_FinChevauchement) {
+				assert currentOverlap != null:
+						"no overlap is currently active!";
+
+				currentOverlap.s2FirstWord = startWord;
+				currentOverlap.s2LastOverlappedWord = word;
 			}
 
 			progress.setProgress((i+1) / (float)elts.size());
