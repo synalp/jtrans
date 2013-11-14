@@ -88,7 +88,7 @@ class TRSLoader {
 						if (!currentSpeakerIntroduced) {
 							int pos = append('\n', currentSpeaker.getName());
 							currentSpeakerIntroduced = true;
-							elements.add(new Element_Locuteur(currentSpeaker.getId(), currentSpeaker.getId()));
+							elements.addLocuteurElement(currentSpeaker.getName(), 0);
 							nonText.add(new Segment(pos, pos + currentSpeaker.getName().length(), 0)); // Type 0 = speaker
 						}
 
