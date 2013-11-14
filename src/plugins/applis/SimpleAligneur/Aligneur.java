@@ -16,9 +16,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.*;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import javax.sound.sampled.*;
 import javax.swing.Box;
 import javax.swing.JFileChooser;
@@ -1651,5 +1649,108 @@ public class Aligneur extends JPanel implements PrintLogger {
 		}
 
 		return speakers;
+	}
+
+	public String generatePraatWithTiersBySpeaker() {
+		class Interval {
+			float xmin, xmax;
+			String text;
+			Interval(float m, float M, String t) {
+				xmin = m;
+				xmax = M;
+				text = t;
+			}
+		}
+
+		class SpeakerTrack {
+			ArrayList<Interval> phones = new ArrayList<Interval>();
+			ArrayList<Interval> words = new ArrayList<Interval>();
+		}
+
+		ListeElement lst = edit.getListeElement();
+		SpeakerTrack currTrack = null;
+
+		SpeakerTrack[] tracks = new SpeakerTrack[lst.getNbLocuteur()];
+		for (int i = 0; i < lst.getNbLocuteur(); i++)
+			tracks[i] = new SpeakerTrack();
+
+
+
+		float finalSec = -1;
+		for (int i = 0; i < lst.size(); i++) {
+			Element el = lst.get(i);
+
+			if (el instanceof Element_Locuteur) {
+				currTrack = tracks[((Element_Locuteur)el).getLocuteurID()];
+			}
+
+			else if (el instanceof Element_Mot) {
+				Element_Mot w = (Element_Mot)el;
+				float xmin = JTrans.frame2sec(alignement.getSegmentDebFrame(w.posInAlign));
+				float xmax = JTrans.frame2sec(alignement.getSegmentEndFrame(w.posInAlign));
+				currTrack.words.add(new Interval(xmin, xmax, w.getWordString()));
+				if (xmax > finalSec) {
+					finalSec = xmax;
+				}
+				System.out.println("xmax " + xmax + " " + ((Element_Mot) el).getWordString());
+			}
+		}
+
+		StringBuilder buf = new StringBuilder();
+
+		buf.append("File type = \"ooTextFile\"")
+				.append("\nObject class = \"TextGrid\"")
+				.append("\n")
+				.append("\nxmin = 0")
+				.append("\nxmax = " + finalSec)
+				.append("\ntiers? <exists>")
+				.append("\nsize = " + (1+tracks.length)) // TODO 2*tracks.length quand il y aura les phonèmes
+				.append("\nitem []:");
+
+		for (int i = 0; i < tracks.length; i++) {
+			buf.append("\n\titem [" + (1 + i) + "]:") // TODO 1+i*2
+					.append("\n\t\tclass = \"IntervalTier\"")
+					.append("\n\t\tname = \"Words ")
+							.append(lst.getLocuteurName(i))
+							.append("\"")
+					.append("\n\t\txmin = 0")
+					.append("\n\t\txmax = " + finalSec)
+					.append("\n\t\tintervals: size = ")
+							.append(tracks[i].words.size());
+			int n = 0;
+			for (Interval intvl: tracks[i].words) {
+				buf.append("\n\t\tintervals [" + (1+n++) + "]:")
+						.append("\n\t\t\txmin = " + intvl.xmin)
+						.append("\n\t\t\txmax = " + intvl.xmax)
+						.append("\n\t\t\ttext = \"" + intvl.text + "\""); // TODO escape strings?
+			}
+
+			// TODO phonèmes
+		}
+
+
+		int overlapSegmentCount = 0;
+		for (S4AlignOrder order: JTransAPI.overlaps)
+			overlapSegmentCount += order.alignWords.getNbSegments();
+
+		buf.append("\n\titem [" + (1 + tracks.length) + "]:") // TODO 2*length quand il y aura les phonèmes
+				.append("\n\t\tclass = \"IntervalTier\"")
+				.append("\n\t\tname = \"OVERLAP\"")
+				.append("\n\t\txmin = 0")
+				.append("\n\t\txmax = " + finalSec)
+				.append("\n\t\tintervals: size = " + overlapSegmentCount);
+		int n = 0;
+		for (S4AlignOrder order: JTransAPI.overlaps) {
+			for (int w = 0; w < order.alignWords.getNbSegments(); w++) {
+				buf.append("\n\t\tintervals [" + (1+n++) + "]:");
+				float xmin = JTrans.frame2sec(order.alignWords.getSegmentDebFrame(w));
+				float xmax = JTrans.frame2sec(order.alignWords.getSegmentEndFrame(w));
+				buf.append("\n\t\t\txmin = " + xmin)
+						.append("\n\t\t\txmax = " + xmax)
+						.append("\n\t\t\ttext = \"" + order.alignWords.getSegmentLabel(w) + "\""); // TODO ESCAPE
+			}
+		}
+
+		return buf.toString();
 	}
 }

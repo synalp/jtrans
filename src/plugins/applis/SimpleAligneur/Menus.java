@@ -11,6 +11,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.LinkedHashMap;
@@ -58,6 +59,7 @@ public class Menus {
 		JMenuItem savejtr = new JMenuItem("Save JTrans project as...");
 		JMenuItem savepho = new JMenuItem("Save align.pho");
 		JMenuItem savepraat = new JMenuItem("Save as Praat text grid...");
+		JMenuItem saveParallelPraat = new JMenuItem("Save as Praat parallel tiers (experimental)...");
 		JMenuItem quit = new JMenuItem("Quit");
 
 		menubar.add(file);
@@ -71,6 +73,7 @@ public class Menus {
 		file.add(savejtr);
 		file.add(savepho);
 		file.add(savepraat);
+		file.add(saveParallelPraat);
 		file.addSeparator();
 		file.add(quit);
 
@@ -152,6 +155,28 @@ public class Menus {
 				if (returnVal == fc.APPROVE_OPTION) {
 					File file = fc.getSelectedFile();
 					JTrans.savePraat(file.getAbsolutePath(), tiers);
+				}
+			}
+		});
+
+		saveParallelPraat.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				JFileChooser fc = new JFileChooser();
+				fc.setDialogTitle("Save to Praat text grid...");
+				fc.setSelectedFile(new File("out.textGrid"));
+				int returnVal = fc.showSaveDialog(aligneur.jf);
+
+				if (returnVal == fc.APPROVE_OPTION) {
+					String praat = aligneur.generatePraatWithTiersBySpeaker();
+					File file = fc.getSelectedFile();
+					try {
+						FileWriter fw = new FileWriter(file);
+						fw.write(praat);
+						fw.flush();
+						fw.close();
+					} catch (IOException ex) {
+					}
 				}
 			}
 		});

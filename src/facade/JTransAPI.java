@@ -300,6 +300,7 @@ public class JTransAPI {
 	private static ListeElement elts =  null;
 	public static AlignementEtat alignementWords = null;
 	public static AlignementEtat alignementPhones = null;
+	public static ArrayList<S4AlignOrder> overlaps = new ArrayList<S4AlignOrder>();
 	public static TexteEditor edit = null;
 	public static Aligneur aligneur = null;
 	public static S4ForceAlignBlocViterbi s4blocViterbi = null;
@@ -379,6 +380,15 @@ public class JTransAPI {
 					}
 				}
 				setAlignWord(startWord, word, alignFrom, alignTo);
+
+				S4AlignOrder spk1Overlap = partialBatchAlign(startWord,
+						SpectroControl.second2frame(alignFrom),
+						nextWord,
+						SpectroControl.second2frame(alignTo));
+
+				if (!spk1Overlap.isEmpty())
+					overlaps.add(spk1Overlap);
+
 				alignFrom = alignTo;
 				word = nextWord;
 				startWord = word + 1;
