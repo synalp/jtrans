@@ -393,18 +393,29 @@ public class JTransAPI {
 				if (word >= 0 && word > startWord) {
 					setAlignWord(startWord, word, alignFrom, alignTo);
 
-					if (currentOverlap != null) {
+					if (currentOverlap != null && currentOverlap.s2LastOverlappedWord >= 0) {
 						// Find when the overlapped speech ends.
 						int seg = mots.get(currentOverlap.s2LastOverlappedWord).posInAlign;
 						currentOverlap.overlapEnd = JTrans.frame2sec(
 								alignementWords.getSegmentEndFrame(seg));
 
-						System.out.println("Overlap: previous speaker starts speaking @"
-								+ currentOverlap.s1StartsSpeaking
-								+ ", gets overlapped @"
-								+ currentOverlap.overlapStart
-								+ ", stops speaking @"
-								+ currentOverlap.overlapEnd);
+						if (currentOverlap.overlapEnd > currentOverlap.overlapStart) {
+							System.out.println("Overlap: previous speaker starts speaking @"
+									+ currentOverlap.s1StartsSpeaking
+									+ ", gets overlapped @"
+									+ currentOverlap.overlapStart
+									+ ", stops speaking @"
+									+ currentOverlap.overlapEnd);
+
+							S4AlignOrder spk1Overlap = partialBatchAlign(
+									currentOverlap.s1FirstWord,
+									SpectroControl.second2frame(currentOverlap.s1StartsSpeaking),
+									currentOverlap.s1LastWord,
+									SpectroControl.second2frame(currentOverlap.overlapEnd));
+
+							if (!spk1Overlap.isEmpty())
+								overlaps.add(spk1Overlap);
+						}
 
 						currentOverlap = null;
 					}
@@ -421,7 +432,6 @@ public class JTransAPI {
 					Element e2 = elts.get(i);
 					if (e2 instanceof Element_Ancre) {
 						alignTo = ((Element_Ancre) e2).seconds;
-						// TODO c'est plutôt la next-next-anchor plutôt qu'il faudrait prendre ?
 						break;
 					} else if (e2 instanceof Element_Mot) {
 						nextWord++;
@@ -429,8 +439,9 @@ public class JTransAPI {
 				}
 				setAlignWord(startWord, word, alignFrom, alignTo);
 
-				assert currentOverlap == null:
-						"an overlap was already ongoing!";
+				// TODO
+				// TODO assert currentOverlap == null:
+				// TODO		"an overlap was already ongoing!";
 
 				currentOverlap = new Overlap();
 
@@ -441,25 +452,16 @@ public class JTransAPI {
 				currentOverlap.s1StartsSpeaking = alignFrom;
 				currentOverlap.overlapStart = alignTo;
 
-				/*
-				S4AlignOrder spk1Overlap = partialBatchAlign(startWord,
-						SpectroControl.second2frame(alignFrom),
-						nextWord,
-						SpectroControl.second2frame(alignTo));
-
-				if (!spk1Overlap.isEmpty())
-					overlaps.add(spk1Overlap);
-				*/
-
 				alignFrom = alignTo;
 				word = nextWord;
 				startWord = word + 1;
 			} else if (e instanceof Element_FinChevauchement) {
-				assert currentOverlap != null:
-						"no overlap is currently active!";
-
-				currentOverlap.s2FirstWord = startWord;
-				currentOverlap.s2LastOverlappedWord = word;
+				if (currentOverlap == null) {
+					System.err.println("ERRONEOUS INPUT: no overlap is currently active!");
+				} else {
+					currentOverlap.s2FirstWord = startWord;
+					currentOverlap.s2LastOverlappedWord = word;
+				}
 			}
 
 			progress.setProgress((i+1) / (float)elts.size());
