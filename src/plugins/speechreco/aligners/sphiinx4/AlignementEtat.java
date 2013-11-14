@@ -101,7 +101,7 @@ public class AlignementEtat implements Serializable {
 	 * suppose que le nouvel align commence juste apres un segment precedent
 	 * 
 	 * @param al
-	 * @return
+	 * @return Insertion index of first segment
 	 */
 	public int merge(AlignementEtat al) {
 		int nsegsConservesDuPremier=getNbSegments();

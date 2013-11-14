@@ -35,4 +35,14 @@ public class S4AlignOrder implements Serializable {
 	public int getLastMot() {return mot2;}
 	public int getFirstFrame() {return tr1;}
 	public int getLastFrame() {return tr2;}
+
+	public void adjustOffset() {
+		alignWords.adjustOffset(tr1);
+		alignPhones.adjustOffset(tr1);
+		alignStates.adjustOffset(tr1);
+	}
+
+	public boolean isEmpty() {
+		return alignWords == null;
+	}
 }

@@ -101,6 +101,9 @@ public class JTransAPI {
 			e.printStackTrace();
 		}
 
+		if (!order.isEmpty())
+			order.adjustOffset();
+
 		return order;
 	}
 
@@ -109,9 +112,12 @@ public class JTransAPI {
 	 * Slow, but accurate.
 	 *
 	 * The resulting S4AlignOrder objects may be cached to save time.
+	 *
+	 * It is not merged into the main alignment (use mergeOrder() for that).
 	 */
-	public static void batchAlign(final int startWord, final int startFrame, final int endWord, final int endFrame) {
+	public static S4AlignOrder partialBatchAlign(final int startWord, final int startFrame, final int endWord, final int endFrame) {
 		System.out.println("batch align "+startWord+"-"+endWord+" "+startFrame+":"+endFrame);
+
 		if (s4blocViterbi==null) {
 			String[] amots = new String[mots.size()];
 			for (int i=0;i<mots.size();i++) {
@@ -121,7 +127,7 @@ public class JTransAPI {
 			s4blocViterbi.setMots(amots);
 		}
 
-		S4AlignOrder order = (S4AlignOrder)Cache.cachedObject(
+		return (S4AlignOrder)Cache.cachedObject(
 				String.format("%05d_%05d_%05d_%05d.order", startWord, startFrame, endWord, endFrame),
 				new Cache.ObjectFactory() {
 					public Object make() {
@@ -130,33 +136,37 @@ public class JTransAPI {
 				},
 				aligneur.originalAudioFile,
 				edit.getText());
+	}
 
-		if (order.alignWords!=null) {
-			order.alignWords.adjustOffset(startFrame);
-			order.alignPhones.adjustOffset(startFrame);
-			order.alignStates.adjustOffset(startFrame);
+	/**
+	 * Merge an S4AlignOrder into the main alignment.
+	 */
+	public static void mergeOrder(S4AlignOrder order, int startWord, int endWord) {
+		if (order.alignWords != null) {
 			System.out.println("================================= ALIGN FOUND");
 			System.out.println(order.alignWords.toString());
-			String[] wordsThatShouldBeAligned = new String[1+endWord-startWord];
-			for (int i=startWord, j=0;i<=endWord;i++,j++) {
-				wordsThatShouldBeAligned[j]=mots.get(i).getWordString();
+
+			String[] alignedWords = new String[1 + endWord - startWord];
+			for (int i = 0; i < 1+endWord-startWord; i++)
+				alignedWords[i] = mots.get(i + startWord).getWordString();
+			int[] wordSegments = order.alignWords.matchWithText(alignedWords);
+
+			// Merge word segments into the main word alignment
+			int firstSegment = alignementWords.merge(order.alignWords);
+
+			// Adjust posInAlign for word elements (Element_Mot)
+			for (int i = 0; i < wordSegments.length; i++) {
+				int idx = wordSegments[i];
+
+				// Offset if we have a valid segment index
+				if (idx >= 0)
+					idx += firstSegment;
+
+				mots.get(i + startWord).posInAlign = idx;
 			}
-			System.out.println("wordsthatshouldbealigned "+Arrays.toString(wordsThatShouldBeAligned));
-			int[] locmots2segidx = order.alignWords.matchWithText(wordsThatShouldBeAligned);
-			int nsegsbefore = alignementWords.merge(order.alignWords);
-			int[] mots2segidx = Arrays.copyOf(locmots2segidx,locmots2segidx.length);
-			for (int i=0;i<locmots2segidx.length;i++) {
-				if (locmots2segidx[i]>=0)
-					mots2segidx[i]+=nsegsbefore;
-			}
-			System.out.println("mots2segs "+locmots2segidx.length+" "+Arrays.toString(mots2segidx));
-			if (edit!=null) {
-				for (int i=startWord, j=0;i<=endWord;i++,j++) {
-					System.out.println("posinalign "+i+" "+mots2segidx[j]);
-					mots.get(i).posInAlign=mots2segidx[j];
-				}
-				elts.refreshIndex();
-			}
+			elts.refreshIndex();
+
+			// Merge phoneme segments into the main phoneme alignment
 			alignementPhones.merge(order.alignPhones);
 		} else {
 			System.out.println("================================= ALIGN FOUND null");
@@ -165,7 +175,8 @@ public class JTransAPI {
 	}
 
 	/**
-	 * Align words between startWord and endWord using linear interpolation.
+	 * Align words between startWord and endWord using linear interpolation in
+	 * the main alignment.
 	 * Very fast, but inaccurate.
 	 */
 	public static void linearAlign(int startWord, int startFrame, int endWord, int endFrame) {
@@ -227,7 +238,8 @@ public class JTransAPI {
 			if (USE_LINEAR_ALIGNMENT) {
 				linearAlign(startWord, startFrame, word, endFrame);
 			} else {
-				batchAlign(startWord, startFrame, word, endFrame);
+				S4AlignOrder order = partialBatchAlign(startWord, startFrame, word, endFrame);
+				mergeOrder(order, startWord, word);
 			}
 		} else {
 			// Only one word to align; create a new manual segment.
@@ -381,7 +393,6 @@ public class JTransAPI {
 		// force la construction de l'index
 		alignementWords.clearIndex();
 		alignementWords.getSegmentAtFrame(0);
-		System.out.println("align index built");
 		alignementPhones.clearIndex();
 		alignementPhones.getSegmentAtFrame(0);
 		elts.refreshIndex();
