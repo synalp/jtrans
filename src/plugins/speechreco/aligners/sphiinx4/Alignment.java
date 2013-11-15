@@ -59,6 +59,18 @@ public class Alignment implements Serializable {
 		clear();
 	}
 
+	/**
+	 * Copy constructor - performs a SHALLOW copy of the segments!
+	 */
+	public Alignment(Alignment other) {
+		frameOffset = other.frameOffset;
+		firstSegmentModified = other.firstSegmentModified;
+		segments = new ArrayList<String>(other.segments);
+		segmentsDeb = new ArrayList<Integer>(other.segmentsDeb);
+		segmentsFin = new ArrayList<Integer>(other.segmentsFin);
+		segmentsSource = new ArrayList<Byte>(other.segmentsSource);
+	}
+
 	public void clear() {
 		frameOffset = 0;
 		firstSegmentModified = -1;
@@ -191,6 +203,24 @@ public class Alignment implements Serializable {
 		setFirstSegmentAltered(nsegsConservesDuPremier);
 
 		return nsegsConservesDuPremier;
+	}
+
+	/**
+	 * Overwrites part of this alignment with a smaller alignment.
+	 */
+	public void overwrite(Alignment small) {
+		int fromFrame = small.getStartFrame();
+		int toFrame   = small.getSegmentEndFrame(small.getNbSegments()-1);
+
+		assert fromFrame >= getStartFrame();
+		assert toFrame <= getSegmentEndFrame(getNbSegments()-1);
+
+		Alignment after = new Alignment(this);
+		cutAfterFrame(fromFrame);
+		after.cutBeforeFrame(toFrame);
+
+		merge(small);
+		merge(after);
 	}
 
 	public void clearIndex() {

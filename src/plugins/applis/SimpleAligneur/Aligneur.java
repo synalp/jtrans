@@ -1686,7 +1686,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 		for (int i = 0; i < JTransAPI.overlaps.size(); i++) {
 			byte overlapSpeaker = JTransAPI.overlapSpeakers.get(i);
 			S4AlignOrder order = JTransAPI.overlaps.get(i);
-			spk[overlapSpeaker].words.merge(order.alignWords);
+			spk[overlapSpeaker].words.overwrite(order.alignWords);
 		}
 
 		// Now that we have the interval count, generate tier headers and copy
