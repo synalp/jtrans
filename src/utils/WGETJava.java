@@ -63,7 +63,7 @@ public class WGETJava {
 	 */
 	public static WGETJavaResults DownloadFile(final URL theURL) {
 
-		final utils.ProgressDialog waiting = new utils.ProgressDialog((JFrame)null,null,"please wait: downloading...");
+		final utils.installer.ProgressDialog waiting = new utils.installer.ProgressDialog((JFrame)null,null,"please wait: downloading...");
 		final ArrayBlockingQueue<WGETJavaResults> res = new ArrayBlockingQueue<WGETJavaResults>(1);
 		utils.installer.Interruptable searchingproc = new Interruptable() {
 			private boolean tostop=false;

@@ -27,21 +27,21 @@ public class Installer {
 	public static void main(String args[]) {
 		System.out.println("starting JTrans installer in curdir "+((new File(".")).getAbsolutePath()));
 		if ((new File("culture.jtr")).exists())
-			launchJSafran(args);
+			launchJTrans(args);
 		else {
 			try {
 				WGETJava.DownloadFile(new URL("http://talc1.loria.fr/users/cerisara/jtrans/culture.wav"));
 				WGETJava.DownloadFile(new URL("http://talc1.loria.fr/users/cerisara/jtrans/culture.txt"));
 				WGETJava.DownloadFile(new URL("http://talc1.loria.fr/users/cerisara/jtrans/culture.jtr"));
 				String[] ar = {"culture.jtr"};
-				launchJSafran(ar);
+				launchJTrans(ar);
 			} catch (MalformedURLException e) {
 				e.printStackTrace();
 			}
 		}
 	}
 	
-	public static void launchJSafran(final String[] args) {
+	public static void launchJTrans(final String[] args) {
 		if (!isAlreadyInstalled()) install();
 		try {
 			plugins.applis.SimpleAligneur.Aligneur.main(args);
