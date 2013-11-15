@@ -50,6 +50,7 @@ import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import javax.swing.JTextPane;
 
@@ -274,6 +275,33 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 		}
 		return null;
 	}//getLocuteurName
+
+
+	/**
+	 * Fills a mapping of segments (array indices) to speaker IDs (array items).
+	 * @param seg2spk an array whose length is the total segment count
+	 * @return the mapping
+	 */
+	public byte[] getSegmentToSpeakerIndex(byte[] seg2spk) {
+		int startSeg = 0;
+		int currSeg = 0;
+		byte currSpk = -1;
+		for (Element el: this) {
+			if (el instanceof Element_Locuteur) {
+				Arrays.fill(seg2spk, startSeg, currSeg + 1, currSpk);
+				startSeg = currSeg + 1;
+				currSpk = ((Element_Locuteur) el).getLocuteurID();
+			} else if (el instanceof Element_Mot) {
+				int seg = ((Element_Mot) el).posInAlign;
+				// sometimes words get stuck at -1 because they couldn't be aligned
+				if (seg > currSeg)
+					currSeg = seg;
+				assert currSeg < seg2spk.length;
+			}
+		}
+		return seg2spk;
+	}
+
 
 	/**
 	 * Fonction permettant de r�cup�rer une ArrayList
