@@ -213,7 +213,9 @@ public class Alignment implements Serializable {
 		int toFrame   = small.getSegmentEndFrame(small.getNbSegments()-1);
 
 		assert fromFrame >= getStartFrame();
-		assert toFrame <= getSegmentEndFrame(getNbSegments()-1);
+		// Ignore assertion below - the inserted alignment
+		// may extend beyond the end of this alignment
+		// assert toFrame <= getSegmentEndFrame(getNbSegments()-1);
 
 		Alignment after = new Alignment(this);
 		cutAfterFrame(fromFrame);
