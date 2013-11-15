@@ -1643,88 +1643,68 @@ public class Aligneur extends JPanel implements PrintLogger {
 	}
 
 	public String generatePraatWithTiersBySpeaker() {
-		class Interval {
-			float xmin, xmax;
-			String text;
-			Interval(float m, float M, String t) {
-				xmin = m;
-				xmax = M;
-				text = t;
-			}
-		}
-
 		class SpeakerTrack {
-			ArrayList<Interval> phones = new ArrayList<Interval>();
-			ArrayList<Interval> words = new ArrayList<Interval>();
+			String name;
+			StringBuffer words = new StringBuffer();
+			int wordIntervals = 0;
 		}
 
-		ListeElement lst = edit.getListeElement();
-		SpeakerTrack currTrack = null;
-
-		SpeakerTrack[] tracks = new SpeakerTrack[lst.getNbLocuteur()];
-		for (int i = 0; i < lst.getNbLocuteur(); i++)
-			tracks[i] = new SpeakerTrack();
-
-
-
-		float finalSec = -1;
-		for (int i = 0; i < lst.size(); i++) {
-			Element el = lst.get(i);
-
-			if (el instanceof Element_Locuteur) {
-				currTrack = tracks[((Element_Locuteur)el).getLocuteurID()];
-			}
-
-			else if (el instanceof Element_Mot) {
-				Element_Mot w = (Element_Mot)el;
-				float xmin = JTrans.frame2sec(alignement.getSegmentDebFrame(w.posInAlign));
-				float xmax = JTrans.frame2sec(alignement.getSegmentEndFrame(w.posInAlign));
-				currTrack.words.add(new Interval(xmin, xmax, w.getWordString()));
-				if (xmax > finalSec) {
-					finalSec = xmax;
-				}
-				System.out.println("xmax " + xmax + " " + ((Element_Mot) el).getWordString());
-			}
-		}
+		ListeElement    lst      = edit.getListeElement();
+		SpeakerTrack[]  spk      = new SpeakerTrack[lst.getNbLocuteur()];
+		byte[]          seg2spk  = lst.getSegmentToSpeakerIndex(new byte[alignement.getNbSegments()]);
+		float           finalSec = alignement.getSegmentEndFrame(alignement.getNbSegments() - 1);
 
 		StringBuilder buf = new StringBuilder();
-
 		buf.append("File type = \"ooTextFile\"")
 				.append("\nObject class = \"TextGrid\"")
 				.append("\n")
 				.append("\nxmin = 0")
 				.append("\nxmax = " + finalSec)
 				.append("\ntiers? <exists>")
-				.append("\nsize = " + (1+tracks.length)) // TODO 2*tracks.length quand il y aura les phonèmes
+				.append("\nsize = " + (1+lst.getNbLocuteur())) // TODO 2*tracks.length quand il y aura les phonèmes
 				.append("\nitem []:");
 
-		for (int i = 0; i < tracks.length; i++) {
-			buf.append("\n\titem [" + (1 + i) + "]:") // TODO 1+i*2
+		// Initialize speaker tracks
+		for (int i = 0; i < lst.getNbLocuteur(); i++) {
+			spk[i] = new SpeakerTrack();
+			spk[i].name = lst.getLocuteurName(i);
+		}
+
+		// Fill speaker tier bodies
+		for (int i = 0; i < alignement.getNbSegments(); i++) {
+			byte spkCode = seg2spk[i];
+			if (spkCode < 0)
+				continue;
+			SpeakerTrack track = spk[spkCode];
+			track.wordIntervals++;
+			track.words.append("\n\t\tintervals [" + track.wordIntervals + "]:")
+					.append("\n\t\t\txmin = ")
+					.append(JTrans.frame2sec(alignement.getSegmentDebFrame(i)))
+					.append("\n\t\t\txmax = ")
+					.append(JTrans.frame2sec(alignement.getSegmentEndFrame(i)))
+					.append("\n\t\t\ttext = \"")
+					.append(alignement.getSegmentLabel(i) + "\""); // TODO escape strings
+		}
+
+		// Now that we have the interval count, generate tier headers and copy
+		// tier body to the main buffer
+		for (int i = 0; i < lst.getNbLocuteur(); i++) {
+			SpeakerTrack track = spk[i];
+			buf.append("\n\titem [" + (1 + i) + "]:") // TODO 1+i*2 (phonemes)
 					.append("\n\t\tclass = \"IntervalTier\"")
-					.append("\n\t\tname = \"Words ")
-							.append(lst.getLocuteurName(i))
-							.append("\"")
+					.append("\n\t\tname = \"Words " + spk[i].name + "\"") // TODO escape strings
 					.append("\n\t\txmin = 0")
 					.append("\n\t\txmax = " + finalSec)
 					.append("\n\t\tintervals: size = ")
-							.append(tracks[i].words.size());
-			int n = 0;
-			for (Interval intvl: tracks[i].words) {
-				buf.append("\n\t\tintervals [" + (1+n++) + "]:")
-						.append("\n\t\t\txmin = " + intvl.xmin)
-						.append("\n\t\t\txmax = " + intvl.xmax)
-						.append("\n\t\t\ttext = \"" + intvl.text + "\""); // TODO escape strings?
-			}
-
-			// TODO phonèmes
+						.append(spk[i].wordIntervals)
+					.append(track.words);
 		}
 
-
+		// Overlap tier
 		int overlapSegmentCount = 0;
 		for (S4AlignOrder order: JTransAPI.overlaps)
 			overlapSegmentCount += order.alignWords.getNbSegments();
-
-		buf.append("\n\titem [" + (1 + tracks.length) + "]:") // TODO 2*length quand il y aura les phonèmes
+		buf.append("\n\titem [" + (1 + lst.getNbLocuteur()) + "]:") // TODO 2*length quand il y aura les phonèmes
 				.append("\n\t\tclass = \"IntervalTier\"")
 				.append("\n\t\tname = \"OVERLAP\"")
 				.append("\n\t\txmin = 0")
