@@ -224,12 +224,12 @@ public class S4ASR implements SignalListener {
     		dico.allocate();
     		System.out.println("dico loaded");
     		// LargeNGramModel lm = new LargeNGramModel("arpa", new URL("file://"+bp+"LM_africain_3g.sorted.arpa.utf8.dmp"), null, 100000, 50000, false, n, logMath, dico, false, lw, wip, 0.5f, false);
-    		LargeNGramModel lm = new LargeNGramModel("arpa", new URL("file://"+bp+"LM_africain_3g.sorted.arpa.utf8.dmp"), null, 100000, false, n, logMath, dico, false, lw, wip, 0.5f, false);
+    		//LargeNGramModel lm = new LargeNGramModel("arpa", new URL("file://"+bp+"LM_africain_3g.sorted.arpa.utf8.dmp"), null, 100000, false, n, logMath, dico, false, lw, wip, 0.5f, false);
+    		LargeTrigramModel lm = new LargeTrigramModel("dmp",new URL("file://"+bp+"LM_africain_3g.sorted.arpa.utf8.dmp"),null,100000,50000,false,-1,logMath,dico,false,lw,wip,0.5f,false);
     		lm.allocate();
-    		//    			LargeTrigramModel lm = new LargeTrigramModel("dmp",new URL("file://"+bp+"LM_africain_3g.sorted.arpa.utf8.dmp"),null,100000,50000,false,-1,logMath,dico,false,lw,wip,0.5f,false);
     		System.out.println("lm loaded");
 
-    		String txt = "<s> le président de la république est venu en visite officielle à paris </s>";
+    		String txt = "<s> le président de la république est venu en visite officielle à unk </s>";
 
     		StringTokenizer st = new StringTokenizer(txt);
     		ArrayList<String> wtxt = new ArrayList<String>();

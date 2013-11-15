@@ -1,0 +1,2 @@
+- attention aux conflits de package !! jsafran.utils vs jtrans.utils sachant que jsafran est dans le classpath de jtrans !
+
