@@ -1644,15 +1644,14 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 	public String generatePraatWithTiersBySpeaker() {
 		class SpeakerTrack {
-			String name;
-			StringBuffer words = new StringBuffer();
-			int wordIntervals = 0;
+			String name = "???";
+			Alignment words = new Alignment();
 		}
 
-		ListeElement    lst      = edit.getListeElement();
-		SpeakerTrack[]  spk      = new SpeakerTrack[lst.getNbLocuteur()];
-		byte[]          seg2spk  = lst.getSegmentToSpeakerIndex(new byte[alignement.getNbSegments()]);
-		float           finalSec = alignement.getSegmentEndFrame(alignement.getNbSegments() - 1);
+		ListeElement    lst          = edit.getListeElement();
+		SpeakerTrack[]  spk          = new SpeakerTrack[lst.getNbLocuteur()];
+		byte[]          seg2spk      = lst.getSegmentToSpeakerIndex(new byte[alignement.getNbSegments()]);
+		float           finalSec     = alignement.getSegmentEndFrame(alignement.getNbSegments() - 1);
 
 		StringBuilder buf = new StringBuilder();
 		buf.append("File type = \"ooTextFile\"")
@@ -1661,7 +1660,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 				.append("\nxmin = 0")
 				.append("\nxmax = " + finalSec)
 				.append("\ntiers? <exists>")
-				.append("\nsize = " + (1+lst.getNbLocuteur())) // TODO 2*tracks.length quand il y aura les phonèmes
+				.append("\nsize = " + lst.getNbLocuteur()) // TODO 2*tracks.length quand il y aura les phonèmes
 				.append("\nitem []:");
 
 		// Initialize speaker tracks
@@ -1675,15 +1674,19 @@ public class Aligneur extends JPanel implements PrintLogger {
 			byte spkCode = seg2spk[i];
 			if (spkCode < 0)
 				continue;
-			SpeakerTrack track = spk[spkCode];
-			track.wordIntervals++;
-			track.words.append("\n\t\tintervals [" + track.wordIntervals + "]:")
-					.append("\n\t\t\txmin = ")
-					.append(JTrans.frame2sec(alignement.getSegmentDebFrame(i)))
-					.append("\n\t\t\txmax = ")
-					.append(JTrans.frame2sec(alignement.getSegmentEndFrame(i)))
-					.append("\n\t\t\ttext = \"")
-					.append(alignement.getSegmentLabel(i) + "\""); // TODO escape strings
+			spk[spkCode].words.addRecognizedSegment(
+					alignement.getSegmentLabel(i),
+					alignement.getSegmentDebFrame(i),
+					alignement.getSegmentEndFrame(i),
+					null,
+					null);
+		}
+
+		// Account for overlaps in main speaker alignments
+		for (int i = 0; i < JTransAPI.overlaps.size(); i++) {
+			byte overlapSpeaker = JTransAPI.overlapSpeakers.get(i);
+			S4AlignOrder order = JTransAPI.overlaps.get(i);
+			spk[overlapSpeaker].words.merge(order.alignWords);
 		}
 
 		// Now that we have the interval count, generate tier headers and copy
@@ -1692,33 +1695,19 @@ public class Aligneur extends JPanel implements PrintLogger {
 			SpeakerTrack track = spk[i];
 			buf.append("\n\titem [" + (1 + i) + "]:") // TODO 1+i*2 (phonemes)
 					.append("\n\t\tclass = \"IntervalTier\"")
-					.append("\n\t\tname = \"Words " + spk[i].name + "\"") // TODO escape strings
+					.append("\n\t\tname = \"Words " + track.name + "\"") // TODO escape strings
 					.append("\n\t\txmin = 0")
 					.append("\n\t\txmax = " + finalSec)
 					.append("\n\t\tintervals: size = ")
-						.append(spk[i].wordIntervals)
-					.append(track.words);
-		}
-
-		// Overlap tier
-		int overlapSegmentCount = 0;
-		for (S4AlignOrder order: JTransAPI.overlaps)
-			overlapSegmentCount += order.alignWords.getNbSegments();
-		buf.append("\n\titem [" + (1 + lst.getNbLocuteur()) + "]:") // TODO 2*length quand il y aura les phonèmes
-				.append("\n\t\tclass = \"IntervalTier\"")
-				.append("\n\t\tname = \"OVERLAP\"")
-				.append("\n\t\txmin = 0")
-				.append("\n\t\txmax = " + finalSec)
-				.append("\n\t\tintervals: size = " + overlapSegmentCount);
-		int n = 0;
-		for (S4AlignOrder order: JTransAPI.overlaps) {
-			for (int w = 0; w < order.alignWords.getNbSegments(); w++) {
-				buf.append("\n\t\tintervals [" + (1+n++) + "]:");
-				float xmin = JTrans.frame2sec(order.alignWords.getSegmentDebFrame(w));
-				float xmax = JTrans.frame2sec(order.alignWords.getSegmentEndFrame(w));
-				buf.append("\n\t\t\txmin = " + xmin)
-						.append("\n\t\t\txmax = " + xmax)
-						.append("\n\t\t\ttext = \"" + order.alignWords.getSegmentLabel(w) + "\""); // TODO ESCAPE
+						.append(track.words.getNbSegments());
+			for (int j = 0; j < track.words.getNbSegments(); j++) {
+				buf.append("\n\t\tintervals [" + (j+1) + "]:")
+						.append("\n\t\t\txmin = ")
+						.append(JTrans.frame2sec(track.words.getSegmentDebFrame(j)))
+						.append("\n\t\t\txmax = ")
+						.append(JTrans.frame2sec(track.words.getSegmentEndFrame(j)))
+						.append("\n\t\t\ttext = \"")
+						.append(track.words.getSegmentLabel(j) + "\""); // TODO escape strings
 			}
 		}
 

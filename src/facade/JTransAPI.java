@@ -299,6 +299,7 @@ public class JTransAPI {
 	public static Alignment alignementWords = null;
 	public static Alignment alignementPhones = null;
 	public static ArrayList<S4AlignOrder> overlaps = new ArrayList<S4AlignOrder>();
+	public static ArrayList<Byte> overlapSpeakers = new ArrayList<Byte>();
 	public static TexteEditor edit = null;
 	public static Aligneur aligneur = null;
 	public static S4ForceAlignBlocViterbi s4blocViterbi = null;
@@ -351,7 +352,14 @@ public class JTransAPI {
 		int startWord = 0;
 		int word = -1;
 
+		byte currentSpeaker = (byte)0xff;
+
 		class Overlap {
+			/**
+			 * ID of speaker #1 (the one who gets interrupted)
+			 */
+			byte s1;
+
 			// speaker 1 word indices
 			int s1FirstWord = -1;
 			int s1LastNonOverlappedWord = -1;
@@ -413,8 +421,10 @@ public class JTransAPI {
 									currentOverlap.s1LastWord,
 									SpectroControl.second2frame(currentOverlap.overlapEnd));
 
-							if (!spk1Overlap.isEmpty())
+							if (!spk1Overlap.isEmpty()) {
 								overlaps.add(spk1Overlap);
+								overlapSpeakers.add(currentOverlap.s1);
+							}
 						}
 
 						currentOverlap = null;
@@ -445,6 +455,8 @@ public class JTransAPI {
 
 				currentOverlap = new Overlap();
 
+				currentOverlap.s1 = currentSpeaker;
+
 				currentOverlap.s1FirstWord = startWord;
 				currentOverlap.s1LastNonOverlappedWord = word;
 				currentOverlap.s1LastWord = nextWord;
@@ -462,6 +474,8 @@ public class JTransAPI {
 					currentOverlap.s2FirstWord = startWord;
 					currentOverlap.s2LastOverlappedWord = word;
 				}
+			} else if (e instanceof Element_Locuteur) {
+				currentSpeaker = ((Element_Locuteur) e).getLocuteurID();
 			}
 
 			progress.setProgress((i+1) / (float)elts.size());
