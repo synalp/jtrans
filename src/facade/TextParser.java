@@ -25,7 +25,7 @@ public class TextParser {
 				.replace('\r', '\n')                // remaining non-Unix linebreaks
 				.replace('\u00a0', ' ')             // non-breaking spaces
 				.replaceAll("[\"=/]", " ")          // junk punctuation marks
-				//.replaceAll("\'(\\S)", "\' $1")     // add space after apostrophes glued to a word
+				.replaceAll("\'(\\S)", "\' $1")     // add space after apostrophes glued to a word
 		;
 	}
 
