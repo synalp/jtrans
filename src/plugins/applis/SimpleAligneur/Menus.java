@@ -59,7 +59,6 @@ public class Menus {
 		JMenuItem savejtr = new JMenuItem("Save JTrans project as...");
 		JMenuItem savepho = new JMenuItem("Save align.pho");
 		JMenuItem savepraat = new JMenuItem("Save as Praat text grid...");
-		JMenuItem saveParallelPraat = new JMenuItem("Save as Praat parallel tiers (experimental)...");
 		JMenuItem quit = new JMenuItem("Quit");
 
 		menubar.add(file);
@@ -73,7 +72,6 @@ public class Menus {
 		file.add(savejtr);
 		file.add(savepho);
 		file.add(savepraat);
-		file.add(saveParallelPraat);
 		file.addSeparator();
 		file.add(quit);
 
@@ -118,57 +116,30 @@ public class Menus {
 		savepraat.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				JCheckBox jcbWords = new JCheckBox("Word tier", true);
+				JCheckBox jcbPhons = new JCheckBox("Phoneme tier", true);
+
 				JPanel choicePane = new JPanel();
-				choicePane.setLayout(new GridLayout(3, 1));
-
-				JCheckBox jcbPhonemes = new JCheckBox("Phonemes", true);
-				JCheckBox jcbWords = new JCheckBox("Words", true);
-				JCheckBox jcbSpeakers = new JCheckBox("Speakers", true);
-
-				choicePane.add(jcbPhonemes);
+				choicePane.setLayout(new GridLayout(2, 1));
 				choicePane.add(jcbWords);
-				choicePane.add(jcbSpeakers);
-
+				choicePane.add(jcbPhons);
 				int rc = JOptionPane.showConfirmDialog(aligneur.jf, choicePane,
 						"Select tiers to export",
 						JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE);
-
 				if (rc != JOptionPane.OK_OPTION)
 					return;
-
-				LinkedHashMap<String, Alignment> tiers = new LinkedHashMap<String, Alignment>();
-				if (jcbPhonemes.isSelected())
-					tiers.put("Phonemes", aligneur.alignementPhones);
-				if (jcbWords.isSelected())
-					tiers.put("Words", aligneur.alignement);
-				if (jcbSpeakers.isSelected())
-					tiers.put("Speakers", aligneur.generateSpeakerAlignment());
-
-				if (tiers.isEmpty())
+				if (!jcbWords.isSelected() && !jcbPhons.isSelected())
 					return;
 
 				JFileChooser fc = new JFileChooser();
 				fc.setDialogTitle("Save to Praat text grid...");
-				fc.setSelectedFile(new File("out.textGrid"));
+				fc.setSelectedFile(new File("out.TextGrid"));
 				int returnVal = fc.showSaveDialog(aligneur.jf);
 
-				if (returnVal == fc.APPROVE_OPTION) {
-					File file = fc.getSelectedFile();
-					JTrans.savePraat(file.getAbsolutePath(), tiers);
-				}
-			}
-		});
-
-		saveParallelPraat.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				JFileChooser fc = new JFileChooser();
-				fc.setDialogTitle("Save to Praat text grid...");
-				fc.setSelectedFile(new File("out.textGrid"));
-				int returnVal = fc.showSaveDialog(aligneur.jf);
-
-				if (returnVal == fc.APPROVE_OPTION) {
-					String praat = aligneur.generatePraatWithTiersBySpeaker();
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					String praat = aligneur.generatePraat(
+							jcbWords.isSelected(),
+							jcbPhons.isSelected());
 					File file = fc.getSelectedFile();
 					try {
 						FileWriter fw = new FileWriter(file);
@@ -176,6 +147,11 @@ public class Menus {
 						fw.flush();
 						fw.close();
 					} catch (IOException ex) {
+						ex.printStackTrace();
+						JOptionPane.showMessageDialog(aligneur.jf,
+								"Couldn't save Praat!\n" + ex,
+								"IOException",
+								JOptionPane.ERROR_MESSAGE);
 					}
 				}
 			}

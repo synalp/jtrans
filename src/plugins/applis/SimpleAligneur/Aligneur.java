@@ -1584,168 +1584,109 @@ public class Aligneur extends JPanel implements PrintLogger {
 		progress.setVisible(true);
 	}
 
-	public Alignment generateSpeakerAlignment() {
-		ListeElement lst = edit.getListeElement();
-		Element_Locuteur currSpeaker = null;
-		Alignment speakers = new Alignment();
 
-		int segStart   = -1;
-		int segEnd     = -1;
-		int prevSegEnd = -1;
+	//==========================================================================
+	// PRAAT OUTPUT
+	//==========================================================================
 
-		for (int i = 0; i < lst.size(); i++) {
-			Element el = lst.get(i);
+	/**
+	 * Breaks down a linear alignment into parallel alignments by speaker.
+	 * Does not handle overlaps.
+	 */
+	private static Alignment[] breakDownBySpeaker(int speakers, Alignment speakerTurns, Alignment linearAlignment) {
+		Alignment[] spk = new Alignment[speakers];
+		for (int i = 0; i < speakers; i++)
+			spk[i] = new Alignment();
 
-			if (i == lst.size()-1 || el instanceof Element_Locuteur) {
-				// Add speaker segment
-				if (currSpeaker != null && segStart >= 0) {
-					int overlapLength = prevSegEnd - segStart;
+		int[] seg2seg = linearAlignment.mapSegmentTimings(speakerTurns);
 
-					// Overlap
-					if (overlapLength > 0) {
-						int overlapEnd = segStart + overlapLength;
-						int prevSeg = speakers.getNbSegments()-1;
-						System.out.println(String.format("Overlap! ...~%d %d-%d %d-...",
-								segStart, segStart, overlapEnd, overlapEnd));
-						// Shorten previous segment to make room for overlap segment
-						speakers.setSegmentEndFrame(prevSeg, segStart);
-						// Insert overlap segment
-						speakers.addRecognizedSegment(
-								speakers.getSegmentLabel(prevSeg) + "+L" + currSpeaker.getNumeroParole(),
-								segStart, overlapEnd, null, null);
-						// Shorten current segment
-						segStart = overlapEnd;
-					}
-
-					// Ensure the new segment isn't fully overlapped
-					if (segStart < segEnd) {
-						speakers.addRecognizedSegment("L" + currSpeaker.getNumeroParole(),
-								segStart, segEnd, null, null);
-					}
-				}
-
-				prevSegEnd = segEnd;
-				segStart = -1;
-
-				if (i < lst.size()-1)
-					currSpeaker = (Element_Locuteur)el;
-			}
-
-			if (el instanceof Element_Mot) {
-				int seg = ((Element_Mot)el).posInAlign;
-				segEnd = alignement.getSegmentEndFrame(seg);
-				if (segStart < 0)
-					segStart = alignement.getSegmentDebFrame(seg);
-			}
+		for (int i = 0; i < linearAlignment.getNbSegments(); i++) {
+			int spkCode = Integer.parseInt(speakerTurns.getSegmentLabel(seg2seg[i]));
+			if (spkCode < 0)
+				continue;
+			spk[spkCode].addRecognizedSegment(
+					linearAlignment.getSegmentLabel(i),
+					linearAlignment.getSegmentDebFrame(i),
+					linearAlignment.getSegmentEndFrame(i),
+					null,
+					null);
 		}
 
-		return speakers;
+		return spk;
 	}
 
-	public String generatePraatWithTiersBySpeaker() {
-		class SpeakerTrack {
-			String name = "???";
-			Alignment words = new Alignment();
-			Alignment phones = new Alignment();
+	/**
+	 * Generates a Praat tier for an alignment.
+	 * @param buf Append text to this buffer. If null, a new StringBuilder is created
+	 * @param id Tier ID (Praat tier numbering starts at 1 and is contiguous!)
+	 * @param name Tier name
+	 * @param finalFrame Final frame in the entire file
+	 */
+	private static StringBuilder praatTier(StringBuilder buf, int id, String name, int finalFrame, Alignment al) {
+		assert id > 0;
+		if (buf == null)
+			buf = new StringBuilder();
+		buf.append("\n\titem [").append(id).append("]:")
+				.append("\n\t\tclass = \"IntervalTier\"")
+				.append("\n\t\tname = \"").append(name).append('"') // TODO escape strings
+				.append("\n\t\txmin = 0")
+				.append("\n\t\txmax = ").append(JTrans.frame2sec(finalFrame))
+				.append("\n\t\tintervals: size = ")
+				.append(al.getNbSegments());
+		for (int j = 0; j < al.getNbSegments(); j++) {
+			buf.append("\n\t\tintervals [").append(j+1).append("]:")
+					.append("\n\t\t\txmin = ")
+					.append(JTrans.frame2sec(al.getSegmentDebFrame(j)))
+					.append("\n\t\t\txmax = ")
+					.append(JTrans.frame2sec(al.getSegmentEndFrame(j)))
+					.append("\n\t\t\ttext = \"")
+					.append(al.getSegmentLabel(j)).append('"'); // TODO escape strings
 		}
+		return buf;
+	}
 
+
+	public String generatePraat(boolean withWords, boolean withPhons) {
 		ListeElement    lst          = edit.getListeElement();
-		SpeakerTrack[]  spk          = new SpeakerTrack[lst.getNbLocuteur()];
-		float           finalSec     = alignement.getSegmentEndFrame(alignement.getNbSegments() - 1);
-		Alignment       speakerTimes = lst.getLinearSpeakerTimes(alignement);
+		int             speakers     = lst.getNbLocuteur();
+		int             tiers        = speakers * ((withWords?1:0) + (withPhons?1:0));
+		int             finalFrame   = alignement.getSegmentEndFrame(alignement.getNbSegments() - 1);
+		Alignment       speakerTurns = lst.getLinearSpeakerTimes(alignement);
+		Alignment[]     spkWords     = null;
+		Alignment[]     spkPhons     = null;
 
 		StringBuilder buf = new StringBuilder();
 		buf.append("File type = \"ooTextFile\"")
 				.append("\nObject class = \"TextGrid\"")
 				.append("\n")
 				.append("\nxmin = 0")
-				.append("\nxmax = " + finalSec)
+				.append("\nxmax = ").append(JTrans.frame2sec(finalFrame))
 				.append("\ntiers? <exists>")
-				.append("\nsize = " + 2*lst.getNbLocuteur())
+				.append("\nsize = ").append(tiers)
 				.append("\nitem []:");
 
-		// Initialize speaker tracks
-		for (int i = 0; i < lst.getNbLocuteur(); i++) {
-			spk[i] = new SpeakerTrack();
-			spk[i].name = lst.getLocuteurName(i);
-		}
+		// Linear, non-overlapping tiers
+		if (withWords) spkWords = breakDownBySpeaker(speakers, speakerTurns, alignement);
+		if (withPhons) spkPhons = breakDownBySpeaker(speakers, speakerTurns, alignementPhones);
 
-		// Fill speaker tier bodies
-		{
-			int[] seg2seg = alignement.mapSegmentTimings(speakerTimes);
-			for (int i = 0; i < alignement.getNbSegments(); i++) {
-				int spkCode = Integer.parseInt(speakerTimes.getSegmentLabel(seg2seg[i]));
-				if (spkCode < 0)
-					continue;
-				spk[spkCode].words.addRecognizedSegment(
-						alignement.getSegmentLabel(i),
-						alignement.getSegmentDebFrame(i),
-						alignement.getSegmentEndFrame(i),
-						null,
-						null);
-			}
-		}
-
-		{
-			int[] seg2seg = alignementPhones.mapSegmentTimings(speakerTimes);
-			for (int i = 0; i < alignementPhones.getNbSegments(); i++) {
-				int spkCode = Integer.parseInt(speakerTimes.getSegmentLabel(seg2seg[i]));
-				if (spkCode < 0)
-					continue;
-				spk[spkCode].phones.addRecognizedSegment(
-						alignementPhones.getSegmentLabel(i),
-						alignementPhones.getSegmentDebFrame(i),
-						alignementPhones.getSegmentEndFrame(i),
-						null,
-						null);
-			}
-		}
-
-		// Account for overlaps in main speaker alignments
+		// Account for overlaps
 		for (int i = 0; i < JTransAPI.overlaps.size(); i++) {
-			byte overlapSpeaker = JTransAPI.overlapSpeakers.get(i);
+			int speakerID = JTransAPI.overlapSpeakers.get(i);
 			S4AlignOrder order = JTransAPI.overlaps.get(i);
-			spk[overlapSpeaker].words.overwrite(order.alignWords);
-			spk[overlapSpeaker].phones.overwrite(order.alignPhones);
+			if (withWords)
+				spkWords[speakerID].overwrite(order.alignWords);
+			if (withPhons)
+				spkPhons[speakerID].overwrite(order.alignPhones);
 		}
 
-		// Now that we have the interval count, generate tier headers and copy
-		// tier body to the main buffer
-		for (int i = 0; i < lst.getNbLocuteur(); i++) {
-			SpeakerTrack track = spk[i];
-			buf.append("\n\titem [" + (1 + i*2) + "]:")
-					.append("\n\t\tclass = \"IntervalTier\"")
-					.append("\n\t\tname = \"Words " + track.name + "\"") // TODO escape strings
-					.append("\n\t\txmin = 0")
-					.append("\n\t\txmax = " + finalSec)
-					.append("\n\t\tintervals: size = ")
-						.append(track.words.getNbSegments());
-			for (int j = 0; j < track.words.getNbSegments(); j++) {
-				buf.append("\n\t\tintervals [" + (j+1) + "]:")
-						.append("\n\t\t\txmin = ")
-						.append(JTrans.frame2sec(track.words.getSegmentDebFrame(j)))
-						.append("\n\t\t\txmax = ")
-						.append(JTrans.frame2sec(track.words.getSegmentEndFrame(j)))
-						.append("\n\t\t\ttext = \"")
-						.append(track.words.getSegmentLabel(j) + "\""); // TODO escape strings
-			}
-			buf.append("\n\titem [" + (2 + i * 2) + "]:")
-					.append("\n\t\tclass = \"IntervalTier\"")
-					.append("\n\t\tname = \"Phonemes " + track.name + "\"") // TODO escape strings
-					.append("\n\t\txmin = 0")
-					.append("\n\t\txmax = " + finalSec)
-					.append("\n\t\tintervals: size = ")
-					.append(track.phones.getNbSegments());
-			for (int j = 0; j < track.phones.getNbSegments(); j++) {
-				buf.append("\n\t\tintervals [" + (j+1) + "]:")
-						.append("\n\t\t\txmin = ")
-						.append(JTrans.frame2sec(track.phones.getSegmentDebFrame(j)))
-						.append("\n\t\t\txmax = ")
-						.append(JTrans.frame2sec(track.phones.getSegmentEndFrame(j)))
-						.append("\n\t\t\ttext = \"")
-						.append(track.phones.getSegmentLabel(j) + "\""); // TODO escape strings
-			}
-
+		// Now that we have the final segment count, generate Praat tiers
+		int id = 1;
+		for (int i = 0; i < speakers; i++) {
+			String name = lst.getLocuteurName(i);
+			if (withWords)
+				praatTier(buf, id++, name + " words", finalFrame, spkWords[i]);
+			if (withPhons)
+				praatTier(buf, id++, name + " phons", finalFrame, spkPhons[i]);
 		}
 
 		return buf.toString();
