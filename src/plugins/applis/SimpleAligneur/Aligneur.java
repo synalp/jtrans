@@ -1646,12 +1646,13 @@ public class Aligneur extends JPanel implements PrintLogger {
 		class SpeakerTrack {
 			String name = "???";
 			Alignment words = new Alignment();
+			Alignment phones = new Alignment();
 		}
 
 		ListeElement    lst          = edit.getListeElement();
 		SpeakerTrack[]  spk          = new SpeakerTrack[lst.getNbLocuteur()];
-		byte[]          seg2spk      = lst.getSegmentToSpeakerIndex(new byte[alignement.getNbSegments()]);
 		float           finalSec     = alignement.getSegmentEndFrame(alignement.getNbSegments() - 1);
+		Alignment       speakerTimes = lst.getLinearSpeakerTimes(alignement);
 
 		StringBuilder buf = new StringBuilder();
 		buf.append("File type = \"ooTextFile\"")
@@ -1660,7 +1661,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 				.append("\nxmin = 0")
 				.append("\nxmax = " + finalSec)
 				.append("\ntiers? <exists>")
-				.append("\nsize = " + lst.getNbLocuteur()) // TODO 2*tracks.length quand il y aura les phonèmes
+				.append("\nsize = " + 2*lst.getNbLocuteur())
 				.append("\nitem []:");
 
 		// Initialize speaker tracks
@@ -1670,16 +1671,34 @@ public class Aligneur extends JPanel implements PrintLogger {
 		}
 
 		// Fill speaker tier bodies
-		for (int i = 0; i < alignement.getNbSegments(); i++) {
-			byte spkCode = seg2spk[i];
-			if (spkCode < 0)
-				continue;
-			spk[spkCode].words.addRecognizedSegment(
-					alignement.getSegmentLabel(i),
-					alignement.getSegmentDebFrame(i),
-					alignement.getSegmentEndFrame(i),
-					null,
-					null);
+		{
+			int[] seg2seg = alignement.mapSegmentTimings(speakerTimes);
+			for (int i = 0; i < alignement.getNbSegments(); i++) {
+				int spkCode = Integer.parseInt(speakerTimes.getSegmentLabel(seg2seg[i]));
+				if (spkCode < 0)
+					continue;
+				spk[spkCode].words.addRecognizedSegment(
+						alignement.getSegmentLabel(i),
+						alignement.getSegmentDebFrame(i),
+						alignement.getSegmentEndFrame(i),
+						null,
+						null);
+			}
+		}
+
+		{
+			int[] seg2seg = alignementPhones.mapSegmentTimings(speakerTimes);
+			for (int i = 0; i < alignementPhones.getNbSegments(); i++) {
+				int spkCode = Integer.parseInt(speakerTimes.getSegmentLabel(seg2seg[i]));
+				if (spkCode < 0)
+					continue;
+				spk[spkCode].phones.addRecognizedSegment(
+						alignementPhones.getSegmentLabel(i),
+						alignementPhones.getSegmentDebFrame(i),
+						alignementPhones.getSegmentEndFrame(i),
+						null,
+						null);
+			}
 		}
 
 		// Account for overlaps in main speaker alignments
@@ -1687,13 +1706,14 @@ public class Aligneur extends JPanel implements PrintLogger {
 			byte overlapSpeaker = JTransAPI.overlapSpeakers.get(i);
 			S4AlignOrder order = JTransAPI.overlaps.get(i);
 			spk[overlapSpeaker].words.overwrite(order.alignWords);
+			spk[overlapSpeaker].phones.overwrite(order.alignPhones);
 		}
 
 		// Now that we have the interval count, generate tier headers and copy
 		// tier body to the main buffer
 		for (int i = 0; i < lst.getNbLocuteur(); i++) {
 			SpeakerTrack track = spk[i];
-			buf.append("\n\titem [" + (1 + i) + "]:") // TODO 1+i*2 (phonemes)
+			buf.append("\n\titem [" + (1 + i*2) + "]:")
 					.append("\n\t\tclass = \"IntervalTier\"")
 					.append("\n\t\tname = \"Words " + track.name + "\"") // TODO escape strings
 					.append("\n\t\txmin = 0")
@@ -1709,6 +1729,23 @@ public class Aligneur extends JPanel implements PrintLogger {
 						.append("\n\t\t\ttext = \"")
 						.append(track.words.getSegmentLabel(j) + "\""); // TODO escape strings
 			}
+			buf.append("\n\titem [" + (2 + i * 2) + "]:")
+					.append("\n\t\tclass = \"IntervalTier\"")
+					.append("\n\t\tname = \"Phonemes " + track.name + "\"") // TODO escape strings
+					.append("\n\t\txmin = 0")
+					.append("\n\t\txmax = " + finalSec)
+					.append("\n\t\tintervals: size = ")
+					.append(track.phones.getNbSegments());
+			for (int j = 0; j < track.phones.getNbSegments(); j++) {
+				buf.append("\n\t\tintervals [" + (j+1) + "]:")
+						.append("\n\t\t\txmin = ")
+						.append(JTrans.frame2sec(track.phones.getSegmentDebFrame(j)))
+						.append("\n\t\t\txmax = ")
+						.append(JTrans.frame2sec(track.phones.getSegmentEndFrame(j)))
+						.append("\n\t\t\ttext = \"")
+						.append(track.phones.getSegmentLabel(j) + "\""); // TODO escape strings
+			}
+
 		}
 
 		return buf.toString();

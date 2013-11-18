@@ -56,6 +56,7 @@ import javax.swing.JTextPane;
 
 import facade.JTransAPI;
 
+import plugins.speechreco.aligners.sphiinx4.Alignment;
 import plugins.text.elements.Element;
 import plugins.text.elements.Element_Mot;
 import plugins.text.elements.Element_Commentaire;
@@ -278,17 +279,23 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 
 
 	/**
-	 * Fills a mapping of segments (array indices) to speaker IDs (array items).
-	 * @param seg2spk an array whose length is the total segment count
-	 * @return the mapping
+	 * Creates an alignment whose segments spans speaker turns.
+	 * This method does not account for overlaps, hence the produced
+	 * alignment is 'linear'.
 	 */
-	public byte[] getSegmentToSpeakerIndex(byte[] seg2spk) {
+	public Alignment getLinearSpeakerTimes(Alignment words) {
+		Alignment al = new Alignment();
 		int startSeg = 0;
 		int currSeg = 0;
 		byte currSpk = -1;
 		for (Element el: this) {
 			if (el instanceof Element_Locuteur) {
-				Arrays.fill(seg2spk, startSeg, currSeg + 1, currSpk);
+				if (currSpk != -1 && startSeg < currSeg)
+					al.addRecognizedSegment(""+currSpk,
+							words.getSegmentDebFrame(startSeg),
+							words.getSegmentEndFrame(currSeg),
+							null,
+							null);
 				startSeg = currSeg + 1;
 				currSpk = ((Element_Locuteur) el).getLocuteurID();
 			} else if (el instanceof Element_Mot) {
@@ -296,10 +303,9 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 				// sometimes words get stuck at -1 because they couldn't be aligned
 				if (seg > currSeg)
 					currSeg = seg;
-				assert currSeg < seg2spk.length;
 			}
 		}
-		return seg2spk;
+		return al;
 	}
 
 

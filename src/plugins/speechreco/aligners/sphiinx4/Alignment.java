@@ -60,6 +60,34 @@ public class Alignment implements Serializable {
 	}
 
 	/**
+	 * Generates a mapping of segments in this alignment (array indices) to
+	 * segments occurring simultaneously in another alignment (array items).
+	 *
+	 * Segments in the other alignment should typically span longer than
+	 * segments in this alignment for this method to work properly.
+	 */
+	public int[] mapSegmentTimings(Alignment bigAlignment) {
+		int[] seg2seg = new int[getNbSegments()];
+
+		int j = 0;
+
+		for (int i = 0; i < bigAlignment.segments.size(); i++) {
+			int startFrame = bigAlignment.getSegmentDebFrame(i);
+			int endFrame = bigAlignment.getSegmentEndFrame(i);
+
+			for (; j < segments.size(); j++) {
+				if (getSegmentDebFrame(j) >= startFrame)
+					break;
+			}
+
+			for (; j < segments.size() && getSegmentEndFrame(j) <= endFrame; j++)
+				seg2seg[j] = i;
+		}
+
+		return seg2seg;
+	}
+
+	/**
 	 * Copy constructor - performs a SHALLOW copy of the segments!
 	 */
 	public Alignment(Alignment other) {
