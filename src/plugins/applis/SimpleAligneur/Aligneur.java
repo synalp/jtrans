@@ -28,8 +28,11 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 
+import markup.MarkupLoader;
 import facade.JTransAPI;
 
+import markup.ParsingException;
+import markup.TRSLoader;
 import main.JTrans;
 import main.SpeechReco;
 
@@ -1553,34 +1556,92 @@ public class Aligneur extends JPanel implements PrintLogger {
 	}
 	
 	public static void main(String args[]) {
-		// TODO rendre les options plus propres
 		Aligneur m = new Aligneur();
+		MarkupLoader loader = null;
+		String markupFileName = null;
+		boolean audioSourceSet = false;
+
 		m.inputControls();
-		if (args.length>0) {
-			if (args[0].endsWith(".jtr")) m.loadProject(args[0]);
-			else if (args[0].endsWith(".wav")) {
-				m.setAudioSource(args[0]);
-				if (args.length>1) {
-					if (args[1].endsWith(".trs")) {
-						m.loadTRSWithProgress(args[1]);
-					} else {
-						m.sourceTxtfile=args[1];
-						InputStream in = FileUtils.findFileOrUrl(m.sourceTxtfile);
-						m.loadtxt(in);
-						m.updateViewers();
-					}
-				}
-			} else {
-				System.out.println("args error: dont know what to do with "+args[0]);
+		for (String arg: args) {
+			String lcarg = arg.toLowerCase();
+
+			if (lcarg.endsWith(".jtr")) {
+				m.loadProject(arg);
+			}
+
+			else if (lcarg.endsWith(".wav")) {
+				m.setAudioSource(arg);
+				audioSourceSet = true;
+			}
+
+			else if (lcarg.endsWith(".trs")) {
+				loader = new TRSLoader();
+				markupFileName = arg;
+			}
+
+			else if (lcarg.endsWith(".txt")) {
+				m.sourceTxtfile = arg;
+				InputStream in = FileUtils.findFileOrUrl(m.sourceTxtfile);
+				m.loadtxt(in);
+				m.updateViewers();
+			}
+
+			else {
+				System.err.println("args error: dont know what to do with " + arg);
+				return;
 			}
 		}
+
+		try {
+			if (loader != null && markupFileName != null) {
+				loader.parse(new FileInputStream(markupFileName));
+				m.edit.apply(loader);
+			}
+		} catch (Exception ex) {
+			System.exit(1);
+		}
+
+		if (audioSourceSet) {
+			m.alignWithProgress(loader);
+		}
+
 		m.repaint();
 	}
 
-	public void loadTRSWithProgress(final String trsfile) {
-		final ProgressDialog progress = new ProgressDialog(jf, null, "Loading TRS");
+	/**
+	 * Load text markup file. Display a message dialog and throw an exception
+	 * if an error occurs.
+	 * @param loader loader for the adequate markup format
+	 */
+	public void loadMarkup(MarkupLoader loader, File markupFile) throws IOException, ParsingException {
+		try {
+			loader.parse(new FileInputStream(markupFile));
+		} catch (IOException ex) {
+			ex.printStackTrace();
+			JOptionPane.showMessageDialog(jf,
+					"A fatal error occurred when trying to parse " + markupFile + "\n\n" + ex,
+					"I/O Exception",
+					JOptionPane.ERROR_MESSAGE);
+			throw ex;
+		} catch (ParsingException ex) {
+			ex.printStackTrace();
+			JOptionPane.showMessageDialog(jf,
+					"Couldn't parse \"" + markupFile + "\" as a "
+							+ "\"" + loader.getFormat() + "\" file.\n"
+							+ "This file is either erroneous or it contains "
+							+ "tokens JTrans can't handle yet.\n\n"
+							+ ex,
+					"Parsing Exception",
+					JOptionPane.ERROR_MESSAGE);
+		}
+
+		edit.apply(loader);
+	}
+
+	public void alignWithProgress(final MarkupLoader loader) {
+		final ProgressDialog progress = new ProgressDialog(jf, null, "Loading...");
 		progress.setRunnable(new Runnable() {
-			public void run() { JTransAPI.loadTRS(trsfile, progress); }});
+			public void run() { JTransAPI.alignBetweenAnchors(loader.getLastEnd(), progress); }});
 		progress.setVisible(true);
 	}
 

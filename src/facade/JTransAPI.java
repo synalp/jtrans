@@ -327,25 +327,12 @@ public class JTransAPI {
 		return -1;
 	}
 
-	public static void loadTRS(String trsfile, ProgressDialog progress) {
-		progress.setMessage("Parsing TRS markup...");
-
-		TRSLoader trs = null;
-		try {
-			trs = new TRSLoader(trsfile);
-		} catch (Exception e) {
-			System.err.println("TRS loader failed!");
-			e.printStackTrace();
-			// TODO handle failure gracefully -IJ
-		}
-
-		TexteEditor zonetexte = TexteEditor.getTextEditor();
-		zonetexte.setEditable(false);
-		zonetexte.setText(trs.buffer.toString());
-		zonetexte.setListeElement(trs.elements);
-		zonetexte.highlightNonTextSegments(trs.nonText);
-
-		// Align words between the previous anchor and the current one.
+	/**
+	 * Align words automatically between anchors set manually.
+	 * @param lastEnd timestamp of the end of the last utterance (in seconds)
+	 * @param progress progress dialog to refresh
+	 */
+	public static void alignBetweenAnchors(float lastEnd, ProgressDialog progress) {
 		progress.setMessage("Aligning...");
 
 		float alignFrom = 0;
@@ -483,7 +470,7 @@ public class JTransAPI {
 
 		// Align end of file.
 		if (word >= 0)
-			setAlignWord(startWord, word, alignFrom, trs.lastEnd);
+			setAlignWord(startWord, word, alignFrom, lastEnd);
 
 		progress.setMessage("Finishing up...");
 		progress.setIndeterminate(true);

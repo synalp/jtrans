@@ -20,11 +20,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringReader;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.util.*;
 import java.util.concurrent.PriorityBlockingQueue;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.swing.JTextPane;
@@ -42,13 +39,10 @@ import javax.swing.text.LayeredHighlighter.LayerPainter;
 
 import facade.JTransAPI;
 
-import facade.TextParser;
+import markup.MarkupLoader;
+import markup.TextParser;
 import plugins.speechreco.aligners.sphiinx4.AutoAligner;
 import plugins.text.elements.Element_Mot;
-import plugins.text.elements.Element_Commentaire;
-import plugins.text.elements.Element_DebutChevauchement;
-import plugins.text.elements.Element_FinChevauchement;
-import plugins.text.elements.Element_Ponctuation;
 import plugins.text.elements.Segment;
 import plugins.text.regexp.TypeElement;
 
@@ -755,5 +749,16 @@ public class TexteEditor extends JTextPane {
 	}
 
 
+	/**
+	 * Apply the result of a markup loader: load text/elements and colorize the
+	 * relevant parts.
+	 * loader.parse() must have been called prior to this method!
+	 */
+	public void apply(MarkupLoader loader) {
+		setEditable(false);
+		setText(loader.getText());
+		setListeElement(loader.getElements());
+		highlightNonTextSegments(loader.getNonTextSegments());
+	}
 	
 }//class TextEditor

@@ -14,7 +14,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.LinkedHashMap;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Mixer;
 import javax.swing.*;
@@ -22,13 +21,12 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import edu.cmu.sphinx.result.Result;
 
-import main.JTrans;
+import markup.TRSLoader;
 import main.LiveSpeechReco;
 
 import plugins.sourceSignals.Mike2wav;
 import plugins.speechreco.RecoListener;
 import plugins.speechreco.adaptation.BiaisAdapt;
-import plugins.speechreco.aligners.sphiinx4.Alignment;
 import plugins.speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
 import plugins.speechreco.grammaire.Grammatiseur;
 import plugins.utils.TextInputWindow;
@@ -95,8 +93,10 @@ public class Menus {
 				filechooser.setDialogTitle("Load TRS...");
 				int returnVal = filechooser.showOpenDialog(aligneur.jf);
 				if (returnVal == filechooser.APPROVE_OPTION) {
-					File file = filechooser.getSelectedFile();
-					aligneur.loadTRSWithProgress(file.getAbsolutePath());
+					try {
+						aligneur.loadMarkup(new TRSLoader(), filechooser.getSelectedFile());
+					} catch (Exception ex) {
+					}
 				}
 			}
 		});
