@@ -10,8 +10,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 import javax.swing.JFrame;
 
-import utils.installer.Interruptable;
-
 /**
  * @author David Cheeseman
  *	DePauw '08
@@ -65,7 +63,7 @@ public class WGETJava {
 
 		final utils.ProgressDialog waiting = new utils.ProgressDialog((JFrame)null,null,"please wait: downloading...");
 		final ArrayBlockingQueue<WGETJavaResults> res = new ArrayBlockingQueue<WGETJavaResults>(1);
-		utils.installer.Interruptable searchingproc = new Interruptable() {
+		utils.Interruptable searchingproc = new Interruptable() {
 			private boolean tostop=false;
 			public void stopit() {
 				tostop=true;
