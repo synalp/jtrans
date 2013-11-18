@@ -42,7 +42,7 @@ public class JTransInstall {
 		File dir = new File(".");
 		System.out.println("Downloading jars in dir "+dir);
 		try {
-			WGETJava.DownloadFile(new URL(baseurl+"counts.php"));
+//			WGETJava.DownloadFile(new URL(baseurl+"counts.php"));
 			WGETJava.DownloadFile(new URL(baseurl+"res.jar"));
 			// res.jar doit contenir tous les jars dans libs/*.jar et toutes les autres resources
 			File zipfile = new File("res.jar");
