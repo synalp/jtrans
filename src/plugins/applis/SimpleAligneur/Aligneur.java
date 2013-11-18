@@ -7,8 +7,7 @@ http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html
 
 package plugins.applis.SimpleAligneur;
 
-import java.awt.Color;
-import java.awt.Dimension;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -17,16 +16,10 @@ import java.awt.event.WindowEvent;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.util.*;
+import java.util.List;
 import javax.sound.sampled.*;
-import javax.swing.Box;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JMenuBar;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JSplitPane;
+import javax.swing.*;
+import javax.swing.border.BevelBorder;
 
 import markup.MarkupLoader;
 import facade.JTransAPI;
@@ -36,8 +29,6 @@ import markup.TRSLoader;
 import main.JTrans;
 import main.SpeechReco;
 
-//import plugins.blackboard.Blackboard;
-//import plugins.blackboard.BlackboardListener;
 import plugins.buffer.RoundBuffer;
 import plugins.buffer.RoundBufferFrontEnd;
 import plugins.signalViewers.spectroPanel.SpectroControl;
@@ -101,9 +92,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 	public ToolBarTemporalSig toolbar = null;
 	public KeysManager kmgr = null;
 	PlayerListener playerController;
-	JScrollPane scrollPane;
-	JSplitPane splitPane = null;
-	Box textBox, sigBox;
 
 	/** Original audio file, format may not be suitable for processing */
 	public File originalAudioFile = null;
@@ -123,7 +111,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 	int wordSelectedIdx = -1;
 	public boolean caretSensible = false;
 	int state = 0;
-	JLabel infoLabel = new JLabel("                                      ");
+	JLabel infoLabel = new JLabel("Welcome to JTrans");
 	/**
 	 * ces variables ne sont utilisees que avec un "User simulator": elles contiennent la reference
 	 */
@@ -708,13 +696,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 		infoLabel.repaint();
 	}
 
-	private void adjustPanel() {
-		textBox.setPreferredSize(new Dimension(getWidth(),getHeight()*2/3));
-		sigpan.setPreferredSize(new Dimension(getWidth(),getHeight()*1/3));
-		splitPane.setDividerLocation(0.7);
-		repaint();
-	}
-
 	public Aligneur(boolean withGUI) {
 		withgui=withGUI;
 		initPanel();
@@ -753,39 +734,35 @@ public class Aligneur extends JPanel implements PrintLogger {
 				aligneur.quit();
 			}
 		});
-		jf.setSize(800, 700);
+		jf.pack();
 		jf.setVisible(true);
 	}
 
 	private void initPanel() {
-		setSize(800,700);
-		// partie texte
+		setLayout(new BorderLayout());
+
 		edit = new TexteEditor();
 		JTransAPI.edit=edit;
-		scrollPane = new JScrollPane(edit,
-				JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-				JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-		textBox = Box.createVerticalBox();
 		ctrlbox = new ControlBox(this);
 		playergui = ctrlbox.getPlayerGUI();
-		textBox.add(ctrlbox);
-		textBox.add(scrollPane);
-		textBox.add(infoLabel);
+		infoLabel.setBorder(new BevelBorder(BevelBorder.LOWERED));
 
-		// partie signal
 		sigpan = new SpectroControl(this);
 		AudioInputStream aud = getAudioStreamFromSec(getCurPosInSec());
 		if (aud!=null) sigpan.setAudioInputStream(getCurPosInSec(),aud);
 
-		// empilage des deux
-		splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, textBox, sigpan);
-		final Dimension d0 = new Dimension(0, 0);
-		textBox.setMinimumSize(d0);
-		sigpan.setMinimumSize(d0);
-		splitPane.setDividerLocation(500);
+		// Add everything to the panel
 
-		add(splitPane);
-		adjustPanel();
+		add(ctrlbox, BorderLayout.NORTH);
+
+		add(new JScrollPane(edit) {{
+			setPreferredSize(new Dimension(edit.getWidth(), 300));
+		}}, BorderLayout.CENTER);
+
+		add(new JPanel(new BorderLayout()) {{
+			add(sigpan, BorderLayout.NORTH);
+			add(infoLabel, BorderLayout.SOUTH);
+		}}, BorderLayout.SOUTH);
 	}
 
 	void rewindAudio() {
