@@ -10,8 +10,8 @@ package plugins.applis.SimpleAligneur;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import javax.sound.sampled.AudioSystem;
@@ -19,6 +19,9 @@ import javax.sound.sampled.Mixer;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
+
 import edu.cmu.sphinx.result.Result;
 
 import markup.TRSLoader;
@@ -31,6 +34,7 @@ import plugins.speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
 import plugins.speechreco.grammaire.Grammatiseur;
 import plugins.utils.TextInputWindow;
 import plugins.utils.UserInputProcessor;
+import utils.NicerFileChooser;
 
 public class Menus {
 	Aligneur aligneur;
@@ -39,120 +43,120 @@ public class Menus {
 	boolean[] done = {false};
 	LiveSpeechReco gram;
 
+	private static final FileFilter
+			filterJTR = new FileNameExtensionFilter("JTrans Project (*.jtr)", "jtr"),
+			filterTRS = new FileNameExtensionFilter("Transcriber (*.trs)", "trs"),
+			filterTextGridWordsOnly = new FileNameExtensionFilter("Praat TextGrid (*.textgrid) - Words only", "textgrid"),
+			filterTextGridWordsAndPhons = new FileNameExtensionFilter("Praat TextGrid (*.textgrid) - Words + Phonemes", "textgrid"),
+			filterTXT = new FileNameExtensionFilter("Raw Text (*.txt)", "txt");
+
 	public Menus(Aligneur main) {
 		aligneur=main;
 	}
+
 	public JMenuBar menus() {
 		final JMenuBar menubar = new JMenuBar();
 
-		// //////////////////////////////////////////////////////////////
-		JMenu file = new JMenu("File");
+		final int modifier = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
 
-		JMenuItem loadwav = new JMenuItem("Load .WAV...");
-		JMenuItem loadtxt = new JMenuItem("Load .TXT...");
-		JMenuItem loadjtr = new JMenuItem("Load JTrans project...");
-		JMenuItem loadtrs = new JMenuItem("Load ref TRS...");
-		JMenuItem savewav = new JMenuItem("Save .WAV as...");
-		JMenuItem savetxt = new JMenuItem("Save .TXT as...");
-		JMenuItem savejtr = new JMenuItem("Save JTrans project as...");
-		JMenuItem savepho = new JMenuItem("Save align.pho");
-		JMenuItem savepraat = new JMenuItem("Save as Praat text grid...");
-		JMenuItem quit = new JMenuItem("Quit");
+		// //////////////////////////////////////////////////////////////
+		JMenu file        = new JMenu("File");
+
+		JMenuItem open    = new JMenuItem("Open text markup...");
+		JMenuItem loadwav = new JMenuItem("Load audio...");
+		JMenuItem savejtr = new JMenuItem("Save project as...");
+		JMenuItem export  = new JMenuItem("Export alignment...");
+		JMenuItem savewav = new JMenuItem("Export audio...");
+		JMenuItem quit    = new JMenuItem("Quit");
 
 		menubar.add(file);
-		file.add(loadwav);
-		file.add(loadtxt);
-		file.add(loadjtr);
-		file.add(loadtrs);
+		file.add(open);
 		file.addSeparator();
-		file.add(savewav);
-		file.add(savetxt);
 		file.add(savejtr);
-		file.add(savepho);
-		file.add(savepraat);
+		file.add(export);
+		file.addSeparator();
+		file.add(loadwav);
+		file.add(savewav);
 		file.addSeparator();
 		file.add(quit);
 
-		savetxt.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				JFileChooser filechooser = new JFileChooser();
-				filechooser.setDialogTitle("Save .TXT...");
-				filechooser.setSelectedFile(new File("out.txt"));
-				int returnVal = filechooser.showSaveDialog(aligneur.jf);
-				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					File file = filechooser.getSelectedFile();
-					aligneur.savetxt(file);
-				}
-			}
-		});
+		open.setAccelerator(KeyStroke.getKeyStroke('O', modifier));
+		loadwav.setAccelerator(KeyStroke.getKeyStroke('O', modifier | InputEvent.SHIFT_MASK));
+		savejtr.setAccelerator(KeyStroke.getKeyStroke('S', modifier | InputEvent.SHIFT_MASK));
+		export.setAccelerator(KeyStroke.getKeyStroke('E', modifier));
+		quit.setAccelerator(KeyStroke.getKeyStroke('Q', modifier));
 
-		loadtrs.addActionListener(new ActionListener() {
-			@Override
+		open.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				JFileChooser filechooser = new JFileChooser();
-				filechooser.setDialogTitle("Load TRS...");
-				int returnVal = filechooser.showOpenDialog(aligneur.jf);
-				if (returnVal == filechooser.APPROVE_OPTION) {
-					try {
-						aligneur.loadMarkup(new TRSLoader(), filechooser.getSelectedFile());
-					} catch (Exception ex) {
-					}
+				JFileChooser fc = new JFileChooser();
+				fc.setDialogTitle("Open text markup...");
+
+				fc.addChoosableFileFilter(filterJTR);
+				fc.addChoosableFileFilter(filterTRS);
+				fc.addChoosableFileFilter(filterTXT);
+				fc.setAcceptAllFileFilterUsed(false);
+				fc.setFileFilter(filterJTR);
+
+				int returnVal = fc.showOpenDialog(aligneur.jf);
+				if (returnVal != JFileChooser.APPROVE_OPTION)
+					return;
+				FileFilter ff = fc.getFileFilter();
+				File file = fc.getSelectedFile();
+
+				if (ff == filterJTR) {
+					aligneur.loadProject(file.getAbsolutePath());
+				} else if (ff == filterTRS) {
+					aligneur.loadMarkup(new TRSLoader(), file);
+				} else if (ff == filterTXT) {
+					aligneur.loadtxt(file);
+				} else {
+					JOptionPane.showMessageDialog(aligneur.jf, "Unknown filter " + ff);
 				}
 			}
 		});
-		//		JMenuItem loadstm = new JMenuItem("load STM");
-		//		file.add(loadstm);
-		//		JMenuItem savetrs = new JMenuItem("save TRS");
-		//		file.add(savetrs);
 
-		savepho.addActionListener(new ActionListener() {
-			@Override
+		export.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				//				aligneur.alignement.savePho("align.pho");
-				System.out.println("saving: "+(new File("align.pho")).getAbsolutePath());
-			}
-		});
+				JOptionPane.showMessageDialog(aligneur.jf,
+						"By exporting the alignment to a foreign format,\n" +
+						"some JTrans-specific information may be lost.\n\n" +
+						"To keep this information intact, save your work\n" +
+						"as a JTrans project instead.",
+						"Exporting to a foreign format",
+						JOptionPane.INFORMATION_MESSAGE);
 
-		savepraat.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				JCheckBox jcbWords = new JCheckBox("Word tier", true);
-				JCheckBox jcbPhons = new JCheckBox("Phoneme tier", true);
+				NicerFileChooser fc = new NicerFileChooser();
 
-				JPanel choicePane = new JPanel();
-				choicePane.setLayout(new GridLayout(2, 1));
-				choicePane.add(jcbWords);
-				choicePane.add(jcbPhons);
-				int rc = JOptionPane.showConfirmDialog(aligneur.jf, choicePane,
-						"Select tiers to export",
-						JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE);
-				if (rc != JOptionPane.OK_OPTION)
-					return;
-				if (!jcbWords.isSelected() && !jcbPhons.isSelected())
+				fc.setDialogTitle("Export alignment...");
+				fc.addChoosableFileFilter(filterTextGridWordsOnly);
+				fc.addChoosableFileFilter(filterTextGridWordsAndPhons);
+				fc.addChoosableFileFilter(filterTXT);
+				fc.setAcceptAllFileFilterUsed(false);
+				fc.setFileFilter(filterTextGridWordsOnly);
+
+				int rc = fc.showSaveDialog(aligneur.jf);
+
+				if (rc != JFileChooser.APPROVE_OPTION)
 					return;
 
-				JFileChooser fc = new JFileChooser();
-				fc.setDialogTitle("Save to Praat text grid...");
-				fc.setSelectedFile(new File("out.TextGrid"));
-				int returnVal = fc.showSaveDialog(aligneur.jf);
+				FileFilter ff = fc.getFileFilter();
+				File file = fc.getSelectedFile();
 
-				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					String praat = aligneur.generatePraat(
-							jcbWords.isSelected(),
-							jcbPhons.isSelected());
-					File file = fc.getSelectedFile();
-					try {
-						FileWriter fw = new FileWriter(file);
-						fw.write(praat);
-						fw.flush();
-						fw.close();
-					} catch (IOException ex) {
-						ex.printStackTrace();
-						JOptionPane.showMessageDialog(aligneur.jf,
-								"Couldn't save Praat!\n" + ex,
-								"IOException",
-								JOptionPane.ERROR_MESSAGE);
+				try {
+					if (ff == filterTXT) {
+						aligneur.saveRawText(file);
+					} else if (ff == filterTextGridWordsOnly) {
+						aligneur.savePraat(file, true, false);
+					} else if (ff == filterTextGridWordsAndPhons) {
+						aligneur.savePraat(file, true, true);
+					} else {
+						JOptionPane.showMessageDialog(aligneur.jf, "Unknown filter " + ff);
 					}
+				} catch (IOException ex) {
+					JOptionPane.showMessageDialog(aligneur.jf,
+							"Couldn't export. An I/O error occured.\n\n" + ex,
+							"IOException",
+							JOptionPane.ERROR_MESSAGE);
 				}
 			}
 		});
@@ -532,37 +536,6 @@ public class Menus {
 				aligneur.saveProject();
 			}
 		});
-		loadjtr.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				aligneur.loadProject();
-			}
-		});
-		//		loadstm.addActionListener(new ActionListener() {
-		//			public void actionPerformed(ActionEvent e) {
-		//				JFileChooser filechooser = new JFileChooser();
-		//				filechooser.validate();
-		//				filechooser.setApproveButtonText("Ouvrir");
-		//				int returnVal = filechooser.showOpenDialog(null);
-		//				if (returnVal == JFileChooser.APPROVE_OPTION) {
-		//					File file = filechooser.getSelectedFile();
-		//					if (file.exists()) {
-		////						aligneur.loadSTM reference(file);
-		//					}
-		//				}
-		//			}
-		//		});
-		//		savetrs.addActionListener(new ActionListener() {
-		//			public void actionPerformed(ActionEvent e) {
-		//				JFileChooser filechooser = new JFileChooser();
-		//				filechooser.validate();
-		//				filechooser.setApproveButtonText("Ouvrir");
-		//				int returnVal = filechooser.showOpenDialog(null);
-		//				if (returnVal == JFileChooser.APPROVE_OPTION) {
-		//					File file = filechooser.getSelectedFile();
-		//					// TODO
-		//				}
-		//			}
-		//		});
 		quit.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				aligneur.quit();
@@ -605,20 +578,7 @@ public class Menus {
 				}
 			}
 		});
-		loadtxt.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				JFileChooser filechooser = new JFileChooser();
-				int returnVal = filechooser.showOpenDialog(aligneur.jf);
-				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					File file = filechooser.getSelectedFile();
-					if (file.exists()) {
-						aligneur.loadtxt(file);
-					}
-				}
-			}
-		});
+
 		return menubar;
 	}
-
-
 }

@@ -181,16 +181,15 @@ public class Aligneur extends JPanel implements PrintLogger {
 		System.out.println("after dispose : exiting");
 		System.exit(0);
 	}
-	public void savetxt(File txtout) {
+
+	public void saveRawText(File file) throws IOException {
 		List<Element_Mot> mots = edit.getListeElement().getMots();
 		try {
-			PrintWriter fout = FileUtils.writeFileUTF(txtout.getAbsolutePath());
+			PrintWriter fout = FileUtils.writeFileUTF(file.getAbsolutePath());
 			for (Element_Mot m : mots)
 				fout.println(m);
 			fout.close();
 		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
@@ -1640,36 +1639,33 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 	/**
 	 * Generates a Praat tier for an alignment.
-	 * @param buf Append text to this buffer. If null, a new StringBuilder is created
+	 * @param w Append text to this writer
 	 * @param id Tier ID (Praat tier numbering starts at 1 and is contiguous!)
 	 * @param name Tier name
 	 * @param finalFrame Final frame in the entire file
 	 */
-	private static StringBuilder praatTier(StringBuilder buf, int id, String name, int finalFrame, Alignment al) {
+	private static void praatTier(Writer w, int id, String name, int finalFrame, Alignment al) throws IOException {
 		assert id > 0;
-		if (buf == null)
-			buf = new StringBuilder();
-		buf.append("\n\titem [").append(id).append("]:")
+		w.append("\n\titem [").append(Integer.toString(id)).append("]:")
 				.append("\n\t\tclass = \"IntervalTier\"")
 				.append("\n\t\tname = \"").append(name).append('"') // TODO escape strings
 				.append("\n\t\txmin = 0")
-				.append("\n\t\txmax = ").append(JTrans.frame2sec(finalFrame))
+				.append("\n\t\txmax = ").append(Float.toString(JTrans.frame2sec(finalFrame)))
 				.append("\n\t\tintervals: size = ")
-				.append(al.getNbSegments());
+				.append("" + al.getNbSegments());
 		for (int j = 0; j < al.getNbSegments(); j++) {
-			buf.append("\n\t\tintervals [").append(j+1).append("]:")
+			w.append("\n\t\tintervals [").append(Integer.toString(j+1)).append("]:")
 					.append("\n\t\t\txmin = ")
-					.append(JTrans.frame2sec(al.getSegmentDebFrame(j)))
+					.append(Float.toString(JTrans.frame2sec(al.getSegmentDebFrame(j))))
 					.append("\n\t\t\txmax = ")
-					.append(JTrans.frame2sec(al.getSegmentEndFrame(j)))
+					.append(Float.toString(JTrans.frame2sec(al.getSegmentEndFrame(j))))
 					.append("\n\t\t\ttext = \"")
 					.append(al.getSegmentLabel(j)).append('"'); // TODO escape strings
 		}
-		return buf;
 	}
 
 
-	public String generatePraat(boolean withWords, boolean withPhons) {
+	public void savePraat(File f, boolean withWords, boolean withPhons) throws IOException {
 		ListeElement    lst          = edit.getListeElement();
 		int             speakers     = lst.getNbLocuteur();
 		int             tiers        = speakers * ((withWords?1:0) + (withPhons?1:0));
@@ -1677,15 +1673,15 @@ public class Aligneur extends JPanel implements PrintLogger {
 		Alignment       speakerTurns = lst.getLinearSpeakerTimes(alignement);
 		Alignment[]     spkWords     = null;
 		Alignment[]     spkPhons     = null;
+		FileWriter      fw           = new FileWriter(f);
 
-		StringBuilder buf = new StringBuilder();
-		buf.append("File type = \"ooTextFile\"")
+		fw.append("File type = \"ooTextFile\"")
 				.append("\nObject class = \"TextGrid\"")
 				.append("\n")
 				.append("\nxmin = 0")
-				.append("\nxmax = ").append(JTrans.frame2sec(finalFrame))
+				.append("\nxmax = ").append("" + JTrans.frame2sec(finalFrame))
 				.append("\ntiers? <exists>")
-				.append("\nsize = ").append(tiers)
+				.append("\nsize = ").append("" + tiers)
 				.append("\nitem []:");
 
 		// Linear, non-overlapping tiers
@@ -1707,11 +1703,11 @@ public class Aligneur extends JPanel implements PrintLogger {
 		for (int i = 0; i < speakers; i++) {
 			String name = lst.getLocuteurName(i);
 			if (withWords)
-				praatTier(buf, id++, name + " words", finalFrame, spkWords[i]);
+				praatTier(fw, id++, name + " words", finalFrame, spkWords[i]);
 			if (withPhons)
-				praatTier(buf, id++, name + " phons", finalFrame, spkPhons[i]);
+				praatTier(fw, id++, name + " phons", finalFrame, spkPhons[i]);
 		}
 
-		return buf.toString();
+		fw.close();
 	}
 }
