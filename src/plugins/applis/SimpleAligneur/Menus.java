@@ -172,28 +172,61 @@ public class Menus {
 		actionsm.add(gototime);
 
 		// //////////////////////////////////////////////////////////////
+		JMenu alignMenu = new JMenu("Align");
+		JMenuItem autoAnchors = new JMenuItem("Auto-align between anchors...");
+		JMenuItem autoAll = new JMenuItem("Auto-align (raw)...");
+		JMenuItem clearAll = new JMenuItem("Clear entire alignment");
+		JMenuItem clearFrom  = new JMenuItem("Clear alignment from selected word");
+		menubar.add(alignMenu);
+		alignMenu.add(autoAnchors);
+		alignMenu.add(autoAll);
+		alignMenu.addSeparator();
+		alignMenu.add(clearAll);
+		alignMenu.add(clearFrom);
+
+		autoAnchors.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				aligneur.alignWithProgress();
+			}
+		});
+
+		autoAll.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				aligneur.batch();
+			}
+		});
+
+		clearAll.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				aligneur.clearAlign();
+				aligneur.repaint();
+			}
+		});
+
+		clearFrom.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				aligneur.clearAlignFrom(aligneur.wordSelectedIdx);
+			}
+		});
+
+
+		// //////////////////////////////////////////////////////////////
 		JMenu sig = new JMenu("Process");
 		JMenuItem bias = new JMenuItem("Bias adapt");
 		JMenuItem map = new JMenuItem("MAP adapt");
 		JMenuItem mapload = new JMenuItem("Load adapted models");
-		JMenuItem clear = new JMenuItem("Clear all align");
-		JMenuItem clearfrom = new JMenuItem("Clear align from selected word");
 		JMenuItem asr= new JMenuItem("Automatic Speech Recognition");
 		JMenuItem asrJSAPI= new JMenuItem("JSAPI Speech Recognition");
-		JMenuItem batch= new JMenuItem("Batch align all");
 		JMenuItem beam= new JMenuItem("Set beam");
 		JMenuItem playfrom = new JMenuItem("Play from");
-
 		menubar.add(sig);
-
 		sig.add(bias);
 		sig.add(map);
 		sig.add(mapload);
-		sig.add(clear);
-		sig.add(clearfrom);
 		sig.add(asr);
 		sig.add(asrJSAPI);
-		sig.add(batch);
 		sig.add(beam);
 		sig.addSeparator();
 		sig.add(playfrom);
@@ -217,11 +250,6 @@ public class Menus {
 				a.loadAdapted(null);
 			}
 		});
-
-
-		//		JMenuItem batchalign= new JMenuItem("batch align between anchors");
-		//		actionsm.add(batchalign);
-
 
 		beam.addActionListener(new ActionListener() {
 			@Override
@@ -413,17 +441,7 @@ public class Menus {
 				aligneur.gototime();
 			}
 		});
-		clear.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				aligneur.clearAlign();
-				aligneur.repaint();
-			}
-		});
-		clearfrom.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				aligneur.clearAlignFrom(aligneur.wordSelectedIdx);
-			}
-		});
+
 		editb.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				aligneur.setEditionMode();
@@ -436,12 +454,6 @@ public class Menus {
 		//			}
 		//		});
 
-		batch.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				aligneur.batch();
-			}
-		});
 
 		asr.addActionListener(new ActionListener() {
 			@Override
