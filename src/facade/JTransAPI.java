@@ -329,10 +329,9 @@ public class JTransAPI {
 
 	/**
 	 * Align words automatically between anchors set manually.
-	 * @param lastEnd timestamp of the end of the last utterance (in seconds)
 	 * @param progress progress dialog to refresh
 	 */
-	public static void alignBetweenAnchors(float lastEnd, ProgressDialog progress) {
+	public static void alignBetweenAnchors(ProgressDialog progress) {
 		progress.setMessage("Aligning...");
 
 		float alignFrom = 0;
@@ -467,10 +466,6 @@ public class JTransAPI {
 
 			progress.setProgress((i+1) / (float)elts.size());
 		}
-
-		// Align end of file.
-		if (word >= 0)
-			setAlignWord(startWord, word, alignFrom, lastEnd);
 
 		progress.setMessage("Finishing up...");
 		progress.setIndeterminate(true);

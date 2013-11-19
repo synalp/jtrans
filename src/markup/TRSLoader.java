@@ -45,12 +45,6 @@ public class TRSLoader implements MarkupLoader {
 
 
 	/**
-	 * End time of last turn.
-	 */
-	private float lastEnd;
-
-
-	/**
 	 * Parse a TRS file.
 	 */
 	public void parse(InputStream in)
@@ -72,7 +66,7 @@ public class TRSLoader implements MarkupLoader {
 		nonText = new ArrayList<Segment>();
 
 		// end time of last turn
-		lastEnd = -1f;
+		float lastEnd = -1f;
 
 		speakers = loadSpeakers(doc.getElementsByTagName("Speakers").item(0));
 
@@ -123,14 +117,7 @@ public class TRSLoader implements MarkupLoader {
 
 				// Anchor. Placed on the last character in the word *PRECEDING* the sync point
 				else if (name.equals("Sync")) {
-					float second = Float.parseFloat(((Element)child).getAttribute("time"));
-
-					String ancText = String.format("%d'%02d\"%03d",
-							(int)(second/60f), (int)(second%60f), Math.round(second%1f * 1000f));
-
-					int pos = append(' ', ancText);
-					elements.add(new Element_Ancre(second));
-					nonText.add(new Segment(pos, pos + ancText.length(), 6));
+					addAnchor(Float.parseFloat(((Element)child).getAttribute("time")));
 				}
 
 				else if (name.equals("Comment")) {
@@ -149,6 +136,8 @@ public class TRSLoader implements MarkupLoader {
 				child = child.getNextSibling();
 			}
 		}
+
+		addAnchor(lastEnd);
 	}
 
 
@@ -194,6 +183,19 @@ public class TRSLoader implements MarkupLoader {
 
 
 	/**
+	 * Appends an anchor to the elements and text buffer.
+	 */
+	private void addAnchor(float second) {
+		String ancText = String.format("%d'%02d\"%03d",
+				(int)(second/60f), (int)(second%60f), Math.round(second%1f * 1000f));
+		int pos = append(' ', ancText);
+		elements.add(new Element_Ancre(second));
+		nonText.add(new Segment(pos, pos + ancText.length(), 6));
+	}
+
+
+
+	/**
 	 * Return a DocumentBuilder suitable to parsing a TRS file.
 	 */
 	private static DocumentBuilder newXMLDocumentBuilder() throws ParserConfigurationException {
@@ -221,10 +223,6 @@ public class TRSLoader implements MarkupLoader {
 
 	public List<Segment> getNonTextSegments() {
 		return nonText;
-	}
-
-	public float getLastEnd() {
-		return lastEnd;
 	}
 
 	public String getFormat() {

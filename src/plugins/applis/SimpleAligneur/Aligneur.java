@@ -1579,7 +1579,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 		}
 
 		if (audioSourceSet) {
-			m.alignWithProgress(loader);
+			m.alignWithProgress();
 		}
 
 		m.repaint();
@@ -1615,10 +1615,10 @@ public class Aligneur extends JPanel implements PrintLogger {
 		edit.apply(loader);
 	}
 
-	public void alignWithProgress(final MarkupLoader loader) {
-		final ProgressDialog progress = new ProgressDialog(jf, null, "Loading...");
+	public void alignWithProgress() {
+		final ProgressDialog progress = new ProgressDialog(jf, null, "Aligning...");
 		progress.setRunnable(new Runnable() {
-			public void run() { JTransAPI.alignBetweenAnchors(loader.getLastEnd(), progress); }});
+			public void run() { JTransAPI.alignBetweenAnchors(progress); }});
 		progress.setVisible(true);
 	}
 
