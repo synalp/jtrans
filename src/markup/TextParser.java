@@ -30,24 +30,21 @@ public class TextParser {
 	}
 
 	/**
-	 * Return sorted list of segments containing non-text items.
+	 * Creates elements from a string according to the regular expressions
+	 * defined in typeList.
 	 */
-	public static List<Segment> findNonTextSegments(String normedText, List<TypeElement> listeTypes) {
+	public static ListeElement parseString(String normedText, List<TypeElement> typeList) {
+		ListeElement listeElts = new ListeElement();
 		ArrayList<Segment> nonText = new ArrayList<Segment>();
-		for (int type = 0; type < listeTypes.size(); type++) {
-			for (Pattern pat: listeTypes.get(type).getPatterns()) {
+
+		for (int type = 0; type < typeList.size(); type++) {
+			for (Pattern pat: typeList.get(type).getPatterns()) {
 				Matcher mat = pat.matcher(normedText);
-				while (mat.find()) {
+				while (mat.find())
 					nonText.add(new Segment(mat.start(), mat.end(), type));
-				}
 			}
 		}
 		Collections.sort(nonText);
-		return nonText;
-	}
-
-	public static ListeElement parseString(String normedText, List<Segment> nonText) {
-		ListeElement listeElts = new ListeElement();
 
 		// on transforme les elements obtenus par ce parsing en elements pour jtrans
 		int precfin = 0;

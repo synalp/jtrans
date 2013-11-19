@@ -81,11 +81,8 @@ public class TRSLoader implements MarkupLoader {
 							elements.addLocuteurElement(currentSpeaker.getName());
 						}
 
-						List<Segment> subNonText = TextParser.findNonTextSegments(text,
-								Arrays.asList(TexteEditor.DEFAULT_TYPES));
-						ListeElement subElements = TextParser.parseString(text, subNonText);
-
-						elements.addAll(subElements);
+						elements.addAll(TextParser.parseString(text,
+								Arrays.asList(TexteEditor.DEFAULT_TYPES)));
 					}
 				}
 

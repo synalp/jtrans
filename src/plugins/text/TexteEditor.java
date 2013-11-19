@@ -193,8 +193,7 @@ public class TexteEditor extends JTextPane {
 			setText(normedText);
 		}
 
-		List<Segment> nonText = TextParser.findNonTextSegments(normedText, listeTypes);
-		setListeElement(TextParser.parseString(normedText, nonText));
+		setListeElement(TextParser.parseString(normedText, listeTypes));
 		
 		lastSelectedWord = lastSelectedWord2 = null;
 		setCaretPosition(caretPosition);
