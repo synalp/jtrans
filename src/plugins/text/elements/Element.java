@@ -45,5 +45,20 @@ package plugins.text.elements;
 
 import java.io.Serializable;
 
-public interface Element extends Serializable {
+public abstract class Element implements Serializable {
+	/**
+	 * Start of element in the large string.
+	 */
+	public int start = -1;
+
+	/**
+	 * End of element in the large string.
+	 */
+	public int end = -1;
+
+	/**
+	 * TypeElement ID.
+	 * TODO this is an ugly stop-gap
+	 */
+	public abstract int getType();
 }

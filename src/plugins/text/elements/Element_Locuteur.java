@@ -44,44 +44,26 @@ termes.
 package plugins.text.elements;
 
 
-public class Element_Locuteur implements Element{
+public class Element_Locuteur extends Element {
+	private Locuteur_Info speakerInfo;
 
-	public static final long serialVersionUID = 1;
-	
-	//--------- Private Fields ---------
-	private byte locuteurID;
-	private int numeroParole;
-	
-	
-	//---------- Constructor ---------
-	public Element_Locuteur(byte locuteurID, int numeroParole) {
-		super();
-		this.locuteurID = locuteurID;
-		this.numeroParole = numeroParole;
+
+	public Element_Locuteur(Locuteur_Info speakerInfo) {
+		this.speakerInfo = speakerInfo;
 	}
 
 
-	//---------- Getters & Setters ---------
 	public byte getLocuteurID() {
-		return locuteurID;
+		return speakerInfo.getId();
 	}
 
-
-
-	public void setLocuteurID(byte locuteurID) {
-		this.locuteurID = locuteurID;
-	}
-
-
-	public int getNumeroParole() {
-		return numeroParole;
-	}
-
-
-	public void setNumeroParole(int numeroParole) {
-		this.numeroParole = numeroParole;
-	}
 	
-	
-	
+	public int getType() {
+		return 0;
+	}
+
+
+	public String toString() {
+		return speakerInfo.getName();
+	}
 }//class Element_Locuteur

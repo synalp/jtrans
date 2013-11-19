@@ -19,8 +19,6 @@ public interface MarkupLoader {
 	 */
 	public void parse(InputStream in) throws ParsingException, IOException;
 
-	public String getText();
 	public ListeElement getElements();
-	public List<Segment> getNonTextSegments();
 	public String getFormat();
 }

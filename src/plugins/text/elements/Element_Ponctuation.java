@@ -44,31 +44,25 @@ termes.
 package plugins.text.elements;
 
 
-public class Element_Ponctuation implements Element {
-
-	public static final long serialVersionUID = 1;
-	
+public class Element_Ponctuation extends Element {
 	//-------- Private fields --------
 	private char ponctuation;
-	public long posdeb=-1,posfin=-1;
 	
 	
 	//--------- Constructeur -------------
 	public Element_Ponctuation(char ponctuation) {
-		super();
 		this.ponctuation = ponctuation;
 	}
 
-	
-	//--------- Getters & Setters ---
 	public char getPonctuation() {
 		return ponctuation;
 	}
 
-	public void setPonctuation(char ponctuation) {
-		this.ponctuation = ponctuation;
+	public int getType() {
+		return 5;
 	}
-	
-	
-	
+
+	public String toString() {
+		return ""+ponctuation;
+	}
 }//class Element_Ponctuation

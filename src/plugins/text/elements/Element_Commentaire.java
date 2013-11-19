@@ -46,29 +46,18 @@ package plugins.text.elements;
 /**
  * Wrapper autour d'un commentaire
  */
-public class Element_Commentaire implements Element {
-	public static final long serialVersionUID = 2;
-
+public class Element_Commentaire extends Element {
 	public final String comment;
-	public int posDebInTextPanel,posFinInTextPanel;
 
-	public Element_Commentaire(String comment, int posdeb) {
+	public Element_Commentaire(String comment) {
 		this.comment = comment;
-		this.posDebInTextPanel = posdeb;
-		this.posFinInTextPanel = posdeb + comment.length();
 	}
 
-	public Element_Commentaire(String comment, int posdeb, int posfin) {
-		this.comment = comment;
-		this.posDebInTextPanel = posdeb;
-		this.posFinInTextPanel = posfin;
+	public int getType() {
+		return 1;
 	}
 
-	/**
-	 * Returns an Element_Mot whose word is created from a substring of
-	 * bigString, beginning at posdeb and ending at posfin-1.
-	 */
-	public static Element_Commentaire fromSubstring(String bigString, int posdeb, int posfin) {
-		return new Element_Commentaire(bigString.substring(posdeb, posfin), posdeb, posfin);
+	public String toString() {
+		return comment;
 	}
 }//class Element_Commentaire

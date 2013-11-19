@@ -57,14 +57,7 @@ import javax.swing.JTextPane;
 import facade.JTransAPI;
 
 import plugins.speechreco.aligners.sphiinx4.Alignment;
-import plugins.text.elements.Element;
-import plugins.text.elements.Element_Mot;
-import plugins.text.elements.Element_Commentaire;
-import plugins.text.elements.Element_DebutChevauchement;
-import plugins.text.elements.Element_FinChevauchement;
-import plugins.text.elements.Element_Locuteur;
-import plugins.text.elements.Element_Ponctuation;
-import plugins.text.elements.Locuteur_Info;
+import plugins.text.elements.*;
 
 /**
  * Le texte est stock� sous forme d'une liste d'Element.
@@ -92,11 +85,10 @@ import plugins.text.elements.Locuteur_Info;
  * afin de parcourir et afficher les �l�ments de la liste qui doivent l'�tre.
  */
 public class ListeElement extends ArrayList<Element> implements Serializable {
-
-	public static final long serialVersionUID = 1;
-	
-	//----------- Champs priv�s --------------
 	private ArrayList<Locuteur_Info> locuteursInfo;
+	private Element_Mot[] seg2mot = null;
+	// TODO: il faut mettre a jour l'index a la moindre modification !
+	public int indiceMot=-1;
 	
 	public int importAlign(int[] mots2segidx, int fromMot) {
 		List<Element_Mot> mots = getMots();
@@ -108,9 +100,32 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 		}
 		return firstWordNotAligned;
 	}
+
+
+	/**
+	 * Renders the element list as a long string and sets element positions
+	 * accordingly.
+	 * @return the rendered string
+	 */
+	public String render() {
+		StringBuilder buf = new StringBuilder();
+
+		for (Element el: this) {
+			if (buf.length() > 0)
+				buf.append(el instanceof Element_Locuteur? '\n': ' ');
+
+			int pos = buf.length();
+			String str = el.toString();
+			buf.append(str);
+
+			el.start = pos;
+			el.end = pos + str.length();
+		}
+
+		return buf.toString();
+	}
 	
-	private Element_Mot[] seg2mot = null;
-	// TODO: il faut mettre a jour l'index a la moindre modification !
+
 
 	/**
 	 * Refresh reverse index (segment indices to word indices).
@@ -151,6 +166,7 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 	}
 	
 	public void load(BufferedReader f, JTextPane textarea) {
+		/*
 		JTransAPI.setElts(this);
 		try {
 			String s = f.readLine();
@@ -195,9 +211,12 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		*/
+		throw new Error("Reimplement me!");
 	}
 	
 	public void save(PrintWriter f) {
+		/*
 		f.println("listeelements "+size());
 		for (int i=0;i<size();i++) {
 			Element e = get(i);
@@ -219,6 +238,8 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 				f.println("pun "+p.getPonctuation());
 			}
 		}
+		*/
+		throw new Error("Reimplement me!");
 	}
 
 	//----------- Constructeur ---------
@@ -229,27 +250,26 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 	//-----------------------------------------------------------
 	//-------------------Partie gestion des locuteurs -----------
 	//-----------------------------------------------------------
-	public void addLocuteurElement(String locuteurName, int numeroParole){
-		//on v�rifie qu'il n'appartient pas d�j� � la liste des locuteurs
-		boolean trouve = false;
+	public void addLocuteurElement(String name){
+		// Try to find it in the speaker list
+		Locuteur_Info speaker = null;
 		byte i = 0;
 		byte id = -1;
-		while(!trouve && (i < locuteursInfo.size())){
-			if(locuteursInfo.get(i).getName().equals(locuteurName)) {
-				id = i;
-				trouve = true;
+		for (Locuteur_Info candidate: locuteursInfo) {
+			if (candidate.getName().equals(name)) {
+				speaker = candidate;
+				break;
 			}
-			i++;
 		}
 		
-		//Si il n'a pas �t� trouv�, on l'ajoute � la liste des locuteurs
-		if(!trouve){
-			id = (byte)locuteursInfo.size();
-			locuteursInfo.add(new Locuteur_Info(id,locuteurName));
+		// Not found - create it
+		if (speaker == null){
+			speaker = new Locuteur_Info((byte)locuteursInfo.size(), name);
+			locuteursInfo.add(speaker);
 		}
 		
-		//On rajoute l'element locuteur � la liste
-		Element_Locuteur elementLocuteur = new Element_Locuteur(id,numeroParole);
+		// Add Element_Locuteur
+		Element_Locuteur elementLocuteur = new Element_Locuteur(speaker);
 		add(elementLocuteur);
 	}//addLocuteurElement
 	
@@ -504,38 +524,36 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 			element = get(i);
 			if(element instanceof Element_Mot){
 				mot = (Element_Mot)element;
-				if(mot.posDebInTextPanel <= posiDansLeTexte){
-					if(mot.posFinInTextPanel >= posiDansLeTexte) return i;
-				}
+				if (mot.start <= posiDansLeTexte && mot.end >= posiDansLeTexte)
+					return i;
 			}
 		}
 		return -1;
-	}//getMotAtTextPosi
+	}
+
+
 	public int getIndiceMotAtTextPosi(int posiDansLeTexte){
 		List<Element_Mot> mots = getMots();
 		for(int i = 0;i<mots.size(); i++) {
 			Element_Mot mot = mots.get(i);
-			if(mot.posDebInTextPanel <= posiDansLeTexte){
-				if(mot.posFinInTextPanel >= posiDansLeTexte) return i;
-			}
+			if (mot.start <= posiDansLeTexte && mot.end >= posiDansLeTexte)
+				return i;
 		}
 		return -1;
-	}//getMotAtTextPosi
-	
-	public int indiceMot=-1;
+	}
+
+
 	public Element_Mot getMotAtTextPosi(int posiDansLeTexte){
 		List<Element_Mot> mots = getMots();
 		for(int i = 0;i<mots.size(); i++) {
 			Element_Mot mot = mots.get(i);
-			if(mot.posDebInTextPanel <= posiDansLeTexte){
-				if(mot.posFinInTextPanel >= posiDansLeTexte) {
-					indiceMot=i;
-					return mot;
-				}
+			if (mot.start <= posiDansLeTexte && mot.end >= posiDansLeTexte) {
+				indiceMot=i;
+				return mot;
 			}
 		}
 		return null;
-	}//getMotAtTextPosi
+	}
 	
 	
 	public void decalerTextPosi(int valeur, int from){
@@ -547,19 +565,11 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 			element = get(i);
 			if(element instanceof Element_Mot){
 				elementMot = (Element_Mot)element;
-				elementMot.posDebInTextPanel += valeur;
-				elementMot.posFinInTextPanel += valeur;
+				elementMot.start += valeur;
+				elementMot.end += valeur;
 			}
 		}//for
 	}
-	
-	
-	
-	
-	
-	
-	
-	
 	
 	
 	

@@ -432,24 +432,11 @@ public class Aligneur extends JPanel implements PrintLogger {
 		}
 	}
 
-	private void colorieElements() {
-		for (Element elt : edit.getListeElement()) {
-			if (elt instanceof Element_Ponctuation) {
-				Element_Ponctuation e = (Element_Ponctuation)elt;
-				edit.colorHighlight((int)e.posdeb,(int)e.posfin, Color.orange);
-			} else if (elt instanceof Element_Commentaire) {
-				Element_Commentaire e = (Element_Commentaire)elt;
-				edit.colorHighlight(e.posDebInTextPanel,e.posFinInTextPanel, Color.green);
-			}
-		}
-		edit.repaint();
-		System.out.println("fin colorie elements");
-	}
-
 	/**
 	 * cree une liste d'elements a partir d'un texte brut
 	 * @param thenew
 	 */
+	// FIXME c'est quoi ce n-ième parseur ?
 	public void parse(final boolean thenew) {
 		parseWithRegexp = !thenew;
 		edit.setEditable(false);
@@ -480,7 +467,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 						}
 						ListeElement elts = parser.parseimmutable(sourceTxtfile);
 						edit.setListeElement(elts);
-						colorieElements();
 					} else {
 						// version avec un texte mutable mais un parser indep du TextEditor
 						parser.parse();
@@ -1405,7 +1391,10 @@ public class Aligneur extends JPanel implements PrintLogger {
 			lmots.add(word.word);
 			//    		alignement.wordsIdx.add(alignement.words.size()-1);
 			int posfininpanel = sb.length();
-			elts.add(new Element_Mot(word.word, posdebinpanel, posfininpanel, false));
+			Element_Mot ew = new Element_Mot(word.word, false);
+			ew.start = posdebinpanel;
+			ew.end = posfininpanel;
+			elts.add(ew);
 			frdebs.add(word.frameDeb);
 			frfins.add(word.frameEnd);
 		}

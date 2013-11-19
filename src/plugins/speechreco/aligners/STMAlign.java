@@ -25,7 +25,7 @@ public class STMAlign {
 			String editortxt = aligneur.edit.getText();
 			Element_Mot mot = aligneur.edit.getListeElement().getFirstMot();
 			int motidx=0;
-			while (posMotInEditor<mot.posDebInTextPanel) {
+			while (posMotInEditor<mot.start) {
 				if (editortxt.charAt(posMotInEditor)=='\n') editorLigne++;
 				posMotInEditor++;
 			}
@@ -76,7 +76,7 @@ public class STMAlign {
 //				mot=dermot.nextEltInGram;
 				if (mot!=null) {
 					motidx=dermotidx+1;
-					while (posMotInEditor<mot.posDebInTextPanel) {
+					while (posMotInEditor<mot.start) {
 						if (editortxt.charAt(posMotInEditor)=='\n') editorLigne++;
 						posMotInEditor++;
 					}

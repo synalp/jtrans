@@ -44,7 +44,12 @@ termes.
 package plugins.text.elements;
 
 
-public class Element_FinChevauchement implements Element {
-	public static final long serialVersionUID = 1;
-	
+public class Element_FinChevauchement extends Element {
+	public int getType() {
+		return 4;
+	}
+
+	public String toString() {
+		return ">";
+	}
 }

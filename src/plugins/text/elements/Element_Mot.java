@@ -47,12 +47,9 @@ package plugins.text.elements;
  * Classe repr�sentant un mot : 
  * le mot en lui m�me et le sample de fin.
  */
-public class Element_Mot implements Element {
-	public static final long serialVersionUID = 1;
-
+public class Element_Mot extends Element {
 	public final boolean isBruit;
 	public final String word;
-	public int posDebInTextPanel, posFinInTextPanel;
 
 	/**
 	 * contient le segment du mot dans alignement
@@ -63,21 +60,16 @@ public class Element_Mot implements Element {
 		return word;
 	}
 
-	//------------ Constructors ------------
-
-	public Element_Mot(String word, int posdeb, int posfin, boolean isBruit) {
+	public Element_Mot(String word, boolean isBruit) {
 		this.word = word;
-		this.posDebInTextPanel = posdeb;
-		this.posFinInTextPanel = posfin;
 		this.isBruit = isBruit;
 	}
 
-	/**
-	 * Returns an Element_Mot whose word is created from a substring of
-	 * bigString, beginning at posdeb and ending at posfin-1.
-	 */
-	public static Element_Mot fromSubstring(String bigString, int posdeb, int posfin, boolean isBruit) {
-		return new Element_Mot(bigString.substring(posdeb, posfin), posdeb, posfin, isBruit);
+	public int getType() {
+		return isBruit? 2: -1;
 	}
 
+	public String toString() {
+		return word;
+	}
 }//classe Element_Mot

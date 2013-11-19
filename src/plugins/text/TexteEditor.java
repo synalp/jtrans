@@ -42,6 +42,7 @@ import facade.JTransAPI;
 import markup.MarkupLoader;
 import markup.TextParser;
 import plugins.speechreco.aligners.sphiinx4.AutoAligner;
+import plugins.text.elements.Element;
 import plugins.text.elements.Element_Mot;
 import plugins.text.elements.Segment;
 import plugins.text.regexp.TypeElement;
@@ -194,7 +195,6 @@ public class TexteEditor extends JTextPane {
 
 		List<Segment> nonText = TextParser.findNonTextSegments(normedText, listeTypes);
 		setListeElement(TextParser.parseString(normedText, nonText));
-		highlightNonTextSegments(nonText);
 		
 		lastSelectedWord = lastSelectedWord2 = null;
 		setCaretPosition(caretPosition);
@@ -269,10 +269,7 @@ public class TexteEditor extends JTextPane {
 	 * Highlight non-text segments according to the color defined in their
 	 * respective types.
 	 */
-	public void highlightNonTextSegments(List<Segment> nonTextSegments) {
-		String text = getText();
-		int textLength = text.length();
-
+	public void highlightNonText() {
 		// Clear all existing formatting
 		selectAll();
 		AttributeSet attr = styler.getEmptySet();
@@ -286,28 +283,12 @@ public class TexteEditor extends JTextPane {
 					listeTypes.get(i).getColor());
 		}
 
-		// Highlight segments
-		for (Segment seg: nonTextSegments) {
-			int start = seg.deb;
-			int end = seg.fin;
-
-			while (start < end &&
-					start < textLength &&
-					Character.isWhitespace(text.charAt(start)))
-			{
-				start++;
-			}
-
-			while (start < end &&
-					end < textLength &&
-					!Character.isWhitespace(text.charAt(end)))
-			{
-				end--;
-			}
-
-			if (start < end && start < text.length()) {
-				select(start, end);
-				setCharacterAttributes(attr2[seg.type], true);
+		// Apply styles
+		for (Element el: listeElement) {
+			int type = el.getType();			
+			if (type >= 0 && type < listeTypes.size()) {
+				select(el.start, el.end);
+				setCharacterAttributes(attr2[type], true);
 			}
 		}
 	}
@@ -325,20 +306,15 @@ public class TexteEditor extends JTextPane {
 			e1.printStackTrace();
 		}
 	}
+	
 	public void souligne(Element_Mot mot) {
-		setCaretPosition((mot.posDebInTextPanel+mot.posFinInTextPanel)/2);
+		setCaretPosition((mot.start + mot.end)/2);
 		AttributeSet a = getCharacterAttributes();
 		AttributeSet b = styler.addAttribute(a, StyleConstants.Underline, true);
-		select(mot.posDebInTextPanel,mot.posFinInTextPanel);
+		select(mot.start, mot.end);
 		setCharacterAttributes(b, true);
 	}
-	public void unsouligne(Element_Mot mot) {
-		setCaretPosition((mot.posDebInTextPanel+mot.posFinInTextPanel)/2);
-		AttributeSet a = getCharacterAttributes();
-		AttributeSet b = styler.addAttribute(a, StyleConstants.Underline, false);
-		select(mot.posDebInTextPanel,mot.posFinInTextPanel);
-		setCharacterAttributes(b, true);
-	}
+
 	public void degrise() {
 		try {
 			if (lastSelectedWord != null) {
@@ -383,16 +359,7 @@ public class TexteEditor extends JTextPane {
 		}
 		lastSelectedWord=mot;
 	}
-	public void griseMotred(Element_Mot mot) {
-		degrise();
-		lastSelectedWord=mot;
-		if (lastSelectedWord==null) return;
-		setCaretPosition((lastSelectedWord.posDebInTextPanel+lastSelectedWord.posFinInTextPanel)/2);
-		AttributeSet a = getCharacterAttributes();
-		AttributeSet b = styler.addAttribute(a, StyleConstants.ColorConstants.Background, Color.MAGENTA);
-		select(lastSelectedWord.posDebInTextPanel, lastSelectedWord.posFinInTextPanel);
-		setCharacterAttributes(b, true);
-	}
+
 	public void colorHighlight(int deb, int fin, Color c) {
 		ColoriageEvent e = new ColoriageEvent(deb, fin, c, true, 9);
 		colorOrders.add(e);
@@ -402,6 +369,7 @@ public class TexteEditor extends JTextPane {
 			e1.printStackTrace();
 		}
 	}
+	
     public void colorizeAlignedWords() {
     	ListeElement elts = getListeElement();
     	if (elts!=null) {
@@ -488,7 +456,7 @@ public class TexteEditor extends JTextPane {
     	if (elts!=null) {
     		List<Element_Mot> mots = elts.getMots();
 			try {
-				hh.addHighlight(mots.get(fromWord).posDebInTextPanel, mots.get(toWord).posFinInTextPanel, painter4alignedWords);
+				hh.addHighlight(mots.get(fromWord).start, mots.get(toWord).end, painter4alignedWords);
 			} catch (BadLocationException e) {}
     	}    	
 /*
@@ -496,7 +464,7 @@ public class TexteEditor extends JTextPane {
     	if (elts!=null) {
     		List<Element_Mot> mots = elts.getMots();
         	try {
-				hh.addHighlight(mots.get(fromWord).posDebInTextPanel, mots.get(toWord).posFinInTextPanel, DefaultHighlighter.DefaultPainter);
+				hh.addHighlight(mots.get(fromWord).start, mots.get(toWord).end, DefaultHighlighter.DefaultPainter);
 			} catch (BadLocationException e) {
 				e.printStackTrace();
 			}
@@ -514,8 +482,8 @@ public class TexteEditor extends JTextPane {
 		lastSelectedWord2=mot2;
 		if (lastSelectedWord==null) return;
 		if (lastSelectedWord2==null) return;
-		setCaretPosition((lastSelectedWord.posDebInTextPanel+lastSelectedWord.posFinInTextPanel)/2);
-		select(lastSelectedWord.posDebInTextPanel, mot2.posFinInTextPanel);
+		setCaretPosition((lastSelectedWord.start + lastSelectedWord.end)/2);
+		select(lastSelectedWord.start, mot2.end);
 
 		setSelectedTextColor(Color.MAGENTA);
 		repaint();
@@ -525,15 +493,10 @@ public class TexteEditor extends JTextPane {
 		setCharacterAttributes(b, true);
 		*/
 	}
-	
-	public boolean textChanged() {
-		return textChanged;
-	}
 
 	public String getMot(Element_Mot mot) {
-		int len = mot.posFinInTextPanel-mot.posDebInTextPanel;
 		try {
-			return getText(mot.posDebInTextPanel, len);
+			return getText(mot.start, mot.end-mot.start);
 		} catch (BadLocationException e) {
 			e.printStackTrace();
 			return null;
@@ -742,6 +705,8 @@ public class TexteEditor extends JTextPane {
 	public void setListeElement(ListeElement listeElement) {
 		this.listeElement = listeElement;
 		JTransAPI.setElts(listeElement);
+		setText(listeElement.render());
+		highlightNonText();
 	}
 
 	public void setListeTypes(ArrayList<TypeElement> listeTypes) {
@@ -756,9 +721,7 @@ public class TexteEditor extends JTextPane {
 	 */
 	public void apply(MarkupLoader loader) {
 		setEditable(false);
-		setText(loader.getText());
 		setListeElement(loader.getElements());
-		highlightNonTextSegments(loader.getNonTextSegments());
 	}
 	
 }//class TextEditor

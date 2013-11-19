@@ -75,27 +75,16 @@ public class TextParser {
 				}//if (deb-precfin>0)
 
 				//l'élement en lui même
+				String sub = normedText.substring(deb, fin);
 				switch (seg.type) {
 					case 0: // LOCUTEUR
-						int num=0;
-						String loc = normedText.substring(deb,fin);
-						Matcher p = Pattern.compile("\\d").matcher(loc);
-						if (p.find()) {
-							int posnum = p.start();
-							try {
-								num=Integer.parseInt(loc.substring(posnum).trim());
-								loc=loc.substring(0,posnum).trim();
-							} catch (NumberFormatException e) {
-								// e.printStackTrace();
-							}
-						}
-						listeElts.addLocuteurElement(loc, num);
+						listeElts.addLocuteurElement(sub);
 						break;
 					case 1: // COMMENT
-						listeElts.add(Element_Commentaire.fromSubstring(normedText, deb, fin));
+						listeElts.add(new Element_Commentaire(sub));
 						break;
 					case 2: // BRUIT
-						listeElts.add(Element_Mot.fromSubstring(normedText, deb, fin, true));
+						listeElts.add(new Element_Mot(sub, true));
 						break;
 					case 3 : //Debut chevauchement
 						listeElts.add(new Element_DebutChevauchement());
@@ -104,7 +93,7 @@ public class TextParser {
 						listeElts.add(new Element_FinChevauchement());
 						break;
 					case 5 : // ponctuation
-						listeElts.add(new Element_Ponctuation(normedText.substring(deb, fin).charAt(0)));
+						listeElts.add(new Element_Ponctuation(sub.charAt(0)));
 						break;
 					default : System.err.println("HOUSTON, ON A UN PROBLEME ! TYPE PARSE INCONNU");
 				}
@@ -140,9 +129,9 @@ public class TextParser {
 				index++;
 			}
 
-			if(index > debutMot){
-				listeElts.add(Element_Mot.fromSubstring(
-						text, debutMot + precfin, index + precfin, false));
+			if (index > debutMot){
+				listeElts.add(new Element_Mot(
+						text.substring(debutMot + precfin, index + precfin), false));
 			}
 		}
 	}

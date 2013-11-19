@@ -62,8 +62,8 @@ public class ColoriageEvent implements Comparable<ColoriageEvent> {
 					textpane.setCaretPosition(posdeb);
 					textpane.moveCaretPosition(posfin);
 				} else {
-					textpane.setCaretPosition(seldeb.posDebInTextPanel);
-					textpane.moveCaretPosition(selfin.posFinInTextPanel);
+					textpane.setCaretPosition(seldeb.start);
+					textpane.moveCaretPosition(selfin.end);
 				}
 			} catch (Exception e) {
 				// un problème dans l'affichage !

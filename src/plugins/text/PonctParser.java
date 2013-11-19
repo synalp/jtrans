@@ -38,7 +38,10 @@ public class PonctParser {
 			fullText = texte;
 		else
 			fullText = aligneur.edit.getText();
-		le.add(Element_Mot.fromSubstring(fullText, deb, finExclue, false));
+		Element_Mot ew = new Element_Mot(fullText.substring(deb, finExclue), false);
+		ew.start = deb;
+		ew.end = finExclue;
+		le.add(ew);
 	}
 
 	private final static byte[] winAposbytes = {32,25};
@@ -116,23 +119,16 @@ public class PonctParser {
 			for (int j=0;j<utt.getNbSegments();j++) {
 				switch (utt.getSegmentType(j)) {
 				case ponct:
-					Element_Ponctuation pct = new Element_Ponctuation(utt.getSegment(j).trim().charAt(0));
-					pct.posdeb=(int)utt.getSegmentStartPos(j);
-					pct.posfin=(int)utt.getSegmentEndPos(j);
-					lst.add(pct);
+					lst.add(new Element_Ponctuation(utt.getSegment(j).trim().charAt(0)));
 					npcts++;
 					break;
 				case mot:
-					Element_Mot mot = new Element_Mot(utt.getSegment(j),(int)utt.getSegmentStartPos(j),(int)utt.getSegmentEndPos(j), false);
-					lst.add(mot);
+					lst.add(new Element_Mot(utt.getSegment(j), false));
 					nmots++;
 					break;
 				case comment:
 				case bruit:
-					int pdeb = (int)utt.getSegmentStartPos(j);
-					int pfin = (int)utt.getSegmentEndPos(j);
-					Element_Commentaire e = new Element_Commentaire(utt.getSegment(j), pdeb, pfin);
-					lst.add(e);
+					lst.add(new Element_Commentaire(utt.getSegment(j)));
 					ncmts++;
 					break;
 				default:
