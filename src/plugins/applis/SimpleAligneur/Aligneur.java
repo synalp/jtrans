@@ -1558,20 +1558,12 @@ public class Aligneur extends JPanel implements PrintLogger {
 			}
 		}
 
-		try {
-			if (loader != null && markupFileName != null) {
-				loader.parse(new FileInputStream(markupFileName));
-				m.edit.apply(loader);
+		if (loader != null && markupFileName != null) {
+			boolean success = m.loadMarkup(loader, new File(markupFileName));
+			if (success && audioSourceSet) {
+				m.alignWithProgress();
 			}
-		} catch (Exception ex) {
-			System.exit(1);
 		}
-
-		if (audioSourceSet) {
-			m.alignWithProgress();
-		}
-
-		m.repaint();
 	}
 
 	/**
@@ -1579,29 +1571,33 @@ public class Aligneur extends JPanel implements PrintLogger {
 	 * if an error occurs.
 	 * @param loader loader for the adequate markup format
 	 */
-	public void loadMarkup(MarkupLoader loader, File markupFile) throws IOException, ParsingException {
+	public boolean loadMarkup(MarkupLoader loader, File markupFile) {
 		try {
 			loader.parse(new FileInputStream(markupFile));
-		} catch (IOException ex) {
+		} catch (Exception ex) {
 			ex.printStackTrace();
-			JOptionPane.showMessageDialog(jf,
-					"A fatal error occurred when trying to parse " + markupFile + "\n\n" + ex,
-					"I/O Exception",
-					JOptionPane.ERROR_MESSAGE);
-			throw ex;
-		} catch (ParsingException ex) {
-			ex.printStackTrace();
-			JOptionPane.showMessageDialog(jf,
-					"Couldn't parse \"" + markupFile + "\" as a "
-							+ "\"" + loader.getFormat() + "\" file.\n"
-							+ "This file is either erroneous or it contains "
-							+ "tokens JTrans can't handle yet.\n\n"
-							+ ex,
-					"Parsing Exception",
-					JOptionPane.ERROR_MESSAGE);
+
+			String message = "Couldn't parse \"" + markupFile.getName() +
+					"\"\nas a \"" + loader.getFormat() + "\" file.\n\n";
+
+			if (ex instanceof ParsingException)
+				message += "This file is either erroneous or it contains " +
+						"tokens that JTrans can't handle yet.";
+			else if (ex instanceof IOException)
+				message += "An I/O error occurred.";
+			else
+				message += "An unknown exception was thrown.\n" +
+						"This isn't supposed to happen.\n" +
+						"Please file a bug report.";
+
+			JOptionPane.showMessageDialog(jf, message + "\n\n" + ex,
+					"Parsing failed", JOptionPane.ERROR_MESSAGE);
+			return false;
 		}
 
+		jf.setTitle(markupFile.getName());
 		edit.apply(loader);
+		return true;
 	}
 
 	public void alignWithProgress() {
