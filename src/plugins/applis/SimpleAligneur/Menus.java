@@ -24,7 +24,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 import edu.cmu.sphinx.result.Result;
 
-import markup.TRSLoader;
+import markup.*;
 import main.LiveSpeechReco;
 
 import plugins.sourceSignals.Mike2wav;
@@ -46,6 +46,7 @@ public class Menus {
 	private static final FileFilter
 			filterJTR = new FileNameExtensionFilter("JTrans Project (*.jtr)", "jtr"),
 			filterTRS = new FileNameExtensionFilter("Transcriber (*.trs)", "trs"),
+			filterTextGrid = new FileNameExtensionFilter("Praat TextGrid (*.textgrid)", "textgrid"),
 			filterTextGridWordsOnly = new FileNameExtensionFilter("Praat TextGrid (*.textgrid) - Words only", "textgrid"),
 			filterTextGridWordsAndPhons = new FileNameExtensionFilter("Praat TextGrid (*.textgrid) - Words + Phonemes", "textgrid"),
 			filterTXT = new FileNameExtensionFilter("Raw Text (*.txt)", "txt");
@@ -93,6 +94,7 @@ public class Menus {
 
 				fc.addChoosableFileFilter(filterJTR);
 				fc.addChoosableFileFilter(filterTRS);
+				fc.addChoosableFileFilter(filterTextGrid);
 				fc.addChoosableFileFilter(filterTXT);
 				fc.setAcceptAllFileFilterUsed(false);
 				fc.setFileFilter(filterJTR);
@@ -107,6 +109,8 @@ public class Menus {
 					aligneur.loadProject(file.getAbsolutePath());
 				} else if (ff == filterTRS) {
 					aligneur.loadMarkup(new TRSLoader(), file);
+				} else if (ff == filterTextGrid) {
+					aligneur.loadMarkup(new TextGridLoader(), fc.getSelectedFile());
 				} else if (ff == filterTXT) {
 					aligneur.loadtxt(file);
 				} else {

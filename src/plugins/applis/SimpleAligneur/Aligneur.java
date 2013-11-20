@@ -21,14 +21,12 @@ import javax.sound.sampled.*;
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
 
-import markup.MarkupLoader;
 import facade.JTransAPI;
-
-import markup.ParsingException;
-import markup.TRSLoader;
+import markup.*;
 import main.JTrans;
 import main.SpeechReco;
 
+import markup.TextGridLoader;
 import plugins.buffer.RoundBuffer;
 import plugins.buffer.RoundBufferFrontEnd;
 import plugins.signalViewers.spectroPanel.SpectroControl;
@@ -1545,6 +1543,11 @@ public class Aligneur extends JPanel implements PrintLogger {
 				markupFileName = arg;
 			}
 
+			else if (lcarg.endsWith(".textgrid")) {
+				loader = new TextGridLoader();
+				markupFileName = arg;
+			}
+
 			else if (lcarg.endsWith(".txt")) {
 				m.sourceTxtfile = arg;
 				InputStream in = FileUtils.findFileOrUrl(m.sourceTxtfile);
@@ -1573,6 +1576,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 	 */
 	public boolean loadMarkup(MarkupLoader loader, File markupFile) {
 		try {
+			printInStatusBar("Parsing markup");
 			loader.parse(new FileInputStream(markupFile));
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -1596,7 +1600,9 @@ public class Aligneur extends JPanel implements PrintLogger {
 		}
 
 		jf.setTitle(markupFile.getName());
+		printInStatusBar("Applying");
 		edit.setListeElement(loader.getElements());
+		printInStatusBar("Ready");
 		return true;
 	}
 
