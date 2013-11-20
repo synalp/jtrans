@@ -42,8 +42,6 @@ public class AutoAligner extends Thread {
 	// contient l'index du segment audio dans alignement ou -1 si le mot n'est pas prononcé
 	private int[] mots2segidx;
 
-	public final static Color alignedColor = Color.decode("0x3B3BC9");
-
 	public S4ForceAlignBlocViterbi getS4aligner() {
 		if (s4blocViterbi==null) {
 			s4blocViterbi=S4ForceAlignBlocViterbi.getS4Aligner(wavname);

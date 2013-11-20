@@ -9,9 +9,7 @@ package plugins.text;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.Graphics;
 import java.awt.Rectangle;
-import java.awt.Shape;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -24,27 +22,15 @@ import java.util.*;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.regex.Pattern;
 
-import javax.swing.JTextPane;
+import javax.swing.*;
 import javax.swing.event.CaretEvent;
-import javax.swing.text.AttributeSet;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.DefaultHighlighter;
-import javax.swing.text.Highlighter;
-import javax.swing.text.JTextComponent;
-import javax.swing.text.Position;
-import javax.swing.text.StyleConstants;
-import javax.swing.text.StyleContext;
-import javax.swing.text.View;
-import javax.swing.text.LayeredHighlighter.LayerPainter;
+import javax.swing.text.*;
 
 import facade.JTransAPI;
 
-import markup.MarkupLoader;
 import markup.TextParser;
-import plugins.speechreco.aligners.sphiinx4.AutoAligner;
 import plugins.text.elements.Element;
 import plugins.text.elements.Element_Mot;
-import plugins.text.elements.Segment;
 import plugins.text.regexp.TypeElement;
 
 /**
@@ -112,8 +98,6 @@ public class TexteEditor extends JTextPane {
 	public Element_Mot lastSelectedWord2=null;
 	
 	private File openedTextFile;
-	
-	StyleContext styler = StyleContext.getDefaultStyleContext();
 
 	// THREAD dont le role est de colorier le texte
 	// pour arreter ce thread, il faut appeler colorieur.interrupt()
@@ -264,54 +248,44 @@ public class TexteEditor extends JTextPane {
 	//----------------- M�thode de mise � jour ----------------------------
 	//---------------------------------------------------------------------
 
-	/**
-	 * Highlight non-text segments according to the color defined in their
-	 * respective types.
-	 */
-	public void highlightNonText() {
-		// Clear all existing formatting
-		selectAll();
-		AttributeSet attr = styler.getEmptySet();
-		setCharacterAttributes(attr, true);
+	private static final AttributeSet ALIGNED_STYLE = new SimpleAttributeSet() {{
+		addAttribute(StyleConstants.CharacterConstants.Foreground, new Color(0x2018a8));
+		addAttribute(StyleConstants.CharacterConstants.Italic, true);
+	}};
 
+	/**
+	 * Sets text from the list of elements and highlights non-text segments
+	 * according to the color defined in their respective types.
+	 * @see ListeElement#render()
+	 */
+	public void setTextFromElements() {
 		// Create a new style for each type
-		AttributeSet[] attr2 = new AttributeSet[listeTypes.size()];
+		AttributeSet[] attr = new AttributeSet[listeTypes.size()];
 		for (int i = 0; i < listeTypes.size(); i++) {
-			attr2[i] = styler.addAttribute(attr,
-					StyleConstants.ColorConstants.Background,
-					listeTypes.get(i).getColor());
+			SimpleAttributeSet sas = new SimpleAttributeSet();
+			sas.addAttribute(StyleConstants.ColorConstants.Background, listeTypes.get(i).getColor());
+			sas.addAttribute(StyleConstants.ColorConstants.Foreground, Color.gray);
+			attr[i] = sas;
+		}
+
+		// Create a new document instead of using this instance's document to avoid
+		// triggering any listeners, which makes the styling process much faster
+		StyledDocument doc = new DefaultStyledDocument();
+
+		try {
+			doc.insertString(0, listeElement.render(), null);
+		} catch (BadLocationException ex) {
+			JOptionPane.showMessageDialog(this, ex.toString(), "BadLocationException", JOptionPane.ERROR_MESSAGE);
 		}
 
 		// Apply styles
 		for (Element el: listeElement) {
 			int type = el.getType();			
-			if (type >= 0 && type < listeTypes.size()) {
-				select(el.start, el.end);
-				setCharacterAttributes(attr2[type], true);
-			}
+			if (type >= 0 && type < listeTypes.size())
+				doc.setCharacterAttributes(el.start, el.end - el.start, attr[type], true);
 		}
-	}
 
-	/**
-	 * @deprecated use Highlighter instead
-	 */
-	public void inkInColor(Element_Mot mot1, Element_Mot mot2, Color c) {
-		// il ne doit pas etre prioritaire par rapport au player
-		ColoriageEvent e = new ColoriageEvent(mot1, mot2, c, false, 1);
-		colorOrders.add(e);
-		try {
-			e.waitForColoriageDone();
-		} catch (InterruptedException e1) {
-			e1.printStackTrace();
-		}
-	}
-	
-	public void souligne(Element_Mot mot) {
-		setCaretPosition((mot.start + mot.end)/2);
-		AttributeSet a = getCharacterAttributes();
-		AttributeSet b = styler.addAttribute(a, StyleConstants.Underline, true);
-		select(mot.start, mot.end);
-		setCharacterAttributes(b, true);
+		setStyledDocument(doc);
 	}
 
 	public void degrise() {
@@ -359,122 +333,26 @@ public class TexteEditor extends JTextPane {
 		lastSelectedWord=mot;
 	}
 
-	public void colorHighlight(int deb, int fin, Color c) {
-		ColoriageEvent e = new ColoriageEvent(deb, fin, c, true, 9);
-		colorOrders.add(e);
-		try {
-			e.waitForColoriageDone();
-		} catch (InterruptedException e1) {
-			e1.printStackTrace();
-		}
+	/**
+	 * @deprecated Very inefficient (recreates an entire word list);
+	 * use the much more nimble #colorizeAlignedChars() instead.
+	 */
+	@Deprecated public void colorizeAlignedWords(int fromWord, int toWord) {
+		List<Element_Mot> words = listeElement.getMots();
+		Element_Mot w1 = words.get(fromWord);
+		Element_Mot w2 = words.get(toWord);
+		colorizeAlignedChars(w1.start, w2.end);
 	}
-	
-    public void colorizeAlignedWords() {
-    	ListeElement elts = getListeElement();
-    	if (elts!=null) {
-    		List<Element_Mot> mots = elts.getMots();
-    		if (mots!=null) {
-    	    	Element_Mot lastaligned=null;
-    	    	for (Element_Mot elmot : mots) {
-    	    		if (elmot.posInAlign>=0) lastaligned=elmot;
-    	    	}
-    	    	if (lastaligned!=null&&mots.size()>0)
-    	    		inkInColor(mots.get(0),lastaligned,AutoAligner.alignedColor);
-    		}
-    	}
-    }
-	static class FocusHighlightPainter extends DefaultHighlighter.DefaultHighlightPainter {
 
-		FocusHighlightPainter(Color color) {
-			super(color);
-		}
-
-		/**
-		 * Paints a portion of a highlight.
-		 *
-		 * @param g the graphics context
-		 * @param offs0 the starting model offset >= 0
-		 * @param offs1 the ending model offset >= offs1
-		 * @param bounds the bounding box of the view, which is not
-		 *        necessarily the region to paint.
-		 * @param c the editor
-		 * @param view View painting for
-		 * @return region in which drawing occurred
-		 */
-		public Shape paintLayer(Graphics g, int offs0, int offs1, Shape bounds, JTextComponent c, View view) {
-
-			Color color = getColor();
-
-			if (color == null) {
-				g.setColor(c.getSelectionColor());
-			}
-			else {
-				g.setColor(color);
-			}
-			if (offs0 == view.getStartOffset() &&
-					offs1 == view.getEndOffset()) {
-				// Contained in view, can just use bounds.
-				Rectangle alloc;
-				if (bounds instanceof Rectangle) {
-					alloc = (Rectangle)bounds;
-				}
-				else {
-					alloc = bounds.getBounds();
-				}
-//				g.drawRect(alloc.x, alloc.y, alloc.width - 1, alloc.height);
-				g.drawLine(alloc.x, alloc.y+alloc.height-1, alloc.x+alloc.width-1, alloc.y+alloc.height-1);
-				return alloc;
-			}
-			else {
-				// Should only render part of View.
-				try {
-					// --- determine locations ---
-					Shape shape = view.modelToView(offs0, Position.Bias.Forward,
-							offs1,Position.Bias.Backward,
-							bounds);
-					Rectangle r = (shape instanceof Rectangle) ? (Rectangle)shape : shape.getBounds();
-//					g.drawRect(r.x, r.y, r.width - 1, r.height);
-					g.drawLine(r.x, r.y+r.height-1, r.x+r.width-1, r.y+r.height-1);
-					return r;
-				} catch (BadLocationException e) {
-					// can't render
-				}
-			}
-			// Only if exception
-			return null;
-		}
+	/**
+	 * Colorize range of characters with the "aligned" style
+	 * @param from first character to colorize
+	 * @param to last character to colorize (exclusive)
+	 */
+	public void colorizeAlignedChars(int from, int to) {
+		getStyledDocument().setCharacterAttributes(from, to-from, ALIGNED_STYLE, true);
 	}
-	LayerPainter painter4alignedWords = new FocusHighlightPainter(Color.blue);
 
-    public void colorizeAlignedWords(int fromWord, int toWord) {
-    	if (fromWord<0||toWord<0) return;
-    	Highlighter hh = getHighlighter();
-//    	hh.removeAllHighlights();
-    	
-    	ListeElement elts = getListeElement();
-    	if (elts!=null) {
-    		List<Element_Mot> mots = elts.getMots();
-			try {
-				hh.addHighlight(mots.get(fromWord).start, mots.get(toWord).end, painter4alignedWords);
-			} catch (BadLocationException e) {}
-    	}    	
-/*
-    	ListeElement elts = getListeElement();
-    	if (elts!=null) {
-    		List<Element_Mot> mots = elts.getMots();
-        	try {
-				hh.addHighlight(mots.get(fromWord).start, mots.get(toWord).end, DefaultHighlighter.DefaultPainter);
-			} catch (BadLocationException e) {
-				e.printStackTrace();
-			}
-			*/
-/*
-			if (mots!=null && fromWord>=0 && toWord>=fromWord && toWord<mots.size()) {
-    	    	inkInColor(mots.get(fromWord), mots.get(toWord), AutoAligner.alignedColor);
-    		}
-    	}
-    		*/
-    }
 	public void griseMotsRed(Element_Mot mot, Element_Mot mot2) {
 		degrise();
 		lastSelectedWord=mot;
@@ -701,26 +579,17 @@ public class TexteEditor extends JTextPane {
 		return listeElement;
 	}
 
+	/**
+	 * Load text/elements into the text editor and colorize the relevant parts.
+	 */
 	public void setListeElement(ListeElement listeElement) {
+		setEditable(false);
 		this.listeElement = listeElement;
 		JTransAPI.setElts(listeElement);
-		setText(listeElement.render());
-		highlightNonText();
+		setTextFromElements();
 	}
 
 	public void setListeTypes(ArrayList<TypeElement> listeTypes) {
 		this.listeTypes = listeTypes;
 	}
-
-
-	/**
-	 * Apply the result of a markup loader: load text/elements and colorize the
-	 * relevant parts.
-	 * loader.parse() must have been called prior to this method!
-	 */
-	public void apply(MarkupLoader loader) {
-		setEditable(false);
-		setListeElement(loader.getElements());
-	}
-	
 }//class TextEditor

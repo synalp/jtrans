@@ -1467,11 +1467,13 @@ public class Aligneur extends JPanel implements PrintLogger {
 		int caret2 = edit.getSelectionEnd();
 		final int mot1 = edit.getListeElement().getIndiceMotAtTextPosi(caret1);
 		final int mot2 = edit.getListeElement().getIndiceMotAtTextPosi(caret2);
+		final Element_Mot elmot1 = edit.getListeElement().getMot(mot1);
+		final Element_Mot elmot2 = edit.getListeElement().getMot(mot2);
 
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
-				edit.griseMotsRed(edit.getListeElement().getMot(mot1), edit.getListeElement().getMot(mot2));
+				edit.griseMotsRed(elmot1, elmot2);
 				clearAlignFrom(mot1);
 				System.out.println("REALIGN BEFORE");
 				if (mot1-1>=0)
@@ -1495,12 +1497,11 @@ public class Aligneur extends JPanel implements PrintLogger {
 					// quand on selectionne une zone du signal, on suppose qu'il n'y a pas de silence aux bouts !
 					//					alignement.setEndFrameForWord(mot2, OldAlignment.sample2frame(send));
 
-					edit.griseMotsRed(edit.getListeElement().getMot(mot1), edit.getListeElement().getMot(mot2));
+					edit.griseMotsRed(elmot1, elmot2);
 					edit.setSelectedTextColor(null);
 					//	    	        alignement.addManualAnchorv2(mot1);
 					//	    	        alignement.addManualAnchorv2(mot2);
-					edit.souligne(edit.getListeElement().getMot(mot1));
-					edit.colorizeAlignedWords(mot1,mot2);
+					edit.colorizeAlignedChars(elmot1.start, elmot2.end);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
@@ -1595,7 +1596,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 		}
 
 		jf.setTitle(markupFile.getName());
-		edit.apply(loader);
+		edit.setListeElement(loader.getElements());
 		return true;
 	}
 
