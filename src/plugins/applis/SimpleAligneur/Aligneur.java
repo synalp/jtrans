@@ -1499,7 +1499,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 					edit.setSelectedTextColor(null);
 					//	    	        alignement.addManualAnchorv2(mot1);
 					//	    	        alignement.addManualAnchorv2(mot2);
-					edit.colorizeAlignedChars(elmot1.start, elmot2.end);
+					edit.colorizeAlignedWords(mot1, mot2);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}

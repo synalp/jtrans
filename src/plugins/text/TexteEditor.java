@@ -334,14 +334,37 @@ public class TexteEditor extends JTextPane {
 	}
 
 	/**
-	 * @deprecated Very inefficient (recreates an entire word list);
-	 * use the much more nimble #colorizeAlignedChars() instead.
+	 * Colorizes range of words with the "aligned" style.
+	 * Does not touch non-word elements.
+	 * @param fromWord number of the first word (in a list containing only
+	 *                    words) to colorize. This is NOT an element index!
+	 * @param toWord number of the last word to colorize (inclusive). This is
+	 *               NOT an element index!
 	 */
-	@Deprecated public void colorizeAlignedWords(int fromWord, int toWord) {
-		List<Element_Mot> words = listeElement.getMots();
-		Element_Mot w1 = words.get(fromWord);
-		Element_Mot w2 = words.get(toWord);
-		colorizeAlignedChars(w1.start, w2.end);
+	public void colorizeAlignedWords(int fromWord, int toWord) {
+		int word = -1;
+		int fromCh = -1;
+		int toCh = -1;
+
+		for (int i = 0; i < listeElement.size() && word < toWord; i++) {
+			Element el = listeElement.get(i);
+
+			if (el instanceof Element_Mot) {
+				word++;
+				if (word >= fromWord) {
+					toCh = el.end;
+					if (fromCh < 0)
+						fromCh = el.start;
+				}
+			} else {
+				if (fromCh > 0)
+					colorizeAlignedChars(fromCh, toCh);
+				fromCh = -1;
+			}
+		}
+
+		if (fromCh > 0)
+			colorizeAlignedChars(fromCh, toCh);
 	}
 
 	/**
@@ -349,7 +372,7 @@ public class TexteEditor extends JTextPane {
 	 * @param from first character to colorize
 	 * @param to last character to colorize (exclusive)
 	 */
-	public void colorizeAlignedChars(int from, int to) {
+	private void colorizeAlignedChars(int from, int to) {
 		getStyledDocument().setCharacterAttributes(from, to-from, ALIGNED_STYLE, true);
 	}
 
