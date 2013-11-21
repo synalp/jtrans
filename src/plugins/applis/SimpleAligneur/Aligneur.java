@@ -267,96 +267,7 @@ public class Aligneur extends JPanel implements PrintLogger {
     mfccbuf.setSource(mfcc);
     }
 	 */
-	public void loadtxt(File file) {
-		try  {
-			//			BufferedReader f=new BufferedReader(new FileReader(file));
-			BufferedReader f = FileUtils.openFileUTF(file.getAbsolutePath());
-			StringBuilder sb = new StringBuilder();
-			for (;;) {
-				String s = f.readLine();
-				if (s==null) break;
-				sb.append(s+"\n");
-			}
-			f.close();
 
-			// check encoding
-			if (sb.toString().indexOf('é')<0) {
-				System.err.println("loadtxt: suspect ISO file, retry...");
-				f = FileUtils.openFileISO(file.getAbsolutePath());
-				sb = new StringBuilder();
-				for (;;) {
-					String s = f.readLine();
-					if (s==null) break;
-					sb.append(s+"\n");
-				}
-				f.close();
-				if (sb.toString().indexOf('é')<0) {
-					System.err.println("cannot decide on encoding... maybe ASCII ?");
-				} else {
-					plugins.text.TextSegments.isISO=true;
-					System.err.println("... iso seems ok !");
-				}
-			}
-
-			setText(sb.toString());
-			sourceTxtfile=file.getAbsolutePath();
-			System.out.println("loadtext source "+sourceTxtfile);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-	public void loadtxt(InputStream in) {
-		try  {
-			BufferedReader f=new BufferedReader(new InputStreamReader(in, Charset.forName("UTF-8")));
-			StringBuilder sb = new StringBuilder();
-			for (;;) {
-				String s = f.readLine();
-				if (s==null) break;
-				sb.append(s+"\n");
-			}
-			f.close();
-			setText(sb.toString());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-	public void loadtxt(String url) {
-		try  {
-			BufferedReader f = FileUtils.openFileURL(url);
-			StringBuilder sb = new StringBuilder();
-			for (;;) {
-				String s = f.readLine();
-				if (s==null) break;
-				sb.append(s+"\n");
-			}
-			f.close();
-
-			// check encoding
-			if (sb.toString().indexOf('é')<0) {
-				System.err.println("loadtxt: suspect ISO file, retry...");
-				f = FileUtils.openFileURL(url);
-				sb = new StringBuilder();
-				for (;;) {
-					String s = f.readLine();
-					if (s==null) break;
-					sb.append(s+"\n");
-				}
-				f.close();
-				if (sb.toString().indexOf('é')<0) {
-					System.err.println("cannot decide on encoding... maybe ASCII ?");
-				} else {
-					plugins.text.TextSegments.isISO=true;
-					System.err.println("... iso seems ok !");
-				}
-			}
-
-			setText(sb.toString());
-			sourceTxtfile=null;
-			System.out.println("loadtext source "+sourceTxtfile);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
 	public void setText(String s) {
 		edit.setText(s);
 		repaint();
@@ -587,7 +498,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 			else System.out.println("ERROR jtr format "+s);
 
 			InputStream in = FileUtils.findFileOrUrl(sourceTxtfile);
-			loadtxt(in);
+			//TODO loadtxt(in);
 //			in = FileUtils.findFileOrUrl(wavname);
 			updateViewers();
 
@@ -1550,9 +1461,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 			else if (lcarg.endsWith(".txt")) {
 				m.sourceTxtfile = arg;
-				InputStream in = FileUtils.findFileOrUrl(m.sourceTxtfile);
-				m.loadtxt(in);
-				m.updateViewers();
+				loader = new RawTextLoader();
+				markupFileName = arg;
 			}
 
 			else {

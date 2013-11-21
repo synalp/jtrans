@@ -68,7 +68,7 @@ public class TRSLoader implements MarkupLoader {
 
 				// Speech text
 				if (name.equals("#text")) {
-					String text = TextParser.normalizeText(child.getTextContent().trim());
+					String text = RawTextLoader.normalizeText(child.getTextContent().trim());
 					if (!text.isEmpty()) {
 						// Introduce current speaker
 						if (!currentSpeakerIntroduced) {
@@ -76,7 +76,7 @@ public class TRSLoader implements MarkupLoader {
 							elements.addLocuteurElement(currentSpeaker.getName());
 						}
 
-						elements.addAll(TextParser.parseString(text, types));
+						elements.addAll(RawTextLoader.parseString(text, types));
 					}
 				}
 

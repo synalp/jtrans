@@ -28,7 +28,7 @@ import javax.swing.text.*;
 
 import facade.JTransAPI;
 
-import markup.TextParser;
+import markup.RawTextLoader;
 import plugins.text.elements.Element;
 import plugins.text.elements.Element_Mot;
 import plugins.text.regexp.TypeElement;
@@ -173,11 +173,11 @@ public class TexteEditor extends JTextPane {
 
 		String normedText = getText();
 		if (modifytxt) {
-			normedText = TextParser.normalizeText(normedText);
+			normedText = RawTextLoader.normalizeText(normedText);
 			setText(normedText);
 		}
 
-		setListeElement(TextParser.parseString(normedText, listeTypes));
+		setListeElement(RawTextLoader.parseString(normedText, listeTypes));
 		
 		lastSelectedWord = lastSelectedWord2 = null;
 		setCaretPosition(caretPosition);

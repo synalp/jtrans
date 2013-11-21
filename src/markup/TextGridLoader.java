@@ -221,8 +221,8 @@ public class TextGridLoader implements MarkupLoader {
 			if (prevEndFrame != startFrame)
 				elements.add(new Element_Ancre(JTrans.frame2sec(startFrame)));
 
-			String text = TextParser.normalizeText(tier.getSegmentLabel(i));
-			elements.addAll(TextParser.parseString(text, types));
+			String text = RawTextLoader.normalizeText(tier.getSegmentLabel(i));
+			elements.addAll(RawTextLoader.parseString(text, types));
 
 			elements.add(new Element_Ancre(JTrans.frame2sec(tier.getSegmentEndFrame(i))));
 			prevEndFrame = tier.getSegmentEndFrame(i);

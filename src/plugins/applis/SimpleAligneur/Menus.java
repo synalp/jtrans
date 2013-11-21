@@ -110,9 +110,9 @@ public class Menus {
 				} else if (ff == filterTRS) {
 					aligneur.loadMarkup(new TRSLoader(), file);
 				} else if (ff == filterTextGrid) {
-					aligneur.loadMarkup(new TextGridLoader(), fc.getSelectedFile());
+					aligneur.loadMarkup(new TextGridLoader(), file);
 				} else if (ff == filterTXT) {
-					aligneur.loadtxt(file);
+					aligneur.loadMarkup(new RawTextLoader(), file);
 				} else {
 					JOptionPane.showMessageDialog(aligneur.jf, "Unknown filter " + ff);
 				}
