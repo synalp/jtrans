@@ -14,7 +14,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.*;
-import java.nio.charset.Charset;
 import java.util.*;
 import java.util.List;
 import javax.sound.sampled.*;
@@ -23,7 +22,6 @@ import javax.swing.border.BevelBorder;
 
 import facade.JTransAPI;
 import markup.*;
-import main.JTrans;
 import main.SpeechReco;
 
 import markup.TextGridLoader;
@@ -58,7 +56,6 @@ import utils.ProgressDialog;
  * @author cerisara
  *
  */
-@SuppressWarnings("deprecation")
 public class Aligneur extends JPanel implements PrintLogger {
 
 	public JFrame jf=null;
@@ -98,28 +95,15 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 	public RoundBuffer audiobuf = new RoundBuffer(this, 10000000);
 	public RoundBufferFrontEnd mfccbuf;
-	TemporalSigFromWavFile wavForMFCC;
 	ForceAlignBlocViterbi blocViterbi = null;
 
 	// position lue pour la derniere fois dans le flux audio
 	long currentSample = 0;
-	int nFrames = -1;
 	public Alignment alignement = new Alignment();
 	public Alignment alignementPhones = new Alignment();
 	int wordSelectedIdx = -1;
 	public boolean caretSensible = false;
-	int state = 0;
 	JLabel infoLabel = new JLabel("Welcome to JTrans");
-	/**
-	 * ces variables ne sont utilisees que avec un "User simulator": elles contiennent la reference
-	 */
-	String stmfile = null, trsfile = null;
-	OldAlignment refAlign = null;
-	/**
-	 * mesure de confiance
-	 */
-	AcousticCM conf = new AcousticCM(this);
-	public float cmthr = -Float.MAX_VALUE;
 
 	/*
 	 * pour l'alignement semi-automatique
@@ -150,18 +134,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 	public void print(String msg) {
 		printInStatusBar(msg);
 	}
-
-	//	public void GUIfast() {
-	//		sigPanel.removeAndDestroy();
-	//		sigPanel = null;
-	//		toolbar = null;
-	//		splitPane = null;
-	//		sigBox = null;
-	//		getContentPane().removeAll();
-	//		getContentPane().add(textBox);
-	//		validate();
-	//		repaint();
-	//	}
 
 	public void quit() {
 		if (autoAligner!=null) autoAligner.terminateAll();
@@ -259,15 +231,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 		}
 	}
 
-	/*
-    public void rewindMFCC() {
-    wavForMFCC.rewind();
-    MFCC mfcc = new MFCC(wavForMFCC);
-    mfccbuf = new RoundBufferFrontEnd(10000, mfcc.getNcoefs());
-    mfccbuf.setSource(mfcc);
-    }
-	 */
-
 	public void setText(String s) {
 		edit.setText(s);
 		repaint();
@@ -279,18 +242,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 			sigpan.setAudioInputStream(getCurPosInSec(),aud);
 			sigpan.refresh();
 		}
-	}
-
-	public void griseSelectedWord() {
-		caretSensible = false;
-		Element_Mot mot = edit.getListeElement().getWordElement(wordSelectedIdx);
-		/*
-        if (alignement.getAncres().contains(wordSelectedIdx)) {
-            edit.souligne(mot);
-        }
-		 */
-		edit.griseMot(mot);
-		caretSensible = true;
 	}
 
 	private AutoAligner getAutoAligner() {
@@ -308,22 +259,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 		autoAligner = getAutoAligner();
 	}
 
-	public void souligneAncres() {
-		/*
-        for (int i : alignement.getAncres()) {
-            edit.souligne(edit.getListeElement().getWordElement(i));
-        }
-		 */
-	}
-	public void colorizeAlignedWords() {
-		/*
-    	for (int i=0;i<alignement.getNbMotsAligned();i++) {
-    		if (alignement.getWordFirstFrame(i)>=0) {
-    			edit.inkInColor(edit.getListeElement().getMot(i),edit.getListeElement().getMot(i),AutoAligner.alignedColor);
-    		}
-    	}
-		 */
-	}
 	private void saveCurrentTextInSourcefile() {
 		try {
 			sourceTxtfile="tmpsource.txt";
