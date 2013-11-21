@@ -6,6 +6,7 @@ import plugins.speechreco.aligners.sphiinx4.Alignment;
 import plugins.text.ListeElement;
 import plugins.text.TexteEditor;
 import plugins.text.elements.Element_Ancre;
+import plugins.text.regexp.TypeElement;
 import utils.EncodingDetector;
 
 import java.io.*;
@@ -213,17 +214,21 @@ public class TextGridLoader implements MarkupLoader {
 		elements.addLocuteurElement(tierNames.get(0));
 		Alignment tier = tiers.get(0);
 		int prevEndFrame = -1;
+		List<TypeElement> types = Arrays.asList(TexteEditor.DEFAULT_TYPES);
+
 		for (int i = 0; i < tiers.get(0).getNbSegments(); i++) {
 			int startFrame = tier.getSegmentDebFrame(i);
 			if (prevEndFrame != startFrame)
 				elements.add(new Element_Ancre(JTrans.frame2sec(startFrame)));
 
-			elements.addAll(TextParser.parseString(TextParser.normalizeText(tier.getSegmentLabel(i)),
-					Arrays.asList(TexteEditor.DEFAULT_TYPES)));
+			String text = TextParser.normalizeText(tier.getSegmentLabel(i));
+			elements.addAll(TextParser.parseString(text, types));
 
 			elements.add(new Element_Ancre(JTrans.frame2sec(tier.getSegmentEndFrame(i))));
 			prevEndFrame = tier.getSegmentEndFrame(i);
 		}
+
+		reader.close();
 	}
 
 	public ListeElement getElements() {
