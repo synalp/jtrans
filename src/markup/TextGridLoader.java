@@ -6,9 +6,8 @@ import plugins.speechreco.aligners.sphiinx4.Alignment;
 import plugins.text.ListeElement;
 import plugins.text.TexteEditor;
 import plugins.text.elements.Element_Ancre;
-import plugins.text.elements.Element_Mot;
+import utils.EncodingDetector;
 
-import javax.swing.*;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -52,7 +51,7 @@ public class TextGridLoader implements MarkupLoader {
 	public void parse(File file)
 			throws ParsingException, IOException
 	{
-		BufferedReader reader = new BufferedReader(new FileReader(file));
+		BufferedReader reader = EncodingDetector.properReader(file);
 		State state = State.FILE_HEADER_1;
 		int lineNumber = 0;
 
