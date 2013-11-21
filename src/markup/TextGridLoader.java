@@ -1,7 +1,6 @@
 package markup;
 
-import main.JTrans;
-import plugins.signalViewers.spectroPanel.SpectroControl;
+import facade.JTransAPI;
 import plugins.speechreco.aligners.sphiinx4.Alignment;
 import plugins.text.ListeElement;
 import plugins.text.TexteEditor;
@@ -186,8 +185,8 @@ public class TextGridLoader implements MarkupLoader {
 						if (currentInterval.isComplete()) {
 							currentTier.addRecognizedSegment(
 									currentInterval.text,
-									SpectroControl.second2frame(currentInterval.xmin),
-									SpectroControl.second2frame(currentInterval.xmax),
+									JTransAPI.second2frame(currentInterval.xmin),
+									JTransAPI.second2frame(currentInterval.xmax),
 									null,
 									null);
 							currentInterval = new Interval();
@@ -219,12 +218,12 @@ public class TextGridLoader implements MarkupLoader {
 		for (int i = 0; i < tiers.get(0).getNbSegments(); i++) {
 			int startFrame = tier.getSegmentDebFrame(i);
 			if (prevEndFrame != startFrame)
-				elements.add(new Element_Ancre(JTrans.frame2sec(startFrame)));
+				elements.add(new Element_Ancre(JTransAPI.frame2sec(startFrame)));
 
 			String text = RawTextLoader.normalizeText(tier.getSegmentLabel(i));
 			elements.addAll(RawTextLoader.parseString(text, types));
 
-			elements.add(new Element_Ancre(JTrans.frame2sec(tier.getSegmentEndFrame(i))));
+			elements.add(new Element_Ancre(JTransAPI.frame2sec(tier.getSegmentEndFrame(i))));
 			prevEndFrame = tier.getSegmentEndFrame(i);
 		}
 

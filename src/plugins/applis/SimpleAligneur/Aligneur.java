@@ -131,7 +131,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 	public float getCurPosInSec() {return cursec;}
 	public void setCurPosInSec(float sec) {
 		cursec=sec;
-		int fr = SpectroControl.second2frame(cursec);
+		int fr = JTransAPI.second2frame(cursec);
 		int seg = alignement.getSegmentAtFrame(fr);
 		// nouveau panel
 		sigpan.setAudioInputStream(getCurPosInSec(), getAudioStreamFromSec(getCurPosInSec()));
@@ -951,8 +951,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 				int segmentDuMot = edit.getListeElement().getMot(mot).posInAlign;
 				if (segmentDuMot>=0) {
 					// mot deja aligne
-					if (deb>=0) alignement.setSegmentDebFrame(segmentDuMot, SpectroControl.second2frame(deb));
-					if (end>=0) alignement.setSegmentEndFrame(segmentDuMot, SpectroControl.second2frame(end));
+					if (deb>=0) alignement.setSegmentDebFrame(segmentDuMot, JTransAPI.second2frame(deb));
+					if (end>=0) alignement.setSegmentEndFrame(segmentDuMot, JTransAPI.second2frame(end));
 				} else {
 					// mot non encore aligne
 					if (mot>0) {
@@ -963,14 +963,14 @@ public class Aligneur extends JPanel implements PrintLogger {
 						alignement.clear();
 						int curdebfr = 0;
 						if (deb>0) {
-							curdebfr = SpectroControl.second2frame(deb);
+							curdebfr = JTransAPI.second2frame(deb);
 							if (curdebfr>0) {
 								alignement.addRecognizedSegment("SIL", 0, curdebfr, null, null);
 							}
 						}
 						if (end>=0) {
 							int newseg = alignement.addRecognizedSegment(edit.getListeElement().getMot(0).getWordString(),
-									curdebfr, SpectroControl.second2frame(end), null, null);
+									curdebfr, JTransAPI.second2frame(end), null, null);
 							edit.getListeElement().getMot(0).posInAlign=newseg;
 						} else {
 							// TODO
@@ -1032,8 +1032,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 				doForceAnchor(lastSecClickedOnSpectro,mot);
 			} else {
 				System.out.println("set end of segment "+segmentDuMot+" "+alignement.getSegmentLabel(segmentDuMot));
-				System.out.println("set at frame "+SpectroControl.second2frame(lastSecClickedOnSpectro));
-				alignement.setSegmentEndFrame(segmentDuMot, SpectroControl.second2frame(lastSecClickedOnSpectro));
+				System.out.println("set at frame "+JTransAPI.second2frame(lastSecClickedOnSpectro));
+				alignement.setSegmentEndFrame(segmentDuMot, JTransAPI.second2frame(lastSecClickedOnSpectro));
 			}
 			if (edit!=null) edit.colorizeAlignedWords(0,mot);
 			setCurPosInSec(sec0);
@@ -1219,7 +1219,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 		} else {
 			absms = (long)(1000f*seconds);
 		}
-		final int fr = JTrans.millisec2frame(absms);
+		final int fr = JTransAPI.millisec2frame(absms);
 		System.out.println("insert anchor "+absms+" "+fr);
 
 		// c'est le AWT event thread qui appelle cette fonction: il ne faut pas le bloquer !
@@ -1567,15 +1567,15 @@ public class Aligneur extends JPanel implements PrintLogger {
 				.append("\n\t\tclass = \"IntervalTier\"")
 				.append("\n\t\tname = \"").append(name).append('"') // TODO escape strings
 				.append("\n\t\txmin = 0")
-				.append("\n\t\txmax = ").append(Float.toString(JTrans.frame2sec(finalFrame)))
+				.append("\n\t\txmax = ").append(Float.toString(JTransAPI.frame2sec(finalFrame)))
 				.append("\n\t\tintervals: size = ")
 				.append("" + al.getNbSegments());
 		for (int j = 0; j < al.getNbSegments(); j++) {
 			w.append("\n\t\tintervals [").append(Integer.toString(j+1)).append("]:")
 					.append("\n\t\t\txmin = ")
-					.append(Float.toString(JTrans.frame2sec(al.getSegmentDebFrame(j))))
+					.append(Float.toString(JTransAPI.frame2sec(al.getSegmentDebFrame(j))))
 					.append("\n\t\t\txmax = ")
-					.append(Float.toString(JTrans.frame2sec(al.getSegmentEndFrame(j))))
+					.append(Float.toString(JTransAPI.frame2sec(al.getSegmentEndFrame(j))))
 					.append("\n\t\t\ttext = \"")
 					.append(al.getSegmentLabel(j)).append('"'); // TODO escape strings
 		}
@@ -1596,7 +1596,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 				.append("\nObject class = \"TextGrid\"")
 				.append("\n")
 				.append("\nxmin = 0")
-				.append("\nxmax = ").append("" + JTrans.frame2sec(finalFrame))
+				.append("\nxmax = ").append("" + JTransAPI.frame2sec(finalFrame))
 				.append("\ntiers? <exists>")
 				.append("\nsize = ").append("" + tiers)
 				.append("\nitem []:");

@@ -17,6 +17,7 @@ import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import facade.JTransAPI;
 import plugins.applis.SimpleAligneur.Aligneur;
 import plugins.speechreco.aligners.sphiinx4.Alignment;
 
@@ -150,13 +151,8 @@ public class SpectroControl extends JPanel {
 		}
 	}
 
-	public static int second2frame(float sec) {
-		int fr = (int)(sec*100f);
-		return fr;
-	}
-
 	private void gottosec(float s) {
-		int fr = second2frame(s);
+		int fr = JTransAPI.second2frame(s);
 		setFirstFrame(fr);
 	}
 

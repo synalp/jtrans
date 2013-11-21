@@ -3,9 +3,7 @@ package facade;
 import java.io.*;
 import java.util.*;
 
-import main.JTrans;
 import plugins.applis.SimpleAligneur.Aligneur;
-import plugins.signalViewers.spectroPanel.SpectroControl;
 import plugins.speechreco.aligners.sphiinx4.Alignment;
 import plugins.speechreco.aligners.sphiinx4.S4AlignOrder;
 import plugins.speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
@@ -36,10 +34,29 @@ public class JTransAPI {
 		initmots();
 		return mots.size();
 	}
+
 	public static boolean isBruit(int mot) {
 		initmots();
 		Element_Mot m = elts.getMot(mot);
 		return m.isBruit;
+	}
+
+	public static float frame2sec(int fr) {
+		return (float)frame2millisec(fr)/1000f;
+	}
+
+	public static long frame2millisec(int fr) {
+		// window = 25ms, donc milieu = 12ms
+		return fr*10+12;
+	}
+
+	public static int millisec2frame(long ms) {
+		return (int)((ms-12)/10);
+	}
+
+	public static int second2frame(float sec) {
+		int fr = (int)(sec*100f);
+		return fr;
 	}
 
 	/**
@@ -256,8 +273,8 @@ public class JTransAPI {
 	}
 
 	public static void setAlignWord(int startWord, int endWord, float startSecond, float endSecond) {
-		int startFrame = SpectroControl.second2frame(startSecond);
-		int endFrame   = SpectroControl.second2frame(endSecond);
+		int startFrame = second2frame(startSecond);
+		int endFrame   = second2frame(endSecond);
 		setAlignWord(startWord, endWord, startFrame, endFrame);
 	}
 
@@ -283,8 +300,8 @@ public class JTransAPI {
 		al.setSegmentSourceManu(newseg);
 	}
 	public static void setSilenceSegment(float secdeb, float secfin) {
-		int curdebfr = SpectroControl.second2frame(secdeb);
-		int curendfr = SpectroControl.second2frame(secfin);
+		int curdebfr = second2frame(secdeb);
+		int curendfr = second2frame(secfin);
 		setSilenceSegment(curdebfr, curendfr, alignementWords);
 		setSilenceSegment(curdebfr, curendfr, alignementPhones);
 	}
@@ -390,7 +407,7 @@ public class JTransAPI {
 					if (currentOverlap != null && currentOverlap.s2LastOverlappedWord >= 0) {
 						// Find when the overlapped speech ends.
 						int seg = mots.get(currentOverlap.s2LastOverlappedWord).posInAlign;
-						currentOverlap.overlapEnd = JTrans.frame2sec(
+						currentOverlap.overlapEnd = frame2sec(
 								alignementWords.getSegmentEndFrame(seg));
 
 						if (currentOverlap.overlapEnd > currentOverlap.overlapStart) {
@@ -403,9 +420,9 @@ public class JTransAPI {
 
 							S4AlignOrder spk1Overlap = partialBatchAlign(
 									currentOverlap.s1FirstWord,
-									SpectroControl.second2frame(currentOverlap.s1StartsSpeaking),
+									second2frame(currentOverlap.s1StartsSpeaking),
 									currentOverlap.s1LastWord,
-									SpectroControl.second2frame(currentOverlap.overlapEnd));
+									second2frame(currentOverlap.overlapEnd));
 
 							if (!spk1Overlap.isEmpty()) {
 								overlaps.add(spk1Overlap);
