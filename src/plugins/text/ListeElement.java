@@ -305,18 +305,29 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 	 * alignment is 'linear'.
 	 */
 	public Alignment getLinearSpeakerTimes(Alignment words) {
-		Alignment al = new Alignment();
+		Alignment speakerAlignment = new Alignment();
+
 		int startSeg = 0;
 		int currSeg = 0;
 		byte currSpk = -1;
-		for (Element el: this) {
+
+		for (int i = 0; i < size(); i++) {
+			Element el = get(i);
+
+			// Switching to next speaker or reached the last element:
+			// add new speaker segment
+			if ((i == size()-1 || el instanceof Element_Locuteur) &&
+					currSpk != -1 && startSeg < currSeg)
+			{
+				speakerAlignment.addRecognizedSegment("" + currSpk,
+						words.getSegmentDebFrame(startSeg),
+						words.getSegmentEndFrame(currSeg),
+						null,
+						null);
+			}
+
+			// Adjust current segment
 			if (el instanceof Element_Locuteur) {
-				if (currSpk != -1 && startSeg < currSeg)
-					al.addRecognizedSegment(""+currSpk,
-							words.getSegmentDebFrame(startSeg),
-							words.getSegmentEndFrame(currSeg),
-							null,
-							null);
 				startSeg = currSeg + 1;
 				currSpk = ((Element_Locuteur) el).getLocuteurID();
 			} else if (el instanceof Element_Mot) {
@@ -326,7 +337,8 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 					currSeg = seg;
 			}
 		}
-		return al;
+
+		return speakerAlignment;
 	}
 
 
