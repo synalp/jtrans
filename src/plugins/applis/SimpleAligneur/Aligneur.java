@@ -1577,7 +1577,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 	public boolean loadMarkup(MarkupLoader loader, File markupFile) {
 		try {
 			printInStatusBar("Parsing markup");
-			loader.parse(new FileInputStream(markupFile));
+			loader.parse(markupFile);
 		} catch (Exception ex) {
 			ex.printStackTrace();
 

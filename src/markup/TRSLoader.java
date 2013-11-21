@@ -8,6 +8,7 @@ import plugins.text.TexteEditor;
 import plugins.text.elements.*;
 
 import javax.xml.parsers.*;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -35,13 +36,13 @@ public class TRSLoader implements MarkupLoader {
 	/**
 	 * Parse a TRS file.
 	 */
-	public void parse(InputStream in)
+	public void parse(File file)
 			throws ParsingException, IOException
 	{
 		Document doc;
 
 		try {
-			doc = newXMLDocumentBuilder().parse(in);
+			doc = newXMLDocumentBuilder().parse(file);
 		} catch (ParserConfigurationException ex) {
 			ex.printStackTrace();
 			throw new ParsingException(ex.toString());

@@ -1,11 +1,9 @@
 package markup;
 
 import plugins.text.ListeElement;
-import plugins.text.elements.Segment;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
+import java.io.*;
+
 
 /**
  * Interface for loaders of various text markup formats.
@@ -17,7 +15,7 @@ public interface MarkupLoader {
 	 *
 	 * Must create a synthetic anchor at the end of the last speaker turn.
 	 */
-	public void parse(InputStream in) throws ParsingException, IOException;
+	public void parse(File file) throws ParsingException, IOException;
 
 	public ListeElement getElements();
 	public String getFormat();

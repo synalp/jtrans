@@ -49,10 +49,10 @@ public class TextGridLoader implements MarkupLoader {
 
 	private ListeElement elements;
 
-	public void parse(InputStream in)
+	public void parse(File file)
 			throws ParsingException, IOException
 	{
-		BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+		BufferedReader reader = new BufferedReader(new FileReader(file));
 		State state = State.FILE_HEADER_1;
 		int lineNumber = 0;
 
@@ -174,7 +174,7 @@ public class TextGridLoader implements MarkupLoader {
 					if (!PAT_INTERVAL_INDEX.matcher(lcline).matches()) {
 						throw new ParsingException(lineNumber, line, "interval definition expected here");
 					}
-					state = state.INTERVAL_DESCRIPTION;
+					state = State.INTERVAL_DESCRIPTION;
 					remainingIntervals--;
 					if (remainingIntervals < 0) {
 						throw new ParsingException(lineNumber, line, "too many intervals");
