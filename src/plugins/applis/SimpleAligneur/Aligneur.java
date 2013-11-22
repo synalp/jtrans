@@ -101,8 +101,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 	// position lue pour la derniere fois dans le flux audio
 	long currentSample = 0;
-	public Alignment alignement = new Alignment();
-	public Alignment alignementPhones = new Alignment();
+	public Project project = new Project();
 	int wordSelectedIdx = -1;
 	public boolean caretSensible = false;
 	JLabel infoLabel = new JLabel("Welcome to JTrans");
@@ -118,16 +117,16 @@ public class Aligneur extends JPanel implements PrintLogger {
 	public void setCurPosInSec(float sec) {
 		cursec=sec;
 		int fr = JTransAPI.second2frame(cursec);
-		int seg = alignement.getSegmentAtFrame(fr);
+		int seg = project.words.getSegmentAtFrame(fr);
 		// nouveau panel
 		sigpan.setAudioInputStream(getCurPosInSec(), getAudioStreamFromSec(getCurPosInSec()));
 		if (showPhones) {
-			int segphidx = alignementPhones.getSegmentAtFrame(fr);
-			sigpan.setAlign(alignementPhones);
+			int segphidx = project.phons.getSegmentAtFrame(fr);
+			sigpan.setAlign(project.phons);
 			sigpan.setFirstSeg(segphidx);
 		} else {
 			sigpan.setFirstSeg(seg);
-			sigpan.setAlign(alignement);
+			sigpan.setAlign(project.words);
 		}
 		repaint();
 		updateViewers();
@@ -248,7 +247,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 	private AutoAligner getAutoAligner() {
 		// TODO: support for URL !!
-		return AutoAligner.getAutoAligner(convertedAudioFile.getAbsolutePath(), null, edit, alignement, alignementPhones);
+		return AutoAligner.getAutoAligner(convertedAudioFile.getAbsolutePath(), null, edit, project.words, project.phons);
 	}
 
 	public void batch() {
@@ -336,9 +335,9 @@ public class Aligneur extends JPanel implements PrintLogger {
 					System.out.println("reparse: saved naligns "+i);
 					*/
 				}
-				if (alignement!=null) {
+				if (project.words!=null) {
 					// matche les Element_Mot avec l'alignement existant
-					int[] match = alignement.matchWithText(edit.getListeElement().getMotsInTab());
+					int[] match = project.words.matchWithText(edit.getListeElement().getMotsInTab());
 					edit.getListeElement().importAlign(match,0);
 					if (edit!=null) edit.colorizeWords(0, getLastMotAligned());
 					repaint();
@@ -371,8 +370,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 		p.elts = edit.getListeElement();
 		p.wavname = originalAudioFile.getCanonicalPath();
 		p.txtfile = sourceTxtfile;
-		p.words = alignement;
-		p.phons = alignementPhones;
+		p.words = project.words;
+		p.phons = project.phons;
 		p.types = edit.getListeTypes();
 
 		FileWriter w = new FileWriter(file);
@@ -391,8 +390,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 		p.elts.locuteursInfo = p.speakers;
 		edit.setListeElement(p.elts);
 		setAudioSource(p.wavname);
-		alignement = p.words;
-		alignementPhones = p.phons;
+		project.words = p.words;
+		project.phons = p.phons;
 
 		edit.colorizeAllAlignedWords();
 		JTransAPI.refreshIndex();
@@ -445,8 +444,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 	}
 
 	public Aligneur() {
-		JTransAPI.alignementWords=alignement;
-		JTransAPI.alignementPhones=alignementPhones;
+		JTransAPI.alignementWords=project.words;
+		JTransAPI.alignementPhones=project.phons;
 		JTransAPI.aligneur=this;
 		withgui=true;
 		initPanel();
@@ -564,7 +563,7 @@ public class Aligneur extends JPanel implements PrintLogger {
             System.err.println("dont goto last aligned word because playing");
             return;
         }
-        int lastAlignedWord = alignement.getLastWordAligned();
+        int lastAlignedWord = project.words.getLastWordAligned();
         if (lastAlignedWord < 0) {
             wordSelectedIdx = 0;
         } else {
@@ -581,10 +580,10 @@ public class Aligneur extends JPanel implements PrintLogger {
 	}
 
 	public void newplaystarted() {
-		if (alignement!=null) {
-			System.out.println("newplaystarted "+alignement.getNbSegments());
+		if (project.words!=null) {
+			System.out.println("newplaystarted "+project.words.getNbSegments());
 			griserwhenplaying = new GriserWhilePlaying(playergui, edit);
-			griserwhenplaying.setAlignement(alignement);
+			griserwhenplaying.setAlignement(project.words);
 		} else
 			System.out.println("newplaystarted no align");
 	}
@@ -610,7 +609,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 					sigPanel.replayFrom(sdeb);
 				}
 				//				 relance le thread qui grise les mots
-				if (alignement != null) {
+				if (project.words != null) {
 					playerController.unpause();
 				}
 				//				 lance la lecture
@@ -640,16 +639,16 @@ public class Aligneur extends JPanel implements PrintLogger {
 		if (sigPanel != null) {
 			currentSample = sigPanel.getProgressBar();
 			nsec = 0;
-			//        } else if (alignement != null) {
-			//            int lastAlignedWord = alignement.getLastWordAligned();
-			//            if (wordSelectedIdx < 0 || alignement.getFrameFin(wordSelectedIdx) < 0) {
+			//        } else if (project.words != null) {
+			//            int lastAlignedWord = project.words.getLastWordAligned();
+			//            if (wordSelectedIdx < 0 || project.words.getFrameFin(wordSelectedIdx) < 0) {
 			//                if (lastAlignedWord < 0) {
 			//                    currentSample = 0;
 			//                } else {
-			//                    currentSample = OldAlignment.frame2sample(alignement.getFrameFin(lastAlignedWord));
+			//                    currentSample = OldAlignment.frame2sample(project.words.getFrameFin(lastAlignedWord));
 			//                }
 			//            } else {
-			//                currentSample = OldAlignment.frame2sample(alignement.getFrameFin(wordSelectedIdx));
+			//                currentSample = OldAlignment.frame2sample(project.words.getFrameFin(wordSelectedIdx));
 			//            }
 		} else {
 			//            currentSample = 0;
@@ -666,7 +665,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 			sigPanel.replayFrom(currentSample);
 		}
 		// relance le thread qui grise les mots
-		if (alignement != null) {
+		if (project.words != null) {
 			playerController.unpause();
 		}
 		// lance la lecture
@@ -692,7 +691,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 		audiobuf.samplePosition = currentSample;
 		System.err.println("play from " + OldAlignment.sample2second(currentSample));
 		// relance le thread qui grise les mots
-		if (alignement != null) {
+		if (project.words != null) {
 			playerController.unpause();
 		}
 		// lance la lecture
@@ -708,8 +707,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 	public void clearAlign() {
 		clearAlignFrom(0);
 		// pour supprimer les SIL en debut de fichier
-		alignement.clear();
-		alignementPhones.clear();
+		project.words.clear();
+		project.phons.clear();
 	}
 	void clearAlignFrom(int mot) {
 		if (autoAligner!=null) autoAligner.stopAutoAlign();
@@ -718,15 +717,15 @@ public class Aligneur extends JPanel implements PrintLogger {
 		List<Element_Mot> mots = edit.getListeElement().getMots();
 		for (;mot<mots.size();mot++) {
 			seg4mot = mots.get(mot).posInAlign;
-			if (seg4mot>=0&&!alignement.getSegmentLabel(seg4mot).equals("SIL")) break;
+			if (seg4mot>=0&&!project.words.getSegmentLabel(seg4mot).equals("SIL")) break;
 		}
 		if (seg4mot<0) return; // rien n'est aligne
 		// supprimer les alignements
-		int fr = alignement.getSegmentDebFrame(seg4mot);
-		alignement.cutAfterFrame(fr);
-		alignementPhones.cutAfterFrame(fr);
-		alignement.clearIndex();
-		alignementPhones.clearIndex();
+		int fr = project.words.getSegmentDebFrame(seg4mot);
+		project.words.cutAfterFrame(fr);
+		project.phons.cutAfterFrame(fr);
+		project.words.clearIndex();
+		project.phons.clearIndex();
 		
 		// supprimer la correspondance mots/segments
 		for (int i=mot;i<edit.getListeElement().getMots().size();i++) {
@@ -799,8 +798,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 				int segmentDuMot = edit.getListeElement().getMot(mot).posInAlign;
 				if (segmentDuMot>=0) {
 					// mot deja aligne
-					if (deb>=0) alignement.setSegmentDebFrame(segmentDuMot, JTransAPI.second2frame(deb));
-					if (end>=0) alignement.setSegmentEndFrame(segmentDuMot, JTransAPI.second2frame(end));
+					if (deb>=0) project.words.setSegmentDebFrame(segmentDuMot, JTransAPI.second2frame(deb));
+					if (end>=0) project.words.setSegmentEndFrame(segmentDuMot, JTransAPI.second2frame(end));
 				} else {
 					// mot non encore aligne
 					if (mot>0) {
@@ -808,22 +807,22 @@ public class Aligneur extends JPanel implements PrintLogger {
 						// TODO
 					} else {
 						// premier mot
-						alignement.clear();
+						project.words.clear();
 						int curdebfr = 0;
 						if (deb>0) {
 							curdebfr = JTransAPI.second2frame(deb);
 							if (curdebfr>0) {
-								alignement.addRecognizedSegment("SIL", 0, curdebfr, null, null);
+								project.words.addRecognizedSegment("SIL", 0, curdebfr, null, null);
 							}
 						}
 						if (end>=0) {
-							int newseg = alignement.addRecognizedSegment(edit.getListeElement().getMot(0).getWordString(),
+							int newseg = project.words.addRecognizedSegment(edit.getListeElement().getMot(0).getWordString(),
 									curdebfr, JTransAPI.second2frame(end), null, null);
 							edit.getListeElement().getMot(0).posInAlign=newseg;
 						} else {
 							// TODO
 						}
-						System.out.println("debug segs  \n"+alignement.toString());
+						System.out.println("debug segs  \n"+project.words.toString());
 					}
 				}
 				System.out.println("last aligned word "+getLastMotAligned());
@@ -835,7 +834,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 				Element_Mot emot = edit.getListeElement().getMot(mot);
 				int segidx = emot.posInAlign;
 				if (segidx>=0) {
-					int frame = alignement.getSegmentDebFrame(segidx);
+					int frame = project.words.getSegmentDebFrame(segidx);
 					cursec = OldAlignment.frame2second(frame);
 					long currentSample = OldAlignment.frame2sample(frame);
 					if (currentSample<0) currentSample=0;
@@ -847,12 +846,12 @@ public class Aligneur extends JPanel implements PrintLogger {
 					// nouveau panel
 					sigpan.setAudioInputStream(getCurPosInSec(), getAudioStreamFromSec(getCurPosInSec()));
 					if (showPhones) {
-						int segphidx = alignementPhones.getSegmentAtFrame(frame);
-						sigpan.setAlign(alignementPhones);
+						int segphidx = project.phons.getSegmentAtFrame(frame);
+						sigpan.setAlign(project.phons);
 						sigpan.setFirstSeg(segphidx);
 					} else {
 						sigpan.setFirstSeg(segidx);
-						sigpan.setAlign(alignement);
+						sigpan.setAlign(project.words);
 					}
 					repaint();
 				} else {
@@ -879,9 +878,9 @@ public class Aligneur extends JPanel implements PrintLogger {
 				System.out.println("ctrl-clic when playing: create anchor");
 				doForceAnchor(lastSecClickedOnSpectro,mot);
 			} else {
-				System.out.println("set end of segment "+segmentDuMot+" "+alignement.getSegmentLabel(segmentDuMot));
+				System.out.println("set end of segment "+segmentDuMot+" "+project.words.getSegmentLabel(segmentDuMot));
 				System.out.println("set at frame "+JTransAPI.second2frame(lastSecClickedOnSpectro));
-				alignement.setSegmentEndFrame(segmentDuMot, JTransAPI.second2frame(lastSecClickedOnSpectro));
+				project.words.setSegmentEndFrame(segmentDuMot, JTransAPI.second2frame(lastSecClickedOnSpectro));
 			}
 			if (edit!=null) edit.colorizeWords(0, mot);
 			setCurPosInSec(sec0);
@@ -907,7 +906,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 			Element_Mot emot = edit.getListeElement().getMot(mot);
 			int segidx = emot.posInAlign;
 			if (segidx>=0) {
-				int frame = alignement.getSegmentDebFrame(segidx);
+				int frame = project.words.getSegmentDebFrame(segidx);
 				cursec = OldAlignment.frame2second(frame);
 				long currentSample = OldAlignment.frame2sample(frame);
 				if (currentSample<0) currentSample=0;
@@ -919,12 +918,12 @@ public class Aligneur extends JPanel implements PrintLogger {
 				// nouveau panel
 				sigpan.setAudioInputStream(getCurPosInSec(), getAudioStreamFromSec(getCurPosInSec()));
 				if (showPhones) {
-					int segphidx = alignementPhones.getSegmentAtFrame(frame);
-					sigpan.setAlign(alignementPhones);
+					int segphidx = project.phons.getSegmentAtFrame(frame);
+					sigpan.setAlign(project.phons);
 					sigpan.setFirstSeg(segphidx);
 				} else {
 					sigpan.setFirstSeg(segidx);
-					sigpan.setAlign(alignement);
+					sigpan.setAlign(project.words);
 				}
 				repaint();
 			} else {
@@ -961,7 +960,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 		int firstFrame = 0;
 		if (firstMot>0) {
 			int segidx = edit.getListeElement().getMots().get(firstMot-1).posInAlign;
-			firstFrame = alignement.getSegmentEndFrame(segidx);
+			firstFrame = project.words.getSegmentEndFrame(segidx);
 		}
 
 		// ici, je fais un Viterbi pour realigner les mots avant
@@ -982,7 +981,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 				String[] wordsThatShouldBeAligned = Arrays.copyOfRange(mots, firstMot, mots.length);
 				System.out.println("wordsthatshouldbealigned "+Arrays.toString(wordsThatShouldBeAligned));
 				int[] locmots2segidx = order.alignWords.matchWithText(wordsThatShouldBeAligned);
-				int nsegsbefore = alignement.merge(order.alignWords);
+				int nsegsbefore = project.words.merge(order.alignWords);
 				for (int i=0;i<locmots2segidx.length;i++) {
 					if (locmots2segidx[i]>=0)
 						mots2segidx[firstMot+i]=locmots2segidx[i]+nsegsbefore;
@@ -996,7 +995,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 					System.err.println("last mot aligned "+lastMotAligned);
 					edit.getListeElement().refreshIndex();
 				}
-				alignementPhones.merge(order.alignPhones);
+				project.phons.merge(order.alignPhones);
 				if (lastMotAligned>=0) {
 					if (firstMot==0)
 						edit.colorizeWords(firstMot, lastMotAligned - 1);
@@ -1129,7 +1128,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 		ArrayList<String> lmots = new ArrayList<String>();
 
 		ListeElement elts = new ListeElement();
-		alignement.clear();
+		project.words.clear();
 		for (RecoWord word : asr.resRecoPublic) {
 			String[] phones = new String[word.frameEnd-word.frameDeb];
 			int[] states = new int[word.frameEnd-word.frameDeb];
@@ -1138,14 +1137,14 @@ public class Aligneur extends JPanel implements PrintLogger {
 				states[t] = word.getState(t);
 				// TODO : ajouter les GMM qui ont ete perdues dans RecoWord
 			}
-			alignement.addRecognizedSegment(word.word,word.frameDeb,word.frameEnd,phones,states);
-			//    		alignement.words.add(word.word);
-			//    		alignement.wordsEnd.add(word.frameEnd);
+			project.words.addRecognizedSegment(word.word,word.frameDeb,word.frameEnd,phones,states);
+			//    		project.words.words.add(word.word);
+			//    		project.words.wordsEnd.add(word.frameEnd);
 			if (word.word.charAt(0)=='<') continue;
 			int posdebinpanel = sb.length();
 			sb.append(word.word+" ");
 			lmots.add(word.word);
-			//    		alignement.wordsIdx.add(alignement.words.size()-1);
+			//    		project.words.wordsIdx.add(project.words.words.size()-1);
 			int posfininpanel = sb.length();
 			Element_Mot ew = new Element_Mot(word.word, false);
 			ew.start = posdebinpanel;
@@ -1171,12 +1170,12 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 	// fonction activee par la touche X qui sert a afficher/debugger 
 	public void debug() {
-		//    	System.out.println(alignement.alignedGMMs);
-		//   	System.out.println(alignement.alignedGMMs.size());
-		//   	System.out.println(alignement.phones.size());
-		//  	System.out.println(alignement.states.size());
+		//    	System.out.println(project.words.alignedGMMs);
+		//   	System.out.println(project.words.alignedGMMs.size());
+		//   	System.out.println(project.words.phones.size());
+		//  	System.out.println(project.words.states.size());
 		// 	SpeechReco asr = SpeechReco.getSpeechReco();
-		//   	asr.getGMMs(alignement);
+		//   	asr.getGMMs(project.words);
 	}
 
 	public void asr() {
@@ -1247,17 +1246,17 @@ public class Aligneur extends JPanel implements PrintLogger {
 					System.out.println("================================= BATCH ALIGN FOUND");
 					System.out.println(order.alignWords.toString());
 					//					order.fullalign.checkWithText(Arrays.asList(mots),mot1);
-					//					alignement.merge(order.fullalign,mot1);
+					//					project.words.merge(order.fullalign,mot1);
 
 					stopAlign();
 
 					// quand on selectionne une zone du signal, on suppose qu'il n'y a pas de silence aux bouts !
-					//					alignement.setEndFrameForWord(mot2, OldAlignment.sample2frame(send));
+					//					project.words.setEndFrameForWord(mot2, OldAlignment.sample2frame(send));
 
 					edit.griseMotsRed(elmot1, elmot2);
 					edit.setSelectedTextColor(null);
-					//	    	        alignement.addManualAnchorv2(mot1);
-					//	    	        alignement.addManualAnchorv2(mot2);
+					//	    	        project.words.addManualAnchorv2(mot1);
+					//	    	        project.words.addManualAnchorv2(mot2);
 					edit.colorizeWords(mot1, mot2);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
@@ -1462,8 +1461,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 		ListeElement    lst          = edit.getListeElement();
 		int             speakers     = lst.getNbLocuteur();
 		int             tiers        = speakers * ((withWords?1:0) + (withPhons?1:0));
-		int             finalFrame   = alignement.getSegmentEndFrame(alignement.getNbSegments() - 1);
-		Alignment       speakerTurns = lst.getLinearSpeakerTimes(alignement);
+		int             finalFrame   = project.words.getSegmentEndFrame(project.words.getNbSegments() - 1);
+		Alignment       speakerTurns = lst.getLinearSpeakerTimes(project.words);
 		Alignment[]     spkWords     = null;
 		Alignment[]     spkPhons     = null;
 		FileWriter      fw           = new FileWriter(f);
@@ -1478,8 +1477,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 				.append("\nitem []:");
 
 		// Linear, non-overlapping tiers
-		if (withWords) spkWords = breakDownBySpeaker(speakers, speakerTurns, alignement);
-		if (withPhons) spkPhons = breakDownBySpeaker(speakers, speakerTurns, alignementPhones);
+		if (withWords) spkWords = breakDownBySpeaker(speakers, speakerTurns, project.words);
+		if (withPhons) spkPhons = breakDownBySpeaker(speakers, speakerTurns, project.phons);
 
 		// Account for overlaps
 		for (int i = 0; i < JTransAPI.overlaps.size(); i++) {

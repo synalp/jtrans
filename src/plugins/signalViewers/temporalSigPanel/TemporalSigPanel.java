@@ -435,7 +435,7 @@ public class TemporalSigPanel extends JComponent {
 				motidx++;
 				if (showPhones) {
 				} else {
-					long lastSample = OldAlignment.frame2sample(aligneur.alignement.getSegmentEndFrame(elm.posInAlign));
+					long lastSample = OldAlignment.frame2sample(aligneur.project.words.getSegmentEndFrame(elm.posInAlign));
 					Element_Mot elementAvecDuree = (Element_Mot)element;
 					posiLine = (int) ((lastSample-offsetStart)/hZoom);
 					
@@ -506,18 +506,18 @@ public class TemporalSigPanel extends JComponent {
 		if (showPhones) {
 			g.setColor(Color.black);
 			int frdeb = OldAlignment.sample2frame(offsetStart);
-			int segidx = aligneur.alignementPhones.getSegmentAtFrame(frdeb);
+			int segidx = aligneur.project.phons.getSegmentAtFrame(frdeb);
 System.out.println("debugsegtoprint "+segidx);
 			if (segidx>=0) {
-				int endFrOfSeg = aligneur.alignementPhones.getSegmentEndFrame(segidx);
+				int endFrOfSeg = aligneur.project.phons.getSegmentEndFrame(segidx);
 				long endSampleOfSeg = OldAlignment.frame2sample(endFrOfSeg);
 				posiLine = (int) ((endSampleOfSeg-offsetStart)/hZoom);
 				if(posiLine > 0){
 					g.drawLine(posiLine, lineBase, posiLine, lineMax);
 					lastLine=posiLine;
 					// afficher la fin du premier segment visible ? bof...
-					for (int k=segidx+1;k<aligneur.alignementPhones.getNbSegments();k++) {
-						endFrOfSeg = aligneur.alignementPhones.getSegmentEndFrame(k);
+					for (int k=segidx+1;k<aligneur.project.phons.getNbSegments();k++) {
+						endFrOfSeg = aligneur.project.phons.getSegmentEndFrame(k);
 						endSampleOfSeg = OldAlignment.frame2sample(endFrOfSeg);
 						posiLine = (int) ((endSampleOfSeg-offsetStart)/hZoom);
 						if(posiLine > 0){
@@ -526,7 +526,7 @@ System.out.println("debugsegtoprint "+segidx);
 							// ligne de fin du phone:
 							g.drawLine(posiLine, lineBase, posiLine, lineMax);
 							// pos du phone:
-							String phone = aligneur.alignementPhones.getSegmentLabel(k);
+							String phone = aligneur.project.phons.getSegmentLabel(k);
 							int phoneWidth = SwingUtilities.computeStringWidth(fontMetric, phone);
 							posiMot = posiLine - ((posiLine - lastLine) >> 1) - (phoneWidth >> 1);
 							g.drawString(phone, posiMot, hauteurMot);
@@ -1242,7 +1242,7 @@ System.out.println("debugsegtoprint "+segidx);
 						//pour empecher d'aller e gauche de la barre de debut de mot
 						Element_Mot motPrecedent = listeElement.getElementAvecDureePrecedent(selectedLineIndice);
 						if(motPrecedent != null) {
-							positionMin = aligneur.alignement.getSegmentEndFrame(motPrecedent.posInAlign);
+							positionMin = aligneur.project.words.getSegmentEndFrame(motPrecedent.posInAlign);
 						}
 						else positionMin = 0;
 					}
@@ -1254,27 +1254,27 @@ System.out.println("debugsegtoprint "+segidx);
 						Element_Mot prochainMot = listeElement.getElementAvecDureeSuivant(selectedLineIndice);
 
 						if(prochainMot != null){
-							long positionMax = aligneur.alignement.getSegmentEndFrame(prochainMot.posInAlign) - longueurMotMinimale;
+							long positionMax = aligneur.project.words.getSegmentEndFrame(prochainMot.posInAlign) - longueurMotMinimale;
 							positionLineInSample = Math.min(positionLineInSample,positionMax);
 						}	
 					}
 
 					// TODO
-//					aligneur.alignement.setEndSample(((Element_Mot)(listeElement.get(selectedLineIndice))).getIndexInAlignement(), positionLineInSample);
+//					aligneur.project.words.setEndSample(((Element_Mot)(listeElement.get(selectedLineIndice))).getIndexInAlignement(), positionLineInSample);
 					repaint();
 				}//if
 			} else if (selectedWordIndice != -1) {
 				/*
 					int valeurDeplacement = (int) ((e.getX()-indiceDebutDeplacement)*hZoom);
 					int deltafr = OldAlignment.sample2frame(valeurDeplacement);
-					int oldfr = aligneur.alignement.getWordEndFrame(selectedWordIndice);
+					int oldfr = aligneur.project.words.getWordEndFrame(selectedWordIndice);
 					int newfr = oldfr+deltafr;
-					int minfr = aligneur.alignement.getWordFirstFrame(selectedWordIndice)+1;
+					int minfr = aligneur.project.words.getWordFirstFrame(selectedWordIndice)+1;
 					if (newfr<minfr) newfr=minfr;
-					int maxfr = aligneur.alignement.getWordFirstFrame(selectedWordIndice+1)-1;
+					int maxfr = aligneur.project.words.getWordFirstFrame(selectedWordIndice+1)-1;
 					if (maxfr>=0 && newfr>maxfr) newfr=maxfr;
 // TODO
-//					aligneur.alignement.setAlignForWord(selectedWordIndice, minfr-1, newfr);
+//					aligneur.project.words.setAlignForWord(selectedWordIndice, minfr-1, newfr);
 					indiceDebutDeplacement = e.getX();
 					*/
 					TemporalSigPanel.this.repaint();
@@ -1338,7 +1338,7 @@ System.out.println("debugsegtoprint "+segidx);
 
 				int i = 0;
 				while ((i < listeMotSize) 
-						&& ( (posiLine = (int) ((aligneur.alignement.getSegmentEndFrame(listeMot.get(i).posInAlign)-offsetStart)/hZoom)) < panelWidth) ){
+						&& ( (posiLine = (int) ((aligneur.project.words.getSegmentEndFrame(listeMot.get(i).posInAlign)-offsetStart)/hZoom)) < panelWidth) ){
 					if( Math.abs(x - posiLine) < ecartAutorise ){
 						return listeElement.indexOf(listeMot.get(i));
 					}//if 
@@ -1359,8 +1359,8 @@ System.out.println("debugsegtoprint "+segidx);
 			
 				// sample sous le curseur:
 				long sample = e.getX()*hZoom+offsetStart;
-				if (aligneur==null||aligneur.alignement==null) return -1;
-				int segidx = aligneur.alignement.getSegmentAtFrame(PlayerListener.sample2frame(sample));
+				if (aligneur==null||aligneur.project.words==null) return -1;
+				int segidx = aligneur.project.words.getSegmentAtFrame(PlayerListener.sample2frame(sample));
 				if (segidx>=0) {
 					int motidx=0;
 					for (Element_Mot m : aligneur.edit.getListeElement().getMots()) {

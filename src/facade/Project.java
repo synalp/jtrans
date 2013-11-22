@@ -17,7 +17,7 @@ public class Project {
 	public ListeElement elts;
 	public String wavname;
 	public String txtfile;
-	public Alignment words;
-	public Alignment phons;
+	public Alignment words = new Alignment();
+	public Alignment phons = new Alignment();
 	public List<TypeElement> types;
 }

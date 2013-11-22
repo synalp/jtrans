@@ -276,7 +276,7 @@ public class Menus {
 		map.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				BiaisAdapt a = new BiaisAdapt(aligneur);
-				a.adaptMAP(aligneur.alignementPhones);
+				a.adaptMAP(aligneur.project.phons);
 			}
 		});
 
