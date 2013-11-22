@@ -45,23 +45,9 @@ package plugins.text.regexp.graphique;
 
 
 import java.awt.BorderLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.File;
-import java.io.IOException;
 import java.util.regex.Pattern;
 
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JList;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
-import javax.swing.JTextPane;
-import javax.swing.filechooser.FileFilter;
+import javax.swing.*;
 
 import plugins.text.TexteEditor;
 import plugins.text.regexp.TypeElement;
@@ -75,14 +61,10 @@ public class RegExpFrame extends JFrame {
 	private TexteEditor texteEditor;
 	private JTabbedPane tabbedPane;
 	
-	private FileFilter filterXML;
-	
 	//--------------------- Constructor -----------------
 	public RegExpFrame(TexteEditor textEdit){
 		setTitle("Edition des differents types");
 		texteEditor = textEdit;
-		
-		initFileFilters();
 		
 		tabbedPane = new JTabbedPane(JTabbedPane.LEFT);
 
@@ -92,36 +74,7 @@ public class RegExpFrame extends JFrame {
 		this.setSize(500,300);
 		this.setVisible(true);
 	}//constructor
-	
-	
-	private void initFileFilters(){
-		filterXML = new FileFilter(){
-			@Override
-			public boolean accept(File arg0) {
-				String path;
-				try {
-					if(arg0.isDirectory()) return true;
 
-					path = arg0.getCanonicalPath();
-					int indice = path.lastIndexOf('.');
-					if (indice == -1) return false;
-
-					String extension = path.substring(indice);
-					return extension.equalsIgnoreCase(".xml");
-
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-				return false;
-			}
-
-			@Override
-			public String getDescription() {
-				return ".xml file";
-			}
-		};
-	}
-	
 	
 	private void remplirTabbedPane(){
 		tabbedPane.add(creerPanelOptions(),"Options");
@@ -159,9 +112,7 @@ public class RegExpFrame extends JFrame {
 	}//remplirTabbedPane
 	
 	
-	private JPanel creerPanelOptions(){
-		JPanel pan = new JPanel(new BorderLayout());
-		
+	private JComponent creerPanelOptions(){
 		JTextPane texteExplicatif = new JTextPane();
 		StringBuilder strBuilder = new StringBuilder();
 		strBuilder.append("Cette fenetre vous permet d'editer les expressions regulieres ");
@@ -172,57 +123,9 @@ public class RegExpFrame extends JFrame {
 		strBuilder.append("http://java.sun.com/javase/6/docs/api/java/util/regex/Pattern.html \n\n");
 		strBuilder.append("Attention, ne modifiez cela que si vous savez ce que vous faites !");
 		texteExplicatif.setText(strBuilder.toString());
-		pan.add(new JScrollPane(texteExplicatif,JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-												JScrollPane.HORIZONTAL_SCROLLBAR_NEVER)
-				,BorderLayout.CENTER);
-		
-		JPanel panelBoutons = new JPanel();
-		panelBoutons.setLayout(new BoxLayout(panelBoutons,BoxLayout.X_AXIS));
-		
-		JButton saveregexps = new JButton("Sauver");
-		saveregexps.setToolTipText("Sauvegarder les expressions regulieres dans un fichier");
-		saveregexps.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				JFileChooser filechooser = new JFileChooser();
-				filechooser.setFileFilter(filterXML);
-				int returnVal = filechooser.showSaveDialog(null);
-				if(returnVal == JFileChooser.APPROVE_OPTION) {
-					File file = filechooser.getSelectedFile();
-					try {
-						texteEditor.saveRegexpTypesAsFile(file.getAbsolutePath());
-					} catch (Exception ee) {
-						ee.printStackTrace();
-					}
-				}
-			}
-		});
-		panelBoutons.add(saveregexps);
-		
-		JButton loadregexp = new JButton("Ouvrir");
-		loadregexp.setToolTipText("Charger les expressions regulieres depuis un fichier");
-		loadregexp.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				JFileChooser filechooser = new JFileChooser();
-				filechooser.setFileFilter(filterXML);
-				int returnVal = filechooser.showOpenDialog(null);
-				if(returnVal == JFileChooser.APPROVE_OPTION) {
-					File file = filechooser.getSelectedFile();
-					try {
-						texteEditor.loadRegexpTypesFromFile(file.getAbsolutePath());
-						tabbedPane.removeAll();
-						remplirTabbedPane();
-					} catch (Exception ee) {
-						ee.printStackTrace();
-					}
-				}
-			}
-		});
-		
-		panelBoutons.add(loadregexp);
-		
-		pan.add(panelBoutons,BorderLayout.SOUTH);
-		
-		return pan;
+		return new JScrollPane(texteExplicatif,
+				JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+				JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 	}//creerPanelOptions
 	
 }//Class RegExpFrame
