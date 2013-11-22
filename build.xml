@@ -1,59 +1,49 @@
-
 <project name="jtrans" default="compile" basedir=".">
     <property name="src" location="src"/>
     <property name="build" location="bin"/>
-    <property name="dist"  location="dist"/>
     <property name="libs"  location="libs"/>
     <property name="version" value="1.2"/>
+    <property name="jarfile" location="jtrans.jar"/>
 
 	<path id="my.classpath">
-		<pathelement location="${libs}/basicplayer3.0.jar"/>
-		<pathelement location="${libs}/commons-logging-api.jar"/>
-		<pathelement location="${libs}/jl1.0.jar"/>
-		<pathelement location="${libs}/jogg-0.0.7.jar"/>
-		<pathelement location="${libs}/jorbis-0.0.15.jar"/>
-		<pathelement location="${libs}/jsafran.jar"/>
-		<pathelement location="${libs}/jspeex0.9.7.jar"/>
-		<pathelement location="${libs}/JUNG.jar"/>
-		<pathelement location="${libs}/junit-4.5.jar"/>
-        <pathelement location="${libs}/juniversalchardet-1.0.3.jar"/>
-		<pathelement location="${libs}/mp3spi1.9.4.jar"/>
-		<pathelement location="${libs}/sphinx4.jar"/>
-		<pathelement location="${libs}/tritonus_gsm-0.3.6.jar"/>
-		<pathelement location="${libs}/tritonus_remaining.jar"/>
-		<pathelement location="${libs}/tritonus_share.jar"/>
-        <pathelement location="${libs}/utils4j-0.6.8.jar"/>
-		<pathelement location="${libs}/vorbisspi1.0.2.jar"/>
-		<pathelement location="${libs}/weka.jar"/>
-	</path>
+        <fileset dir="${libs}">
+            <include name="*.jar"/>
+        </fileset>
+    </path>
 	
     <target name="compile" description="compile the source " >
         <echo message="JVM - ${ant.java.version}" />
         <mkdir dir="${build}"/>
-        <javac debug="false" srcdir="${src}" includes="tools/**/*,plugins/**/*.java,main/**/*.java,utils/**/*.java,speechreco/**/*.java,test/**/*.java" destdir="${build}" encoding="UTF-8">
+        <javac debug="false"
+               srcdir="${src}"
+               destdir="${build}"
+               classpathref="my.classpath"
+               encoding="UTF-8"
+               includeantruntime="false">
     	    <classpath refid="my.classpath" />
         </javac>
     </target>
 
     <target name="jar" depends="compile" description="generate the distribution" >
-    	<mkdir dir="${dist}"/>
-	<manifest file="${dist}/MANIFEST.MF">
-		<attribute name="Class-Path" value="libs/basicplayer3.0.jar libs/commons-logging-api.jar libs/jl1.0.jar libs/jogg-0.0.7.jar libs/jorbis-0.0.15.jar libs/jsafran.jar libs/jspeex0.9.7.jar libs/JUNG.jar libs/junit-4.5.jar libs/juniversalchardet-1.0.3.jar libs/mp3spi1.9.4.jar libs/sphinx4.jar libs/tritonus_gsm-0.3.6.jar libs/tritonus_remaining.jar libs/tritonus_share.jar libs/utils4j-0.6.8.jar libs/vorbisspi1.0.2.jar libs/weka.jar"/>
-		<attribute name="Main-Class" value="utils.JTransInstall"/>
-		<attribute name="Implementation-Title" value="JTrans"/>
-		<attribute name="Implementation-Version" value="${version}"/>
-		<attribute name="Implementation-Vendor" value="Christophe Cerisara"/>
-		<attribute name="Build-Date" value="${TODAY}"/>
-	</manifest>
-        <jar jarfile="jtrans.jar" basedir="${build}"
-             manifest="${dist}/MANIFEST.MF">
+        <manifestclasspath property="manifest.classpath" jarfile="${jarfile}">
+                <classpath refid="my.classpath" />
+        </manifestclasspath>
+        <jar destfile="${jarfile}" basedir="${build}">
+            <manifest>
+                <attribute name="Class-Path" value="${manifest.classpath}"/>
+                <attribute name="Main-Class" value="utils.JTransInstall"/>
+                <attribute name="Implementation-Title" value="JTrans"/>
+                <attribute name="Implementation-Version" value="${version}"/>
+                <attribute name="Implementation-Vendor" value="Christophe Cerisara"/>
+                <attribute name="Build-Date" value="${TODAY}"/>
+            </manifest>
         </jar>
     </target>
 
     <target name="clean"
         description="clean up" >
         <delete dir="${build}"/>
-        <delete dir="${dist}"/>
+        <delete file="${jarfile}"/>
     </target>
 
 <!--
