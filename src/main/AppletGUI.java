@@ -2,6 +2,7 @@ package main;
 
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.io.File;
 import java.net.URL;
 import javax.swing.JApplet;
 import javax.swing.SwingUtilities;
@@ -56,7 +57,7 @@ public class AppletGUI extends JApplet implements FocusListener {
     	String jtrfile = baseurl.toString();
     	int i=jtrfile.lastIndexOf('/');
     	jtrfile = jtrfile.substring(0,i+1)+"culture.jtr";
-    	pan.loadProject(jtrfile);
+    	pan.friendlyLoadProject(new File(jtrfile));
     	System.out.println("GUI created !");
     	pan.inputControls();
     	

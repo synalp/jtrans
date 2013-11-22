@@ -63,7 +63,7 @@ public class Menus {
 		// //////////////////////////////////////////////////////////////
 		JMenu file        = new JMenu("File");
 
-		JMenuItem open    = new JMenuItem("Open text markup...");
+		JMenuItem open    = new JMenuItem("Open project, markup or text...");
 		JMenuItem loadwav = new JMenuItem("Load audio...");
 		JMenuItem savejtr = new JMenuItem("Save project as...");
 		JMenuItem export  = new JMenuItem("Export alignment...");
@@ -90,7 +90,7 @@ public class Menus {
 		open.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				JFileChooser fc = new JFileChooser();
-				fc.setDialogTitle("Open text markup...");
+				fc.setDialogTitle("Open project, markup or text...");
 
 				fc.addChoosableFileFilter(filterJTR);
 				fc.addChoosableFileFilter(filterTRS);
@@ -106,7 +106,7 @@ public class Menus {
 				File file = fc.getSelectedFile();
 
 				if (ff == filterJTR) {
-					aligneur.loadProject(file.getAbsolutePath());
+					aligneur.friendlyLoadProject(file);
 				} else if (ff == filterTRS) {
 					aligneur.friendlyLoadMarkup(new TRSLoader(), file);
 				} else if (ff == filterTextGrid) {
@@ -115,6 +115,34 @@ public class Menus {
 					aligneur.friendlyLoadMarkup(new RawTextLoader(), file);
 				} else {
 					JOptionPane.showMessageDialog(aligneur.jf, "Unknown filter " + ff);
+				}
+			}
+		});
+
+		savejtr.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				NicerFileChooser fc = new NicerFileChooser();
+
+				fc.setDialogTitle("Export alignment...");
+				fc.addChoosableFileFilter(filterJTR);
+				fc.setAcceptAllFileFilterUsed(false);
+				fc.setFileFilter(filterJTR);
+
+				int rc = fc.showSaveDialog(aligneur.jf);
+
+				if (rc != JFileChooser.APPROVE_OPTION)
+					return;
+
+				FileFilter ff = fc.getFileFilter();
+				File file = fc.getSelectedFile();
+
+				try {
+					aligneur.saveJsonProject(file);
+				} catch (IOException ex) {
+					JOptionPane.showMessageDialog(aligneur.jf,
+							"Couldn't save. An I/O error occured.\n\n" + ex,
+							"IOException",
+							JOptionPane.ERROR_MESSAGE);
 				}
 			}
 		});
@@ -535,11 +563,6 @@ public class Menus {
 		aligneur.playerController = new PlayerListener(aligneur, 100);
 
 
-		savejtr.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				aligneur.saveProject();
-			}
-		});
 		quit.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				aligneur.quit();

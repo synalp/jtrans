@@ -20,7 +20,9 @@ import javax.sound.sampled.*;
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
 
+import com.google.gson.*;
 import facade.JTransAPI;
+import facade.Project;
 import markup.*;
 import main.SpeechReco;
 
@@ -30,21 +32,21 @@ import plugins.buffer.RoundBufferFrontEnd;
 import plugins.signalViewers.spectroPanel.SpectroControl;
 import plugins.signalViewers.temporalSigPanel.TemporalSigPanel;
 import plugins.signalViewers.temporalSigPanel.ToolBarTemporalSig;
-import plugins.sourceSignals.TemporalSigFromWavFile;
 import plugins.speechreco.acousticModels.HMM.LogMath;
 import plugins.speechreco.adaptation.BiaisAdapt;
 import plugins.speechreco.aligners.OldAlignment;
 import plugins.speechreco.aligners.ForceAlignBlocViterbi;
 import plugins.speechreco.aligners.sphiinx4.*;
 import plugins.speechreco.aligners.sphiinx4.Alignment;
-import plugins.speechreco.confidenceMeasure.AcousticCM;
 import plugins.text.ColoriageEvent;
 import plugins.text.GriserWhilePlaying;
 import plugins.text.ListeElement;
 import plugins.text.PonctParser;
 import plugins.text.TexteEditor;
 import plugins.text.elements.*;
+import plugins.text.regexp.TypeElement;
 import plugins.utils.FileUtils;
+import plugins.utils.InterfaceAdapter;
 import plugins.utils.PrintLogger;
 import speechreco.RecoWord;
 import tools.audio.PlayerGUI;
@@ -347,150 +349,61 @@ public class Aligneur extends JPanel implements PrintLogger {
 //		t.start();
 	}
 
-	void loadProject() {
-		JFileChooser filechooser = new JFileChooser();
-		filechooser.setDialogTitle("Load JTrans project...");
-		int returnVal = filechooser.showOpenDialog(null);
-		if (returnVal == JFileChooser.APPROVE_OPTION) {
-			File file = filechooser.getSelectedFile();
-			if (file.exists()) {
-				loadProject(file.getAbsolutePath());
-			}
-		}
-	}
-
-	void saveProject() {
-		JFileChooser filechooser = new JFileChooser();
-		filechooser.setDialogTitle("Save JTrans project...");
-		filechooser.setSelectedFile(new File("out.jtr"));
-		int returnVal = filechooser.showSaveDialog(jf);
-		if (returnVal == JFileChooser.APPROVE_OPTION) {
-			File file = filechooser.getSelectedFile();
-			String regexp="";
-			if (edit!=null) {
-				regexp=edit.exportRegexpAsTxt();
-			}
-			if (sourceTxtfile==null) saveCurrentTextInSourcefile();
-			try {
-				saveProject(edit.getListeElement(),
-						file.getAbsolutePath(),
-						sourceTxtfile,
-						originalAudioFile.getCanonicalPath(),
-						alignement,
-						alignementPhones,
-						regexp);
-			} catch(IOException ex) {
-				System.err.println("Couldn't save project!");
-				ex.printStackTrace();
-			}
-		}
+	/**
+	 * Returns a Gson object suitable for serializing and deserializing JTrans
+	 * projects to/from JSON.
+	 */
+	private static Gson newGson() {
+		GsonBuilder gb = new GsonBuilder();
+		gb.registerTypeAdapter(Element.class, new InterfaceAdapter<Element>("$TYPE$"));
+		gb.setPrettyPrinting();
+		return gb.create();
 	}
 
 	/**
-	 * les regexp peuvent être vides: les regexp par defaut sont alors chargees dans jtrans
-	 * 
-	 * J'ai besoin d'une methode static car je sauve des projets depuis l'exterieur
+	 * Saves the project in JSON format.
 	 */
-	public static void saveProject(ListeElement elts, String outfile, String txtfile, String wavname, Alignment alWords, Alignment alPhones, String regexp) {
-		try {
-			PrintWriter f = FileUtils.writeFileUTF(outfile);
-			f.println("wavname= " + wavname);
-			f.println("txtname= " + txtfile);
-			if (parseWithRegexp) f.println("parse with regexp");
-			else f.println("parse with new");
-			if (elts!=null) elts.save(f);
-			else f.println("listeelements 0");
-			alWords.save(f);
-			alPhones.save(f);
-			f.println(regexp);
-			f.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+	public void saveJsonProject(File file) throws IOException {
+		//if (sourceTxtfile==null) saveCurrentTextInSourcefile();
+
+		Project p = new Project();
+		p.speakers = edit.getListeElement().locuteursInfo;
+		p.elts = edit.getListeElement();
+		p.wavname = originalAudioFile.getCanonicalPath();
+		p.txtfile = sourceTxtfile;
+		p.words = alignement;
+		p.phons = alignementPhones;
+		p.types = edit.getListeTypes();
+
+		FileWriter w = new FileWriter(file);
+		newGson().toJson(p, w);
+		w.close();
 	}
+
+	public void loadJsonProject(File file) throws IOException{
+		FileReader r = new FileReader(file);
+		Project p = newGson().fromJson(r, Project.class);
+		r.close();
+
+		edit.setEditable(false);
+		caretSensible = true;
+		edit.setListeTypes(new ArrayList<TypeElement>(p.types));
+		p.elts.locuteursInfo = p.speakers;
+		edit.setListeElement(p.elts);
+		setAudioSource(p.wavname);
+		alignement = p.words;
+		alignementPhones = p.phons;
+
+		edit.colorizeAllAlignedWords();
+		JTransAPI.refreshIndex();
+	}
+
 	public void setEditionMode() {
 		caretSensible=false;
 		edit.setEditable(true);
 		edit.getHighlighter().removeAllHighlights();
 		System.out.println("seteditionmode");
 		sourceTxtfile=null;
-	}
-	public void loadProject(String nom) {
-		try {
-			System.out.println("loading project "+nom);
-			BufferedReader f = FileUtils.openFileOrURL(nom);
-			String s = f.readLine();
-			assert s.startsWith("wavname= ");
-			setAudioSource(s.substring(9));
-			s = f.readLine();
-			assert s.startsWith("txtname= ");
-			sourceTxtfile = s.substring(9);
-			s = f.readLine();
-			assert s.startsWith("parse with ");
-			parseWithRegexp = false;
-			if (s.startsWith("parse with regexp")) parseWithRegexp = true;
-			else if (s.startsWith("parse with new")) parseWithRegexp = false;
-			else System.out.println("ERROR jtr format "+s);
-
-			InputStream in = FileUtils.findFileOrUrl(sourceTxtfile);
-			//TODO loadtxt(in);
-//			in = FileUtils.findFileOrUrl(wavname);
-			updateViewers();
-
-			System.out.println("loadproject source "+sourceTxtfile);
-			edit.getListeElement().clear();
-			// on ecrase la tokenisation realisee dans loadtxt()
-			// ici, on charge les elements et on les met en correspondance avec le textArea, MAIS PAS AVEC l'ALIGNEMENT !
-			edit.getListeElement().load(f, edit);
-			// ici, on charge les segments, mais ils ne sont toujours pas mis en correspondance avec les elements !
-			alignement = Alignment.load(f);
-			JTransAPI.alignementWords=alignement;
-			alignementPhones = Alignment.load(f);
-			JTransAPI.alignementPhones=alignementPhones;
-			System.out.println("align loaded "+alignement.getNbSegments());
-			// ici, on affiche les segments sur le spectro
-			sigpan.setAlign(alignement);
-
-			// regexps
-			edit.parserRegexpFromBufferedReader(f);
-
-			parse(!parseWithRegexp);
-			f.close();
-			System.out.println("text parsing done");
-
-			//            goToLastAlignedWord();
-			caretSensible = true;
-
-			// force la construction de l'index
-			alignement.clearIndex();
-			alignement.getSegmentAtFrame(0);
-			System.out.println("align index built");
-			alignementPhones.clearIndex();
-			alignementPhones.getSegmentAtFrame(0);
-			edit.getListeElement().refreshIndex();
-			System.out.println("project load finish");
-
-			printInStatusBar("project loaded !");
-
-			// souligne les ancres
-			//          for (int widx : alignement.getAncres()) {
-			//             edit.souligne(edit.getListeElement().getWordElement(widx));
-			//        }
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		List<Element_Mot> mts = edit.getListeElement().getMots();
-		System.out.println("end align "+alignement.getNbSegments()+" "+mts.size());
-		String[] mots = new String[mts.size()];
-		for (int i=0;i<mots.length;i++) {
-			mots[i]=mts.get(i).getWordString().trim();
-		}
-		int[] mots2segidx = alignement.matchWithText(mots);
-		System.err.println("mots2segidx "+mots.length+" "+mots2segidx.length);
-		int lastMotAligned = edit.getListeElement().importAlign(mots2segidx,0);
-		System.err.println("last mot aligned "+lastMotAligned+" "+edit);
-		System.err.println("debug lastremot aligned "+getLastMotAligned());
-		if (edit!=null) edit.colorizeAlignedWords(0,lastMotAligned-1);
 	}
 
 	private float lastSecClickedOnSpectro = 0;
@@ -1376,7 +1289,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 			String lcarg = arg.toLowerCase();
 
 			if (lcarg.endsWith(".jtr")) {
-				m.loadProject(arg);
+				m.friendlyLoadProject(new File(arg));
 			}
 
 			else if (lcarg.endsWith(".wav")) {
@@ -1415,9 +1328,10 @@ public class Aligneur extends JPanel implements PrintLogger {
 	}
 
 	/**
-	 * Load text markup file. Display a message dialog and throw an exception
-	 * if an error occurs.
+	 * Loads text markup file, refreshes indexes and updates the UI.
+	 * Displays a message dialog if an error occurs.
 	 * @param loader loader for the adequate markup format
+	 * @return true if the file was loaded with no errors
 	 */
 	public boolean friendlyLoadMarkup(MarkupLoader loader, File markupFile) {
 		try {
@@ -1451,6 +1365,32 @@ public class Aligneur extends JPanel implements PrintLogger {
 		printInStatusBar("Ready");
 		return true;
 	}
+
+
+	/**
+	 * Loads JTrans project file, refreshes indexes and updates the UI.
+	 * Displays a message dialog if an error occurs.
+	 * @return true if the file was loaded with no errors
+	 */
+	public boolean friendlyLoadProject(File file) {
+		try {
+			printInStatusBar("Loading project");
+			loadJsonProject(file);
+		} catch (IOException ex) {
+			printInStatusBar("Couldn't load project");
+			ex.printStackTrace();
+
+			JOptionPane.showMessageDialog(jf, "Couldn't open project \""
+					+ file.getName() + "\"\nbecause an I/O error occured.\n\n" + ex,
+					"Couldn't open project", JOptionPane.ERROR_MESSAGE);
+			return false;
+		}
+
+		printInStatusBar("Ready");
+		return true;
+	}
+
+
 
 	public void alignWithProgress() {
 		final ProgressDialog progress = new ProgressDialog(jf, null, "Aligning...");

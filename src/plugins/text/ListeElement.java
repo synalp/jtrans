@@ -43,19 +43,9 @@ termes.
 
 package plugins.text;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
-import javax.swing.JTextPane;
-
-import facade.JTransAPI;
 
 import plugins.speechreco.aligners.sphiinx4.Alignment;
 import plugins.text.elements.*;
@@ -86,7 +76,7 @@ import plugins.text.elements.*;
  * afin de parcourir et afficher les �l�ments de la liste qui doivent l'�tre.
  */
 public class ListeElement extends ArrayList<Element> implements Serializable {
-	private ArrayList<Locuteur_Info> locuteursInfo;
+	public List<Locuteur_Info> locuteursInfo;
 	private Element_Mot[] seg2mot = null;
 	// TODO: il faut mettre a jour l'index a la moindre modification !
 	public int indiceMot=-1;
@@ -168,83 +158,6 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 			}
 		}
 		return null;
-	}
-	
-	public void load(BufferedReader f, JTextPane textarea) {
-		/*
-		JTransAPI.setElts(this);
-		try {
-			String s = f.readLine();
-			assert s.startsWith("listeelements ");
-			int nelts = Integer.parseInt(s.substring(14));
-			if (nelts<=0) return;
-			for (int i=0;i<nelts;i++) {
-				s = f.readLine();
-				if (s.startsWith("mot")) {
-					String[] ss = s.split(" ");
-					int pdeb = Integer.parseInt(ss[1]);
-					int pfin = Integer.parseInt(ss[2]);
-					boolean bruit = false;
-					if (ss.length>3) bruit=Boolean.parseBoolean(ss[3]);
-					add(Element_Mot.fromSubstring(textarea.getText(), pdeb, pfin, bruit));
-				} else if (s.startsWith("loc")) {
-					int k=s.indexOf(' ')+1;
-					int j=s.indexOf(' ',k);
-					int id = Integer.parseInt(s.substring(k,j)); k=j+1; j=s.indexOf(' ',k);
-					int num = Integer.parseInt(s.substring(k));
-					Element_Locuteur loc = new Element_Locuteur((byte)id,num);
-					add(loc);
-				} else if (s.startsWith("dchev")) {
-					Element_DebutChevauchement ee = new Element_DebutChevauchement();
-					add(ee);
-				} else if (s.startsWith("fchev")) {
-					Element_FinChevauchement ee = new Element_FinChevauchement();
-					add(ee);
-				} else if (s.startsWith("cmt")) {
-					String[] ss = s.split(" ");
-					int pdeb = Integer.parseInt(ss[1]);
-					int pfin = Integer.parseInt(ss[2]);
-					Element_Commentaire mot = Element_Commentaire.fromSubstring(textarea.getText(), pdeb, pfin);
-					add(mot);
-				} else if (s.startsWith("pun")) {
-					int k=s.indexOf(' ')+1;
-					char p = s.charAt(k);
-					Element_Ponctuation ee = new Element_Ponctuation(p);
-					add(ee);
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		*/
-		throw new Error("Reimplement me!");
-	}
-	
-	public void save(PrintWriter f) {
-		/*
-		f.println("listeelements "+size());
-		for (int i=0;i<size();i++) {
-			Element e = get(i);
-			if (e instanceof Element_Mot) {
-				Element_Mot mot = (Element_Mot) e;
-				f.println("mot "+mot.posDebInTextPanel+" "+mot.posFinInTextPanel+" "+mot.isBruit);
-			} else if (e instanceof Element_Locuteur) {
-				Element_Locuteur loc = (Element_Locuteur) e;
-				f.println("loc "+loc.getLocuteurID()+" "+loc.getNumeroParole());
-			} else if (e instanceof Element_DebutChevauchement) {
-				f.println("dchev");
-			} else if (e instanceof Element_FinChevauchement) {
-				f.println("fchev");
-			} else if (e instanceof Element_Commentaire) {
-				Element_Commentaire mot = (Element_Commentaire) e;
-				f.println("cmt "+mot.posDebInTextPanel+" "+mot.posFinInTextPanel);
-			} else if (e instanceof Element_Ponctuation) {
-				Element_Ponctuation p = (Element_Ponctuation)e;
-				f.println("pun "+p.getPonctuation());
-			}
-		}
-		*/
-		throw new Error("Reimplement me!");
 	}
 
 	//----------- Constructeur ---------
