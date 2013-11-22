@@ -116,7 +116,11 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 				buf.append(el instanceof Element_Locuteur? '\n': ' ');
 
 			int pos = buf.length();
-			String str = el.toString();
+			String str;
+			if (el instanceof Element_Locuteur)
+				str = locuteursInfo.get(((Element_Locuteur) el).getLocuteurID()).getName();
+			else
+				str = el.toString();
 			buf.append(str);
 
 			el.start = pos;

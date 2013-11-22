@@ -43,18 +43,16 @@ termes.
 
 package plugins.text.elements;
 
-import java.io.Serializable;
-
-public abstract class Element implements Serializable {
+public abstract class Element {
 	/**
 	 * Start of element in the large string.
 	 */
-	public int start = -1;
+	public transient int start = -1;
 
 	/**
 	 * End of element in the large string.
 	 */
-	public int end = -1;
+	public transient int end = -1;
 
 	/**
 	 * TypeElement ID.

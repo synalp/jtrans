@@ -45,25 +45,20 @@ package plugins.text.elements;
 
 
 public class Element_Locuteur extends Element {
-	private Locuteur_Info speakerInfo;
+	private byte id;
 
 
 	public Element_Locuteur(Locuteur_Info speakerInfo) {
-		this.speakerInfo = speakerInfo;
+		this.id = speakerInfo.getId();
 	}
 
 
 	public byte getLocuteurID() {
-		return speakerInfo.getId();
+		return id;
 	}
 
 	
 	public int getType() {
 		return 0;
-	}
-
-
-	public String toString() {
-		return speakerInfo.getName();
 	}
 }//class Element_Locuteur
