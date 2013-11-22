@@ -336,12 +336,15 @@ public class TexteEditor extends JTextPane {
 	/**
 	 * Colorizes range of words with the "aligned" style.
 	 * Does not touch non-word elements.
+	 * This method does not care whether the word is actually aligned
+	 * (posInAlign) or not.
+	 *
 	 * @param fromWord number of the first word (in a list containing only
 	 *                    words) to colorize. This is NOT an element index!
 	 * @param toWord number of the last word to colorize (inclusive). This is
 	 *               NOT an element index!
 	 */
-	public void colorizeAlignedWords(int fromWord, int toWord) {
+	public void colorizeWords(int fromWord, int toWord) {
 		int word = -1;
 		int fromCh = -1;
 		int toCh = -1;
@@ -356,6 +359,32 @@ public class TexteEditor extends JTextPane {
 					if (fromCh < 0)
 						fromCh = el.start;
 				}
+			} else {
+				if (fromCh > 0)
+					colorizeAlignedChars(fromCh, toCh);
+				fromCh = -1;
+			}
+		}
+
+		if (fromCh > 0)
+			colorizeAlignedChars(fromCh, toCh);
+	}
+
+	/**
+	 * Colorizes all aligned words with the "aligned" style.
+	 * This method only colorizes words that are aligned properly (posInAlign).
+	 */
+	public void colorizeAllAlignedWords() {
+		int fromCh = -1;
+		int toCh = -1;
+
+		for (int i = 0; i < listeElement.size(); i++) {
+			Element el = listeElement.get(i);
+
+			if (el instanceof Element_Mot && ((Element_Mot) el).posInAlign > 0) {
+				toCh = el.end;
+				if (fromCh < 0)
+					fromCh = el.start;
 			} else {
 				if (fromCh > 0)
 					colorizeAlignedChars(fromCh, toCh);

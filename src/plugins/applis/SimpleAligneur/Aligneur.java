@@ -338,7 +338,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 					// matche les Element_Mot avec l'alignement existant
 					int[] match = alignement.matchWithText(edit.getListeElement().getMotsInTab());
 					edit.getListeElement().importAlign(match,0);
-					if (edit!=null) edit.colorizeAlignedWords(0,getLastMotAligned());
+					if (edit!=null) edit.colorizeWords(0, getLastMotAligned());
 					repaint();
 				}
 				caretSensible = true;
@@ -822,7 +822,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 		// decolorier les mots qui ne sont plus alignes:
 		if (edit!=null) {
 			edit.getHighlighter().removeAllHighlights();
-			if (mot>0) edit.colorizeAlignedWords(0,mot-1);
+			if (mot>0) edit.colorizeWords(0, mot - 1);
 		}
 		repaint();
 	}
@@ -914,7 +914,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 					}
 				}
 				System.out.println("last aligned word "+getLastMotAligned());
-				if (edit!=null) edit.colorizeAlignedWords(0,mot);
+				if (edit!=null) edit.colorizeWords(0, mot);
 				repaint();
 			} else { // juste un SHIFT-clic
 				// position pour le play
@@ -970,7 +970,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 				System.out.println("set at frame "+JTransAPI.second2frame(lastSecClickedOnSpectro));
 				alignement.setSegmentEndFrame(segmentDuMot, JTransAPI.second2frame(lastSecClickedOnSpectro));
 			}
-			if (edit!=null) edit.colorizeAlignedWords(0,mot);
+			if (edit!=null) edit.colorizeWords(0, mot);
 			setCurPosInSec(sec0);
 			if (edit!=null) edit.getListeElement().refreshIndex();
 			repaint();
@@ -1086,9 +1086,9 @@ public class Aligneur extends JPanel implements PrintLogger {
 				alignementPhones.merge(order.alignPhones);
 				if (lastMotAligned>=0) {
 					if (firstMot==0)
-						edit.colorizeAlignedWords(firstMot,lastMotAligned-1);
+						edit.colorizeWords(firstMot, lastMotAligned - 1);
 					else
-						edit.colorizeAlignedWords(firstMot-1,lastMotAligned-1);
+						edit.colorizeWords(firstMot - 1, lastMotAligned - 1);
 				}
 			}
 		} catch (InterruptedException e) {
@@ -1205,7 +1205,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 		//   	alignement.checkWithText(lmots, 0);
 
 		//    	System.out.println("debuglmots "+lmots.size()+" "+alignement.wordsIdx.size()+" "+alignement.wordsEnd.size());
-		edit.colorizeAlignedWords(0,lmots.size()-1);
+		edit.colorizeWords(0, lmots.size() - 1);
 		repaint();
 	}
 
@@ -1345,7 +1345,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 					edit.setSelectedTextColor(null);
 					//	    	        alignement.addManualAnchorv2(mot1);
 					//	    	        alignement.addManualAnchorv2(mot2);
-					edit.colorizeAlignedWords(mot1, mot2);
+					edit.colorizeWords(mot1, mot2);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}

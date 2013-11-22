@@ -7,7 +7,6 @@ http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html
 
 package plugins.speechreco.aligners.sphiinx4;
 
-import java.awt.Color;
 import java.util.Arrays;
 import java.util.List;
 
@@ -199,9 +198,9 @@ public class AutoAligner extends Thread {
 					System.out.println(alignementMots);
 					if (lastMotAligned>=0) {
 						if (premierMotNotAligned==0)
-							editor.colorizeAlignedWords(premierMotNotAligned,lastMotAligned-1);
+							editor.colorizeWords(premierMotNotAligned, lastMotAligned - 1);
 						else
-							editor.colorizeAlignedWords(premierMotNotAligned-1,lastMotAligned-1);
+							editor.colorizeWords(premierMotNotAligned - 1, lastMotAligned - 1);
 					}
 					CMStats.newAlignedSegment(premierMotNotAligned, lastMotAligned-1, order.alignWords, nmots);
 				} else {

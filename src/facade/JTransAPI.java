@@ -267,7 +267,7 @@ public class JTransAPI {
 
 		// Update GUI
 		if (edit != null) {
-			edit.colorizeAlignedWords(startWord, word);
+			edit.colorizeWords(startWord, word);
 			edit.repaint();
 		}
 	}
