@@ -488,12 +488,12 @@ public class JTransAPI {
 		progress.setIndeterminate(true);
 
 		aligneur.caretSensible = true;
+		refreshIndex();
+	}
 
-		// force la construction de l'index
-		alignementWords.clearIndex();
-		alignementWords.getSegmentAtFrame(0);
-		alignementPhones.clearIndex();
-		alignementPhones.getSegmentAtFrame(0);
+	public static void refreshIndex() {
+		alignementWords.buildIndex();
+		alignementPhones.buildIndex();
 		elts.refreshIndex();
 	}
 }
