@@ -1,4 +1,6 @@
 <project name="jtrans" default="compile" basedir=".">
+    <tstamp/>
+
     <property name="src" location="src"/>
     <property name="build" location="bin"/>
     <property name="libs"  location="libs"/>
@@ -35,7 +37,8 @@
                 <attribute name="Implementation-Title" value="JTrans"/>
                 <attribute name="Implementation-Version" value="${version}"/>
                 <attribute name="Implementation-Vendor" value="Christophe Cerisara"/>
-                <attribute name="Build-Date" value="${TODAY}"/>
+                <attribute name="Built-Date" value="${TODAY}"/>
+                <attribute name="Built-By" value="${user.name}"/>
             </manifest>
         </jar>
     </target>
