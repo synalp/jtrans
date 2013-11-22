@@ -1407,7 +1407,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 		}
 
 		if (loader != null && markupFileName != null) {
-			boolean success = m.loadMarkup(loader, new File(markupFileName));
+			boolean success = m.friendlyLoadMarkup(loader, new File(markupFileName));
 			if (success && audioSourceSet) {
 				m.alignWithProgress();
 			}
@@ -1419,11 +1419,12 @@ public class Aligneur extends JPanel implements PrintLogger {
 	 * if an error occurs.
 	 * @param loader loader for the adequate markup format
 	 */
-	public boolean loadMarkup(MarkupLoader loader, File markupFile) {
+	public boolean friendlyLoadMarkup(MarkupLoader loader, File markupFile) {
 		try {
 			printInStatusBar("Parsing markup");
 			loader.parse(markupFile);
 		} catch (Exception ex) {
+			printInStatusBar("Couldn't parse markup");
 			ex.printStackTrace();
 
 			String message = "Couldn't parse \"" + markupFile.getName() +

@@ -108,11 +108,11 @@ public class Menus {
 				if (ff == filterJTR) {
 					aligneur.loadProject(file.getAbsolutePath());
 				} else if (ff == filterTRS) {
-					aligneur.loadMarkup(new TRSLoader(), file);
+					aligneur.friendlyLoadMarkup(new TRSLoader(), file);
 				} else if (ff == filterTextGrid) {
-					aligneur.loadMarkup(new TextGridLoader(), file);
+					aligneur.friendlyLoadMarkup(new TextGridLoader(), file);
 				} else if (ff == filterTXT) {
-					aligneur.loadMarkup(new RawTextLoader(), file);
+					aligneur.friendlyLoadMarkup(new RawTextLoader(), file);
 				} else {
 					JOptionPane.showMessageDialog(aligneur.jf, "Unknown filter " + ff);
 				}
