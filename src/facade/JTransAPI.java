@@ -7,7 +7,6 @@ import plugins.applis.SimpleAligneur.Aligneur;
 import plugins.speechreco.aligners.sphiinx4.Alignment;
 import plugins.speechreco.aligners.sphiinx4.S4AlignOrder;
 import plugins.speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
-import plugins.text.ListeElement;
 import plugins.text.TexteEditor;
 import plugins.text.elements.*;
 import utils.ProgressDialog;

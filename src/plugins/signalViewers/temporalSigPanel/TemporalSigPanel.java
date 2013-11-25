@@ -383,8 +383,7 @@ public class TemporalSigPanel extends JComponent {
 		//-----------------------------------------------------------
 		//---------------- Partie Affichage Mots --------------------
 		//-----------------------------------------------------------
-		ListeElement listeElement = aligneur.edit.getListeElement();
-		int listeElementSize = listeElement.size();
+		ListeElement listeElement = aligneur.project.elts;
 		int posiLine = 0;
 
 		completerColorLocuteur(aligneur.project.speakers.size());
@@ -406,7 +405,7 @@ public class TemporalSigPanel extends JComponent {
 		boolean breakNextBoucle = false;
 		int motidx=-1;
 		
-		boucleMot:while (i < listeElementSize){
+		boucleMot:while (i < listeElement.size()){
 
 			Element element = listeElement.get(i);
 
@@ -1160,6 +1159,7 @@ System.out.println("debugsegtoprint "+segidx);
 						break switchBouton;
 					case 2 : 
 						if(e.getY() < ecartHautEtReglette){
+							/*
 							TexteEditor texteEditor = aligneur.edit;
 							ListeElement listeElement = texteEditor.getListeElement();
 							int indiceMotSelectionDansTextEditor = 
@@ -1231,7 +1231,7 @@ System.out.println("debugsegtoprint "+segidx);
 		@Override
 		public void mouseDragged(MouseEvent e) {
 			if(selectedLineIndice >= 0){
-				ListeElement listeElement = aligneur.edit.getListeElement();
+				ListeElement listeElement = aligneur.project.elts;
 				if(listeElement.size() > 0){
 					int longueurMotMinimale = hZoom*5;
 
@@ -1329,7 +1329,7 @@ System.out.println("debugsegtoprint "+segidx);
 				int panelWidth = getWidth();
 				int x = e.getX();
 			
-				ListeElement listeElement = aligneur.edit.getListeElement();
+				ListeElement listeElement = aligneur.project.elts;
 				
 				
 				List<Element_Mot> listeMot = listeElement.getMots();
@@ -1363,7 +1363,7 @@ System.out.println("debugsegtoprint "+segidx);
 				int segidx = aligneur.project.words.getSegmentAtFrame(PlayerListener.sample2frame(sample));
 				if (segidx>=0) {
 					int motidx=0;
-					for (Element_Mot m : aligneur.edit.getListeElement().getMots()) {
+					for (Element_Mot m : aligneur.project.elts.getMots()) {
 						if (m.posInAlign==segidx) {
 							return motidx;
 						}

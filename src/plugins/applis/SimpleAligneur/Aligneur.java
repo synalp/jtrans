@@ -145,7 +145,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 	}
 
 	public void saveRawText(File file) throws IOException {
-		List<Element_Mot> mots = edit.getListeElement().getMots();
+		List<Element_Mot> mots = project.elts.getMots();
 		try {
 			PrintWriter fout = FileUtils.writeFileUTF(file.getAbsolutePath());
 			for (Element_Mot m : mots)
@@ -401,7 +401,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 		if (sigPanel!=null) {
 			sigPanel.setProgressBar(0);
 		}
-		Element_Mot firstmot = edit.getListeElement().getMot(0);
+		Element_Mot firstmot = project.elts.getMot(0);
 		edit.griseMot(firstmot);
 	}
 
@@ -599,7 +599,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 		if (autoAligner!=null) autoAligner.stopAutoAlign();
 		// cherche le prochain mot qui est aligné
 		int seg4mot=-1;
-		List<Element_Mot> mots = edit.getListeElement().getMots();
+		List<Element_Mot> mots = project.elts.getMots();
 		for (;mot<mots.size();mot++) {
 			seg4mot = mots.get(mot).posInAlign;
 			if (seg4mot>=0&&!project.words.getSegmentLabel(seg4mot).equals("SIL")) break;
@@ -613,8 +613,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 		project.phons.clearIndex();
 		
 		// supprimer la correspondance mots/segments
-		for (int i=mot;i<edit.getListeElement().getMots().size();i++) {
-			edit.getListeElement().getMot(i).posInAlign=-1;
+		for (int i=mot;i<project.elts.getMots().size();i++) {
+			project.elts.getMot(i).posInAlign=-1;
 		}
 		// decolorier les mots qui ne sont plus alignes:
 		if (edit!=null) {
@@ -652,7 +652,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 	}
 	
 	void clicAtCaretPosition(int caretPos, int button) {
-		int mot = edit.getListeElement().getIndiceMotAtTextPosi(caretPos);
+		int mot = project.elts.getIndiceMotAtTextPosi(caretPos);
 		if (mot<0) {
 			System.out.println("no mot at position "+caretPos);
 			return;
@@ -675,12 +675,12 @@ public class Aligneur extends JPanel implements PrintLogger {
 				System.out.println("last aligned word "+getLastMotAligned());
 				System.out.println("manual definition of word limits");
 				float deb=-1, end=-1;
-				String s = JOptionPane.showInputDialog("word "+mot+" "+edit.getListeElement().getMot(mot).getWordString()+" start (in sec):").trim();
+				String s = JOptionPane.showInputDialog("word "+mot+" "+project.elts.getMot(mot).getWordString()+" start (in sec):").trim();
 				if (s.length()>0) deb = Float.parseFloat(s);
 				s = JOptionPane.showInputDialog("word "+mot+" end (in sec):").trim();
 				if (s.length()>0) end = Float.parseFloat(s);
 				
-				int segmentDuMot = edit.getListeElement().getMot(mot).posInAlign;
+				int segmentDuMot = project.elts.getMot(mot).posInAlign;
 				if (segmentDuMot>=0) {
 					// mot deja aligne
 					if (deb>=0) project.words.setSegmentDebFrame(segmentDuMot, JTransAPI.second2frame(deb));
@@ -701,9 +701,9 @@ public class Aligneur extends JPanel implements PrintLogger {
 							}
 						}
 						if (end>=0) {
-							int newseg = project.words.addRecognizedSegment(edit.getListeElement().getMot(0).getWordString(),
+							int newseg = project.words.addRecognizedSegment(project.elts.getMot(0).getWordString(),
 									curdebfr, JTransAPI.second2frame(end), null, null);
-							edit.getListeElement().getMot(0).posInAlign=newseg;
+							project.elts.getMot(0).posInAlign=newseg;
 						} else {
 							// TODO
 						}
@@ -716,7 +716,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 			} else { // juste un SHIFT-clic
 				// position pour le play
 				wordSelectedIdx=mot;
-				Element_Mot emot = edit.getListeElement().getMot(mot);
+				Element_Mot emot = project.elts.getMot(mot);
 				int segidx = emot.posInAlign;
 				if (segidx>=0) {
 					int frame = project.words.getSegmentDebFrame(segidx);
@@ -754,10 +754,10 @@ public class Aligneur extends JPanel implements PrintLogger {
 		} else if (kmgr.isControlOn) {
 			lastSecClickedOnSpectro = playergui.getRelativeStartingSec()+(float)playergui.getTimePlayed()/1000f;
 			System.out.println("Ctrl-clic without playing: set at last selected frame "+lastSecClickedOnSpectro+" "+playergui.getRelativeStartingSec()+" "+playergui.getTimePlayed());
-			System.out.println("set word "+mot+" "+edit.getListeElement().getMot(mot).getWordString());
+			System.out.println("set word "+mot+" "+project.elts.getMot(mot).getWordString());
 			float sec0 = getCurPosInSec();
 			setCurPosInSec(lastSecClickedOnSpectro);
-			int segmentDuMot = edit.getListeElement().getMot(mot).posInAlign;
+			int segmentDuMot = project.elts.getMot(mot).posInAlign;
 			if (segmentDuMot<0) {
 				// il n'est pas aligné, que fais-je ???
 				System.out.println("ctrl-clic when playing: create anchor");
@@ -769,12 +769,12 @@ public class Aligneur extends JPanel implements PrintLogger {
 			}
 			if (edit!=null) edit.colorizeWords(0, mot);
 			setCurPosInSec(sec0);
-			if (edit!=null) edit.getListeElement().refreshIndex();
+			if (edit!=null) project.elts.refreshIndex();
 			repaint();
 			useS4aligner=true;
 			s4fastAutoAlign();
 		} else {
-			System.out.println("clic sans control: repositionne mot "+edit.getListeElement().getMot(mot).getWordString());
+			System.out.println("clic sans control: repositionne mot "+project.elts.getMot(mot).getWordString());
 
 			// nouveau player:
 			boolean replay = ctrlbox.getPlayerGUI().isPlaying();
@@ -788,7 +788,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 			// position pour le play
 			wordSelectedIdx=mot;
-			Element_Mot emot = edit.getListeElement().getMot(mot);
+			Element_Mot emot = project.elts.getMot(mot);
 			int segidx = emot.posInAlign;
 			if (segidx>=0) {
 				int frame = project.words.getSegmentDebFrame(segidx);
@@ -827,7 +827,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 	}
 
 	public int getLastMotAligned() {
-		List<Element_Mot> mots = edit.getListeElement().getMots();
+		List<Element_Mot> mots = project.elts.getMots();
 		for (int i=0;i<mots.size();i++) {
 			if (mots.get(i).posInAlign<0) return i-1;
 		}
@@ -844,7 +844,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 		firstMot = getLastMotAligned()+1;
 		int firstFrame = 0;
 		if (firstMot>0) {
-			int segidx = edit.getListeElement().getMots().get(firstMot-1).posInAlign;
+			int segidx = project.elts.getMots().get(firstMot-1).posInAlign;
 			firstFrame = project.words.getSegmentEndFrame(segidx);
 		}
 
@@ -876,9 +876,9 @@ public class Aligneur extends JPanel implements PrintLogger {
 				System.out.println("mots2segs "+locmots2segidx.length+" "+Arrays.toString(mots2segidx));
 				int lastMotAligned=-1;
 				if (edit!=null) {
-					lastMotAligned=edit.getListeElement().importAlign(mots2segidx,firstMot);
+					lastMotAligned=project.elts.importAlign(mots2segidx,firstMot);
 					System.err.println("last mot aligned "+lastMotAligned);
-					edit.getListeElement().refreshIndex();
+					project.elts.refreshIndex();
 				}
 				project.phons.merge(order.alignPhones);
 				if (lastMotAligned>=0) {
@@ -1078,7 +1078,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 	public S4ForceAlignBlocViterbi getS4aligner() {
 		// TODO: support for URL !!
 		S4ForceAlignBlocViterbi s4aligner = S4ForceAlignBlocViterbi.getS4Aligner(convertedAudioFile.getAbsolutePath());
-		List<Element_Mot>  lmots = edit.getListeElement().getMots();
+		List<Element_Mot>  lmots = project.elts.getMots();
 		mots = new String[lmots.size()];
 		for (int i=0;i<lmots.size();i++) {
 			mots[i] = lmots.get(i).getWordString();
@@ -1099,10 +1099,10 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 		int caret1 = edit.getSelectionStart();
 		int caret2 = edit.getSelectionEnd();
-		final int mot1 = edit.getListeElement().getIndiceMotAtTextPosi(caret1);
-		final int mot2 = edit.getListeElement().getIndiceMotAtTextPosi(caret2);
-		final Element_Mot elmot1 = edit.getListeElement().getMot(mot1);
-		final Element_Mot elmot2 = edit.getListeElement().getMot(mot2);
+		final int mot1 = project.elts.getIndiceMotAtTextPosi(caret1);
+		final int mot2 = project.elts.getIndiceMotAtTextPosi(caret2);
+		final Element_Mot elmot1 = project.elts.getMot(mot1);
+		final Element_Mot elmot2 = project.elts.getMot(mot2);
 
 		new Thread(new Runnable() {
 			@Override
