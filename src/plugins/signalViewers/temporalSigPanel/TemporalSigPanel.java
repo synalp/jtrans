@@ -387,7 +387,7 @@ public class TemporalSigPanel extends JComponent {
 		int listeElementSize = listeElement.size();
 		int posiLine = 0;
 
-		completerColorLocuteur(listeElement.getNbLocuteur());
+		completerColorLocuteur(aligneur.project.speakers.size());
 		
 		lineBase = panelHeight - ecartBasEtligneBaseMot;
 		lineMax = lineBase - hauteurLigne;
@@ -417,7 +417,7 @@ public class TemporalSigPanel extends JComponent {
 				g.fillRect(posiFinLastLocuteur, lineBase, lastLine-posiFinLastLocuteur, hauteurZoneCouleur);
 				
 				g.setColor(Color.WHITE);
-				mot = listeElement.getLocuteurName(indiceLocuteur);
+				mot = aligneur.project.speakers.get(indiceLocuteur).getName();
 				motWidth = SwingUtilities.computeStringWidth(fontMetric, mot);
 				
 				
@@ -544,7 +544,7 @@ System.out.println("debugsegtoprint "+segidx);
 		g.fillRect(posiFinLastLocuteur, lineBase, lastLine-posiFinLastLocuteur, hauteurZoneCouleur);
 		
 		g.setColor(Color.WHITE);
-		mot = listeElement.getLocuteurName(indiceLocuteur);
+		mot = aligneur.project.speakers.get(indiceLocuteur).getName();
 		if(mot != null){
 			motWidth = SwingUtilities.computeStringWidth(fontMetric, mot);
 			

@@ -289,17 +289,11 @@ public class Aligneur extends JPanel implements PrintLogger {
 	public void saveJsonProject(File file) throws IOException {
 		//if (sourceTxtfile==null) saveCurrentTextInSourcefile();
 
-		Project p = new Project();
-		p.speakers = edit.getListeElement().locuteursInfo;
-		p.elts = edit.getListeElement();
-		p.wavname = originalAudioFile.getCanonicalPath();
-		p.txtfile = sourceTxtfile;
-		p.words = project.words;
-		p.phons = project.phons;
-		p.types = project.types;
+		project.wavname = originalAudioFile.getCanonicalPath();
+		project.txtfile = sourceTxtfile;
 
 		FileWriter w = new FileWriter(file);
-		newGson().toJson(p, w);
+		newGson().toJson(project, w);
 		w.close();
 	}
 
@@ -308,7 +302,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 		project = newGson().fromJson(r, Project.class);
 		r.close();
 
-		project.elts.locuteursInfo = project.speakers;
 		caretSensible = true;
 		setAudioSource(project.wavname);
 		project.refreshIndex();
@@ -1241,9 +1234,10 @@ public class Aligneur extends JPanel implements PrintLogger {
 	 * @return true if the file was loaded with no errors
 	 */
 	public boolean friendlyLoadMarkup(MarkupLoader loader, File markupFile) {
+		printInStatusBar("Parsing markup");
+
 		try {
-			printInStatusBar("Parsing markup");
-			loader.parse(markupFile);
+			setProject(loader.parse(markupFile));
 		} catch (Exception ex) {
 			printInStatusBar("Couldn't parse markup");
 			ex.printStackTrace();
@@ -1267,7 +1261,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 		}
 
 		jf.setTitle(markupFile.getName());
-		setProject(new Project(loader.getElements()));
 		printInStatusBar("Ready");
 		return true;
 	}
@@ -1374,8 +1367,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 
 	public void savePraat(File f, boolean withWords, boolean withPhons) throws IOException {
-		ListeElement    lst          = edit.getListeElement();
-		int             speakers     = lst.getNbLocuteur();
+		ListeElement    lst          = project.elts;
+		int             speakers     = project.speakers.size();
 		int             tiers        = speakers * ((withWords?1:0) + (withPhons?1:0));
 		int             finalFrame   = project.words.getSegmentEndFrame(project.words.getNbSegments() - 1);
 		Alignment       speakerTurns = lst.getLinearSpeakerTimes(project.words);
@@ -1409,7 +1402,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 		// Now that we have the final segment count, generate Praat tiers
 		int id = 1;
 		for (int i = 0; i < speakers; i++) {
-			String name = lst.getLocuteurName(i);
+			String name = project.speakers.get(i).getName();
 			if (withWords)
 				praatTier(fw, id++, name + " words", finalFrame, spkWords[i]);
 			if (withPhons)

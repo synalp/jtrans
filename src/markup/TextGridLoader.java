@@ -3,23 +3,65 @@ package markup;
 import facade.JTransAPI;
 import facade.Project;
 import plugins.speechreco.aligners.sphiinx4.Alignment;
-import plugins.text.ListeElement;
-import plugins.text.TexteEditor;
-import plugins.text.elements.Element_Ancre;
-import plugins.text.regexp.TypeElement;
+import plugins.text.elements.*;
 import utils.EncodingDetector;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.*;
+import java.util.regex.*;
+
 
 /**
  * Parser for the TextGrid file format.
  */
 public class TextGridLoader implements MarkupLoader {
+
+	public Project parse(File file)
+			throws ParsingException, IOException
+	{
+		Project project = new Project();
+		BufferedReader reader = EncodingDetector.properReader(file);
+		TextGridStateMachine machine = new TextGridStateMachine(reader);
+
+		if (machine.tiers.size() > 1)
+			throw new ParsingException("Can only import one TextGrid tier at a time for now.\n" +
+					"(This file has " + machine.tiers.size() + " tiers.)");
+
+		// Add sole speaker
+		project.speakers.add(new Locuteur_Info((byte)0, machine.tierNames.get(0)));
+		project.elts.add(new Element_Locuteur(project.speakers.get(0)));
+
+		Alignment tier = machine.tiers.get(0);
+		int prevEndFrame = -1;
+
+		for (int i = 0; i < machine.tiers.get(0).getNbSegments(); i++) {
+			int startFrame = tier.getSegmentDebFrame(i);
+			if (prevEndFrame != startFrame)
+				project.elts.add(new Element_Ancre(JTransAPI.frame2sec(startFrame)));
+
+			String text = RawTextLoader.normalizeText(tier.getSegmentLabel(i));
+			project.elts.addAll(RawTextLoader.parseString(text, project.types));
+
+			project.elts.add(new Element_Ancre(JTransAPI.frame2sec(tier.getSegmentEndFrame(i))));
+			prevEndFrame = tier.getSegmentEndFrame(i);
+		}
+
+		reader.close();
+
+		return project;
+	}
+
+	public String getFormat() {
+		return "Praat TextGrid";
+	}
+}
+
+
+class TextGridStateMachine {
+	List<Alignment> tiers = new ArrayList<Alignment>();
+	List<String> tierNames = new ArrayList<String>();
+
+
 	private static enum State {
 		FILE_HEADER_1,
 		FILE_HEADER_2,
@@ -31,11 +73,13 @@ public class TextGridLoader implements MarkupLoader {
 		DONE
 	}
 
+
 	private static final String
 			HALFPAT_STR   = "\\s*=\\s*\"(.*)\"",
 			HALFPAT_FLOAT = "\\s*=\\s*(\\d+(|\\.\\d*))",
 			HALFPAT_INT   = "\\s*=\\s*(\\d+)",
 			HALFPAT_INDEX = "\\s*\\[\\s*(\\d+)\\s*\\]\\s*:";
+
 
 	private static final Pattern
 			PAT_SIZE = Pattern.compile("size" + HALFPAT_INT),
@@ -47,55 +91,49 @@ public class TextGridLoader implements MarkupLoader {
 			PAT_INTERVAL_COUNT = Pattern.compile("intervals: size" + HALFPAT_INT),
 			PAT_INTERVAL_INDEX = Pattern.compile("intervals" + HALFPAT_INDEX);
 
-	private ListeElement elements;
 
-	public void parse(File file)
-			throws ParsingException, IOException
-	{
-		BufferedReader reader = EncodingDetector.properReader(file);
-		State state = State.FILE_HEADER_1;
-		int lineNumber = 0;
+	class Interval {
+		float xmin = -1;
+		float xmax = -1;
+		String text = null;
 
-		elements = new ListeElement();
-
-		class Interval {
-			float xmin = -1;
-			float xmax = -1;
-			String text = null;
-
-			boolean isComplete() {
-				return xmin >= 0 && xmax >= 0 && text != null;
-			}
-
-			boolean findMatch(String line) {
-				Matcher m;
-
-				m = PAT_TEXT.matcher(line);
-				if (m.matches()) {
-					text = m.group(1);
-					return true;
-				}
-
-				m = PAT_XMIN.matcher(line);
-				if (m.matches()) {
-					xmin = Float.parseFloat(m.group(1));
-					return true;
-				}
-
-				m = PAT_XMAX.matcher(line);
-				if (m.matches()) {
-					xmax = Float.parseFloat(m.group(1));
-					return true;
-				}
-
-				return false;
-			}
+		boolean isComplete() {
+			return xmin >= 0 && xmax >= 0 && text != null;
 		}
 
+		boolean findMatch(String line) {
+			Matcher m;
+
+			m = PAT_TEXT.matcher(line);
+			if (m.matches()) {
+				text = m.group(1);
+				return true;
+			}
+
+			m = PAT_XMIN.matcher(line);
+			if (m.matches()) {
+				xmin = Float.parseFloat(m.group(1));
+				return true;
+			}
+
+			m = PAT_XMAX.matcher(line);
+			if (m.matches()) {
+				xmax = Float.parseFloat(m.group(1));
+				return true;
+			}
+
+			return false;
+		}
+	}
+
+
+	TextGridStateMachine(BufferedReader reader)
+			throws IOException, ParsingException
+	{
+		State state = State.FILE_HEADER_1;
+		int lineNumber = 0;
 		Interval currentInterval = new Interval();
-		List<Alignment> tiers = new ArrayList<Alignment>();
 		Alignment currentTier = null;
-		List<String> tierNames = new ArrayList<String>();
 		int remainingIntervals = -1;
 
 		while (state != State.DONE) {
@@ -205,37 +243,5 @@ public class TextGridLoader implements MarkupLoader {
 					throw new ParsingException("unknown state " + state);
 			}
 		}
-
-		if (tiers.size() > 1) {
-			throw new ParsingException("Can only import one TextGrid tier at a time for now.\n" +
-					"(This file has " + tiers.size() + " tiers.)");
-		}
-
-		elements.addLocuteurElement(tierNames.get(0));
-		Alignment tier = tiers.get(0);
-		int prevEndFrame = -1;
-		List<TypeElement> types = Arrays.asList(Project.DEFAULT_TYPES);
-
-		for (int i = 0; i < tiers.get(0).getNbSegments(); i++) {
-			int startFrame = tier.getSegmentDebFrame(i);
-			if (prevEndFrame != startFrame)
-				elements.add(new Element_Ancre(JTransAPI.frame2sec(startFrame)));
-
-			String text = RawTextLoader.normalizeText(tier.getSegmentLabel(i));
-			elements.addAll(RawTextLoader.parseString(text, types));
-
-			elements.add(new Element_Ancre(JTransAPI.frame2sec(tier.getSegmentEndFrame(i))));
-			prevEndFrame = tier.getSegmentEndFrame(i);
-		}
-
-		reader.close();
-	}
-
-	public ListeElement getElements() {
-		return elements;
-	}
-
-	public String getFormat() {
-		return "Praat TextGrid";
 	}
 }

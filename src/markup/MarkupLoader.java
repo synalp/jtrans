@@ -1,6 +1,6 @@
 package markup;
 
-import plugins.text.ListeElement;
+import facade.Project;
 
 import java.io.*;
 
@@ -10,13 +10,14 @@ import java.io.*;
  */
 public interface MarkupLoader {
 	/**
-	 * Builds an element list and text buffer from the text markup contained in
-	 * the input stream.
+	 * Builds a project from the text markup contained in the input stream.
 	 *
 	 * Must create a synthetic anchor at the end of the last speaker turn.
 	 */
-	public void parse(File file) throws ParsingException, IOException;
+	public Project parse(File file) throws ParsingException, IOException;
 
-	public ListeElement getElements();
+	/**
+	 * Returns the name of the format handled by this MarkupLoader.
+	 */
 	public String getFormat();
 }

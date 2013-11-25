@@ -55,6 +55,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 
+import plugins.text.elements.Locuteur_Info;
 import plugins.text.regexp.graphique.SelecteurCouleur;
 
 /** Popup affichant la legende couleur/nom du locuteur. */
@@ -75,7 +76,9 @@ public class PopupMenuLegende extends JPopupMenu {
 
 		//--- la taille des tableaux est definie par le temporalSigPanel;
 		ArrayList<Color> tabColors = temporalSigPanel.getColorsLocuteurs();
-		ArrayList<String> tabColorsName = temporalSigPanel.aligneur.edit.getListeElement().getLocuteurs();
+		ArrayList<String> tabColorsName = new ArrayList<String>();
+		for (Locuteur_Info info: temporalSigPanel.aligneur.project.speakers)
+			tabColorsName.add(info.getName());
 
 		
 		boutonsCouleurs = new BoutonCouleur[tabColorsName.size()];

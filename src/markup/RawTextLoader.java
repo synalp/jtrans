@@ -6,22 +6,14 @@ import plugins.text.elements.*;
 import plugins.text.regexp.TypeElement;
 import utils.EncodingDetector;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.io.*;
+import java.util.*;
+import java.util.regex.*;
 
 /**
  * Parser for raw transcription text.
  */
 public class RawTextLoader implements MarkupLoader {
-	private ListeElement elements;
-
 	/**
 	 * Substitute junk characters with ones that JTrans can handle.
 	 */
@@ -82,7 +74,8 @@ public class RawTextLoader implements MarkupLoader {
 				String sub = normedText.substring(deb, fin);
 				switch (seg.type) {
 					case 0: // LOCUTEUR
-						listeElts.addLocuteurElement(sub);
+						// TODO: allow creating new speakers in raw text files (not TRS/TextGrid!)
+						listeElts.add(new Element_Commentaire(sub));
 						break;
 					case 1: // COMMENT
 						listeElts.add(new Element_Commentaire(sub));
@@ -141,27 +134,26 @@ public class RawTextLoader implements MarkupLoader {
 	}
 
 	@Override
-	public void parse(File file) throws ParsingException, IOException {
+	public Project parse(File file) throws ParsingException, IOException {
+		Project project = new Project();
 		BufferedReader reader = EncodingDetector.properReader(file);
-		elements = new ListeElement();
-		List<TypeElement> types = Arrays.asList(Project.DEFAULT_TYPES);
 
-		elements.addLocuteurElement("DefaultRawSpeaker");
+		// Add default speaker
+		Locuteur_Info speaker = new Locuteur_Info((byte)0, "L1");
+		project.speakers.add(speaker);
+		project.elts.add(new Element_Locuteur(speaker));
 
 		while (true) {
 			String line = reader.readLine();
 			if (line == null)
 				break;
 			line = normalizeText(line.trim());
-			elements.addAll(parseString(line, types));
+			project.elts.addAll(parseString(line, project.types));
 		}
 
 		reader.close();
-	}
 
-	@Override
-	public ListeElement getElements() {
-		return elements;
+		return project;
 	}
 
 	@Override

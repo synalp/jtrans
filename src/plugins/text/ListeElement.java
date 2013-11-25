@@ -76,7 +76,6 @@ import plugins.text.elements.*;
  * afin de parcourir et afficher les �l�ments de la liste qui doivent l'�tre.
  */
 public class ListeElement extends ArrayList<Element> implements Serializable {
-	public List<Locuteur_Info> locuteursInfo;
 	private Element_Mot[] seg2mot = null;
 	// TODO: il faut mettre a jour l'index a la moindre modification !
 	public int indiceMot=-1;
@@ -91,35 +90,6 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 		}
 		return firstWordNotAligned;
 	}
-
-
-	/**
-	 * Renders the element list as a long string and sets element positions
-	 * accordingly.
-	 * @return the rendered string
-	 */
-	public String render() {
-		StringBuilder buf = new StringBuilder();
-
-		for (Element el: this) {
-			if (buf.length() > 0)
-				buf.append(el instanceof Element_Locuteur? '\n': ' ');
-
-			int pos = buf.length();
-			String str;
-			if (el instanceof Element_Locuteur)
-				str = locuteursInfo.get(((Element_Locuteur) el).getLocuteurID()).getName();
-			else
-				str = el.toString();
-			buf.append(str);
-
-			el.start = pos;
-			el.end = pos + str.length();
-		}
-
-		return buf.toString();
-	}
-	
 
 
 	/**
@@ -159,61 +129,6 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 		}
 		return null;
 	}
-
-	//----------- Constructeur ---------
-	public ListeElement(){
-		locuteursInfo = new ArrayList<Locuteur_Info>();
-	}
-	
-	//-----------------------------------------------------------
-	//-------------------Partie gestion des locuteurs -----------
-	//-----------------------------------------------------------
-	public void addLocuteurElement(String name){
-		// Try to find it in the speaker list
-		Locuteur_Info speaker = null;
-		byte i = 0;
-		byte id = -1;
-		for (Locuteur_Info candidate: locuteursInfo) {
-			if (candidate.getName().equals(name)) {
-				speaker = candidate;
-				break;
-			}
-		}
-		
-		// Not found - create it
-		if (speaker == null){
-			speaker = new Locuteur_Info((byte)locuteursInfo.size(), name);
-			locuteursInfo.add(speaker);
-		}
-		
-		// Add Element_Locuteur
-		Element_Locuteur elementLocuteur = new Element_Locuteur(speaker);
-		add(elementLocuteur);
-	}//addLocuteurElement
-	
-	
-
-	public ArrayList<String> getLocuteurs(){
-		ArrayList<String> res = new ArrayList<String>();
-		
-		for(Locuteur_Info info : locuteursInfo){
-			res.add(info.getName());
-		}
-		return res;
-	}//getLocuteurs
-	
-	public int getNbLocuteur(){
-		return locuteursInfo.size();
-	}
-	
-	public String getLocuteurName(int indice){
-		for(Locuteur_Info info : locuteursInfo){
-			if(info.getId() == indice) {
-				return info.getName();
-			}
-		}
-		return null;
-	}//getLocuteurName
 
 
 	/**

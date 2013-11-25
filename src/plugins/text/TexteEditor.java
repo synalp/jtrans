@@ -108,7 +108,7 @@ public class TexteEditor extends JTextPane {
 	/**
 	 * Sets text from the list of elements and highlights non-text segments
 	 * according to the color defined in their respective types.
-	 * @see ListeElement#render()
+	 * @see Project#render()
 	 */
 	public void setTextFromElements() {
 		// Create a new style for each type
@@ -125,7 +125,7 @@ public class TexteEditor extends JTextPane {
 		StyledDocument doc = new DefaultStyledDocument();
 
 		try {
-			doc.insertString(0, project.elts.render(), null);
+			doc.insertString(0, project.render(), null);
 		} catch (BadLocationException ex) {
 			JOptionPane.showMessageDialog(this, ex.toString(), "BadLocationException", JOptionPane.ERROR_MESSAGE);
 		}

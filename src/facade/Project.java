@@ -2,7 +2,7 @@ package facade;
 
 import plugins.speechreco.aligners.sphiinx4.Alignment;
 import plugins.text.ListeElement;
-import plugins.text.elements.Locuteur_Info;
+import plugins.text.elements.*;
 import plugins.text.regexp.TypeElement;
 
 import java.awt.*;
@@ -16,7 +16,7 @@ import java.util.List;
  * TODO: centralize project methods here
  */
 public class Project {
-	public List<Locuteur_Info> speakers;
+	public List<Locuteur_Info> speakers = new ArrayList<Locuteur_Info>();
 	public ListeElement elts = new ListeElement();
 	public String wavname;
 	public String txtfile;
@@ -69,5 +69,32 @@ public class Project {
 		words.buildIndex();
 		phons.buildIndex();
 		elts.refreshIndex();
+	}
+
+	/**
+	 * Renders the element list as a long string and sets element positions
+	 * accordingly.
+	 * @return the rendered string
+	 */
+	public String render() {
+		StringBuilder buf = new StringBuilder();
+
+		for (Element el: elts) {
+			if (buf.length() > 0)
+				buf.append(el instanceof Element_Locuteur ? '\n': ' ');
+
+			int pos = buf.length();
+			String str;
+			if (el instanceof Element_Locuteur)
+				str = speakers.get(((Element_Locuteur)el).getLocuteurID()).getName();
+			else
+				str = el.toString();
+			buf.append(str);
+
+			el.start = pos;
+			el.end = pos + str.length();
+		}
+
+		return buf.toString();
 	}
 }
