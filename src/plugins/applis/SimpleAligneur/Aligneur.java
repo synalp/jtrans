@@ -32,10 +32,8 @@ import plugins.buffer.RoundBufferFrontEnd;
 import plugins.signalViewers.spectroPanel.SpectroControl;
 import plugins.signalViewers.temporalSigPanel.TemporalSigPanel;
 import plugins.signalViewers.temporalSigPanel.ToolBarTemporalSig;
-import plugins.speechreco.acousticModels.HMM.LogMath;
 import plugins.speechreco.adaptation.BiaisAdapt;
 import plugins.speechreco.aligners.OldAlignment;
-import plugins.speechreco.aligners.ForceAlignBlocViterbi;
 import plugins.speechreco.aligners.sphiinx4.*;
 import plugins.speechreco.aligners.sphiinx4.Alignment;
 import plugins.text.ColoriageEvent;
@@ -87,7 +85,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 	public RoundBuffer audiobuf = new RoundBuffer(this, 10000000);
 	public RoundBufferFrontEnd mfccbuf;
-	ForceAlignBlocViterbi blocViterbi = null;
 
 	// position lue pour la derniere fois dans le flux audio
 	long currentSample = 0;
@@ -95,13 +92,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 	int wordSelectedIdx = -1;
 	public boolean caretSensible = false;
 	JLabel infoLabel = new JLabel("Welcome to JTrans");
-
-	/*
-	 * pour l'alignement semi-automatique
-	 */
-	int wordBeforeBeginReco = 0, wordEndReco = 0;
-	boolean userShouldConfirm = false;
-	LogMath logmath = new LogMath();
 
 	public float getCurPosInSec() {return cursec;}
 	public void setCurPosInSec(float sec) {
@@ -405,15 +395,9 @@ public class Aligneur extends JPanel implements PrintLogger {
 	 */
 	void stopAll() {
 		stopPlaying();
-		stopAlign();
+//		stopAlign();
 		caretSensible = true;
 		// attention ! ne pas modifier usersShouldConfirm !!
-	}
-
-	void stopAlign() {
-		if (blocViterbi != null) {
-			blocViterbi.pauseReco = true;
-		}
 	}
 
 	/**
@@ -983,13 +967,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 		 */
 	}
 
-	public void playOutsideAlign() {
-	}
-
-	public void setNwordsForward(int nw) {
-		ForceAlignBlocViterbi.Nwords = nw;
-	}
-
 	private void getRecoResult(main.SpeechReco asr) {
 		List<String> lmots = getRecoResultOld(asr);
 		//    	alignement.merge(asr.fullalign,0);
@@ -1120,7 +1097,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 					//					order.fullalign.checkWithText(Arrays.asList(mots),mot1);
 					//					project.words.merge(order.fullalign,mot1);
 
-					stopAlign();
+//					stopAlign();
 
 					// quand on selectionne une zone du signal, on suppose qu'il n'y a pas de silence aux bouts !
 					//					project.words.setEndFrameForWord(mot2, OldAlignment.sample2frame(send));
