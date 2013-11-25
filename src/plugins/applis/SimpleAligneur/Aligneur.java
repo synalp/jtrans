@@ -73,9 +73,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 	private PlayerGUI playergui;
 
 	public int mixidx=0;
-	public boolean useS4aligner = true;
 
-	public AutoAligner autoAligner = null;
 	public TexteEditor edit;
 	//	public Player player;
 	public TemporalSigPanel sigPanel = null;
@@ -85,6 +83,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 	/** Audio file in a suitable format for processing */
 	public File convertedAudioFile = null;
+	public long audioSourceTotalFrames = -1;
 
 	public RoundBuffer audiobuf = new RoundBuffer(this, 10000000);
 	public RoundBufferFrontEnd mfccbuf;
@@ -128,7 +127,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 	}
 
 	public void quit() {
-		if (autoAligner!=null) autoAligner.terminateAll();
 		if (edit!=null) edit.colorOrders.put(ColoriageEvent.endofthread);
 		Thread.yield();
 		if (playerController!=null) playerController.kill();
@@ -182,9 +180,21 @@ public class Aligneur extends JPanel implements PrintLogger {
 	public void setAudioSource(String path) {
 		project.wavname = path;
 
-		if (path != null)
+		if (path != null) {
 			convertedAudioFile = JTransAPI.suitableAudioFile(new File(project.wavname));
-		else
+
+			try {
+				AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(convertedAudioFile);
+				AudioFormat format = audioInputStream.getFormat();
+				long frames = audioInputStream.getFrameLength();
+				double durationInSeconds = (frames+0.0) / format.getFrameRate();
+				audioSourceTotalFrames = JTransAPI.second2frame((float)durationInSeconds);
+			} catch (IOException ex) {
+				audioSourceTotalFrames = -1;
+			} catch (UnsupportedAudioFileException ex) {
+				audioSourceTotalFrames = -1;
+			}
+		} else
 			convertedAudioFile = null;
 	}
 	
@@ -238,21 +248,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 			sigpan.setAudioInputStream(getCurPosInSec(),aud);
 			sigpan.refresh();
 		}
-	}
-
-	private AutoAligner getAutoAligner() {
-		// TODO: support for URL !!
-		return AutoAligner.getAutoAligner(convertedAudioFile.getAbsolutePath(), null, edit, project.words, project.phons);
-	}
-
-	public void batch() {
-		AutoAligner.batch=!AutoAligner.batch;
-		s4fastAutoAlign();
-	}
-
-	public void s4fastAutoAlign() {
-		if (!useS4aligner) return;
-		autoAligner = getAutoAligner();
 	}
 
 	/**
@@ -596,7 +591,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 		project.phons.clear();
 	}
 	void clearAlignFrom(int mot) {
-		if (autoAligner!=null) autoAligner.stopAutoAlign();
 		// cherche le prochain mot qui est aligné
 		int seg4mot=-1;
 		List<Element_Mot> mots = project.elts.getMots();
@@ -771,8 +765,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 			setCurPosInSec(sec0);
 			if (edit!=null) project.elts.refreshIndex();
 			repaint();
-			useS4aligner=true;
-			s4fastAutoAlign();
+			//useS4aligner=true;
+			//s4fastAutoAlign();
 		} else {
 			System.out.println("clic sans control: repositionne mot "+project.elts.getMot(mot).getWordString());
 
@@ -1277,10 +1271,17 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 
 
-	public void alignWithProgress() {
+	public void alignBetweenAnchorsWithProgress() {
 		final ProgressDialog progress = new ProgressDialog(jf, null, "Aligning...");
 		progress.setRunnable(new Runnable() {
 			public void run() { JTransAPI.alignBetweenAnchors(progress); }});
+		progress.setVisible(true);
+	}
+
+	public void alignAllWithProgress() {
+		final ProgressDialog progress = new ProgressDialog(jf, null, "Aligning...");
+		progress.setRunnable(new Runnable() {
+			public void run() { JTransAPI.alignRaw(progress); }});
 		progress.setVisible(true);
 	}
 

@@ -68,7 +68,7 @@ public class KeysManager {
 						aligneur.alignManual();
 						break;
 					case 116: // F5
-						aligneur.s4fastAutoAlign();
+//						aligneur.s4fastAutoAlign();
 						break;
 					case 117: // F6
 						break;

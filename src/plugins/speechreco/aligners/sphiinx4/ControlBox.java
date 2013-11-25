@@ -35,8 +35,7 @@ public class ControlBox extends JPanel implements ActionListener {
 		alignButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				aligneur.useS4aligner=true;
-				aligneur.s4fastAutoAlign();
+				aligneur.alignAllWithProgress();
 			}
 		});
 		JButton asrButton = new JButton("AutoTranscript");
@@ -58,8 +57,7 @@ public class ControlBox extends JPanel implements ActionListener {
 		stopit.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (aligneur.autoAligner!=null)
-					aligneur.autoAligner.stopAutoAlign();
+				// TODO: Stop auto-align
 				LiveSpeechReco.stopall();
 			}
 		});

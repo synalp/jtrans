@@ -473,8 +473,31 @@ public class JTransAPI {
 			progress.setProgress((i+1) / (float)project.elts.size());
 		}
 
-		progress.setMessage("Finishing up...");
-		progress.setIndeterminate(true);
+		aligneur.caretSensible = true;
+		project.refreshIndex();
+	}
+
+
+	/**
+	 * Aligns words automatically. Does not account for anchors.
+	 * @param progress progress dialog to refresh
+	 */
+	public static void alignRaw(ProgressDialog progress) {
+		progress.setMessage("Aligning...");
+
+		initmots();
+		int lastAlignedWord = 0;
+		int previousLAW = -1;
+
+		// Keep going until all words are aligned or the aligner gets stuck
+		while (lastAlignedWord < mots.size() && lastAlignedWord > previousLAW) {
+			setAlignWord(-1, mots.size()-1, -1, aligneur.audioSourceTotalFrames);
+
+			previousLAW = lastAlignedWord;
+			lastAlignedWord = getLastMotPrecAligned(mots.size()-1);
+
+			progress.setProgress(lastAlignedWord / ((float) mots.size() - 1));
+		}
 
 		aligneur.caretSensible = true;
 		project.refreshIndex();

@@ -219,7 +219,7 @@ public class Menus {
 		// //////////////////////////////////////////////////////////////
 		JMenu alignMenu = new JMenu("Align");
 		JMenuItem autoAnchors = new JMenuItem("Auto-align between anchors...");
-		JMenuItem autoAll = new JMenuItem("Auto-align (raw)...");
+		JMenuItem autoAll = new JMenuItem("Auto-align all (no anchors)...");
 		JMenuItem clearAll = new JMenuItem("Clear entire alignment");
 		JMenuItem clearFrom  = new JMenuItem("Clear alignment from selected word");
 		menubar.add(alignMenu);
@@ -232,14 +232,14 @@ public class Menus {
 		autoAnchors.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				aligneur.alignWithProgress();
+				aligneur.alignBetweenAnchorsWithProgress();
 			}
 		});
 
 		autoAll.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				aligneur.batch();
+				aligneur.alignAllWithProgress();
 			}
 		});
 
