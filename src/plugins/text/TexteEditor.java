@@ -28,6 +28,7 @@ import javax.swing.text.*;
 
 import facade.JTransAPI;
 
+import facade.Project;
 import markup.RawTextLoader;
 import plugins.text.elements.Element;
 import plugins.text.elements.Element_Mot;
@@ -54,53 +55,14 @@ public class TexteEditor extends JTextPane {
 	//----------------------------------------------------------
 	
 	//----------- Objects externes -------------
-	private ListeElement listeElement;
-	
-	//----------- Composants ----------
-	private ArrayList<TypeElement> listeTypes;
-	public static final TypeElement DEFAULT_TYPES[] = {
-			new TypeElement("Locuteur", Color.GREEN,
-					"(^|\\n)(\\s)*\\w\\d+\\s"),
+	private Project project;
 
-			new TypeElement("Commentaire", Color.YELLOW,
-					"\\{[^\\}]*\\}",
-					"\\[[^\\]]*\\]",
-					"\\+"),
-
-			new TypeElement("Bruit", Color.CYAN,
-					"(\\w)*\\((\\w)*\\)(\\w)*",
-					"\\s\\*\\*\\*\\s",
-					"\\s\\*\\s"),
-
-			new TypeElement("Début de chevauchement", Color.PINK,
-					"<"),
-
-			new TypeElement("Fin de chevauchement", Color.PINK,
-					">"),
-
-			new TypeElement("Ponctuation", Color.ORANGE,
-					"\\?",
-					"\\:",
-					"\\;",
-					"\\,",
-					"\\.",
-					"\\!"),
-
-			new TypeElement("Ancre", new Color(0xddffaa)),
-	};
-	
 	//---------- State Flag ---------------
 	public boolean textChanged;
 	
-	public int userSelectedWord = 0;
-	
-	
 	//-------- R�f�rences de travail ---------
-	private int nbMot;
 	public Element_Mot lastSelectedWord=null;
 	public Element_Mot lastSelectedWord2=null;
-	
-	private File openedTextFile;
 
 	// THREAD dont le role est de colorier le texte
 	// pour arreter ce thread, il faut appeler colorieur.interrupt()
@@ -113,7 +75,7 @@ public class TexteEditor extends JTextPane {
 				for (;;) {
 					ColoriageEvent e = colorOrders.take();
 					if (e==ColoriageEvent.endofthread) break;
-					e.colorie(textpane);
+					e.colorie(TexteEditor.this);
 					e.coloriageDone.put(true);
 				}
 			} catch (InterruptedException e) {}
@@ -122,132 +84,21 @@ public class TexteEditor extends JTextPane {
 	}
 	Coloriage colorieur = null;
 	public final PriorityBlockingQueue<ColoriageEvent> colorOrders = new PriorityBlockingQueue<ColoriageEvent>();
-	private final JTextPane textpane = this;
-	
-	private static TexteEditor singleton = null;
-	public static TexteEditor getTextEditor() {
-		return singleton;
-	}
 	
 	//----------------------------------------------------------------
 	//------------------ Constructor --------------------------------
 	//---------------------------------------------------------------
-	public TexteEditor() {
+	public TexteEditor(Project project) {
 		super();
-		listeElement = new ListeElement();
-		listeTypes = new ArrayList<TypeElement>(Arrays.asList(DEFAULT_TYPES));
 
 		setFont(new Font(DEFAULT_FONT_NAME, Font.PLAIN, DEFAULT_FONT_SIZE));
 
+		this.project = project;
 		
 		textChanged = false;
 		colorieur = new Coloriage();
 		colorieur.start();
-		singleton=this;
 	}//Constructor
-
-	/**
-	 * je disable toujours le scrolling automatique.
-	 * pour le faire quand meme, par exemple lors de la lecture automatique, il faudra l'appeler explicitement !
-	 */
-	public void scrollRectToVisible(Rectangle aRect){
-		return;
-	}
-	
-	
-	//------------------------------------------------------------------------------------
-	//------------------------- M�thode de parsing ---------------------------------------
-	//-----------------------------------------------------------------------------------
-
-	/*
-	 * Attention ! reparse() detruit la liste actuelle des elements,
-	 * or il y a des ancres dans ListeAlignement qui pointaient vers l'ancienne liste,
-	 * et on aura donc des objets-mots  dupliques ! (cf. fin de la fonction)
-	 */
-	public void reparse(boolean modifytxt) {
-		int caretPosition = getCaretPosition();
-		nbMot = 0;
-		
-		setIgnoreRepaint(true);
-		setVisible(false);
-		//pour d�sactiver le d�filement automatique du texte quand il est pars�
-
-		String normedText = getText();
-		if (modifytxt) {
-			normedText = RawTextLoader.normalizeText(normedText);
-			setText(normedText);
-		}
-
-		setListeElement(RawTextLoader.parseString(normedText, listeTypes));
-		
-		lastSelectedWord = lastSelectedWord2 = null;
-		setCaretPosition(caretPosition);
-		
-		textChanged = false;
-
-		setIgnoreRepaint(false);
-		setVisible(true);
-	}//reparse
-
-
-	public void openTextFile(File textFile){
-		try {
-			this.openedTextFile = textFile;
-			BufferedReader bufferRead = new BufferedReader(new FileReader(textFile));
-
-			StringBuilder strBuilder = new StringBuilder();
-			String ligne;
-			//pour avoir la premi�re ligne sans \n avant
-			if ((ligne = bufferRead.readLine()) != null){
-				strBuilder.append(ligne);
-			}
-			//pour toutes les autres lignes.
-			while ((ligne = bufferRead.readLine()) != null){
-				strBuilder.append('\n');
-				strBuilder.append(ligne);
-			}
-			bufferRead.close();
-			
-			setText(strBuilder.toString());
-			reparse(true);
-		} catch (FileNotFoundException e) {
-			System.err.println("Fichier introuvable : "+textFile.getAbsolutePath());
-		} catch (IOException e) {
-			System.err.println("Erreur lors de l'ouverture du fichier texte : "
-										+textFile.getAbsolutePath());
-		}
-	}//openTextFile
-
-	
-	public void saveTextAs(File file){
-		PrintWriter f;
-		try {
-			f = new PrintWriter(new FileWriter(file.getAbsolutePath()));
-			f.println(getText());
-			f.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}//saveText
-	
-	
-	public void saveText(){
-		saveTextAs(openedTextFile);
-	}
-
-	
-	public File getOpenedTextFile() {
-		return openedTextFile;
-	}
-
-	public void setOpenedTextFile(File openedTextFile) {
-		this.openedTextFile = openedTextFile;
-	}
-	
-	
-	//---------------------------------------------------------------------
-	//----------------- M�thode de mise � jour ----------------------------
-	//---------------------------------------------------------------------
 
 	private static final AttributeSet ALIGNED_STYLE = new SimpleAttributeSet() {{
 		addAttribute(StyleConstants.CharacterConstants.Foreground, new Color(0x2018a8));
@@ -261,10 +112,10 @@ public class TexteEditor extends JTextPane {
 	 */
 	public void setTextFromElements() {
 		// Create a new style for each type
-		AttributeSet[] attr = new AttributeSet[listeTypes.size()];
-		for (int i = 0; i < listeTypes.size(); i++) {
+		AttributeSet[] attr = new AttributeSet[project.types.size()];
+		for (int i = 0; i < project.types.size(); i++) {
 			SimpleAttributeSet sas = new SimpleAttributeSet();
-			sas.addAttribute(StyleConstants.ColorConstants.Background, listeTypes.get(i).getColor());
+			sas.addAttribute(StyleConstants.ColorConstants.Background, project.types.get(i).getColor());
 			sas.addAttribute(StyleConstants.ColorConstants.Foreground, Color.gray);
 			attr[i] = sas;
 		}
@@ -274,15 +125,15 @@ public class TexteEditor extends JTextPane {
 		StyledDocument doc = new DefaultStyledDocument();
 
 		try {
-			doc.insertString(0, listeElement.render(), null);
+			doc.insertString(0, project.elts.render(), null);
 		} catch (BadLocationException ex) {
 			JOptionPane.showMessageDialog(this, ex.toString(), "BadLocationException", JOptionPane.ERROR_MESSAGE);
 		}
 
 		// Apply styles
-		for (Element el: listeElement) {
+		for (Element el: project.elts) {
 			int type = el.getType();			
-			if (type >= 0 && type < listeTypes.size())
+			if (type >= 0 && type < project.types.size())
 				doc.setCharacterAttributes(el.start, el.end - el.start, attr[type], true);
 		}
 
@@ -350,8 +201,8 @@ public class TexteEditor extends JTextPane {
 		int fromCh = -1;
 		int toCh = -1;
 
-		for (int i = 0; i < listeElement.size() && word < toWord; i++) {
-			Element el = listeElement.get(i);
+		for (int i = 0; i < project.elts.size() && word < toWord; i++) {
+			Element el = project.elts.get(i);
 
 			if (el instanceof Element_Mot) {
 				word++;
@@ -379,8 +230,8 @@ public class TexteEditor extends JTextPane {
 		int fromCh = -1;
 		int toCh = -1;
 
-		for (int i = 0; i < listeElement.size(); i++) {
-			Element el = listeElement.get(i);
+		for (int i = 0; i < project.elts.size(); i++) {
+			Element el = project.elts.get(i);
 
 			if (el instanceof Element_Mot && ((Element_Mot) el).posInAlign > 0) {
 				toCh = el.end;
@@ -434,28 +285,20 @@ public class TexteEditor extends JTextPane {
 	}
 
 	public int getIndiceMotUnderCaret(CaretEvent e) {
-		return listeElement.getIndiceElementAtTextPosi(e.getDot());
-	}
-	
-	public List<TypeElement> getListeTypes() {
-		return listeTypes;
+		return project.elts.getIndiceElementAtTextPosi(e.getDot());
 	}
 
 	public ListeElement getListeElement() {
-		return listeElement;
+		return project.elts;
 	}
 
 	/**
 	 * Load text/elements into the text editor and colorize the relevant parts.
 	 */
-	public void setListeElement(ListeElement listeElement) {
+	public void setProject(Project project) {
+		this.project = project;
 		setEditable(false);
-		this.listeElement = listeElement;
-		JTransAPI.setElts(listeElement);
 		setTextFromElements();
-	}
-
-	public void setListeTypes(ArrayList<TypeElement> listeTypes) {
-		this.listeTypes = listeTypes;
+		colorizeAllAlignedWords();
 	}
 }//class TextEditor

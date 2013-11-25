@@ -1,10 +1,10 @@
 package markup;
 
+import facade.Project;
 import org.w3c.dom.*;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 import plugins.text.ListeElement;
-import plugins.text.TexteEditor;
 import plugins.text.elements.*;
 import plugins.text.regexp.TypeElement;
 
@@ -49,7 +49,7 @@ public class TRSLoader implements MarkupLoader {
 		Map<String, Locuteur_Info> speakers =
 				loadSpeakers(doc.getElementsByTagName("Speakers").item(0));
 
-		List<TypeElement> types = Arrays.asList(TexteEditor.DEFAULT_TYPES);
+		List<TypeElement> types = Arrays.asList(Project.DEFAULT_TYPES);
 
 		// Extract relevant information (speech text, Sync tags...) from Turn tags.
 		NodeList turnList = doc.getElementsByTagName("Turn");

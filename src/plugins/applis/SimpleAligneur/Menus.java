@@ -17,8 +17,6 @@ import java.net.MalformedURLException;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Mixer;
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
@@ -206,14 +204,14 @@ public class Menus {
 
 		// //////////////////////////////////////////////////////////////
 		JMenu actionsm = new JMenu("Edit");
-		JMenuItem parsestd = new JMenuItem("Parse text standard");
-		JMenuItem parse = new JMenuItem("Parse text regexp");
+		//JMenuItem parsestd = new JMenuItem("Parse text standard");
+		//JMenuItem parse = new JMenuItem("Parse text regexp");
 		JMenuItem editb = new JMenuItem("Edit text");
 		JMenuItem regexp = new JMenuItem("Regexps");
 		JMenuItem gototime = new JMenuItem("Go to time [sec]");
 		menubar.add(actionsm);
-		actionsm.add(parsestd);
-		actionsm.add(parse);
+		//actionsm.add(parsestd);
+		//actionsm.add(parse);
 		actionsm.add(editb);
 		actionsm.add(regexp);
 		actionsm.add(gototime);
@@ -493,19 +491,10 @@ public class Menus {
 		//		
 		regexp.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				new plugins.text.regexp.graphique.RegExpFrame(aligneur.edit);
+				new plugins.text.regexp.graphique.RegExpFrame(aligneur.project);
 			}
 		});
-		parse.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				aligneur.parse(false);
-			}
-		});
-		parsestd.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				aligneur.parse(true);
-			}
-		});
+
 		gototime.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				aligneur.gototime();

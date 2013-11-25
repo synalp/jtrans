@@ -1,6 +1,7 @@
 package markup;
 
 import facade.JTransAPI;
+import facade.Project;
 import plugins.speechreco.aligners.sphiinx4.Alignment;
 import plugins.text.ListeElement;
 import plugins.text.TexteEditor;
@@ -213,7 +214,7 @@ public class TextGridLoader implements MarkupLoader {
 		elements.addLocuteurElement(tierNames.get(0));
 		Alignment tier = tiers.get(0);
 		int prevEndFrame = -1;
-		List<TypeElement> types = Arrays.asList(TexteEditor.DEFAULT_TYPES);
+		List<TypeElement> types = Arrays.asList(Project.DEFAULT_TYPES);
 
 		for (int i = 0; i < tiers.get(0).getNbSegments(); i++) {
 			int startFrame = tier.getSegmentDebFrame(i);

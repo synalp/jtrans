@@ -29,15 +29,9 @@ public class JTransAPI {
 	private static final AudioFormat SUITABLE_AUDIO_FORMAT =
 			new AudioFormat(16000, 16, 1, true, false);
 	
-	public static int getNbWords() {
-		if (elts==null) return 0;
-		initmots();
-		return mots.size();
-	}
-
 	public static boolean isBruit(int mot) {
 		initmots();
-		Element_Mot m = elts.getMot(mot);
+		Element_Mot m = project.elts.getMot(mot);
 		return m.isBruit;
 	}
 
@@ -168,7 +162,7 @@ public class JTransAPI {
 			int[] wordSegments = order.alignWords.matchWithText(alignedWords);
 
 			// Merge word segments into the main word alignment
-			int firstSegment = alignementWords.merge(order.alignWords);
+			int firstSegment = project.words.merge(order.alignWords);
 
 			// Adjust posInAlign for word elements (Element_Mot)
 			for (int i = 0; i < wordSegments.length; i++) {
@@ -180,10 +174,10 @@ public class JTransAPI {
 
 				mots.get(i + startWord).posInAlign = idx;
 			}
-			elts.refreshIndex();
+			project.elts.refreshIndex();
 
 			// Merge phoneme segments into the main phoneme alignment
-			alignementPhones.merge(order.alignPhones);
+			project.phons.merge(order.alignPhones);
 		} else {
 			System.out.println("================================= ALIGN FOUND null");
 			// TODO
@@ -203,10 +197,10 @@ public class JTransAPI {
 				"can't align on fractions of frames! (frameDelta=" + frameDelta + ")";
 
 		for (int i = startWord; i <= endWord; i++) {
-			int newseg = alignementWords.addRecognizedSegment(
+			int newseg = project.words.addRecognizedSegment(
 					mots.get(i).getWordString(), startFrame, (int)currEndFrame, null, null);
 
-			alignementWords.setSegmentSourceEqui(newseg);
+			project.words.setSegmentSourceEqui(newseg);
 			mots.get(i).posInAlign = newseg;
 
 			startFrame = (int)currEndFrame;
@@ -242,7 +236,7 @@ public class JTransAPI {
 				if (startFrame < 0) {
 					// Start aligning at the end frame of the last aligned word.
 					int lastAlignedWordSeg = mots.get(lastAlignedWord).posInAlign;
-					startFrame = alignementWords.getSegmentEndFrame(lastAlignedWordSeg);
+					startFrame = project.words.getSegmentEndFrame(lastAlignedWordSeg);
 				}
 			}
 		}
@@ -257,10 +251,10 @@ public class JTransAPI {
 			}
 		} else {
 			// Only one word to align; create a new manual segment.
-			int newseg = alignementWords.addRecognizedSegment(
-					elts.getMot(word).getWordString(), startFrame, endFrame, null, null);
-			alignementWords.setSegmentSourceManu(newseg);
-			elts.getMot(word).posInAlign = newseg;
+			int newseg = project.words.addRecognizedSegment(
+					project.elts.getMot(word).getWordString(), startFrame, endFrame, null, null);
+			project.words.setSegmentSourceManu(newseg);
+			project.elts.getMot(word).posInAlign = newseg;
 		}
 
 		// TODO: phonetiser et aligner auto les phonemes !!
@@ -302,8 +296,8 @@ public class JTransAPI {
 	public static void setSilenceSegment(float secdeb, float secfin) {
 		int curdebfr = second2frame(secdeb);
 		int curendfr = second2frame(secfin);
-		setSilenceSegment(curdebfr, curendfr, alignementWords);
-		setSilenceSegment(curdebfr, curendfr, alignementPhones);
+		setSilenceSegment(curdebfr, curendfr, project.words);
+		setSilenceSegment(curdebfr, curendfr, project.phons);
 	}
 	public static void clearAlignFromFrame(int fr) {
 		// TODO
@@ -312,18 +306,16 @@ public class JTransAPI {
 	
 	// =========================
 	// variables below are duplicate (point to) of variables in the mess of the rest of the code...
-	private static ListeElement elts =  null;
-	public static Alignment alignementWords = null;
-	public static Alignment alignementPhones = null;
+	public static Project project;
 	public static ArrayList<S4AlignOrder> overlaps = new ArrayList<S4AlignOrder>();
 	public static ArrayList<Byte> overlapSpeakers = new ArrayList<Byte>();
 	public static TexteEditor edit = null;
 	public static Aligneur aligneur = null;
 	public static S4ForceAlignBlocViterbi s4blocViterbi = null;
 	
-	public static void setElts(ListeElement e) {
-		elts=e;
-		mots = elts.getMots();
+	public static void setProject(Project p) {
+		project = p;
+		initmots();
 	}
 	
 	// =========================
@@ -331,10 +323,8 @@ public class JTransAPI {
 	
 	// =========================
 	private static void initmots() {
-		if (elts!=null)
-			if (mots==null) {
-				mots=elts.getMots();
-			}
+		if (project != null && mots == null)
+			mots = project.elts.getMots();
 	}
 	private static int getLastMotPrecAligned(int midx) {
 		initmots();
@@ -393,8 +383,8 @@ public class JTransAPI {
 
 		Overlap currentOverlap = null;
 
-		for (int i = 0; i < elts.size(); i++) {
-			Element e = elts.get(i);
+		for (int i = 0; i < project.elts.size(); i++) {
+			Element e = project.elts.get(i);
 
 			if (e instanceof Element_Mot) {
 				word++;
@@ -408,7 +398,7 @@ public class JTransAPI {
 						// Find when the overlapped speech ends.
 						int seg = mots.get(currentOverlap.s2LastOverlappedWord).posInAlign;
 						currentOverlap.overlapEnd = frame2sec(
-								alignementWords.getSegmentEndFrame(seg));
+								project.words.getSegmentEndFrame(seg));
 
 						if (currentOverlap.overlapEnd > currentOverlap.overlapStart) {
 							System.out.println("Overlap: previous speaker starts speaking @"
@@ -441,8 +431,8 @@ public class JTransAPI {
 				// overlapped speech until next anchor
 				float alignTo = -1;
 				int nextWord = word;
-				for (; i < elts.size(); i++) {
-					Element e2 = elts.get(i);
+				for (; i < project.elts.size(); i++) {
+					Element e2 = project.elts.get(i);
 					if (e2 instanceof Element_Ancre) {
 						alignTo = ((Element_Ancre) e2).seconds;
 						break;
@@ -481,19 +471,13 @@ public class JTransAPI {
 				currentSpeaker = ((Element_Locuteur) e).getLocuteurID();
 			}
 
-			progress.setProgress((i+1) / (float)elts.size());
+			progress.setProgress((i+1) / (float)project.elts.size());
 		}
 
 		progress.setMessage("Finishing up...");
 		progress.setIndeterminate(true);
 
 		aligneur.caretSensible = true;
-		refreshIndex();
-	}
-
-	public static void refreshIndex() {
-		alignementWords.buildIndex();
-		alignementPhones.buildIndex();
-		elts.refreshIndex();
+		project.refreshIndex();
 	}
 }

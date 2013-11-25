@@ -49,7 +49,7 @@ import java.util.regex.Pattern;
 
 import javax.swing.*;
 
-import plugins.text.TexteEditor;
+import facade.Project;
 import plugins.text.regexp.TypeElement;
 import plugins.text.regexp.controler.ActionAddRegexp;
 import plugins.text.regexp.controler.ActionDeleteRegexp;
@@ -57,75 +57,57 @@ import plugins.text.regexp.controler.ActionDeleteRegexp;
 /** Fenetre d'edition des regexp */
 public class RegExpFrame extends JFrame {
 
-	//---------------- Private Fields ---------------
-	private TexteEditor texteEditor;
-	private JTabbedPane tabbedPane;
-	
-	//--------------------- Constructor -----------------
-	public RegExpFrame(TexteEditor textEdit){
-		setTitle("Edition des differents types");
-		texteEditor = textEdit;
-		
-		tabbedPane = new JTabbedPane(JTabbedPane.LEFT);
+	private static final String EXPLANATION =
+			"Cette fenêtre vous permet d'éditer les expressions regulières "
+			+ "qui permettent de reconnaître les différentes syntaxes présentes dans "
+			+ "les fichiers textes que vous allez ouvrir.\n"
+			+ "Ces expressions régulières utilisent la syntaxe d'expression du langage Java.\n"
+			+ "Une description de la syntaxe est disponible sur la page :\n"
+			+ "http://docs.oracle.com/javase/7/docs/api/java/util/regex/Pattern.html\n\n"
+			+ "Attention, ne modifiez cela que si vous savez ce que vous faites !";
 
-		remplirTabbedPane();
+
+	public RegExpFrame(Project project) {
+		setTitle("Regexp Editor");
+
+		JTabbedPane tabbedPane = new JTabbedPane();
+
+		JTextPane explanation = new JTextPane();
+		explanation.setText(EXPLANATION);
+		tabbedPane.add(new JScrollPane(explanation), "Help");
+
+		JPanel pan;
+		JList<Pattern> liste;
+		//Un panel pour chaque element defini.
+		for (TypeElement typeElement : project.types) {
+			pan = new JPanel();
+			pan.setLayout(new BorderLayout());
+
+			liste = new JList<Pattern>(typeElement.getPatterns());
+			pan.add(liste,BorderLayout.CENTER);
+
+			//---- Creation du panel des boutons ----------
+			JPanel panBoutons = new JPanel();
+			panBoutons.setLayout(new BoxLayout(panBoutons,BoxLayout.X_AXIS));
+
+			JButton boutonAdd = new JButton("Add");
+			boutonAdd.addActionListener(new ActionAddRegexp(typeElement, liste));
+			panBoutons.add(boutonAdd);
+
+			JButton boutonDel = new JButton("Remove");
+			boutonDel.addActionListener(new ActionDeleteRegexp(typeElement, liste));
+			panBoutons.add(boutonDel);
+
+			panBoutons.add(Box.createHorizontalGlue());
+			panBoutons.add(new JButtonCouleurRegexp(typeElement));
+
+			pan.add(panBoutons,BorderLayout.SOUTH);
+
+			tabbedPane.add(pan,typeElement.getName());
+		}
 
 		getContentPane().add(tabbedPane);
 		this.setSize(500,300);
 		this.setVisible(true);
-	}//constructor
-
-	
-	private void remplirTabbedPane(){
-		tabbedPane.add(creerPanelOptions(),"Options");
-		
-		JPanel pan;
-		JList<Pattern> liste;
-		//Un panel pour chaque element defini.
-		for(TypeElement typeElement : texteEditor.getListeTypes()){
-			pan = new JPanel();
-			pan.setLayout(new BorderLayout());
-			
-			liste = new JList<Pattern>(typeElement.getPatterns());
-			pan.add(liste,BorderLayout.CENTER);
-			
-			//---- Creation du panel des boutons ----------
-			JPanel panBoutons = new JPanel();
-			panBoutons.setLayout(new BoxLayout(panBoutons,BoxLayout.X_AXIS));
-			 
-			JButton boutonAdd = new JButton("Ajouter");
-			boutonAdd.addActionListener(new ActionAddRegexp(typeElement, liste));
-			panBoutons.add(boutonAdd);
-			
-			JButton boutonDel = new JButton("Supprimer");
-			boutonDel.addActionListener(new ActionDeleteRegexp(typeElement, liste));
-			panBoutons.add(boutonDel);
-			
-			panBoutons.add(Box.createHorizontalGlue());
-			panBoutons.add(new JButtonCouleurRegexp(typeElement));
-			
-			pan.add(panBoutons,BorderLayout.SOUTH);
-			
-			tabbedPane.add(pan,typeElement.getName());
-		}//for
-		
-	}//remplirTabbedPane
-	
-	
-	private JComponent creerPanelOptions(){
-		JTextPane texteExplicatif = new JTextPane();
-		StringBuilder strBuilder = new StringBuilder();
-		strBuilder.append("Cette fenetre vous permet d'editer les expressions regulieres ");
-		strBuilder.append("qui permettent de reconnaitre les differentes syntaxes presentes dans ");
-		strBuilder.append("les fichier textes que vous allez ouvrir.\n");
-		strBuilder.append("Ces expressions regulieres utilisent la syntaxe d'expression du langage JAVA.\n");
-		strBuilder.append("Une description de la syntaxe est disponible sur la page : \n");
-		strBuilder.append("http://java.sun.com/javase/6/docs/api/java/util/regex/Pattern.html \n\n");
-		strBuilder.append("Attention, ne modifiez cela que si vous savez ce que vous faites !");
-		texteExplicatif.setText(strBuilder.toString());
-		return new JScrollPane(texteExplicatif,
-				JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-				JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-	}//creerPanelOptions
-	
-}//Class RegExpFrame
+	}
+}

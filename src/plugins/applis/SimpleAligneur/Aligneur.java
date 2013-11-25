@@ -41,10 +41,8 @@ import plugins.speechreco.aligners.sphiinx4.Alignment;
 import plugins.text.ColoriageEvent;
 import plugins.text.GriserWhilePlaying;
 import plugins.text.ListeElement;
-import plugins.text.PonctParser;
 import plugins.text.TexteEditor;
 import plugins.text.elements.*;
-import plugins.text.regexp.TypeElement;
 import plugins.utils.FileUtils;
 import plugins.utils.InterfaceAdapter;
 import plugins.utils.PrintLogger;
@@ -73,9 +71,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 	private GriserWhilePlaying griserwhenplaying = new GriserWhilePlaying(null, null);
 	private PlayerGUI playergui;
-	private static boolean parseWithRegexp = false;
 
-	private boolean withgui = true;
 	private String sourceTxtfile = null;
 	public String getSourceTxt() {return sourceTxtfile;}
 
@@ -277,78 +273,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 	}
 
 	/**
-	 * cree une liste d'elements a partir d'un texte brut
-	 * @param thenew
-	 */
-	// FIXME c'est quoi ce n-ième parseur ?
-	public void parse(final boolean thenew) {
-		parseWithRegexp = !thenew;
-		edit.setEditable(false);
-		caretSensible = false;
-		final Aligneur main = this;
-
-		// pas de thread, car il faut attendre la fin dans le loadProject !
-		
-//		Thread t = new Thread(new Runnable() {
-//			public void run() {
-				if (thenew) {
-					PonctParser parser = new PonctParser(main);
-					if (thenew) {
-						// version avec un texte immutable
-						// verifie si un fichier-source texte existe
-						// si oui, on suppose que toute modification manuelle du texte dans jtrans a déclenché l'enregistrement
-						// d'un nouveau fichier-source texte; donc ce dernier est toujours a jour !
-						// TODO: mettre a jour ce sourcetxtfile lorsqu'il y a une edition manuelle
-
-						if( sourceTxtfile==null && withgui==false) {
-							// cas d'une applet:
-							JOptionPane.showMessageDialog(null, "WARNING: impossible to save a file with an applet !");
-							return;
-						}
-						
-						if (sourceTxtfile==null || !(new File(sourceTxtfile).exists())) {
-							saveCurrentTextInSourcefile();
-						}
-						ListeElement elts = parser.parseimmutable(sourceTxtfile);
-						edit.setListeElement(elts);
-					} else {
-						// version avec un texte mutable mais un parser indep du TextEditor
-						parser.parse();
-					}
-				} else {
-					// vieille version avec le parser du TexteEditor
-/*
-					List<Element_Mot> oldmots = edit.getListeElement().getMots();
-					ArrayList<Integer> sav = new ArrayList<Integer>();
-					for (int i=0;i<oldmots.size();i++)
-						if (oldmots.get(i).posInAlign<0) break;
-						else sav.add(oldmots.get(i).posInAlign);
-					Integer[] savealign = sav.toArray(new Integer[sav.size()]);
-					*/
-					edit.reparse(true);
-					/*
-					int i=0;
-					for (Element_Mot m : edit.getListeElement().getMots()) {
-						if (i>=savealign.length) break;
-						m.posInAlign=savealign[i++];
-					}
-					System.out.println("reparse: saved naligns "+i);
-					*/
-				}
-				if (project.words!=null) {
-					// matche les Element_Mot avec l'alignement existant
-					int[] match = project.words.matchWithText(edit.getListeElement().getMotsInTab());
-					edit.getListeElement().importAlign(match,0);
-					if (edit!=null) edit.colorizeWords(0, getLastMotAligned());
-					repaint();
-				}
-				caretSensible = true;
-//			}
-//		});
-//		t.start();
-	}
-
-	/**
 	 * Returns a Gson object suitable for serializing and deserializing JTrans
 	 * projects to/from JSON.
 	 */
@@ -372,7 +296,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 		p.txtfile = sourceTxtfile;
 		p.words = project.words;
 		p.phons = project.phons;
-		p.types = edit.getListeTypes();
+		p.types = project.types;
 
 		FileWriter w = new FileWriter(file);
 		newGson().toJson(p, w);
@@ -381,20 +305,15 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 	public void loadJsonProject(File file) throws IOException{
 		FileReader r = new FileReader(file);
-		Project p = newGson().fromJson(r, Project.class);
+		project = newGson().fromJson(r, Project.class);
 		r.close();
 
-		edit.setEditable(false);
+		project.elts.locuteursInfo = project.speakers;
 		caretSensible = true;
-		edit.setListeTypes(new ArrayList<TypeElement>(p.types));
-		p.elts.locuteursInfo = p.speakers;
-		edit.setListeElement(p.elts);
-		setAudioSource(p.wavname);
-		project.words = p.words;
-		project.phons = p.phons;
+		setAudioSource(project.wavname);
+		project.refreshIndex();
 
-		edit.colorizeAllAlignedWords();
-		JTransAPI.refreshIndex();
+		setProject(project);
 	}
 
 	public void setEditionMode() {
@@ -438,16 +357,12 @@ public class Aligneur extends JPanel implements PrintLogger {
 	}
 
 	public Aligneur(boolean withGUI) {
-		withgui=withGUI;
 		initPanel();
 		if (withGUI) createJFrame();
 	}
 
 	public Aligneur() {
-		JTransAPI.alignementWords=project.words;
-		JTransAPI.alignementPhones=project.phons;
 		JTransAPI.aligneur=this;
-		withgui=true;
 		initPanel();
 		createJFrame();
 	}
@@ -482,7 +397,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 	private void initPanel() {
 		setLayout(new BorderLayout());
 
-		edit = new TexteEditor();
+		edit = new TexteEditor(project);
 		JTransAPI.edit=edit;
 		ctrlbox = new ControlBox(this);
 		playergui = ctrlbox.getPlayerGUI();
@@ -1123,12 +1038,9 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 	private List<String> getRecoResultOld(main.SpeechReco asr) {
 		StringBuilder sb = new StringBuilder();
-		ArrayList<Integer> frdebs = new ArrayList<Integer>();
-		ArrayList<Integer> frfins = new ArrayList<Integer>();
 		ArrayList<String> lmots = new ArrayList<String>();
 
-		ListeElement elts = new ListeElement();
-		project.words.clear();
+		project = new Project();
 		for (RecoWord word : asr.resRecoPublic) {
 			String[] phones = new String[word.frameEnd-word.frameDeb];
 			int[] states = new int[word.frameEnd-word.frameDeb];
@@ -1138,8 +1050,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 				// TODO : ajouter les GMM qui ont ete perdues dans RecoWord
 			}
 			project.words.addRecognizedSegment(word.word,word.frameDeb,word.frameEnd,phones,states);
-			//    		project.words.words.add(word.word);
-			//    		project.words.wordsEnd.add(word.frameEnd);
 			if (word.word.charAt(0)=='<') continue;
 			int posdebinpanel = sb.length();
 			sb.append(word.word+" ");
@@ -1149,11 +1059,9 @@ public class Aligneur extends JPanel implements PrintLogger {
 			Element_Mot ew = new Element_Mot(word.word, false);
 			ew.start = posdebinpanel;
 			ew.end = posfininpanel;
-			elts.add(ew);
-			frdebs.add(word.frameDeb);
-			frfins.add(word.frameEnd);
+			project.elts.add(ew);
 		}
-		edit.setListeElement(elts);
+		setProject(project);
 
 		//    	rec=rec.replaceAll("<[^>]+>", "");
 		//    	rec=rec.replaceAll("  +", " ");
@@ -1359,8 +1267,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 		}
 
 		jf.setTitle(markupFile.getName());
-		printInStatusBar("Applying");
-		edit.setListeElement(loader.getElements());
+		setProject(new Project(loader.getElements()));
 		printInStatusBar("Ready");
 		return true;
 	}
@@ -1394,7 +1301,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 		}
 
 		jf.setTitle(file.getName());
-		notifyProjectChanged();
 		printInStatusBar("Ready");
 		return true;
 	}
@@ -1511,5 +1417,12 @@ public class Aligneur extends JPanel implements PrintLogger {
 		}
 
 		fw.close();
+	}
+
+
+	public void setProject(Project project) {
+		this.project = project;
+		JTransAPI.setProject(project);
+		edit.setProject(project);
 	}
 }

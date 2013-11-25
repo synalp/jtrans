@@ -1,7 +1,7 @@
 package markup;
 
+import facade.Project;
 import plugins.text.ListeElement;
-import plugins.text.TexteEditor;
 import plugins.text.elements.*;
 import plugins.text.regexp.TypeElement;
 import utils.EncodingDetector;
@@ -144,7 +144,7 @@ public class RawTextLoader implements MarkupLoader {
 	public void parse(File file) throws ParsingException, IOException {
 		BufferedReader reader = EncodingDetector.properReader(file);
 		elements = new ListeElement();
-		List<TypeElement> types = Arrays.asList(TexteEditor.DEFAULT_TYPES);
+		List<TypeElement> types = Arrays.asList(Project.DEFAULT_TYPES);
 
 		elements.addLocuteurElement("DefaultRawSpeaker");
 
