@@ -43,47 +43,71 @@ termes.
 
 package plugins.text.regexp.graphique;
 
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import javax.swing.JButton;
-import javax.swing.JOptionPane;
+import javax.swing.*;
 
 import plugins.text.regexp.TypeElement;
 
 public class JButtonCouleurRegexp extends JButton implements ActionListener {
 
-	//------ private Fields -------
 	private TypeElement typeElement;
-	
-	
-	//-------- Constructor -------
-	public JButtonCouleurRegexp(TypeElement typeElement){
+
+	private static class ColorIcon implements Icon {
+		private int size;
+		private Color color;
+
+		public ColorIcon(int size, Color color) {
+			this.size = size;
+			this.color = color;
+		}
+
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y) {
+			Graphics2D g2d = (Graphics2D) g;
+			g2d.setRenderingHint(
+					RenderingHints.KEY_ANTIALIASING,
+					RenderingHints.VALUE_ANTIALIAS_ON);
+			g2d.setColor(Color.black);
+			g2d.fillOval(x, y, size, size);
+			g2d.setColor(color);
+			g2d.fillOval(x+1, y+1, size-2, size-2);
+		}
+
+		@Override
+		public int getIconWidth() {
+			return size;
+		}
+
+		@Override
+		public int getIconHeight() {
+			return size;
+		}
+	}
+
+	public JButtonCouleurRegexp(TypeElement typeElement) {
 		this.typeElement = typeElement;
-		setBackground(typeElement.getColor());
-		setText("Couleur");
+		setText("Color");
+		// The color must be shown in an icon instead of as the button's
+		// background color. Button background colors have no effect in OS X.
+		setIcon(new ColorIcon(20, typeElement.getColor()));
 		addActionListener(this);
-	}//constructor
+	}
 	
 	public void actionPerformed(ActionEvent e){
-		SelecteurCouleur colorPanel = new SelecteurCouleur();
-		colorPanel.setColor(getBackground());
-		
-		Object[] options = {"Editer","Annuler"};
+		JColorChooser colorPanel = new JColorChooser(typeElement.getColor());
 
-		int selectedOption = JOptionPane.showOptionDialog(null,
+		int selectedOption = JOptionPane.showConfirmDialog(null,
 				colorPanel,
-				"Reglage des couleurs",
-				JOptionPane.YES_NO_OPTION,
-				JOptionPane.PLAIN_MESSAGE,
-				null,     //do not use a custom Icon
-				options,  //the titles of buttons
-				options[0]); //default button title
+				"Color for \"" + typeElement.getName() + "\"",
+				JOptionPane.OK_CANCEL_OPTION,
+				JOptionPane.PLAIN_MESSAGE);
 		
-		if(selectedOption == JOptionPane.YES_OPTION){
+		if (selectedOption == JOptionPane.OK_OPTION){
 			typeElement.setColor(colorPanel.getColor());
 			setBackground(colorPanel.getColor());
-		}//if
-	}//actionPerformed
-	
-}//JButton
+		}
+	}
+}

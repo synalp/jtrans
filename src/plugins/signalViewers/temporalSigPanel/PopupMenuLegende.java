@@ -49,14 +49,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
-import javax.swing.GroupLayout;
-import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPopupMenu;
+import javax.swing.*;
 
 import plugins.text.elements.Locuteur_Info;
-import plugins.text.regexp.graphique.SelecteurCouleur;
 
 /** Popup affichant la legende couleur/nom du locuteur. */
 public class PopupMenuLegende extends JPopupMenu {
@@ -140,6 +135,7 @@ public class PopupMenuLegende extends JPopupMenu {
 
 		public BoutonCouleur(int indice, Color color, Dimension dim){
 			this.indice = indice;
+			// TODO setting a button's background color won't work in OS X
 			setBackground(color);
 			setPreferredSize(dim);
 			setMinimumSize(dim);
@@ -147,8 +143,7 @@ public class PopupMenuLegende extends JPopupMenu {
 		}//constructor
 
 		public void actionPerformed(ActionEvent e){
-			SelecteurCouleur colorPanel = new SelecteurCouleur();
-			colorPanel.setColor(getBackground());
+			JColorChooser colorPanel = new JColorChooser(getBackground());
 
 			Object[] options = {"Editer","Annuler"};
 
