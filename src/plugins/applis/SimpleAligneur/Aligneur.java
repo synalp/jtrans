@@ -1383,8 +1383,18 @@ public class Aligneur extends JPanel implements PrintLogger {
 					+ file.getName() + "\"\nbecause an I/O error occured.\n\n" + ex,
 					"Couldn't open project", JOptionPane.ERROR_MESSAGE);
 			return false;
+		} catch (JsonParseException ex) {
+			ex.printStackTrace();
+
+			JOptionPane.showMessageDialog(jf, "Couldn't open project \""
+					+ file.getName() + "\"\nbecause it is not a valid JSON file.\n\n"
+					+ ex.getLocalizedMessage(),
+					"Couldn't open project", JOptionPane.ERROR_MESSAGE);
+			return false;
 		}
 
+		jf.setTitle(file.getName());
+		notifyProjectChanged();
 		printInStatusBar("Ready");
 		return true;
 	}
