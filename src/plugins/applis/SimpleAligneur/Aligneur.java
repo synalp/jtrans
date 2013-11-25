@@ -1188,14 +1188,10 @@ public class Aligneur extends JPanel implements PrintLogger {
 			}
 		}
 
-		boolean loaded = false;
-		if (loader != null && markupFileName != null)
-			loaded = m.friendlyLoadMarkup(loader, new File(markupFileName));
+		if (loader != null)
+			m.friendlyLoadMarkup(loader, new File(markupFileName));
 
 		m.setAudioSource(audioFileName);
-
-		if (loaded && audioFileName != null)
-			m.alignWithProgress();
 	}
 
 	/**
