@@ -19,7 +19,6 @@ public class Project {
 	public List<Locuteur_Info> speakers = new ArrayList<Locuteur_Info>();
 	public ListeElement elts = new ListeElement();
 	public String wavname;
-	public String txtfile;
 	public Alignment words = new Alignment();
 	public Alignment phons = new Alignment();
 	public List<TypeElement> types = new ArrayList<TypeElement>(Arrays.asList(DEFAULT_TYPES));
@@ -55,14 +54,6 @@ public class Project {
 
 			new TypeElement("Anchor", new Color(0xddffaa)),
 	};
-
-
-	public Project() {
-	}
-
-	public Project(ListeElement elts) {
-		this.elts = elts;
-	}
 
 
 	public void refreshIndex() {

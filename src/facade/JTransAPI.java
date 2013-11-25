@@ -144,7 +144,7 @@ public class JTransAPI {
 						return createS4AlignOrder(startWord, startFrame, endWord, endFrame);
 					}
 				},
-				aligneur.originalAudioFile,
+				project.wavname,
 				edit.getText());
 	}
 

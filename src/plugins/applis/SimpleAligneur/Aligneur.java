@@ -72,9 +72,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 	private GriserWhilePlaying griserwhenplaying = new GriserWhilePlaying(null, null);
 	private PlayerGUI playergui;
 
-	private String sourceTxtfile = null;
-	public String getSourceTxt() {return sourceTxtfile;}
-
 	public int mixidx=0;
 	public boolean useS4aligner = true;
 
@@ -86,8 +83,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 	public KeysManager kmgr = null;
 	PlayerListener playerController;
 
-	/** Original audio file, format may not be suitable for processing */
-	public File originalAudioFile = null;
 	/** Audio file in a suitable format for processing */
 	public File convertedAudioFile = null;
 
@@ -185,8 +180,12 @@ public class Aligneur extends JPanel implements PrintLogger {
 	 * @param path path to the sound file
 	 */
 	public void setAudioSource(String path) {
-		originalAudioFile = new File(path);
-		convertedAudioFile = JTransAPI.suitableAudioFile(originalAudioFile);
+		project.wavname = path;
+
+		if (path != null)
+			convertedAudioFile = JTransAPI.suitableAudioFile(new File(project.wavname));
+		else
+			convertedAudioFile = null;
 	}
 	
 	public AudioInputStream getAudioStreamFromSec(float sec) {
@@ -256,22 +255,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 		autoAligner = getAutoAligner();
 	}
 
-	private void saveCurrentTextInSourcefile() {
-		try {
-			sourceTxtfile="tmpsource.txt";
-			System.out.println("save text in new source "+sourceTxtfile);
-			PrintWriter f = FileUtils.writeFileUTF(sourceTxtfile);
-			String s = edit.getText();
-			f.println(s);
-			f.close();
-			System.out.println("source text saved in "+sourceTxtfile);
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		}
-	}
-
 	/**
 	 * Returns a Gson object suitable for serializing and deserializing JTrans
 	 * projects to/from JSON.
@@ -287,11 +270,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 	 * Saves the project in JSON format.
 	 */
 	public void saveJsonProject(File file) throws IOException {
-		//if (sourceTxtfile==null) saveCurrentTextInSourcefile();
-
-		project.wavname = originalAudioFile.getCanonicalPath();
-		project.txtfile = sourceTxtfile;
-
 		FileWriter w = new FileWriter(file);
 		newGson().toJson(project, w);
 		w.close();
@@ -314,7 +292,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 		edit.setEditable(true);
 		edit.getHighlighter().removeAllHighlights();
 		System.out.println("seteditionmode");
-		sourceTxtfile=null;
 	}
 
 	private float lastSecClickedOnSpectro = 0;
@@ -1182,7 +1159,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 		Aligneur m = new Aligneur();
 		MarkupLoader loader = null;
 		String markupFileName = null;
-		boolean audioSourceSet = false;
+		String audioFileName = null;
 
 		m.inputControls();
 		for (String arg: args) {
@@ -1193,8 +1170,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 			}
 
 			else if (lcarg.endsWith(".wav")) {
-				m.setAudioSource(arg);
-				audioSourceSet = true;
+				audioFileName = arg;
 			}
 
 			else if (lcarg.endsWith(".trs")) {
@@ -1208,7 +1184,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 			}
 
 			else if (lcarg.endsWith(".txt")) {
-				m.sourceTxtfile = arg;
 				loader = new RawTextLoader();
 				markupFileName = arg;
 			}
@@ -1219,12 +1194,14 @@ public class Aligneur extends JPanel implements PrintLogger {
 			}
 		}
 
-		if (loader != null && markupFileName != null) {
-			boolean success = m.friendlyLoadMarkup(loader, new File(markupFileName));
-			if (success && audioSourceSet) {
-				m.alignWithProgress();
-			}
-		}
+		boolean loaded = false;
+		if (loader != null && markupFileName != null)
+			loaded = m.friendlyLoadMarkup(loader, new File(markupFileName));
+
+		m.setAudioSource(audioFileName);
+
+		if (loaded && audioFileName != null)
+			m.alignWithProgress();
 	}
 
 	/**
