@@ -45,6 +45,9 @@ import plugins.text.regexp.TypeElement;
  * Pour definir les elements "speciaux", il faut ajouter des expressions regulieres
  */
 public class TexteEditor extends JTextPane {
+
+	public static final String DEFAULT_FONT_NAME = Font.SANS_SERIF;
+	public static final int DEFAULT_FONT_SIZE = 13;
 	
 	//----------------------------------------------------------
 	//------------------ Private Fields ------------------------
@@ -133,6 +136,9 @@ public class TexteEditor extends JTextPane {
 		super();
 		listeElement = new ListeElement();
 		listeTypes = new ArrayList<TypeElement>(Arrays.asList(DEFAULT_TYPES));
+
+		setFont(new Font(DEFAULT_FONT_NAME, Font.PLAIN, DEFAULT_FONT_SIZE));
+
 		
 		textChanged = false;
 		colorieur = new Coloriage();
@@ -140,11 +146,6 @@ public class TexteEditor extends JTextPane {
 		singleton=this;
 	}//Constructor
 
-	public void fontSize(int size) {
-		setFont(Font.decode("timesnewroman-plain-"+size));
-		repaint();
-	}
-	
 	/**
 	 * je disable toujours le scrolling automatique.
 	 * pour le faire quand meme, par exemple lors de la lecture automatique, il faudra l'appeler explicitement !

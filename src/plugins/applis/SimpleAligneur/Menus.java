@@ -32,6 +32,7 @@ import plugins.speechreco.RecoListener;
 import plugins.speechreco.adaptation.BiaisAdapt;
 import plugins.speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
 import plugins.speechreco.grammaire.Grammatiseur;
+import plugins.text.TexteEditor;
 import plugins.utils.TextInputWindow;
 import plugins.utils.UserInputProcessor;
 import utils.NicerFileChooser;
@@ -50,6 +51,16 @@ public class Menus {
 			filterTextGridWordsOnly = new FileNameExtensionFilter("Praat TextGrid (*.textgrid) - Words only", "textgrid"),
 			filterTextGridWordsAndPhons = new FileNameExtensionFilter("Praat TextGrid (*.textgrid) - Words + Phonemes", "textgrid"),
 			filterTXT = new FileNameExtensionFilter("Raw Text (*.txt)", "txt");
+
+	private static final int[] FONT_SIZES = {
+			10, 11, 12, 13, 14, 16, 18, 20, 24, 28, 36
+	};
+
+	private static final String[] FONT_FAMILIES = {
+			Font.SANS_SERIF,
+			Font.SERIF,
+			Font.MONOSPACED
+	};
 
 	public Menus(Aligneur main) {
 		aligneur=main;
@@ -314,7 +325,8 @@ public class Menus {
 		JMenuItem mikerec = new JMenuItem("Record from mic");
 		JMenuItem liveasr = new JMenuItem("Live ASR");
 		JMenuItem gui3 = new JMenuItem("GUI: toggle words/phones");
-		JMenuItem font = new JMenuItem("Font size");
+		JMenu fontSize = new JMenu("Font size");
+		JMenu fontFamily = new JMenu("Font family");
 		menubar.add(prefs);
 		//		JMenuItem mots = new JMenuItem("forward mots");
 		//		prefs.add(mots);
@@ -322,7 +334,46 @@ public class Menus {
 		prefs.add(mikerec);
 		prefs.add(liveasr);
 		prefs.add(gui3);
-		prefs.add(font);
+		prefs.addSeparator();
+		prefs.add(fontSize);
+		prefs.add(fontFamily);
+
+		ButtonGroup fontSizeGroup = new ButtonGroup();
+		for (final int points: FONT_SIZES) {
+			final JRadioButtonMenuItem jmi = new JRadioButtonMenuItem(points + " pt");
+			fontSize.add(jmi);
+			fontSizeGroup.add(jmi);
+
+			jmi.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					Font currentFont = aligneur.edit.getFont();
+					aligneur.edit.setFont(new Font(currentFont.getName(), Font.PLAIN, points));
+				}
+			});
+
+			if (points == TexteEditor.DEFAULT_FONT_SIZE)
+				jmi.setSelected(true);
+		}
+
+		ButtonGroup fontFamilyGroup = new ButtonGroup();
+		for (final String name: FONT_FAMILIES) {
+			final JRadioButtonMenuItem jmi = new JRadioButtonMenuItem(name);
+			fontFamily.add(jmi);
+			fontFamilyGroup.add(jmi);
+
+			jmi.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					Font currentFont = aligneur.edit.getFont();
+					aligneur.edit.setFont(new Font(name, Font.PLAIN, currentFont.getSize()));
+				}
+			});
+
+			if (name.equals(TexteEditor.DEFAULT_FONT_NAME))
+				jmi.setSelected(true);
+		}
+
 
 		liveasr.addActionListener(new ActionListener() {
 			@Override
@@ -353,23 +404,6 @@ public class Menus {
 				aligneur.toggleShowPhones();
 				//				TemporalSigPanel.showPhones=!TemporalSigPanel.showPhones;
 				//				aligneur.repaint();
-			}
-		});
-		font.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				final String[] fonts = {"10","12","16","18","20","24","30"};
-
-				final JFrame fl = new JFrame("choose font size");
-				final JList jl = new JList(fonts);
-				jl.addListSelectionListener(new ListSelectionListener() {
-					public void valueChanged(ListSelectionEvent e) {
-						aligneur.edit.fontSize(Integer.parseInt((String)jl.getSelectedValue()));
-						fl.dispose();
-					}
-				});
-				fl.getContentPane().add(jl);
-				fl.setSize(100, 100);
-				fl.setVisible(true);
 			}
 		});
 
