@@ -1,6 +1,5 @@
 package facade;
 
-import java.io.*;
 import java.util.*;
 
 import plugins.applis.SimpleAligneur.Aligneur;
@@ -8,23 +7,35 @@ import plugins.speechreco.aligners.sphiinx4.Alignment;
 import plugins.speechreco.aligners.sphiinx4.S4AlignOrder;
 import plugins.speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
 import plugins.text.elements.*;
+import plugins.utils.TimeConverter;
 import utils.ProgressDialog;
 
-import javax.sound.sampled.*;
+
+/**
+ * Handles automatic alignment
+ */
+public class AutoAligner {
+	private Aligneur aligneur;
+	private Project project;
+	private List<Element_Mot> mots;
+	private S4ForceAlignBlocViterbi s4blocViterbi;
 
 
-public class JTransAPI {
-	Aligneur aligneur;
-	Project project;
-	List<Element_Mot> mots;
-	S4ForceAlignBlocViterbi s4blocViterbi;
+	/**
+	 * Align words between anchors using linear interpolation (a.k.a.
+	 * "equialign") instead of proper Sphinx alignment (batchAlign).
+	 * Setting this flag to `true` yields very fast albeit inaccurate results.
+	 */
+	private static final boolean USE_LINEAR_ALIGNMENT = false;
 
-	public JTransAPI(Project project, Aligneur aligneur) {
+
+	public AutoAligner(Project project, Aligneur aligneur) {
 		this.project = project;
 		this.aligneur = aligneur;
 		project.refreshIndex();
 		mots = project.elts.getMots();
 	}
+
 
 	private class Overlap {
 		/**
@@ -61,84 +72,6 @@ public class JTransAPI {
 	}
 
 
-	/**
-	 * Align words between anchors using linear interpolation (a.k.a.
-	 * "equialign") instead of proper Sphinx alignment (batchAlign).
-	 * Setting this flag to `true` yields very fast albeit inaccurate results.
-	 */
-	private static final boolean USE_LINEAR_ALIGNMENT = false;
-
-	/**
-	 * Target audio format. Any input audio files that do not match this format
-	 * will be converted to it before being processed.
-	 */
-	private static final AudioFormat SUITABLE_AUDIO_FORMAT =
-			new AudioFormat(16000, 16, 1, true, false);
-
-	public static float frame2sec(int fr) {
-		return (float)frame2millisec(fr)/1000f;
-	}
-
-	public static long frame2millisec(int fr) {
-		// window = 25ms, donc milieu = 12ms
-		return fr*10+12;
-	}
-
-	public static int millisec2frame(long ms) {
-		return (int)((ms-12)/10);
-	}
-
-	public static int second2frame(float sec) {
-		int fr = (int)(sec*100f);
-		return fr;
-	}
-
-	/**
-	 * Return an audio file in a suitable format for JTrans. If the original
-	 * file isn't in the right format, convert it and cache it.
-	 */
-	public static File suitableAudioFile(final File original) {
-		AudioFormat af;
-
-		try {
-			af = AudioSystem.getAudioFileFormat(original).getFormat();
-		} catch (UnsupportedAudioFileException ex) {
-			ex.printStackTrace();
-			return original;
-		} catch (IOException ex) {
-			ex.printStackTrace();
-			return original;
-		}
-
-		if (af.matches(SUITABLE_AUDIO_FORMAT)) {
-			System.out.println("suitableAudioFile: no conversion needed!");
-			return original;
-		}
-
-		System.out.println("suitableAudioFile: need conversion, trying to get one from the cache");
-
-		Cache.FileFactory factory = new Cache.FileFactory() {
-			public void write(File f) throws IOException {
-				System.out.println("suitableAudioFile: no cache found... creating one");
-
-				AudioInputStream originalStream;
-				try {
-					originalStream = AudioSystem.getAudioInputStream(original);
-				} catch (UnsupportedAudioFileException ex) {
-					ex.printStackTrace();
-					throw new Error("Unsupported audio file; should've been caught above!");
-				}
-
-				AudioSystem.write(
-						AudioSystem.getAudioInputStream(SUITABLE_AUDIO_FORMAT, originalStream),
-						AudioFileFormat.Type.WAVE,
-						f);
-			}
-		};
-
-		return Cache.cachedFile("converted.wav", factory, original);
-	}
-
 	private S4AlignOrder createS4AlignOrder(int motdeb, int trdeb, int motfin, int trfin) {
 		if (s4blocViterbi == null)
 			s4blocViterbi = aligneur.getS4aligner();
@@ -169,7 +102,7 @@ public class JTransAPI {
 	 *
 	 * It is not merged into the main alignment (use mergeOrder() for that).
 	 */
-	public S4AlignOrder partialBatchAlign(final int startWord, final int startFrame, final int endWord, final int endFrame) {
+	private S4AlignOrder partialBatchAlign(final int startWord, final int startFrame, final int endWord, final int endFrame) {
 		System.out.println("batch align "+startWord+"-"+endWord+" "+startFrame+":"+endFrame);
 
 		return (S4AlignOrder)Cache.cachedObject(
@@ -186,7 +119,7 @@ public class JTransAPI {
 	/**
 	 * Merge an S4AlignOrder into the main alignment.
 	 */
-	public void mergeOrder(S4AlignOrder order, int startWord, int endWord) {
+	private void mergeOrder(S4AlignOrder order, int startWord, int endWord) {
 		if (order.alignWords != null) {
 			System.out.println("================================= ALIGN FOUND");
 			System.out.println(order.alignWords.toString());
@@ -224,7 +157,7 @@ public class JTransAPI {
 	 * the main alignment.
 	 * Very fast, but inaccurate.
 	 */
-	public void linearAlign(int startWord, int startFrame, int endWord, int endFrame) {
+	private void linearAlign(int startWord, int startFrame, int endWord, int endFrame) {
 		float frameDelta = ((float)(endFrame-startFrame))/((float)(endWord-startWord+1));
 		float currEndFrame = startFrame + frameDelta;
 
@@ -251,7 +184,7 @@ public class JTransAPI {
 	 * @param startFrame can be < 0, in which case use the last aligned word.
 	 * @param endFrame
 	 */
-	public void setAlignWord(int startWord, int word, int startFrame, int endFrame) {
+	private void setAlignWord(int startWord, int word, int startFrame, int endFrame) {
 		assert endFrame >= 0;
 
 		if (startWord < 0) {
@@ -298,9 +231,9 @@ public class JTransAPI {
 		aligneur.edit.colorizeWords(startWord, word);
 	}
 
-	public void setAlignWord(int startWord, int endWord, float startSecond, float endSecond) {
-		int startFrame = JTransAPI.second2frame(startSecond);
-		int endFrame   = JTransAPI.second2frame(endSecond);
+	private void setAlignWord(int startWord, int endWord, float startSecond, float endSecond) {
+		int startFrame = TimeConverter.second2frame(startSecond);
+		int endFrame   = TimeConverter.second2frame(endSecond);
 		setAlignWord(startWord, endWord, startFrame, endFrame);
 	}
 
@@ -334,8 +267,8 @@ public class JTransAPI {
 	}
 
 	public void setSilenceSegment(float secdeb, float secfin) {
-		int curdebfr = JTransAPI.second2frame(secdeb);
-		int curendfr = JTransAPI.second2frame(secfin);
+		int curdebfr = TimeConverter.second2frame(secdeb);
+		int curendfr = TimeConverter.second2frame(secfin);
 		setSilenceSegment(curdebfr, curendfr, project.words);
 		setSilenceSegment(curdebfr, curendfr, project.phons);
 	}
@@ -375,7 +308,7 @@ public class JTransAPI {
 					if (currentOverlap != null && currentOverlap.s2LastOverlappedWord >= 0) {
 						// Find when the overlapped speech ends.
 						int seg = mots.get(currentOverlap.s2LastOverlappedWord).posInAlign;
-						currentOverlap.overlapEnd = JTransAPI.frame2sec(
+						currentOverlap.overlapEnd = TimeConverter.frame2sec(
 								project.words.getSegmentEndFrame(seg));
 
 						if (currentOverlap.overlapEnd > currentOverlap.overlapStart) {
@@ -388,9 +321,9 @@ public class JTransAPI {
 
 							S4AlignOrder spk1Overlap = partialBatchAlign(
 									currentOverlap.s1FirstWord,
-									JTransAPI.second2frame(currentOverlap.s1StartsSpeaking),
+									TimeConverter.second2frame(currentOverlap.s1StartsSpeaking),
 									currentOverlap.s1LastWord,
-									JTransAPI.second2frame(currentOverlap.overlapEnd));
+									TimeConverter.second2frame(currentOverlap.overlapEnd));
 
 							if (!spk1Overlap.isEmpty()) {
 								project.overlaps.add(spk1Overlap);

@@ -65,11 +65,10 @@ import plugins.applis.SimpleAligneur.PlayerListener;
 import plugins.buffer.RoundBuffer;
 import plugins.speechreco.aligners.OldAlignment;
 import plugins.text.ListeElement;
-import plugins.text.TexteEditor;
 import plugins.text.elements.Element;
 import plugins.text.elements.Element_Locuteur;
 import plugins.text.elements.Element_Mot;
-import plugins.utils.TraducteurTime;
+import plugins.utils.TimeConverter;
 
 public class TemporalSigPanel extends JComponent {
 
@@ -335,7 +334,7 @@ public class TemporalSigPanel extends JComponent {
 				//affichage du string correspondant
 				time = Math.round((xInt*hZoom+offsetStart)/frameRate);
 				
-				timeString = TraducteurTime.getTimeMinMSFromSecondes(time);
+				timeString = TimeConverter.getTimeMinMSFromSecondes(time);
 				motWidth = SwingUtilities.computeStringWidth(fontMetric, timeString);
 				posiMot = xInt - (motWidth >> 1);
 				g.drawString(timeString, posiMot, hauteurText);
@@ -457,7 +456,7 @@ public class TemporalSigPanel extends JComponent {
 								/*
 								time = 
 									elementAvecDuree.endSample/frameRate;
-								timeString = TraducteurTime.getTimeMinSMSFromSeconds(time);
+								timeString = TimeConverter.getTimeMinSMSFromSeconds(time);
 								motWidth = SwingUtilities.computeStringWidth(fontMetric, timeString);
 								posiMot = posiLine - (motWidth >> 1);
 			
@@ -773,7 +772,7 @@ System.out.println("debugsegtoprint "+segidx);
 	public boolean setProgressBar(long readedShort){
 		int widthFoisHZoom = getWidth()*hZoom;
 		if (readedShort<offsetStart) return setProgressBar(readedShort,0.5f);
-		aligneur.toolbar.setPos(TraducteurTime.getTimeHMinSFromSeconds(OldAlignment.sample2second(readedShort)));
+		aligneur.toolbar.setPos(TimeConverter.getTimeHMinSFromSeconds(OldAlignment.sample2second(readedShort)));
 		if(Math.abs(readedShort - offsetStart) > widthFoisHZoom){
 			offsetStart = (readedShort/widthFoisHZoom)*widthFoisHZoom;
 			checkOffsetStart();
@@ -798,7 +797,7 @@ System.out.println("debugsegtoprint "+segidx);
 		return false;
 	}
 	public boolean setProgressBar(long sample, float posPB){
-		aligneur.toolbar.setPos(TraducteurTime.getTimeHMinSFromSeconds(OldAlignment.sample2second(sample)));
+		aligneur.toolbar.setPos(TimeConverter.getTimeHMinSFromSeconds(OldAlignment.sample2second(sample)));
 		int widthFoisHZoom = getWidth()*hZoom;
 		// on force le repaint dans ce cas !
 		offsetStart = sample - (long)(posPB * (float)widthFoisHZoom);

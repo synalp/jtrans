@@ -21,7 +21,8 @@ import javax.swing.*;
 import javax.swing.border.BevelBorder;
 
 import com.google.gson.*;
-import facade.JTransAPI;
+import facade.AutoAligner;
+import facade.Cache;
 import facade.Project;
 import markup.*;
 import main.SpeechReco;
@@ -43,6 +44,7 @@ import plugins.text.elements.*;
 import plugins.utils.FileUtils;
 import plugins.utils.InterfaceAdapter;
 import plugins.utils.PrintLogger;
+import plugins.utils.TimeConverter;
 import speechreco.RecoWord;
 import tools.audio.PlayerGUI;
 import utils.ProgressDialog;
@@ -95,7 +97,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 	public float getCurPosInSec() {return cursec;}
 	public void setCurPosInSec(float sec) {
 		cursec=sec;
-		int fr = JTransAPI.second2frame(cursec);
+		int fr = TimeConverter.second2frame(cursec);
 		int seg = project.words.getSegmentAtFrame(fr);
 		// nouveau panel
 		sigpan.setAudioInputStream(getCurPosInSec(), getAudioStreamFromSec(getCurPosInSec()));
@@ -161,6 +163,61 @@ public class Aligneur extends JPanel implements PrintLogger {
 		out.close();
 	}
 
+
+	/**
+	 * Target audio format. Any input audio files that do not match this format
+	 * will be converted to it before being processed.
+	 */
+	private static final AudioFormat SUITABLE_AUDIO_FORMAT =
+			new AudioFormat(16000, 16, 1, true, false);
+
+
+	/**
+	 * Return an audio file in a suitable format for JTrans. If the original
+	 * file isn't in the right format, convert it and cache it.
+	 */
+	public static File suitableAudioFile(final File original) {
+		AudioFormat af;
+
+		try {
+			af = AudioSystem.getAudioFileFormat(original).getFormat();
+		} catch (UnsupportedAudioFileException ex) {
+			ex.printStackTrace();
+			return original;
+		} catch (IOException ex) {
+			ex.printStackTrace();
+			return original;
+		}
+
+		if (af.matches(SUITABLE_AUDIO_FORMAT)) {
+			System.out.println("suitableAudioFile: no conversion needed!");
+			return original;
+		}
+
+		System.out.println("suitableAudioFile: need conversion, trying to get one from the cache");
+
+		Cache.FileFactory factory = new Cache.FileFactory() {
+			public void write(File f) throws IOException {
+				System.out.println("suitableAudioFile: no cache found... creating one");
+
+				AudioInputStream originalStream;
+				try {
+					originalStream = AudioSystem.getAudioInputStream(original);
+				} catch (UnsupportedAudioFileException ex) {
+					ex.printStackTrace();
+					throw new Error("Unsupported audio file; should've been caught above!");
+				}
+
+				AudioSystem.write(
+						AudioSystem.getAudioInputStream(SUITABLE_AUDIO_FORMAT, originalStream),
+						AudioFileFormat.Type.WAVE,
+						f);
+			}
+		};
+
+		return Cache.cachedFile("converted.wav", factory, original);
+	}
+
 	/**
 	 * Sets the sound source file and converts it to a suitable format for
 	 * JTrans if needed.
@@ -170,14 +227,14 @@ public class Aligneur extends JPanel implements PrintLogger {
 		project.wavname = path;
 
 		if (path != null) {
-			convertedAudioFile = JTransAPI.suitableAudioFile(new File(project.wavname));
+			convertedAudioFile = suitableAudioFile(new File(project.wavname));
 
 			try {
 				AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(convertedAudioFile);
 				AudioFormat format = audioInputStream.getFormat();
 				long frames = audioInputStream.getFrameLength();
 				double durationInSeconds = (frames+0.0) / format.getFrameRate();
-				audioSourceTotalFrames = JTransAPI.second2frame((float)durationInSeconds);
+				audioSourceTotalFrames = TimeConverter.second2frame((float)durationInSeconds);
 			} catch (IOException ex) {
 				audioSourceTotalFrames = -1;
 			} catch (UnsupportedAudioFileException ex) {
@@ -662,8 +719,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 				int segmentDuMot = project.elts.getMot(mot).posInAlign;
 				if (segmentDuMot>=0) {
 					// mot deja aligne
-					if (deb>=0) project.words.setSegmentDebFrame(segmentDuMot, JTransAPI.second2frame(deb));
-					if (end>=0) project.words.setSegmentEndFrame(segmentDuMot, JTransAPI.second2frame(end));
+					if (deb>=0) project.words.setSegmentDebFrame(segmentDuMot, TimeConverter.second2frame(deb));
+					if (end>=0) project.words.setSegmentEndFrame(segmentDuMot, TimeConverter.second2frame(end));
 				} else {
 					// mot non encore aligne
 					if (mot>0) {
@@ -674,14 +731,14 @@ public class Aligneur extends JPanel implements PrintLogger {
 						project.words.clear();
 						int curdebfr = 0;
 						if (deb>0) {
-							curdebfr = JTransAPI.second2frame(deb);
+							curdebfr = TimeConverter.second2frame(deb);
 							if (curdebfr>0) {
 								project.words.addRecognizedSegment("SIL", 0, curdebfr, null, null);
 							}
 						}
 						if (end>=0) {
 							int newseg = project.words.addRecognizedSegment(project.elts.getMot(0).getWordString(),
-									curdebfr, JTransAPI.second2frame(end), null, null);
+									curdebfr, TimeConverter.second2frame(end), null, null);
 							project.elts.getMot(0).posInAlign=newseg;
 						} else {
 							// TODO
@@ -743,8 +800,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 				doForceAnchor(lastSecClickedOnSpectro,mot);
 			} else {
 				System.out.println("set end of segment "+segmentDuMot+" "+project.words.getSegmentLabel(segmentDuMot));
-				System.out.println("set at frame "+JTransAPI.second2frame(lastSecClickedOnSpectro));
-				project.words.setSegmentEndFrame(segmentDuMot, JTransAPI.second2frame(lastSecClickedOnSpectro));
+				System.out.println("set at frame "+TimeConverter.second2frame(lastSecClickedOnSpectro));
+				project.words.setSegmentEndFrame(segmentDuMot, TimeConverter.second2frame(lastSecClickedOnSpectro));
 			}
 			if (edit!=null) edit.colorizeWords(0, mot);
 			setCurPosInSec(sec0);
@@ -930,7 +987,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 		} else {
 			absms = (long)(1000f*seconds);
 		}
-		final int fr = JTransAPI.millisec2frame(absms);
+		final int fr = TimeConverter.millisec2frame(absms);
 		System.out.println("insert anchor "+absms+" "+fr);
 
 		// c'est le AWT event thread qui appelle cette fonction: il ne faut pas le bloquer !
@@ -1248,14 +1305,18 @@ public class Aligneur extends JPanel implements PrintLogger {
 	public void alignBetweenAnchorsWithProgress() {
 		final ProgressDialog progress = new ProgressDialog(jf, null, "Aligning...");
 		progress.setRunnable(new Runnable() {
-			public void run() { new JTransAPI(project, Aligneur.this).alignBetweenAnchors(progress); }});
+			public void run() {
+				new AutoAligner(project, Aligneur.this).alignBetweenAnchors(progress);
+			}});
 		progress.setVisible(true);
 	}
 
 	public void alignAllWithProgress() {
 		final ProgressDialog progress = new ProgressDialog(jf, null, "Aligning...");
 		progress.setRunnable(new Runnable() {
-			public void run() { new JTransAPI(project, Aligneur.this).alignRaw(progress); }});
+			public void run() {
+				new AutoAligner(project, Aligneur.this).alignRaw(progress);
+			}});
 		progress.setVisible(true);
 	}
 
@@ -1303,15 +1364,15 @@ public class Aligneur extends JPanel implements PrintLogger {
 				.append("\n\t\tclass = \"IntervalTier\"")
 				.append("\n\t\tname = \"").append(name).append('"') // TODO escape strings
 				.append("\n\t\txmin = 0")
-				.append("\n\t\txmax = ").append(Float.toString(JTransAPI.frame2sec(finalFrame)))
+				.append("\n\t\txmax = ").append(Float.toString(TimeConverter.frame2sec(finalFrame)))
 				.append("\n\t\tintervals: size = ")
 				.append("" + al.getNbSegments());
 		for (int j = 0; j < al.getNbSegments(); j++) {
 			w.append("\n\t\tintervals [").append(Integer.toString(j+1)).append("]:")
 					.append("\n\t\t\txmin = ")
-					.append(Float.toString(JTransAPI.frame2sec(al.getSegmentDebFrame(j))))
+					.append(Float.toString(TimeConverter.frame2sec(al.getSegmentDebFrame(j))))
 					.append("\n\t\t\txmax = ")
-					.append(Float.toString(JTransAPI.frame2sec(al.getSegmentEndFrame(j))))
+					.append(Float.toString(TimeConverter.frame2sec(al.getSegmentEndFrame(j))))
 					.append("\n\t\t\ttext = \"")
 					.append(al.getSegmentLabel(j)).append('"'); // TODO escape strings
 		}
@@ -1331,7 +1392,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 				.append("\nObject class = \"TextGrid\"")
 				.append("\n")
 				.append("\nxmin = 0")
-				.append("\nxmax = ").append("" + JTransAPI.frame2sec(finalFrame))
+				.append("\nxmax = ").append("" + TimeConverter.frame2sec(finalFrame))
 				.append("\ntiers? <exists>")
 				.append("\nsize = ").append("" + tiers)
 				.append("\nitem []:");

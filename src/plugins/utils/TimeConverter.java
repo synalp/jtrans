@@ -43,11 +43,7 @@ termes.
 
 package plugins.utils;
 
-/**
- * Classe regrouppant les methodes de traduction du temps en string
- *
- */
-public abstract class TraducteurTime {
+public abstract class TimeConverter {
 
 	public static String HEURES_STR = "h";
 	public static String MINUTES_STR = "min";
@@ -126,8 +122,25 @@ public abstract class TraducteurTime {
 		
 		return timeStr.toString();
 	}//getTimeMinMSFromSecondes(double time)
+
+
+	public static float frame2sec(int fr) {
+		return (float)frame2millisec(fr)/1000f;
+	}
+
+	public static long frame2millisec(int fr) {
+		// window = 25ms, donc milieu = 12ms
+		return fr*10+12;
+	}
+
+	public static int millisec2frame(long ms) {
+		return (int)((ms-12)/10);
+	}
+
+	public static int second2frame(float sec) {
+		int fr = (int)(sec*100f);
+		return fr;
+	}
 	
 	
-	
-	
-}//TraducteurTime
+}//TimeConverter

@@ -1,9 +1,9 @@
 package markup;
 
-import facade.JTransAPI;
 import facade.Project;
 import plugins.speechreco.aligners.sphiinx4.Alignment;
 import plugins.text.elements.*;
+import plugins.utils.TimeConverter;
 import utils.EncodingDetector;
 
 import java.io.*;
@@ -68,7 +68,7 @@ public class TextGridLoader implements MarkupLoader {
 			String text = RawTextLoader.normalizeText(early.tier.getSegmentLabel(early.segment));
 			project.elts.addAll(RawTextLoader.parseString(text, project.types));
 
-			project.elts.add(new Element_Ancre(JTransAPI.frame2sec(early.tier.getSegmentEndFrame(early.segment))));
+			project.elts.add(new Element_Ancre(TimeConverter.frame2sec(early.tier.getSegmentEndFrame(early.segment))));
 
 			// Introduce current speaker
 			if (currentSpeaker != early.speaker) {
@@ -285,8 +285,8 @@ class TextGridStateMachine {
 						if (currentInterval.isComplete()) {
 							currentTier.addRecognizedSegment(
 									currentInterval.text,
-									JTransAPI.second2frame(currentInterval.xmin),
-									JTransAPI.second2frame(currentInterval.xmax),
+									TimeConverter.second2frame(currentInterval.xmin),
+									TimeConverter.second2frame(currentInterval.xmax),
 									null,
 									null);
 							currentInterval = new Interval();

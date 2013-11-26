@@ -9,30 +9,16 @@ package plugins.text;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.Rectangle;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringReader;
-import java.util.*;
 import java.util.concurrent.PriorityBlockingQueue;
-import java.util.regex.Pattern;
 
 import javax.swing.*;
 import javax.swing.event.CaretEvent;
 import javax.swing.text.*;
 
-import facade.JTransAPI;
 
 import facade.Project;
-import markup.RawTextLoader;
 import plugins.text.elements.Element;
 import plugins.text.elements.Element_Mot;
-import plugins.text.regexp.TypeElement;
 
 /**
  * permet de selectionner les differents elements pour interpreter le texte:

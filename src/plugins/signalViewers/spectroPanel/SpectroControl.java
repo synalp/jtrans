@@ -17,9 +17,9 @@ import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import facade.JTransAPI;
 import plugins.applis.SimpleAligneur.Aligneur;
 import plugins.speechreco.aligners.sphiinx4.Alignment;
+import plugins.utils.TimeConverter;
 
 /**
  * "wrap" un SpectroPanel dans un autre Panel, et
@@ -152,7 +152,7 @@ public class SpectroControl extends JPanel {
 	}
 
 	private void gottosec(float s) {
-		int fr = JTransAPI.second2frame(s);
+		int fr = TimeConverter.second2frame(s);
 		setFirstFrame(fr);
 	}
 
