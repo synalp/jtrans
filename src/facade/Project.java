@@ -34,9 +34,7 @@ public class Project {
 					"\\+"),
 
 			new TypeElement("Noise", Color.CYAN,
-					"(\\w)*\\((\\w)*\\)(\\w)*",
-					"\\s\\*\\*\\*\\s",
-					"\\s\\*\\s"),
+					"\\*+"),
 
 			new TypeElement("Overlap Start", Color.PINK,
 					"<"),

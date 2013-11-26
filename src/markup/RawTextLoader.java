@@ -81,7 +81,7 @@ public class RawTextLoader implements MarkupLoader {
 						listeElts.add(new Element_Commentaire(sub));
 						break;
 					case 2: // BRUIT
-						listeElts.add(new Element_Mot(sub, true));
+						listeElts.add(new Element_Bruit(sub));
 						break;
 					case 3 : //Debut chevauchement
 						listeElts.add(new Element_DebutChevauchement());
@@ -127,8 +127,7 @@ public class RawTextLoader implements MarkupLoader {
 			}
 
 			if (index > debutMot){
-				listeElts.add(new Element_Mot(
-						text.substring(debutMot + precfin, index + precfin), false));
+				listeElts.add(new Element_Mot(text.substring(debutMot + precfin, index + precfin)));
 			}
 		}
 	}

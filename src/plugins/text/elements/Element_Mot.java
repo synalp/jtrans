@@ -48,7 +48,6 @@ package plugins.text.elements;
  * le mot en lui m�me et le sample de fin.
  */
 public class Element_Mot extends Element {
-	public final boolean isBruit;
 	public final String word;
 
 	/**
@@ -60,13 +59,12 @@ public class Element_Mot extends Element {
 		return word;
 	}
 
-	public Element_Mot(String word, boolean isBruit) {
+	public Element_Mot(String word) {
 		this.word = word;
-		this.isBruit = isBruit;
 	}
 
 	public int getType() {
-		return isBruit? 2: -1;
+		return -1; // not a special element
 	}
 
 	public String toString() {

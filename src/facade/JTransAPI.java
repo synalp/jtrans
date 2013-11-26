@@ -27,12 +27,6 @@ public class JTransAPI {
 	 */
 	private static final AudioFormat SUITABLE_AUDIO_FORMAT =
 			new AudioFormat(16000, 16, 1, true, false);
-	
-	public static boolean isBruit(int mot) {
-		initmots();
-		Element_Mot m = project.elts.getMot(mot);
-		return m.isBruit;
-	}
 
 	public static float frame2sec(int fr) {
 		return (float)frame2millisec(fr)/1000f;

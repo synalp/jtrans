@@ -613,16 +613,16 @@ public class Aligneur extends JPanel implements PrintLogger {
 		if (mot0<0) {
 			// TODO: sec indique l'offset qu'il faut considerer dans le fichier WAV
 			// donc, il faut ajouter un silence au debut du fichier jusqu'a cet offset
-			if (JTransAPI.isBruit(0)) {
-				// TODO: verifier que le mot suivant est bien un mot, et non un bruit ou silence
-				JTransAPI.setAlignWord(-1, 0, 0f, sec);
-			} else {
+//			if (JTransAPI.isBruit(0)) {
+//				// TODO: verifier que le mot suivant est bien un mot, et non un bruit ou silence
+//				JTransAPI.setAlignWord(-1, 0, 0f, sec);
+//			} else {
 				// ajouter un silence devant
 				// TODO: est-ce que le prochain alignement auto, lorsqu'il verra qu'il n'y a aucun mot
 				// de deja aligne, prendra en compte le premier silence qui est aligne ?
 				
 				JTransAPI.setSilenceSegment(0f, sec);
-			}
+//			}
 			return;
 		}
 		// TODO: refaire la suite avec JTransAPI
@@ -997,7 +997,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 			lmots.add(word.word);
 			//    		project.words.wordsIdx.add(project.words.words.size()-1);
 			int posfininpanel = sb.length();
-			Element_Mot ew = new Element_Mot(word.word, false);
+			Element_Mot ew = new Element_Mot(word.word);
 			ew.start = posdebinpanel;
 			ew.end = posfininpanel;
 			project.elts.add(ew);

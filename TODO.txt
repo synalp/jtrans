@@ -5,9 +5,6 @@
 
 Import Praat 1-tier (corpus OFROM)
 
-GUI : quand un mot avec un fond non-blanc (genre les *** à fond bleu) est mis
-en surbrillance par le karaoké, il n'est pas remis à sa couleur d'origine)
-
 GUI : sélectionner du texte et cliquer sur "modifier" ; ça ouvre une nouvelle
 fenêtre qui permet de rentrer le texte de remplacement. Puis, ça reparse la
 sélection (et la ré-aligne ?) - Attention si le texte sélectionné contient une
@@ -21,10 +18,6 @@ Parser un fichier TextGrid. Boîte de dialogue demandant quel tier mots importer
 sont ignorés mais quand même conservés (en tant que String brut) pour ne perdre
 aucune information ; ces tiers sont réécrits tels quels lorsqu'on exporte en
 Praat. Il faut aussi qu'on les sauvegarde dans le .jtr...
-
-Marqueur de bruit n'est pas toujours colorié en bleu. Problème de regexp ?
-C'était le cas au commit 128d518 (i.e. avant la création d'éléments par le
-parseur TRS) ?
 
 
 FAIBLE PRIORITÉ
