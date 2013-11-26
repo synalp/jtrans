@@ -3,8 +3,8 @@ package markup;
 import facade.Project;
 import plugins.speechreco.aligners.sphiinx4.Alignment;
 import plugins.text.elements.*;
+import plugins.utils.FileUtils;
 import plugins.utils.TimeConverter;
-import utils.EncodingDetector;
 
 import java.io.*;
 import java.util.*;
@@ -27,7 +27,7 @@ public class TextGridLoader implements MarkupLoader {
 			throws ParsingException, IOException
 	{
 		Project project = new Project();
-		BufferedReader reader = EncodingDetector.properReader(file);
+		BufferedReader reader = FileUtils.openFileAutoCharset(file);
 		TextGridStateMachine machine = new TextGridStateMachine(reader);
 		reader.close();
 

@@ -4,7 +4,7 @@ import facade.Project;
 import plugins.text.ListeElement;
 import plugins.text.elements.*;
 import plugins.text.regexp.TypeElement;
-import utils.EncodingDetector;
+import plugins.utils.FileUtils;
 
 import java.io.*;
 import java.util.*;
@@ -135,7 +135,7 @@ public class RawTextLoader implements MarkupLoader {
 	@Override
 	public Project parse(File file) throws ParsingException, IOException {
 		Project project = new Project();
-		BufferedReader reader = EncodingDetector.properReader(file);
+		BufferedReader reader = FileUtils.openFileAutoCharset(file);
 
 		// Add default speaker
 		Locuteur_Info speaker = new Locuteur_Info((byte)0, "L1");

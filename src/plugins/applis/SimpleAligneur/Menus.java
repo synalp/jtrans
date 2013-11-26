@@ -31,8 +31,6 @@ import plugins.speechreco.adaptation.BiaisAdapt;
 import plugins.speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
 import plugins.speechreco.grammaire.Grammatiseur;
 import plugins.text.TexteEditor;
-import plugins.utils.TextInputWindow;
-import plugins.utils.UserInputProcessor;
 import utils.NicerFileChooser;
 
 public class Menus {
@@ -308,12 +306,14 @@ public class Menus {
 
 		playfrom.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				TextInputWindow tt = new TextInputWindow("position en secondes:",new UserInputProcessor() {
-					public void processInput(String ii) {
-						float nsec = Float.parseFloat(ii);
-						aligneur.startPlayingFrom(nsec);
-					}
-				});
+				String pos = JOptionPane.showInputDialog(
+						aligneur.jf,
+						"Start playing from second:",
+						"0.0");
+				if (pos == null)
+					return;
+				float nsec = Float.parseFloat(pos);
+				aligneur.startPlayingFrom(nsec);
 			}
 		});
 

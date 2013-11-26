@@ -426,8 +426,7 @@ public class Phonetiseur {
         BufferedReader f;
         System.out.println("looking for ressource "+fichierMatrices);
 //        String fpath = FileUtils.getRessource("plugins.phonetiseur.Phonetiseur", fichierMatrices);
-        InputStream is = FileUtils.findFileOrUrl(fichierMatrices);
-        f = new BufferedReader(new InputStreamReader(is,Charset.forName("UTF-8")));
+        f = FileUtils.openFileUTF(fichierMatrices);
         String[] t;
 
         lexique = new LexiqueGraphemesPhonemesPostag();

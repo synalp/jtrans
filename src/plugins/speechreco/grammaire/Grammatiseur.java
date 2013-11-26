@@ -56,7 +56,7 @@ public class Grammatiseur implements Serializable {
 		if (grammatiseur!=null) return grammatiseur;
 		try {
 //			InputStream is = FileUtils.getRessourceAsStream("plugins.speechreco.grammaire.Grammatiseur", "ressources/grammatiseur");
-			InputStream is = FileUtils.findFileOrUrl("ressources/grammatiseur");
+			InputStream is = new FileInputStream("ressources/grammatiseur");
 			if (is!=null) {
 				ObjectInputStream f = new ObjectInputStream(is);
 				grammatiseur = (Grammatiseur) f.readObject();
