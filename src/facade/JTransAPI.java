@@ -420,20 +420,23 @@ public class JTransAPI {
 				}
 				setAlignWord(startWord, word, alignFrom, alignTo);
 
-				// TODO
 				// TODO assert currentOverlap == null:
 				// TODO		"an overlap was already ongoing!";
 
-				currentOverlap = new Overlap();
+				// Don't start an overlap if the first speaker's overlapped
+				// section does not contain any word element.
+				if (nextWord > word) {
+					currentOverlap = new Overlap();
 
-				currentOverlap.s1 = currentSpeaker;
+					currentOverlap.s1 = currentSpeaker;
 
-				currentOverlap.s1FirstWord = startWord;
-				currentOverlap.s1LastNonOverlappedWord = word;
-				currentOverlap.s1LastWord = nextWord;
+					currentOverlap.s1FirstWord = startWord;
+					currentOverlap.s1LastNonOverlappedWord = word;
+					currentOverlap.s1LastWord = nextWord;
 
-				currentOverlap.s1StartsSpeaking = alignFrom;
-				currentOverlap.overlapStart = alignTo;
+					currentOverlap.s1StartsSpeaking = alignFrom;
+					currentOverlap.overlapStart = alignTo;
+				}
 
 				alignFrom = alignTo;
 				word = nextWord;
