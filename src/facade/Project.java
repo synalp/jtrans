@@ -1,6 +1,7 @@
 package facade;
 
 import plugins.speechreco.aligners.sphiinx4.Alignment;
+import plugins.speechreco.aligners.sphiinx4.S4AlignOrder;
 import plugins.text.ListeElement;
 import plugins.text.elements.*;
 import plugins.text.regexp.TypeElement;
@@ -22,6 +23,8 @@ public class Project {
 	public Alignment words = new Alignment();
 	public Alignment phons = new Alignment();
 	public List<TypeElement> types = new ArrayList<TypeElement>(Arrays.asList(DEFAULT_TYPES));
+	public List<S4AlignOrder> overlaps = new ArrayList<S4AlignOrder>();
+	public List<Byte> overlapSpeakers = new ArrayList<Byte>();
 
 
 	public static final TypeElement DEFAULT_TYPES[] = {

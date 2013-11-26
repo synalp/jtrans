@@ -7,13 +7,60 @@ import plugins.applis.SimpleAligneur.Aligneur;
 import plugins.speechreco.aligners.sphiinx4.Alignment;
 import plugins.speechreco.aligners.sphiinx4.S4AlignOrder;
 import plugins.speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
-import plugins.text.TexteEditor;
 import plugins.text.elements.*;
 import utils.ProgressDialog;
 
 import javax.sound.sampled.*;
 
+
 public class JTransAPI {
+	Aligneur aligneur;
+	Project project;
+	List<Element_Mot> mots;
+	S4ForceAlignBlocViterbi s4blocViterbi;
+
+	public JTransAPI(Project project, Aligneur aligneur) {
+		this.project = project;
+		this.aligneur = aligneur;
+		project.refreshIndex();
+		mots = project.elts.getMots();
+	}
+
+	private class Overlap {
+		/**
+		 * ID of speaker #1 (the one who gets interrupted)
+		 */
+		byte s1;
+
+		// speaker 1 word indices
+		int s1FirstWord = -1;
+		int s1LastNonOverlappedWord = -1;
+		int s1LastWord = -1;
+
+		// speaker 2 word indices
+		int s2FirstWord = -1;
+		int s2LastOverlappedWord = -1;
+
+		// seconds
+		/**
+		 * When speaker #1 starts speaking alone.
+		 */
+		float s1StartsSpeaking = -1;
+
+		/**
+		 * When speaker #2 starts speaking (while speaker #1 is still
+		 * speaking). Start of overlapped speech.
+		 */
+		float overlapStart = -1;
+
+		/**
+		 * When speaker #1 stops speaking (while speaker #2 is still
+		 * speaking). End of overlapped speech.
+		 */
+		float overlapEnd = -1;
+	}
+
+
 	/**
 	 * Align words between anchors using linear interpolation (a.k.a.
 	 * "equialign") instead of proper Sphinx alignment (batchAlign).
@@ -54,7 +101,7 @@ public class JTransAPI {
 		AudioFormat af;
 
 		try {
-			 af = AudioSystem.getAudioFileFormat(original).getFormat();
+			af = AudioSystem.getAudioFileFormat(original).getFormat();
 		} catch (UnsupportedAudioFileException ex) {
 			ex.printStackTrace();
 			return original;
@@ -76,7 +123,7 @@ public class JTransAPI {
 
 				AudioInputStream originalStream;
 				try {
-					 originalStream = AudioSystem.getAudioInputStream(original);
+					originalStream = AudioSystem.getAudioInputStream(original);
 				} catch (UnsupportedAudioFileException ex) {
 					ex.printStackTrace();
 					throw new Error("Unsupported audio file; should've been caught above!");
@@ -92,8 +139,12 @@ public class JTransAPI {
 		return Cache.cachedFile("converted.wav", factory, original);
 	}
 
-	private static S4AlignOrder createS4AlignOrder(int motdeb, int trdeb, int motfin, int trfin) {
+	private S4AlignOrder createS4AlignOrder(int motdeb, int trdeb, int motfin, int trfin) {
+		if (s4blocViterbi == null)
+			s4blocViterbi = aligneur.getS4aligner();
+
 		S4AlignOrder order = new S4AlignOrder(motdeb, trdeb, motfin, trfin);
+
 		try {
 			s4blocViterbi.input2process.put(order);
 			synchronized(order) {
@@ -118,17 +169,8 @@ public class JTransAPI {
 	 *
 	 * It is not merged into the main alignment (use mergeOrder() for that).
 	 */
-	public static S4AlignOrder partialBatchAlign(final int startWord, final int startFrame, final int endWord, final int endFrame) {
+	public S4AlignOrder partialBatchAlign(final int startWord, final int startFrame, final int endWord, final int endFrame) {
 		System.out.println("batch align "+startWord+"-"+endWord+" "+startFrame+":"+endFrame);
-
-		if (s4blocViterbi==null) {
-			String[] amots = new String[mots.size()];
-			for (int i=0;i<mots.size();i++) {
-				amots[i] = mots.get(i).getWordString();
-			}
-			s4blocViterbi = S4ForceAlignBlocViterbi.getS4Aligner(aligneur.convertedAudioFile.getAbsolutePath());
-			s4blocViterbi.setMots(amots);
-		}
 
 		return (S4AlignOrder)Cache.cachedObject(
 				String.format("%05d_%05d_%05d_%05d.order", startWord, startFrame, endWord, endFrame),
@@ -138,13 +180,13 @@ public class JTransAPI {
 					}
 				},
 				project.wavname,
-				edit.getText());
+				aligneur.edit.getText());
 	}
 
 	/**
 	 * Merge an S4AlignOrder into the main alignment.
 	 */
-	public static void mergeOrder(S4AlignOrder order, int startWord, int endWord) {
+	public void mergeOrder(S4AlignOrder order, int startWord, int endWord) {
 		if (order.alignWords != null) {
 			System.out.println("================================= ALIGN FOUND");
 			System.out.println(order.alignWords.toString());
@@ -167,7 +209,7 @@ public class JTransAPI {
 
 				mots.get(i + startWord).posInAlign = idx;
 			}
-			project.elts.refreshIndex();
+			project.refreshIndex();
 
 			// Merge phoneme segments into the main phoneme alignment
 			project.phons.merge(order.alignPhones);
@@ -182,7 +224,7 @@ public class JTransAPI {
 	 * the main alignment.
 	 * Very fast, but inaccurate.
 	 */
-	public static void linearAlign(int startWord, int startFrame, int endWord, int endFrame) {
+	public void linearAlign(int startWord, int startFrame, int endWord, int endFrame) {
 		float frameDelta = ((float)(endFrame-startFrame))/((float)(endWord-startWord+1));
 		float currEndFrame = startFrame + frameDelta;
 
@@ -209,7 +251,7 @@ public class JTransAPI {
 	 * @param startFrame can be < 0, in which case use the last aligned word.
 	 * @param endFrame
 	 */
-	public static void setAlignWord(int startWord, int word, int startFrame, int endFrame) {
+	public void setAlignWord(int startWord, int word, int startFrame, int endFrame) {
 		assert endFrame >= 0;
 
 		if (startWord < 0) {
@@ -253,19 +295,16 @@ public class JTransAPI {
 		// TODO: phonetiser et aligner auto les phonemes !!
 
 		// Update GUI
-		if (edit != null) {
-			edit.colorizeWords(startWord, word);
-			edit.repaint();
-		}
+		aligneur.edit.colorizeWords(startWord, word);
 	}
 
-	public static void setAlignWord(int startWord, int endWord, float startSecond, float endSecond) {
-		int startFrame = second2frame(startSecond);
-		int endFrame   = second2frame(endSecond);
+	public void setAlignWord(int startWord, int endWord, float startSecond, float endSecond) {
+		int startFrame = JTransAPI.second2frame(startSecond);
+		int endFrame   = JTransAPI.second2frame(endSecond);
 		setAlignWord(startWord, endWord, startFrame, endFrame);
 	}
 
-	private static void setSilenceSegment(int curdebfr, int curendfr, Alignment al) {
+	private void setSilenceSegment(int curdebfr, int curendfr, Alignment al) {
 		// detruit tous les segments existants deja a cet endroit
 		ArrayList<Integer> todel = new ArrayList<Integer>();
 		clearAlignFromFrame(curdebfr);
@@ -286,52 +325,32 @@ public class JTransAPI {
 		int newseg=al.addRecognizedSegment("SIL", curdebfr, curendfr, null, null);
 		al.setSegmentSourceManu(newseg);
 	}
-	public static void setSilenceSegment(float secdeb, float secfin) {
-		int curdebfr = second2frame(secdeb);
-		int curendfr = second2frame(secfin);
-		setSilenceSegment(curdebfr, curendfr, project.words);
-		setSilenceSegment(curdebfr, curendfr, project.phons);
-	}
-	public static void clearAlignFromFrame(int fr) {
-		// TODO
-		throw new Error("clearAlignFromFrame: IMPLEMENT ME!");
-	}
-	
-	// =========================
-	// variables below are duplicate (point to) of variables in the mess of the rest of the code...
-	public static Project project;
-	public static ArrayList<S4AlignOrder> overlaps = new ArrayList<S4AlignOrder>();
-	public static ArrayList<Byte> overlapSpeakers = new ArrayList<Byte>();
-	public static TexteEditor edit = null;
-	public static Aligneur aligneur = null;
-	public static S4ForceAlignBlocViterbi s4blocViterbi = null;
-	
-	public static void setProject(Project p) {
-		project = p;
-		initmots();
-	}
-	
-	// =========================
-	private static List<Element_Mot> mots = null;
-	
-	// =========================
-	private static void initmots() {
-		if (project != null && mots == null)
-			mots = project.elts.getMots();
-	}
-	private static int getLastMotPrecAligned(int midx) {
-		initmots();
+
+	private int getLastMotPrecAligned(int midx) {
 		for (int i=midx;i>=0;i--) {
 			if (mots.get(i).posInAlign>=0) return i;
 		}
 		return -1;
 	}
 
+	public void setSilenceSegment(float secdeb, float secfin) {
+		int curdebfr = JTransAPI.second2frame(secdeb);
+		int curendfr = JTransAPI.second2frame(secfin);
+		setSilenceSegment(curdebfr, curendfr, project.words);
+		setSilenceSegment(curdebfr, curendfr, project.phons);
+	}
+	public void clearAlignFromFrame(int fr) {
+		// TODO
+		throw new Error("clearAlignFromFrame: IMPLEMENT ME!");
+	}
+
+
+
 	/**
 	 * Align words automatically between anchors set manually.
 	 * @param progress progress dialog to refresh
 	 */
-	public static void alignBetweenAnchors(ProgressDialog progress) {
+	public void alignBetweenAnchors(ProgressDialog progress) {
 		progress.setMessage("Aligning...");
 
 		float alignFrom = 0;
@@ -339,40 +358,6 @@ public class JTransAPI {
 		int word = -1;
 
 		byte currentSpeaker = (byte)0xff;
-
-		class Overlap {
-			/**
-			 * ID of speaker #1 (the one who gets interrupted)
-			 */
-			byte s1;
-
-			// speaker 1 word indices
-			int s1FirstWord = -1;
-			int s1LastNonOverlappedWord = -1;
-			int s1LastWord = -1;
-
-			// speaker 2 word indices
-			int s2FirstWord = -1;
-			int s2LastOverlappedWord = -1;
-
-			// seconds
-			/**
-			 * When speaker #1 starts speaking alone.
-			 */
-			float s1StartsSpeaking = -1;
-
-			/**
-			 * When speaker #2 starts speaking (while speaker #1 is still
-			 * speaking). Start of overlapped speech.
-			 */
-			float overlapStart = -1;
-
-			/**
-			 * When speaker #1 stops speaking (while speaker #2 is still
-			 * speaking). End of overlapped speech.
-			 */
-			float overlapEnd = -1;
-		}
 
 		Overlap currentOverlap = null;
 
@@ -390,7 +375,7 @@ public class JTransAPI {
 					if (currentOverlap != null && currentOverlap.s2LastOverlappedWord >= 0) {
 						// Find when the overlapped speech ends.
 						int seg = mots.get(currentOverlap.s2LastOverlappedWord).posInAlign;
-						currentOverlap.overlapEnd = frame2sec(
+						currentOverlap.overlapEnd = JTransAPI.frame2sec(
 								project.words.getSegmentEndFrame(seg));
 
 						if (currentOverlap.overlapEnd > currentOverlap.overlapStart) {
@@ -403,13 +388,13 @@ public class JTransAPI {
 
 							S4AlignOrder spk1Overlap = partialBatchAlign(
 									currentOverlap.s1FirstWord,
-									second2frame(currentOverlap.s1StartsSpeaking),
+									JTransAPI.second2frame(currentOverlap.s1StartsSpeaking),
 									currentOverlap.s1LastWord,
-									second2frame(currentOverlap.overlapEnd));
+									JTransAPI.second2frame(currentOverlap.overlapEnd));
 
 							if (!spk1Overlap.isEmpty()) {
-								overlaps.add(spk1Overlap);
-								overlapSpeakers.add(currentOverlap.s1);
+								project.overlaps.add(spk1Overlap);
+								project.overlapSpeakers.add(currentOverlap.s1);
 							}
 						}
 
@@ -476,10 +461,9 @@ public class JTransAPI {
 	 * Aligns words automatically. Does not account for anchors.
 	 * @param progress progress dialog to refresh
 	 */
-	public static void alignRaw(ProgressDialog progress) {
+	public void alignRaw(ProgressDialog progress) {
 		progress.setMessage("Aligning...");
 
-		initmots();
 		int lastAlignedWord = 0;
 		int previousLAW = -1;
 

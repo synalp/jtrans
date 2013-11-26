@@ -38,7 +38,6 @@ import plugins.speechreco.aligners.sphiinx4.*;
 import plugins.speechreco.aligners.sphiinx4.Alignment;
 import plugins.text.ColoriageEvent;
 import plugins.text.GriserWhilePlaying;
-import plugins.text.ListeElement;
 import plugins.text.TexteEditor;
 import plugins.text.elements.*;
 import plugins.utils.FileUtils;
@@ -317,7 +316,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 	}
 
 	public Aligneur() {
-		JTransAPI.aligneur=this;
 		initPanel();
 		createJFrame();
 	}
@@ -353,7 +351,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 		setLayout(new BorderLayout());
 
 		edit = new TexteEditor(project);
-		JTransAPI.edit=edit;
 		ctrlbox = new ControlBox(this);
 		playergui = ctrlbox.getPlayerGUI();
 		infoLabel.setBorder(new BevelBorder(BevelBorder.LOWERED));
@@ -608,6 +605,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 	// aligne tous les mots 
 	void doForceAnchor(float sec, int mot) {
+		/*
 		int mot0 = getLastMotAligned();
 		System.out.println("forceanchor "+mot0);
 		if (mot0<0) {
@@ -627,6 +625,9 @@ public class Aligneur extends JPanel implements PrintLogger {
 		}
 		// TODO: refaire la suite avec JTransAPI
 		JTransAPI.setAlignWord(-1, mot, -1, sec);
+		*/
+		// TODO reimplement me
+		JOptionPane.showMessageDialog(jf, "Reimplement me!");
 	}
 	
 	void clicAtCaretPosition(int caretPos, int button) {
@@ -1247,14 +1248,14 @@ public class Aligneur extends JPanel implements PrintLogger {
 	public void alignBetweenAnchorsWithProgress() {
 		final ProgressDialog progress = new ProgressDialog(jf, null, "Aligning...");
 		progress.setRunnable(new Runnable() {
-			public void run() { JTransAPI.alignBetweenAnchors(progress); }});
+			public void run() { new JTransAPI(project, Aligneur.this).alignBetweenAnchors(progress); }});
 		progress.setVisible(true);
 	}
 
 	public void alignAllWithProgress() {
 		final ProgressDialog progress = new ProgressDialog(jf, null, "Aligning...");
 		progress.setRunnable(new Runnable() {
-			public void run() { JTransAPI.alignRaw(progress); }});
+			public void run() { new JTransAPI(project, Aligneur.this).alignRaw(progress); }});
 		progress.setVisible(true);
 	}
 
@@ -1318,11 +1319,10 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 
 	public void savePraat(File f, boolean withWords, boolean withPhons) throws IOException {
-		ListeElement    lst          = project.elts;
 		int             speakers     = project.speakers.size();
 		int             tiers        = speakers * ((withWords?1:0) + (withPhons?1:0));
 		int             finalFrame   = project.words.getSegmentEndFrame(project.words.getNbSegments() - 1);
-		Alignment       speakerTurns = lst.getLinearSpeakerTimes(project.words);
+		Alignment       speakerTurns = project.elts.getLinearSpeakerTimes(project.words);
 		Alignment[]     spkWords     = null;
 		Alignment[]     spkPhons     = null;
 		FileWriter      fw           = new FileWriter(f);
@@ -1341,9 +1341,9 @@ public class Aligneur extends JPanel implements PrintLogger {
 		if (withPhons) spkPhons = breakDownBySpeaker(speakers, speakerTurns, project.phons);
 
 		// Account for overlaps
-		for (int i = 0; i < JTransAPI.overlaps.size(); i++) {
-			int speakerID = JTransAPI.overlapSpeakers.get(i);
-			S4AlignOrder order = JTransAPI.overlaps.get(i);
+		for (int i = 0; i < project.overlaps.size(); i++) {
+			int speakerID = project.overlapSpeakers.get(i);
+			S4AlignOrder order = project.overlaps.get(i);
 			if (withWords)
 				spkWords[speakerID].overwrite(order.alignWords);
 			if (withPhons)
@@ -1366,7 +1366,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 	public void setProject(Project project) {
 		this.project = project;
-		JTransAPI.setProject(project);
 		edit.setProject(project);
 	}
 }
