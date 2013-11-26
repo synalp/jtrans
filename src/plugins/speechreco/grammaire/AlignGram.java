@@ -7,10 +7,7 @@ http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html
 
 package plugins.speechreco.grammaire;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Vector;
+import java.util.*;
 import java.util.Map.Entry;
 
 import plugins.speechreco.acousticModels.HMM.HMMSet;
@@ -357,11 +354,9 @@ public class AlignGram {
 		
 		// 2eme etape, on continue a parser seulement pour les nouveaux noeuds
 		// on s'interesse maintenant aux trans sortantes, alors que en passe 1 on regardait les trans entrantes
-		Iterator it = newnoeuds.entrySet().iterator();
-		while (it.hasNext()) {
-			Entry e = (Entry)it.next();
-			String triphone = (String)e.getKey();
-			Vector<Integer> nextnodes = (Vector<Integer>)e.getValue();
+		for (Map.Entry<String, Vector<Integer>> entry: newnoeuds.entrySet()) {
+			String triphone = entry.getKey();
+			Vector<Integer> nextnodes = entry.getValue();
 			Integer n3phcur = n1ph.get3phNode(triphone);
 			for (int j=0;j<nextnodes.size();j++) {
 				int i = nextnodes.get(j);
@@ -444,11 +439,9 @@ public class AlignGram {
 		
 		// 2eme etape, on continue a parser seulement pour les nouveaux noeuds (qui viennent d'etre crees)
 		// on s'interesse maintenant aux trans sortantes, alors que en passe 1 on regardait les trans entrantes
-		Iterator it = newnoeuds.entrySet().iterator();
-		while (it.hasNext()) {
-			Entry e = (Entry)it.next();
-			String triphone = (String)e.getKey();
-			Vector<Integer> nextnodes = (Vector<Integer>)e.getValue();
+		for (Map.Entry<String, Vector<Integer>> entry: newnoeuds.entrySet()) {
+			String triphone = entry.getKey();
+			Vector<Integer> nextnodes = entry.getValue();
 			Integer n3phcur = n1ph.get3phNode(triphone);
 			{
 				// on ajoute les mots eventuels

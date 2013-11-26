@@ -112,13 +112,13 @@ class DataList {
 	/**
 	 * Manages the data as a FIFO queue
 	 */
-	private List list;
+	private List<float[]> list;
 
 	/**
 	 * Creates a new data list
 	 */
 	public DataList() {
-		list = new LinkedList();
+		list = new LinkedList<float[]>();
 	}
 
 	/**
@@ -158,7 +158,7 @@ class DataList {
 		} catch (InterruptedException ie) {
 			ie.printStackTrace();
 		}
-		float[] data = (float[]) list.remove(0);
+		float[] data = list.remove(0);
 		if (data == null) {
 			System.out.println("DataList is returning null.");
 		}
