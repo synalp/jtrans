@@ -10,9 +10,6 @@ fenêtre qui permet de rentrer le texte de remplacement. Puis, ça reparse la
 sélection (et la ré-aligne ?) - Attention si le texte sélectionné contient une
 ancre...
 
-Sauvegarde .jtr : doit conserver les types d'alignements (ancres manuelles,
-alignements calculés, alignements linéaires) (Cf. Segment2AudioAlignement:177)
-
 Parser un fichier TextGrid. Boîte de dialogue demandant quel tier mots importer
 (un bouton radio par tier e.g. "Tier '%s' (%d intervals)"). Les autres tiers
 sont ignorés mais quand même conservés (en tant que String brut) pour ne perdre
