@@ -34,7 +34,6 @@ import plugins.signalViewers.spectroPanel.SpectroControl;
 import plugins.signalViewers.temporalSigPanel.TemporalSigPanel;
 import plugins.signalViewers.temporalSigPanel.ToolBarTemporalSig;
 import plugins.speechreco.adaptation.BiaisAdapt;
-import plugins.speechreco.aligners.OldAlignment;
 import plugins.speechreco.aligners.sphiinx4.*;
 import plugins.speechreco.aligners.sphiinx4.Alignment;
 import plugins.text.ColoriageEvent;
@@ -338,7 +337,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 	private float lastSecClickedOnSpectro = 0;
 	public void clicOnSpectro(float frf) {
 		float prevsec = getCurPosInSec();
-		float sec = OldAlignment.frame2second((int) frf);
+		float sec = TimeConverter.frame2second((int) frf);
 		sec += prevsec;
 		// on lit une seconde avant la pos
 		setCurPosInSec(sec-1);
@@ -756,8 +755,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 				int segidx = emot.posInAlign;
 				if (segidx>=0) {
 					int frame = project.words.getSegmentDebFrame(segidx);
-					cursec = OldAlignment.frame2second(frame);
-					long currentSample = OldAlignment.frame2sample(frame);
+					cursec = TimeConverter.frame2second(frame);
+					long currentSample = TimeConverter.frame2sample(frame);
 					if (currentSample<0) currentSample=0;
 					edit.griseMot(emot);
 					// vieux panel
@@ -828,8 +827,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 			int segidx = emot.posInAlign;
 			if (segidx>=0) {
 				int frame = project.words.getSegmentDebFrame(segidx);
-				cursec = OldAlignment.frame2second(frame);
-				long currentSample = OldAlignment.frame2sample(frame);
+				cursec = TimeConverter.frame2second(frame);
+				long currentSample = TimeConverter.frame2sample(frame);
 				if (currentSample<0) currentSample=0;
 				edit.griseMot(emot);
 				// vieux panel
@@ -1140,8 +1139,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 				clearAlignFrom(mot1);
 				System.out.println("REALIGN BEFORE");
 				if (mot1-1>=0)
-					realignBeforeAnchor(mot1-1, OldAlignment.sample2frame(sdeb)-1);
-				S4AlignOrder order = new S4AlignOrder(mot1, OldAlignment.sample2frame(sdeb), mot2, OldAlignment.sample2frame(send));
+					realignBeforeAnchor(mot1-1, TimeConverter.sample2frame(sdeb)-1);
+				S4AlignOrder order = new S4AlignOrder(mot1, TimeConverter.sample2frame(sdeb), mot2, TimeConverter.sample2frame(send));
 				try {
 					S4ForceAlignBlocViterbi s4aligner = getS4aligner();
 					System.out.println("ALIGN SELECTED SEGMENT "+mots[mot1]+" ... "+mots[mot2]);

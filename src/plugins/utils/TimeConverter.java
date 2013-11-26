@@ -141,6 +141,32 @@ public abstract class TimeConverter {
 		int fr = (int)(sec*100f);
 		return fr;
 	}
-	
-	
-}//TimeConverter
+
+	//=======================================================================
+	// TIME CONVERSION FUNCTIONS FROM OldAlignment
+
+	public static long frame2sample(int frame) {
+		long f=frame;
+		f*=160;
+		f+=205; // moitie d'une window
+		return f;
+	}
+
+	public static int sample2frame(long sample) {
+		sample-=205;
+		if (sample<0) return 0;
+		return (int)(sample/160);
+	}
+
+	public static float frame2second(int trame) {
+		return (float)trame/100f;
+	}
+
+	public static float sample2second(long sample) {
+		return (float)sample/16000f;
+	}
+
+	public static int second2sample(float sec) {
+		return (int)(sec*16000f);
+	}
+}
