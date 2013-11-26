@@ -3,9 +3,9 @@ package facade;
 import java.util.*;
 
 import plugins.applis.SimpleAligneur.Aligneur;
-import plugins.speechreco.aligners.sphiinx4.Alignment;
-import plugins.speechreco.aligners.sphiinx4.S4AlignOrder;
-import plugins.speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
+import speechreco.aligners.sphiinx4.Alignment;
+import speechreco.aligners.sphiinx4.S4AlignOrder;
+import speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
 import plugins.text.elements.*;
 import utils.TimeConverter;
 import utils.ProgressDialog;

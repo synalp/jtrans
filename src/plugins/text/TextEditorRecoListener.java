@@ -7,7 +7,7 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 
 import edu.cmu.sphinx.result.Result;
-import plugins.speechreco.RecoListener;
+import speechreco.RecoListener;
 
 public class TextEditorRecoListener implements RecoListener {
 	JTextPane edit;

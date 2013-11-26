@@ -13,7 +13,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 
-import plugins.speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
+import speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
 
 public class KeysManager {
 	Aligneur aligneur;

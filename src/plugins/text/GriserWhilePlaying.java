@@ -6,7 +6,7 @@ import java.awt.event.ActionListener;
 import javax.swing.Timer;
 
 import plugins.applis.SimpleAligneur.PlayerListener;
-import plugins.speechreco.aligners.sphiinx4.Alignment;
+import speechreco.aligners.sphiinx4.Alignment;
 import plugins.text.elements.Element_Mot;
 import tools.audio.PlayerGUI;
 

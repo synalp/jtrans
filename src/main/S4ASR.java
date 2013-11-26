@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import plugins.speechreco.aligners.sphiinx4.HMMModels;
+import speechreco.aligners.sphiinx4.HMMModels;
 import utils.DET;
 import utils.FileUtils;
 import utils.SpeechRecoAccuracy;

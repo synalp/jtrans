@@ -7,7 +7,7 @@ http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html
 
 package plugins.phonetiseurNomPropre;
 
-import plugins.speechreco.acousticModels.HMM.LogMath;
+import speechreco.acousticModels.HMM.LogMath;
 import java.io.*;
 import java.text.DecimalFormat;
 import java.util.*;

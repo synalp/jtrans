@@ -53,10 +53,10 @@ import edu.cmu.sphinx.util.LogMath;
 import edu.cmu.sphinx.util.props.PropertyException;
 import edu.cmu.sphinx.util.props.PropertySheet;
 
-import plugins.speechreco.RecoListener;
-import plugins.speechreco.adaptation.BiaisAdapt;
-import plugins.speechreco.aligners.sphiinx4.*;
-import plugins.speechreco.grammaire.Grammatiseur;
+import speechreco.RecoListener;
+import speechreco.adaptation.BiaisAdapt;
+import speechreco.aligners.sphiinx4.*;
+import speechreco.grammaire.Grammatiseur;
 import utils.ProgressDialog;
 
 public class LiveSpeechReco extends PhoneticForcedGrammar {

@@ -28,7 +28,7 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
-import plugins.speechreco.aligners.sphiinx4.Alignment;
+import speechreco.aligners.sphiinx4.Alignment;
 import utils.FileUtils;
 
 import speechreco.AlignTokenPassing;

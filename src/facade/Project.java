@@ -1,7 +1,7 @@
 package facade;
 
-import plugins.speechreco.aligners.sphiinx4.Alignment;
-import plugins.speechreco.aligners.sphiinx4.S4AlignOrder;
+import speechreco.aligners.sphiinx4.Alignment;
+import speechreco.aligners.sphiinx4.S4AlignOrder;
 import plugins.text.ListeElement;
 import plugins.text.elements.*;
 import plugins.text.regexp.TypeElement;

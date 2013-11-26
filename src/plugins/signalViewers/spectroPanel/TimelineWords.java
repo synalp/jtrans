@@ -6,7 +6,7 @@ import java.awt.Graphics;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
-import plugins.speechreco.aligners.sphiinx4.Alignment;
+import speechreco.aligners.sphiinx4.Alignment;
 
 public class TimelineWords extends JPanel {
 	private Alignment align;

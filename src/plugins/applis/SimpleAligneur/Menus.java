@@ -26,10 +26,10 @@ import markup.*;
 import main.LiveSpeechReco;
 
 import plugins.sourceSignals.Mike2wav;
-import plugins.speechreco.RecoListener;
-import plugins.speechreco.adaptation.BiaisAdapt;
-import plugins.speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
-import plugins.speechreco.grammaire.Grammatiseur;
+import speechreco.RecoListener;
+import speechreco.adaptation.BiaisAdapt;
+import speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
+import speechreco.grammaire.Grammatiseur;
 import plugins.text.TexteEditor;
 import utils.NicerFileChooser;
 

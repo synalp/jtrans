@@ -41,50 +41,68 @@ pris connaissance de la licence CeCILL-C, et que vous en avez accept� les
 termes.
  */
 
-package plugins.buffer;
+package speechreco.aligners.sphiinx4;
 
-import speechreco.frontEnd.FrontEnd;
+import edu.cmu.sphinx.frontend.BaseDataProcessor;
+import edu.cmu.sphinx.frontend.Data;
+import edu.cmu.sphinx.frontend.DataProcessingException;
+import edu.cmu.sphinx.frontend.DataStartSignal;
+
 import utils.PrintLogger;
 
 /** Le RoundBuffer est le buffer circulaire des donnees
  * en provenance du TemporalSig. */
-public class RoundBufferFrontEnd implements FrontEnd {
+public class S4RoundBufferFrontEnd extends BaseDataProcessor {
 
 	//------------- Private Fields --------------
 	/** Buffer de stockage des donn�es */
-	private float[][] buffer;
+	private Data[] buffer;
 
 	/** Pointeur sur la prochaine position � laquelle ins�rer une donn�e */
 	private int pointeur;
 
 	private boolean isFilling;
 
-	FrontEnd source=null;
+	BaseDataProcessor source=null;
 	
-	/*
+	/**
 	 * Indique la taille maximum lue depuis le fichier jusqu'a present..;
 	 */
 	public Integer tailleMaxLueSoFar = 0;
 
+	/**
+	 * Indique si le buffer ne peut plus recuperer des data depuis le fichier
+	 */
 	public boolean endOfFileReached = false;
+	/**
+	 * Indique si le buffer ne peut plus fournir de nouvelles data
+	 */
+	public boolean noMoreFramesAvailable = false;
+	/**
+	 * Au 1er appel, il faut retourner un DataStartSignal
+	 */
+	public boolean firstCall = true;
 	
-	public int curFrame=0;
+	private int curFrame=0;
 	final short[] sigout = new short[1];
 
 	PrintLogger plog=null;
 	
+	public boolean gotoFrame(int fr) {
+		if (fr<0||(fr>=curFrame&&endOfFileReached)) return false;
+		curFrame=fr;
+		noMoreFramesAvailable=false;
+		return true;
+	}
+	
 	//-------------- Constructors ---------------
-	public RoundBufferFrontEnd(PrintLogger pl, int bufferSize, int ncoefs){
+	public S4RoundBufferFrontEnd(PrintLogger pl, int bufferSize){
 		plog=pl;
 		this.pointeur = 0;
 		curFrame = 0;
-		this.buffer = new float[bufferSize][ncoefs];
+		this.buffer = new Data[bufferSize];
 	}//RoundBuffer(int bufferSize)	
 
-	public int getNcoefs() {
-		return buffer[0].length;
-	}
-	
 	public int getSize(){
 		return this.buffer.length;
 	}//getSize()
@@ -97,7 +115,7 @@ public class RoundBufferFrontEnd implements FrontEnd {
 		endOfFileReached = false;
 	}//clear
 
-	public void setSource(FrontEnd sig) {
+	public void setSource(BaseDataProcessor sig) {
 		source=sig;
 	}
 
@@ -109,17 +127,17 @@ public class RoundBufferFrontEnd implements FrontEnd {
 			plog.print("please wait, filling in buffer...");
 		// TODO: utiliser un thread
 		isFilling = true;
-		float[] tab;
+		
+		Data tab;
 		int read = 0;
 		int max2read = (int)(ratio*(float)buffer.length);
 		while (read < max2read) {
-			tab = source.getOneVector();
+			tab = source.getData();
 			if (tab==null) {
 				endOfFileReached = true;
 				break;
 			}
-			System.arraycopy(tab, 0, buffer[pointeur], 0, tab.length);
-			pointeur++;
+			buffer[pointeur++]=tab;
 			if (pointeur>=buffer.length) {
 				pointeur %= buffer.length;
 			}
@@ -131,28 +149,36 @@ public class RoundBufferFrontEnd implements FrontEnd {
 		System.err.println("filled "+tailleMaxLueSoFar);
 	}//fill
 
-	public void gotoFrame(int frame) {
-		curFrame = frame;
-	}
-	public float[] getOneVector() {
+	@Override
+	public Data getData() throws DataProcessingException {
 		if (curFrame<tailleMaxLueSoFar-buffer.length) {
+			System.out.println("mfcc rewind asked !");
+			// TODO
 			// on ne peut pas rewind() avec CE mfffbuf, mais il faut que l'appelant gere le rewind() !
 			return null;
 		} else if (curFrame>=tailleMaxLueSoFar) {
-			if (isFilling || endOfFileReached) {
+			if (isFilling) {
 				// TODO: wait until filled
 				// pour le moment, tout est synchrone, donc ca peut attendre...
 				return null;
+			} else if (endOfFileReached) {
+				noMoreFramesAvailable=true;
+				return null;
 			} else {
 				// charger la suite du buffer !
-				fill(0.3f);
+				while (curFrame>=tailleMaxLueSoFar)
+					fill(0.3f);
 			}
 		}
 		// commme il n'y a pas de discontinuite lors du remplissage du buffer circulaire, on a toujours
 		// le sample 0 en position 0 initialement
 		int posInBuf = (int)(curFrame%buffer.length);
+		if (firstCall) {
+			firstCall=false;
+			return new DataStartSignal(100);
+		}
 		curFrame++;
 		return buffer[posInBuf];
-	}//getValueAtPosiFromStart
+	}
 
 }//class RoundBuffer

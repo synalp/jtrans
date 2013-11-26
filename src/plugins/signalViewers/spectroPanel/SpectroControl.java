@@ -18,7 +18,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import plugins.applis.SimpleAligneur.Aligneur;
-import plugins.speechreco.aligners.sphiinx4.Alignment;
+import speechreco.aligners.sphiinx4.Alignment;
 import utils.TimeConverter;
 
 /**

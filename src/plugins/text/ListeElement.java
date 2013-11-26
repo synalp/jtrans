@@ -47,7 +47,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import plugins.speechreco.aligners.sphiinx4.Alignment;
+import speechreco.aligners.sphiinx4.Alignment;
 import plugins.text.elements.*;
 
 /**
