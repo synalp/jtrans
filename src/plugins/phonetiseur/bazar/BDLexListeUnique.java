@@ -8,11 +8,10 @@ http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html
 package plugins.phonetiseur.bazar;
 
 import java.io.*;
-import java.util.ArrayList;
 import java.util.TreeSet;
 
 import plugins.phonetiseur.Configuration;
-import plugins.utils.FileUtils;
+import utils.FileUtils;
 
 public class BDLexListeUnique {
 

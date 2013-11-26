@@ -12,10 +12,9 @@ import java.io.*;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.Map.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import plugins.utils.FileUtils;
-import plugins.utils.PronunciationsLexicon;
+
+import utils.FileUtils;
+import utils.PronunciationsLexicon;
 
 /**
  * Le phonetiseur

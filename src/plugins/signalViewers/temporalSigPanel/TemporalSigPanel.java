@@ -67,7 +67,7 @@ import plugins.text.ListeElement;
 import plugins.text.elements.Element;
 import plugins.text.elements.Element_Locuteur;
 import plugins.text.elements.Element_Mot;
-import plugins.utils.TimeConverter;
+import utils.TimeConverter;
 
 public class TemporalSigPanel extends JComponent {
 

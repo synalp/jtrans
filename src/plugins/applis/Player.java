@@ -14,7 +14,7 @@ import java.io.InputStreamReader;
 import plugins.buffer.RoundBuffer;
 import plugins.player.PlayerListener;
 import plugins.sourceSignals.TemporalSigFromWavFile;
-import plugins.utils.PrintLogger;
+import utils.PrintLogger;
 
 public class Player {
 	public static void main(String args[]) throws Exception {

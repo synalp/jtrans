@@ -11,7 +11,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 
-import plugins.utils.DET;
+import utils.DET;
 
 public class CMDET {
 	public static void main(String args[]) throws IOException {

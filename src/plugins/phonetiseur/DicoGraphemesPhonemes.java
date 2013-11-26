@@ -10,7 +10,9 @@ package plugins.phonetiseur;
 import java.io.*;
 import java.util.*;
 
-import plugins.utils.*;
+import utils.DicoEntry;
+import utils.FileUtils;
+import utils.PronunciationsLexicon;
 
 /**
  * Classe qui charge le dictionnaire Grapheme -> Phoneme.

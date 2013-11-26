@@ -10,7 +10,7 @@ package plugins.phonetiseur;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-import plugins.utils.FileUtils;
+import utils.FileUtils;
 
 public class Configuration {
 

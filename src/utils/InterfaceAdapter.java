@@ -1,10 +1,12 @@
-package plugins.utils;
+package utils;
 
 import java.lang.reflect.Type;
 
 import com.google.gson.*;
 
 /**
+ * For JSON serialization.
+ *
  * Adds an extra property for class names. Strips package names to save
  * space - therefore all subclasses of T must be in the same package as T!
  */

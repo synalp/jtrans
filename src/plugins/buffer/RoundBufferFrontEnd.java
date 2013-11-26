@@ -44,7 +44,7 @@ termes.
 package plugins.buffer;
 
 import plugins.speechreco.frontEnd.FrontEnd;
-import plugins.utils.PrintLogger;
+import utils.PrintLogger;
 
 /** Le RoundBuffer est le buffer circulaire des donnees
  * en provenance du TemporalSig. */

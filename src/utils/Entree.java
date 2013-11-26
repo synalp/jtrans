@@ -1,4 +1,4 @@
-package plugins.utils;
+package utils;
 
 import java.io.Serializable;
 import java.util.ArrayList;

@@ -19,7 +19,7 @@ import javax.swing.event.ChangeListener;
 
 import plugins.applis.SimpleAligneur.Aligneur;
 import plugins.speechreco.aligners.sphiinx4.Alignment;
-import plugins.utils.TimeConverter;
+import utils.TimeConverter;
 
 /**
  * "wrap" un SpectroPanel dans un autre Panel, et

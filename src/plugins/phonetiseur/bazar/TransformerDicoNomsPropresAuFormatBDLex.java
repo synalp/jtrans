@@ -8,15 +8,13 @@ http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html
 package plugins.phonetiseur.bazar;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
-import plugins.utils.FileUtils;
+import utils.FileUtils;
 
 public class TransformerDicoNomsPropresAuFormatBDLex {
 

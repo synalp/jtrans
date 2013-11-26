@@ -7,8 +7,8 @@ http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html
 
 package plugins.phonetiseurNomPropre;
 
-import plugins.utils.BDLex;
-import plugins.utils.PronunciationsLexicon;
+import utils.BDLex;
+import utils.PronunciationsLexicon;
 
 /**
  * Ce Main est un exemple d'utilisation du phonetiseur via la facade

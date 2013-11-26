@@ -7,7 +7,7 @@ import plugins.speechreco.aligners.sphiinx4.Alignment;
 import plugins.speechreco.aligners.sphiinx4.S4AlignOrder;
 import plugins.speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
 import plugins.text.elements.*;
-import plugins.utils.TimeConverter;
+import utils.TimeConverter;
 import utils.ProgressDialog;
 
 

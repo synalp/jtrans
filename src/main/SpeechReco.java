@@ -29,7 +29,7 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
 import plugins.speechreco.aligners.sphiinx4.Alignment;
-import plugins.utils.FileUtils;
+import utils.FileUtils;
 
 import speechreco.AlignTokenPassing;
 import speechreco.RecoUtterance;

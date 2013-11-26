@@ -8,11 +8,6 @@ http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html
 package plugins.applis;
 
 import java.awt.FlowLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -20,9 +15,9 @@ import javax.swing.JPanel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import plugins.utils.mike.AudioBuffer;
-import plugins.utils.mike.Microphone;
-import plugins.utils.mike.MikeVuMeter;
+import plugins.mic.AudioBuffer;
+import plugins.mic.Microphone;
+import plugins.mic.MikeVuMeter;
 
 public class ASR extends JPanel {
 	AudioBuffer buf;

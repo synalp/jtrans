@@ -40,13 +40,10 @@ import plugins.text.ColoriageEvent;
 import plugins.text.GriserWhilePlaying;
 import plugins.text.TexteEditor;
 import plugins.text.elements.*;
-import plugins.utils.FileUtils;
-import plugins.utils.InterfaceAdapter;
-import plugins.utils.PrintLogger;
-import plugins.utils.TimeConverter;
+import utils.*;
+import utils.PrintLogger;
 import speechreco.RecoWord;
 import tools.audio.PlayerGUI;
-import utils.ProgressDialog;
 
 /**
  * Classe principale de JTrans

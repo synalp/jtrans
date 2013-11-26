@@ -12,7 +12,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
-import plugins.utils.FileUtils;
+import utils.FileUtils;
 
 public class DecouperFichierListeDeMots {
 

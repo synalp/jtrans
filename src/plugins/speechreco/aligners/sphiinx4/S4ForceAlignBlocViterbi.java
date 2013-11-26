@@ -57,7 +57,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 import javax.swing.JFrame;
 
-import plugins.utils.FileUtils;
+import utils.FileUtils;
 import edu.cmu.sphinx.decoder.FrameDecoder;
 import edu.cmu.sphinx.decoder.ResultListener;
 import edu.cmu.sphinx.decoder.pruner.Pruner;

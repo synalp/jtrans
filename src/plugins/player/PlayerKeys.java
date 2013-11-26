@@ -15,9 +15,8 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 
 import plugins.buffer.RoundBuffer;
-import plugins.player.Player;
 import plugins.sourceSignals.TemporalSigFromWavFile;
-import plugins.utils.PrintLogger;
+import utils.PrintLogger;
 
 public class PlayerKeys extends JFrame implements PlayerListener {
 	public Player player=null;

@@ -10,8 +10,10 @@ package plugins.phonetiseurNomPropre;
 import java.io.*;
 import java.util.*;
 import java.util.Map.*;
-import plugins.utils.*;
-import weka.core.*;
+
+import utils.BDLex;
+import utils.FileUtils;
+import utils.PronunciationsLexicon;
 
 /**
  * Ce Main regroupe differentes utilisation du phonetiseur, sans utiliser la facade

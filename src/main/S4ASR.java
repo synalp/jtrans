@@ -14,9 +14,9 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 import plugins.speechreco.aligners.sphiinx4.HMMModels;
-import plugins.utils.DET;
-import plugins.utils.FileUtils;
-import plugins.utils.SpeechRecoAccuracy;
+import utils.DET;
+import utils.FileUtils;
+import utils.SpeechRecoAccuracy;
 import utils.SuiteDeMots;
 
 import edu.cmu.sphinx.decoder.FrameDecoder;
@@ -51,10 +51,7 @@ import edu.cmu.sphinx.linguist.acoustic.UnitManager;
 import edu.cmu.sphinx.linguist.dictionary.Dictionary;
 import edu.cmu.sphinx.linguist.dictionary.FastDictionary;
 import edu.cmu.sphinx.linguist.dictionary.Word;
-import edu.cmu.sphinx.linguist.language.ngram.LanguageModel;
-import edu.cmu.sphinx.linguist.language.ngram.large.LargeNGramModel;
 import edu.cmu.sphinx.linguist.language.ngram.large.LargeTrigramModel;
-import edu.cmu.sphinx.linguist.lextree.LexTreeLinguist;
 import edu.cmu.sphinx.result.ConfidenceResult;
 import edu.cmu.sphinx.result.MAPConfidenceScorer;
 import edu.cmu.sphinx.result.Path;

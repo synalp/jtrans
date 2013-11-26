@@ -18,7 +18,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.io.Serializable;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -31,7 +30,6 @@ import plugins.phonetiseur.PhonetiseurFacade;
 import plugins.speechreco.phonetiseurs.Morphalou;
 import plugins.speechreco.phonetiseurs.PronunciationsLexicon;
 import plugins.speechreco.phonetiseurs.SimplePhonetiseur;
-import plugins.utils.FileUtils;
 
 public class Grammatiseur implements Serializable {
 

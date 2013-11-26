@@ -4,7 +4,7 @@ import facade.Project;
 import plugins.text.ListeElement;
 import plugins.text.elements.*;
 import plugins.text.regexp.TypeElement;
-import plugins.utils.FileUtils;
+import utils.FileUtils;
 
 import java.io.*;
 import java.util.*;

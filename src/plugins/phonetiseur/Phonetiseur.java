@@ -8,12 +8,11 @@ http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html
 package plugins.phonetiseur;
 
 import java.io.*;
-import java.nio.charset.Charset;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.Map.*;
-import plugins.utils.FileUtils;
-import plugins.utils.PronunciationsLexicon;
+import utils.FileUtils;
+import utils.PronunciationsLexicon;
 
 /**
  * Le phonetiseur

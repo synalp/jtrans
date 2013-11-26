@@ -7,7 +7,7 @@ import java.util.List;
 
 import edu.cmu.sphinx.util.NISTAlign;
 
-import plugins.utils.FileUtils;
+import utils.FileUtils;
 
 public class LabEval {
 	private ArrayList<String> recursDir(File d) {

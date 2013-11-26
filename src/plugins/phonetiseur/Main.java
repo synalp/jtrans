@@ -10,11 +10,9 @@ package plugins.phonetiseur;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.PrintWriter;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-import plugins.utils.BDLex;
-import plugins.utils.FileUtils;
+import utils.BDLex;
+import utils.FileUtils;
 
 /**
  * Permet d'executer le phonetiseur en standAlone

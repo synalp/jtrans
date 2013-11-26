@@ -11,7 +11,7 @@ import java.io.*;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 
-import plugins.utils.FileUtils;
+import utils.FileUtils;
 
 import weka.classifiers.Classifier;
 import weka.classifiers.trees.J48;

@@ -51,8 +51,6 @@ import edu.cmu.sphinx.frontend.DataEndSignal;
 import edu.cmu.sphinx.frontend.DataProcessingException;
 import edu.cmu.sphinx.frontend.DataStartSignal;
 
-import plugins.utils.PrintLogger;
-
 /**
  * 
  * si on veut avoir beaucoup de flexibilite en aller-retour, il vaut mieux ne pas avoir de round-buffer

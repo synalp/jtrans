@@ -3,8 +3,8 @@ package markup;
 import facade.Project;
 import plugins.speechreco.aligners.sphiinx4.Alignment;
 import plugins.text.elements.*;
-import plugins.utils.FileUtils;
-import plugins.utils.TimeConverter;
+import utils.FileUtils;
+import utils.TimeConverter;
 
 import java.io.*;
 import java.util.*;

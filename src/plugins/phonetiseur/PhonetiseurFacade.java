@@ -7,7 +7,7 @@ http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html
 
 package plugins.phonetiseur;
 
-import plugins.utils.PronunciationsLexicon;
+import utils.PronunciationsLexicon;
 
 public class PhonetiseurFacade {
 

@@ -9,9 +9,11 @@ package plugins.phonetiseur.bazar;
 
 import java.io.*;
 import java.util.*;
-import java.util.Map.*;
-import plugins.phonetiseur.*;
-import plugins.utils.*;
+
+import utils.BDLex;
+import utils.DicoEntry;
+import utils.FileUtils;
+import utils.PronunciationsLexicon;
 
 public class TestAutrePhonetiseur {
 

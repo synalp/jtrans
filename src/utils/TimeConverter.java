@@ -41,7 +41,7 @@ pris connaissance de la licence CeCILL-C, et que vous en avez accepte les
 termes.
 */
 
-package plugins.utils;
+package utils;
 
 public abstract class TimeConverter {
 

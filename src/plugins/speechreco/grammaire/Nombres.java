@@ -1,15 +1,11 @@
 package plugins.speechreco.grammaire;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Serializable;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
-import plugins.utils.FileUtils;
+import utils.FileUtils;
 
 /**
  * classe qui gère la phonétisation des nombres
