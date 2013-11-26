@@ -16,13 +16,74 @@ import java.util.regex.*;
  */
 public class TextGridLoader implements MarkupLoader {
 
+	private class Early {
+		int frame;
+		int segment;
+		int speaker;
+		Alignment tier;
+	}
+
 	public Project parse(File file)
 			throws ParsingException, IOException
 	{
 		Project project = new Project();
 		BufferedReader reader = EncodingDetector.properReader(file);
 		TextGridStateMachine machine = new TextGridStateMachine(reader);
+		reader.close();
 
+		for (String name: machine.tierNames)
+			project.speakers.add(new Locuteur_Info((byte)project.speakers.size(), name));
+
+		int nspk = machine.tiers.size();
+		System.out.println(" *** SPEAKER COUNT: " + nspk + " ***");
+
+		int[] upcoming = new int[nspk];
+		for (int i = 0; i < nspk; i++)
+			upcoming[i] = machine.tiers.get(i).getNbSegments() == 0? -1: 0;
+
+		int currentSpeaker = -1;
+
+		while (true) {
+			Early early = null;
+
+			// find earliest upcoming segment
+			for (int i = 0; i < nspk; i++) {
+				int segment = upcoming[i];
+				if (segment < 0)
+					continue;
+				Alignment tier = machine.tiers.get(i);
+				int frame = tier.getSegmentDebFrame(segment);
+				if (early == null || frame < early.frame) {
+					early = new Early();
+					early.frame = frame;
+					early.segment = segment;
+					early.speaker = i;
+					early.tier = tier;
+				}
+			}
+
+			if (early == null)
+				break;
+
+			String text = RawTextLoader.normalizeText(early.tier.getSegmentLabel(early.segment));
+			project.elts.addAll(RawTextLoader.parseString(text, project.types));
+
+			project.elts.add(new Element_Ancre(JTransAPI.frame2sec(early.tier.getSegmentEndFrame(early.segment))));
+
+			// Introduce current speaker
+			if (currentSpeaker != early.speaker) {
+				currentSpeaker = early.speaker;
+				project.elts.add(new Element_Locuteur(project.speakers.get(early.speaker)));
+			}
+//			prevEndFrame = tier.getSegmentEndFrame(i);
+
+			if (early.segment == early.tier.getNbSegments()-1)
+				upcoming[early.speaker] = -1;
+			else
+				upcoming[early.speaker]++;
+		}
+
+		/*
 		if (machine.tiers.size() > 1)
 			throw new ParsingException("Can only import one TextGrid tier at a time for now.\n" +
 					"(This file has " + machine.tiers.size() + " tiers.)");
@@ -45,8 +106,8 @@ public class TextGridLoader implements MarkupLoader {
 			project.elts.add(new Element_Ancre(JTransAPI.frame2sec(tier.getSegmentEndFrame(i))));
 			prevEndFrame = tier.getSegmentEndFrame(i);
 		}
+		*/
 
-		reader.close();
 
 		return project;
 	}
