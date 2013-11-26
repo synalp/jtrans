@@ -11,18 +11,13 @@ import java.util.*;
 import java.util.regex.*;
 
 
+
+
+
 /**
  * Parser for the TextGrid file format.
  */
 public class TextGridLoader implements MarkupLoader {
-
-	private class Early {
-		int frame;
-		int segment;
-		int speaker;
-		Alignment tier;
-	}
-
 	public Project parse(File file)
 			throws ParsingException, IOException
 	{
@@ -34,37 +29,47 @@ public class TextGridLoader implements MarkupLoader {
 		for (String name: machine.tierNames)
 			project.speakers.add(new Locuteur_Info((byte)project.speakers.size(), name));
 
-		int nspk = machine.tiers.size();
-		System.out.println(" *** SPEAKER COUNT: " + nspk + " ***");
-
-		int[] upcoming = new int[nspk];
-		for (int i = 0; i < nspk; i++)
-			upcoming[i] = machine.tiers.get(i).getNbSegments() == 0? -1: 0;
-
 		int currentSpeaker = -1;
 
 		while (true) {
-			Early early = null;
+			SegQueue earliest = null;
 
 			// find earliest upcoming segment
-			for (int i = 0; i < nspk; i++) {
-				int segment = upcoming[i];
-				if (segment < 0)
+			for (SegQueue tier: machine.tiers) {
+				if (!tier.hasNext())
 					continue;
-				Alignment tier = machine.tiers.get(i);
-				int frame = tier.getSegmentDebFrame(segment);
-				if (early == null || frame < early.frame) {
-					early = new Early();
-					early.frame = frame;
-					early.segment = segment;
-					early.speaker = i;
-					early.tier = tier;
+				if (earliest == null || tier.peekStart() < earliest.peekStart())
+					earliest = tier;
+			}
+
+			if (earliest == null) // All tiers exhausted
+				break;
+
+			int overlapStart = earliest.peekStart();
+			int overlapEnd = earliest.peekEnd();
+			earliest.pop();
+
+			// Find extent of overlap chain
+			int encompass = 1;
+			boolean growing = true;
+			while (growing) {
+				growing = false;
+
+				for (SegQueue tier: machine.tiers) {
+					if (tier.hasNext() && tier.peekStart() < overlapEnd) {
+						growing = true;
+						encompass++;
+						if (tier.peekEnd() > overlapEnd)
+							overlapEnd = tier.peekEnd();
+						tier.pop();
+					}
 				}
 			}
 
-			if (early == null)
-				break;
+			System.out.println("Extent of overlap chain: " + overlapStart + "-" + overlapEnd + " (encompasses " + encompass + ")");
 
+
+			/*
 			String text = RawTextLoader.normalizeText(early.tier.getSegmentLabel(early.segment));
 			project.elts.addAll(RawTextLoader.parseString(text, project.types));
 
@@ -77,37 +82,8 @@ public class TextGridLoader implements MarkupLoader {
 			}
 //			prevEndFrame = tier.getSegmentEndFrame(i);
 
-			if (early.segment == early.tier.getNbSegments()-1)
-				upcoming[early.speaker] = -1;
-			else
-				upcoming[early.speaker]++;
+            */
 		}
-
-		/*
-		if (machine.tiers.size() > 1)
-			throw new ParsingException("Can only import one TextGrid tier at a time for now.\n" +
-					"(This file has " + machine.tiers.size() + " tiers.)");
-
-		// Add sole speaker
-		project.speakers.add(new Locuteur_Info((byte)0, machine.tierNames.get(0)));
-		project.elts.add(new Element_Locuteur(project.speakers.get(0)));
-
-		Alignment tier = machine.tiers.get(0);
-		int prevEndFrame = -1;
-
-		for (int i = 0; i < machine.tiers.get(0).getNbSegments(); i++) {
-			int startFrame = tier.getSegmentDebFrame(i);
-			if (prevEndFrame != startFrame)
-				project.elts.add(new Element_Ancre(JTransAPI.frame2sec(startFrame)));
-
-			String text = RawTextLoader.normalizeText(tier.getSegmentLabel(i));
-			project.elts.addAll(RawTextLoader.parseString(text, project.types));
-
-			project.elts.add(new Element_Ancre(JTransAPI.frame2sec(tier.getSegmentEndFrame(i))));
-			prevEndFrame = tier.getSegmentEndFrame(i);
-		}
-		*/
-
 
 		return project;
 	}
@@ -118,9 +94,37 @@ public class TextGridLoader implements MarkupLoader {
 }
 
 
+
+class SegQueue extends Alignment {
+	private int upcoming = 0;
+
+	public int peek() {
+		return upcoming;
+	}
+
+	public boolean hasNext() {
+		return upcoming < getNbSegments();
+	}
+
+	public int peekStart() {
+		return getSegmentDebFrame(upcoming);
+	}
+
+	public int peekEnd() {
+		return getSegmentEndFrame(upcoming);
+	}
+
+	public int pop() {
+		return upcoming++;
+	}
+}
+
+
+
 class TextGridStateMachine {
-	List<Alignment> tiers = new ArrayList<Alignment>();
+	List<SegQueue> tiers = new ArrayList<SegQueue>();
 	List<String> tierNames = new ArrayList<String>();
+
 
 
 	private static enum State {
@@ -194,7 +198,7 @@ class TextGridStateMachine {
 		State state = State.FILE_HEADER_1;
 		int lineNumber = 0;
 		Interval currentInterval = new Interval();
-		Alignment currentTier = null;
+		SegQueue currentTier = null;
 		int remainingIntervals = -1;
 
 		while (state != State.DONE) {
@@ -235,7 +239,7 @@ class TextGridStateMachine {
 				
 				case TIER_HEADER:
 					if (PAT_ITEM.matcher(lcline).matches()) {
-						currentTier = new Alignment();
+						currentTier = new SegQueue();
 						tiers.add(currentTier);
 						state = State.TIER_DESCRIPTION;
 					} else {
