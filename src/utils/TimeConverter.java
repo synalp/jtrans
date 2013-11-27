@@ -138,8 +138,7 @@ public abstract class TimeConverter {
 	}
 
 	public static int second2frame(float sec) {
-		int fr = (int)(sec*100f);
-		return fr;
+		return (int)(sec*100f);
 	}
 
 	//=======================================================================
@@ -156,10 +155,6 @@ public abstract class TimeConverter {
 		sample-=205;
 		if (sample<0) return 0;
 		return (int)(sample/160);
-	}
-
-	public static float frame2second(int trame) {
-		return (float)trame/100f;
 	}
 
 	public static float sample2second(long sample) {

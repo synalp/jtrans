@@ -334,7 +334,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 	private float lastSecClickedOnSpectro = 0;
 	public void clicOnSpectro(float frf) {
 		float prevsec = getCurPosInSec();
-		float sec = TimeConverter.frame2second((int) frf);
+		float sec = TimeConverter.frame2sec((int) frf);
 		sec += prevsec;
 		// on lit une seconde avant la pos
 		setCurPosInSec(sec-1);
@@ -752,7 +752,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 				int segidx = emot.posInAlign;
 				if (segidx>=0) {
 					int frame = project.words.getSegmentDebFrame(segidx);
-					cursec = TimeConverter.frame2second(frame);
+					cursec = TimeConverter.frame2sec(frame);
 					long currentSample = TimeConverter.frame2sample(frame);
 					if (currentSample<0) currentSample=0;
 					edit.griseMot(emot);
@@ -824,7 +824,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 			int segidx = emot.posInAlign;
 			if (segidx>=0) {
 				int frame = project.words.getSegmentDebFrame(segidx);
-				cursec = TimeConverter.frame2second(frame);
+				cursec = TimeConverter.frame2sec(frame);
 				long currentSample = TimeConverter.frame2sample(frame);
 				if (currentSample<0) currentSample=0;
 				edit.griseMot(emot);
