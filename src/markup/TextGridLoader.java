@@ -1,6 +1,7 @@
 package markup;
 
 import facade.Project;
+import plugins.text.ListeElement;
 import speechreco.aligners.sphiinx4.Alignment;
 import plugins.text.elements.*;
 import utils.FileUtils;
@@ -29,10 +30,16 @@ public class TextGridLoader implements MarkupLoader {
 		for (String name: machine.tierNames)
 			project.speakers.add(new Locuteur_Info((byte)project.speakers.size(), name));
 
-		int currentSpeaker = -1;
+		SegQueue currentTier = null;
 
 		while (true) {
 			SegQueue earliest = null;
+			SegQueue overlappingTier = null;
+
+			ListeElement eltsUnder = new ListeElement();
+			ListeElement eltsOver = new ListeElement();
+
+			// TODO prevent 3-way overlap
 
 			// find earliest upcoming segment
 			for (SegQueue tier: machine.tiers) {
@@ -45,6 +52,8 @@ public class TextGridLoader implements MarkupLoader {
 			if (earliest == null) // All tiers exhausted
 				break;
 
+			eltsUnder.addAll(RawTextLoader.parseString(
+					RawTextLoader.normalizeText(earliest.peekText()), project.types));
 			int overlapStart = earliest.peekStart();
 			int overlapEnd = earliest.peekEnd();
 			earliest.pop();
@@ -61,28 +70,45 @@ public class TextGridLoader implements MarkupLoader {
 						encompass++;
 						if (tier.peekEnd() > overlapEnd)
 							overlapEnd = tier.peekEnd();
+
+						ListeElement parsed = RawTextLoader.parseString(
+								RawTextLoader.normalizeText(tier.peekText()), project.types);
+
+						if (tier == earliest) {
+							eltsUnder.addAll(parsed);
+						} else {
+							eltsOver.addAll(parsed);
+							overlappingTier = tier;
+						}
+
 						tier.pop();
 					}
 				}
 			}
 
-			System.out.println("Extent of overlap chain: " + overlapStart + "-" + overlapEnd + " (encompasses " + encompass + ")");
+			// Add elements
 
-
-			/*
-			String text = RawTextLoader.normalizeText(early.tier.getSegmentLabel(early.segment));
-			project.elts.addAll(RawTextLoader.parseString(text, project.types));
-
-			project.elts.add(new Element_Ancre(TimeConverter.frame2sec(early.tier.getSegmentEndFrame(early.segment))));
-
-			// Introduce current speaker
-			if (currentSpeaker != early.speaker) {
-				currentSpeaker = early.speaker;
-				project.elts.add(new Element_Locuteur(project.speakers.get(early.speaker)));
+			if (currentTier != earliest) {
+				project.elts.add(new Element_Locuteur(project.speakers.get(machine.tiers.indexOf(earliest))));
+				currentTier = earliest;
 			}
-//			prevEndFrame = tier.getSegmentEndFrame(i);
 
-            */
+			if (encompass == 1) {
+				// no overlap
+				project.elts.add(new Element_Ancre(TimeConverter.frame2sec(overlapStart)));
+				project.elts.addAll(eltsUnder);
+			} else {
+				project.elts.add(new Element_DebutChevauchement());
+				project.elts.addAll(eltsUnder);
+				project.elts.add(new Element_Locuteur(project.speakers.get(machine.tiers.indexOf(overlappingTier))));
+				currentTier = overlappingTier;
+				project.elts.add(new Element_Ancre(TimeConverter.frame2sec(overlapStart)));
+				project.elts.addAll(eltsOver);
+				project.elts.add(new Element_FinChevauchement());
+			}
+
+			//TODO leave that there or not?
+			project.elts.add(new Element_Ancre(TimeConverter.frame2sec(overlapEnd)));
 		}
 
 		return project;
@@ -112,6 +138,10 @@ class SegQueue extends Alignment {
 
 	public int peekEnd() {
 		return getSegmentEndFrame(upcoming);
+	}
+
+	public String peekText() {
+		return getSegmentLabel(upcoming);
 	}
 
 	public int pop() {
@@ -171,7 +201,7 @@ class TextGridStateMachine {
 
 			m = PAT_TEXT.matcher(line);
 			if (m.matches()) {
-				text = m.group(1);
+				text = m.group(1).trim();
 				return true;
 			}
 
@@ -287,12 +317,21 @@ class TextGridStateMachine {
 				case INTERVAL_DESCRIPTION:
 					if (currentInterval.findMatch(line)) {
 						if (currentInterval.isComplete()) {
-							currentTier.addRecognizedSegment(
-									currentInterval.text,
-									TimeConverter.second2frame(currentInterval.xmin),
-									TimeConverter.second2frame(currentInterval.xmax),
-									null,
-									null);
+							int startFrame = TimeConverter.second2frame(currentInterval.xmin);
+							int endFrame = TimeConverter.second2frame(currentInterval.xmax);
+							if (!currentInterval.text.isEmpty() &&
+									!currentInterval.text.equals("_") &&
+									!currentInterval.text.equals("#") &&
+									!currentInterval.text.equals("%") &&
+									!currentInterval.text.equals("-") &&
+									startFrame < endFrame) { // skip silences... TODO this isn't very clean
+								currentTier.addRecognizedSegment(
+										currentInterval.text,
+										startFrame,
+										endFrame,
+										null,
+										null);
+							}
 							currentInterval = new Interval();
 							if (remainingIntervals == 0)
 								state = State.TIER_HEADER;

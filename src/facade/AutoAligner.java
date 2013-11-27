@@ -197,10 +197,6 @@ public class AutoAligner {
 			} else {
 				startWord = lastAlignedWord + 1;
 
-				// Lagging behind the alignment - wait for a couple more words
-				if (startWord > word)
-					return;
-
 				if (startFrame < 0) {
 					// Start aligning at the end frame of the last aligned word.
 					int lastAlignedWordSeg = mots.get(lastAlignedWord).posInAlign;
@@ -208,6 +204,10 @@ public class AutoAligner {
 				}
 			}
 		}
+
+		// Lagging behind the alignment - wait for a couple more words
+		if (startWord > word)
+			return;
 
 		if (startWord < word) {
 			// There are unaligned words before `word`; align them.
