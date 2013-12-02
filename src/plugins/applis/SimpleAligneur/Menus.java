@@ -97,7 +97,7 @@ public class Menus {
 
 		open.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				JFileChooser fc = new JFileChooser();
+				JFileChooser fc = new NicerFileChooser();
 				fc.setDialogTitle("Open project, markup or text...");
 
 				fc.addChoosableFileFilter(filterJTR);
@@ -611,7 +611,7 @@ public class Menus {
 		});
 		loadwav.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				JFileChooser filechooser = new JFileChooser();
+				JFileChooser filechooser = new NicerFileChooser();
 				filechooser.setDialogTitle("Load .WAV...");
 				int returnVal = filechooser.showOpenDialog(null);
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
@@ -627,7 +627,7 @@ public class Menus {
 		});
 		savewav.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				JFileChooser filechooser = new JFileChooser();
+				JFileChooser filechooser = new NicerFileChooser();
 				filechooser.setDialogTitle("Save .WAV...");
 				filechooser.setSelectedFile(new File("out.wav"));
 				int returnVal = filechooser.showSaveDialog(aligneur.jf);

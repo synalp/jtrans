@@ -1,16 +1,29 @@
 package utils;
 
 import javax.swing.*;
+import java.awt.*;
 import java.io.File;
 
 /**
  * File chooser that lets the user change their mind before overwriting an
  * existing file.
+ *
+ * Also remembers the last chosen location during the program's lifespan.
  */
 public class NicerFileChooser extends JFileChooser {
+	// TODO: make this permanent instead of static
+	private static File lastLocation = null;
+
+	@Override
+	public int showDialog(Component parent, String approveButtonText) {
+		setCurrentDirectory(lastLocation);
+		return super.showDialog(parent, approveButtonText);
+	}
+
 	@Override
 	public void approveSelection() {
 		File f = getSelectedFile();
+		lastLocation = f.getParentFile();
 		if (SAVE_DIALOG != getDialogType() || !f.exists()) {
 			super.approveSelection();
 			return;
