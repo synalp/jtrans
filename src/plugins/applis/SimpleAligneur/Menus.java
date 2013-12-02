@@ -32,6 +32,7 @@ import speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
 import speechreco.grammaire.Grammatiseur;
 import plugins.text.TexteEditor;
 import utils.NicerFileChooser;
+import utils.ProgressDialog;
 
 public class Menus {
 	Aligneur aligneur;
@@ -325,6 +326,7 @@ public class Menus {
 		JMenuItem gui3 = new JMenuItem("GUI: toggle words/phones");
 		JMenu fontSize = new JMenu("Font size");
 		JMenu fontFamily = new JMenu("Font family");
+		JMenuItem initGrammar = new JMenuItem("Initialize grammar...");
 		menubar.add(prefs);
 		//		JMenuItem mots = new JMenuItem("forward mots");
 		//		prefs.add(mots);
@@ -335,6 +337,8 @@ public class Menus {
 		prefs.addSeparator();
 		prefs.add(fontSize);
 		prefs.add(fontFamily);
+		prefs.addSeparator();
+		prefs.add(initGrammar);
 
 		ButtonGroup fontSizeGroup = new ButtonGroup();
 		for (final int points: FONT_SIZES) {
@@ -404,6 +408,20 @@ public class Menus {
 				//				aligneur.repaint();
 			}
 		});
+
+		initGrammar.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				ProgressDialog waiting = new ProgressDialog((JFrame) null, new Runnable() {
+					@Override
+					public void run() {
+						Grammatiseur.getGrammatiseur();
+					}
+				}, "please wait: initializing grammars...");
+				waiting.setVisible(true);
+			}
+		}
+		);
 
 		// //////////////////////////////////////////////////////////////
 		JMenu help = new JMenu("Help");
