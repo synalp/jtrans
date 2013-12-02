@@ -235,21 +235,29 @@ public class Alignment implements Serializable {
 
 	/**
 	 * Overwrites part of this alignment with a smaller alignment.
+	 * The smaller alignment may extend beyond the end of this alignment.
+	 * @return index of the first overwritten segment
 	 */
-	public void overwrite(Alignment small) {
+	public int overwrite(Alignment small) {
 		int fromFrame = small.getStartFrame();
 		int toFrame   = small.getSegmentEndFrame(small.getNbSegments()-1);
 
 		assert fromFrame >= getStartFrame();
-		// Ignore assertion below - the inserted alignment
-		// may extend beyond the end of this alignment
-		// assert toFrame <= getSegmentEndFrame(getNbSegments()-1);
 
 		Alignment after = new Alignment(this);
 		cutAfterFrame(fromFrame);
+		int segmentsBefore = getNbSegments();
 		after.cutBeforeFrame(toFrame);
 
 		merge(small);
+		merge(after);
+		return segmentsBefore;
+	}
+
+	public void clearInterval(int startFrame, int endFrame) {
+		Alignment after = new Alignment(this);
+		cutAfterFrame(startFrame);
+		after.cutBeforeFrame(endFrame);
 		merge(after);
 	}
 

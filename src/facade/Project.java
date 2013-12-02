@@ -27,6 +27,35 @@ public class Project {
 	public List<Byte> overlapSpeakers = new ArrayList<Byte>();
 
 
+	public void clearAlignment() {
+		words = new Alignment();
+		phons = new Alignment();
+		overlaps = new ArrayList<S4AlignOrder>();
+		overlapSpeakers = new ArrayList<Byte>();
+		for (Element_Mot word: elts.getMots())
+			word.posInAlign = -1;
+		refreshIndex();
+	}
+
+
+	public void clearAlignmentInterval(int startFrame, int endFrame) {
+		for (Element_Mot word: elts.getMots()) {
+			int seg = word.posInAlign;
+			if (word.posInAlign < 0)
+				continue;
+			if (words.getSegmentDebFrame(seg) >= startFrame &&
+					words.getSegmentEndFrame(seg) <= endFrame)
+				word.posInAlign = -1;
+		}
+
+		words.clearInterval(startFrame, endFrame);
+		phons.clearInterval(startFrame, endFrame);
+		// TODO: unalign phonemes, clear affected overlaps...
+
+		refreshIndex();
+	}
+
+
 	public static final TypeElement DEFAULT_TYPES[] = {
 			new TypeElement("Speaker", Color.GREEN,
 					"(^|\\n)(\\s)*\\w\\d+\\s"),

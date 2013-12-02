@@ -225,8 +225,6 @@ public class AutoAligner {
 			project.elts.getMot(word).posInAlign = newseg;
 		}
 
-		// TODO: phonetiser et aligner auto les phonemes !!
-
 		// Update GUI
 		aligneur.edit.colorizeWords(startWord, word);
 	}
@@ -279,12 +277,19 @@ public class AutoAligner {
 
 
 
+	public void alignBetweenAnchors(ProgressDialog progress) {
+		alignBetweenAnchors(progress, 0, project.elts.size()-1);
+	}
+
+
 	/**
 	 * Align words automatically between anchors set manually.
 	 * @param progress progress dialog to refresh
 	 */
-	public void alignBetweenAnchors(ProgressDialog progress) {
+	public void alignBetweenAnchors(ProgressDialog progress, final int from, final int to) {
 		progress.setMessage("Aligning...");
+
+		project.clearAlignmentInterval(from, to);
 
 		float alignFrom = 0;
 		int startWord = 0;
@@ -294,7 +299,15 @@ public class AutoAligner {
 
 		Overlap currentOverlap = null;
 
-		for (int i = 0; i < project.elts.size(); i++) {
+		for (int i = 0; i < from; i++) {
+			Element e = project.elts.get(i);
+			if (e instanceof Element_Mot) {
+				word++;
+				startWord = word;
+			}
+		}
+
+		for (int i = from; i <= to; i++) {
 			Element e = project.elts.get(i);
 
 			if (e instanceof Element_Mot) {
@@ -399,6 +412,8 @@ public class AutoAligner {
 	 */
 	public void alignRaw(ProgressDialog progress) {
 		progress.setMessage("Aligning...");
+
+		project.clearAlignment();
 
 		int lastAlignedWord = 0;
 		int previousLAW = -1;
