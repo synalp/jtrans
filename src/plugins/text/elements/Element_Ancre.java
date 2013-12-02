@@ -1,7 +1,9 @@
 package plugins.text.elements;
 
+import utils.TimeConverter;
+
 public class Element_Ancre extends Element {
-	public final float seconds;
+	public float seconds;
 
 	public Element_Ancre(float seconds) {
 		this.seconds = seconds;
@@ -12,6 +14,10 @@ public class Element_Ancre extends Element {
 				(int)(seconds/60f),
 				(int)(seconds%60f),
 				Math.round(seconds%1f * 1000f));
+	}
+
+	public int getFrame() {
+		return TimeConverter.second2frame(seconds);
 	}
 
 	public int getType() {

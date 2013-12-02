@@ -56,6 +56,46 @@ public class Project {
 	}
 
 
+	/**
+	 * Clears alignment around an anchor.
+	 * @return an array of two integers representing the indices of the first
+	 * and last elements whose alignment was cleared
+	 */
+	public int[] clearAlignmentAround(Element_Ancre anchor) {
+		// anchor element indices
+		int prev = 0;
+		int curr = -1;
+		int next = 0;
+
+		for (int i = 0; i < elts.size(); i++) {
+			Element el = elts.get(i);
+			if (!(el instanceof Element_Ancre))
+				continue;
+			if (el == anchor) {
+				curr = i;
+			} else if (curr < 0) {
+				prev = i;
+			} else {
+				next = i;
+				break;
+			}
+		}
+
+		for (int i = prev; i <= next; i++) {
+			Element el = elts.get(i);
+			if (!(el instanceof Element_Mot))
+				continue;
+			Element_Mot word = (Element_Mot)el;
+			word.posInAlign = -1;
+		}
+
+		int start = ((Element_Ancre)elts.get(prev)).getFrame();
+		int end   = ((Element_Ancre)elts.get(next)).getFrame();
+		clearAlignmentInterval(start, end);
+		return new int[]{prev, next};
+	}
+
+
 	public static final TypeElement DEFAULT_TYPES[] = {
 			new TypeElement("Speaker", Color.GREEN,
 					"(^|\\n)(\\s)*\\w\\d+\\s"),

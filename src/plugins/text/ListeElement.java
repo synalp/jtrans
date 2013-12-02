@@ -78,7 +78,6 @@ import plugins.text.elements.*;
 public class ListeElement extends ArrayList<Element> implements Serializable {
 	private Element_Mot[] seg2mot = null;
 	// TODO: il faut mettre a jour l'index a la moindre modification !
-	public int indiceMot=-1;
 	
 	public int importAlign(int[] mots2segidx, int fromMot) {
 		List<Element_Mot> mots = getMots();
@@ -118,18 +117,6 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 		if (segidx>=seg2mot.length) return null;
 		return seg2mot[segidx];
 	}
-	
-	public Element_Mot getWordElement(int widx) {
-		int j=-1;
-		for (int i=0;i<size();i++) {
-			Element e = get(i);
-			if (e instanceof Element_Mot) {
-				if (++j==widx) return (Element_Mot)e;
-			}
-		}
-		return null;
-	}
-
 
 	/**
 	 * Creates an alignment whose segments spans speaker turns.
@@ -361,17 +348,11 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 	 * @param posiDansLeTexte
 	 * @return
 	 */
-	public int getIndiceElementAtTextPosi(int posiDansLeTexte){
-		Element_Mot mot;
-		Element element;
-		int size = size();
-		for(int i = 0; i < size; i++){
-			element = get(i);
-			if(element instanceof Element_Mot){
-				mot = (Element_Mot)element;
-				if (mot.start <= posiDansLeTexte && mot.end >= posiDansLeTexte)
-					return i;
-			}
+	public int getIndiceElementAtTextPosi(int posiDansLeTexte) {
+		for (int i = 0; i < size(); i++) {
+			Element el = get(i);
+			if (el.start <= posiDansLeTexte && el.end >= posiDansLeTexte)
+				return i;
 		}
 		return -1;
 	}
@@ -385,19 +366,6 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 				return i;
 		}
 		return -1;
-	}
-
-
-	public Element_Mot getMotAtTextPosi(int posiDansLeTexte){
-		List<Element_Mot> mots = getMots();
-		for(int i = 0;i<mots.size(); i++) {
-			Element_Mot mot = mots.get(i);
-			if (mot.start <= posiDansLeTexte && mot.end >= posiDansLeTexte) {
-				indiceMot=i;
-				return mot;
-			}
-		}
-		return null;
 	}
 	
 	

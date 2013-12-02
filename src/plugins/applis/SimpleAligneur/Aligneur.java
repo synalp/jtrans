@@ -682,13 +682,43 @@ public class Aligneur extends JPanel implements PrintLogger {
 		// TODO reimplement me
 		JOptionPane.showMessageDialog(jf, "Reimplement me!");
 	}
+
+	void anchorClicked(Element_Ancre anchor) {
+		String newPosString = JOptionPane.showInputDialog(jf,
+				"Enter new anchor position in seconds:",
+				Float.toString(anchor.seconds));
+
+		if (newPosString == null)
+			return;
+
+		float newPos = Float.parseFloat(newPosString);
+
+		anchor.seconds = newPos;
+
+		int[] range = project.clearAlignmentAround(anchor);
+		setProject(project); // force refresh
+
+		int rc = JOptionPane.showConfirmDialog(jf, "Realign?",
+				"Anchor repositioned", JOptionPane.YES_NO_OPTION);
+
+		if (rc == JOptionPane.YES_OPTION)
+			alignBetweenAnchorsWithProgress(range[0], range[1]);
+	}
 	
 	void clicAtCaretPosition(int caretPos, int button) {
-		int mot = project.elts.getIndiceMotAtTextPosi(caretPos);
-		if (mot<0) {
-			System.out.println("no mot at position "+caretPos);
+		int elementIdx = project.elts.getIndiceElementAtTextPosi(caretPos);
+		if (elementIdx < 0)
 			return;
-		}
+
+		Element el = project.elts.get(elementIdx);
+		if (el instanceof Element_Ancre) {
+			anchorClicked((Element_Ancre)el);
+			return;
+		} else if (!(el instanceof Element_Mot))
+			return;
+
+		int mot = project.elts.getIndiceMotAtTextPosi(caretPos);
+
 		// simplification:
 		// shift+clic = del align from there + replay from here
 		// ctrl +clic = equi-align up to here + auto-align from here
@@ -1297,6 +1327,15 @@ public class Aligneur extends JPanel implements PrintLogger {
 	}
 
 
+	public void alignBetweenAnchorsWithProgress(final int from, final int to) {
+		final ProgressDialog progress = new ProgressDialog(jf, null, "Aligning...");
+		progress.setRunnable(new Runnable() {
+			public void run() {
+				new AutoAligner(project, Aligneur.this).alignBetweenAnchors(progress, from, to);
+				setProject(project); // refresh
+			}});
+		progress.setVisible(true);
+	}
 
 	public void alignBetweenAnchorsWithProgress() {
 		final ProgressDialog progress = new ProgressDialog(jf, null, "Aligning...");
