@@ -61,24 +61,12 @@ public class KeysManager {
 					if (!parms.startsWith("KEY_PRESSED,"))
 						return false;
 					switch (e.getKeyCode()) {
-					case 80: // lettre "p"
-						aligneur.restartPlaying();
-						break;
 					case 113: // F2
 						aligneur.alignManual();
-						break;
-					case 116: // F5
-//						aligneur.s4fastAutoAlign();
-						break;
-					case 117: // F6
 						break;
 					case 27: // ESC
 						aligneur.stopAll();
 //						if (aligneur.userShouldConfirm) aligneur.confirmAlign(false);
-						break;
-					case 10: // Enter
-//						if (aligneur.userShouldConfirm) aligneur.confirmAlign(true);
-//						else if (aligneur.userShouldAlign) aligneur.manualAlign();
 						break;
 					case 16: // Shift
 						isShiftOn=true;
@@ -88,15 +76,8 @@ public class KeysManager {
 							System.out.println("KMGR set control on");
 						isControlOn=true;
 						break;
-					case 35: // END
-						aligneur.goToLastAlignedWord();
-						return true;
 					case 36: // HOME
 						aligneur.goHome();
-						break;
-					case 37: // fleche gauche
-						break;
-					case 39: // fleche droite
 						break;
 					case 77: // lettre M
 						S4ForceAlignBlocViterbi.silprob *= 0.1f;
@@ -106,8 +87,6 @@ public class KeysManager {
 						S4ForceAlignBlocViterbi.silprob /= 0.1f;
 						System.out.println("SIL INS PROB "+S4ForceAlignBlocViterbi.silprob);
 						break;
-					case 88: // lettre X
-						aligneur.debug();
 					default:
 						System.err.println("key " + e.getKeyCode());
 					}

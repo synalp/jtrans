@@ -373,11 +373,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 		createJFrame();
 	}
 
-	public JMenuBar createMenus() {
-		JMenuBar menubar = (new Menus(this)).menus();
-		return menubar;
-	}
-
 	private void createJFrame() {
 		// Use OS X menu bar if possible
 		if (System.getProperty("os.name").toLowerCase().contains("mac"))
@@ -426,9 +421,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 		}}, BorderLayout.SOUTH);
 	}
 
-	void rewindAudio() {
-		audiobuf.rewind();
-	}
 	void goHome() {
 		//		if (player.isPlaying()) return;
 		currentSample=0;
@@ -470,24 +462,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 		 */
 	}
 
-	void goToLastAlignedWord() {
-		/*
-        caretSensible = false;
-        if (player != null && player.isPlaying()) {
-            System.err.println("dont goto last aligned word because playing");
-            return;
-        }
-        int lastAlignedWord = project.words.getLastWordAligned();
-        if (lastAlignedWord < 0) {
-            wordSelectedIdx = 0;
-        } else {
-            wordSelectedIdx = lastAlignedWord;
-        }
-        griseSelectedWord();
-        caretSensible = true;
-		 */
-	}
-
 	public void inputControls() {
 		kmgr = new KeysManager(this);
 		new MouseManager(this);
@@ -503,44 +477,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 	}
 	public void newplaystopped() {
 		griserwhenplaying.killit();
-	}
-
-	void restartPlaying() {
-		/*
-		if (player.isPlaying()) return;
-		if (sigPanel != null) {
-			// on demarre depuis la barre de selection du sigPanel
-			long sfin = sigPanel.getEndSelection();
-			if (sfin >= 0) {
-				long sdeb = sigPanel.getStartSelection();
-				if (sfin - sdeb < 1000) {
-					restartPlaying(0);
-					return;
-				}
-				//				 positionne l'audio buffer
-				audiobuf.samplePosition = sdeb;
-				if (sigPanel != null) {
-					sigPanel.replayFrom(sdeb);
-				}
-				//				 relance le thread qui grise les mots
-				if (project.words != null) {
-					playerController.unpause();
-				}
-				//				 lance la lecture
-				player.play(mixidx,new plugins.player.PlayerListener() {
-
-					public void playerHasFinished() {
-						stopPlaying();
-					}
-				}, sdeb, sfin);
-			} else {
-				// on demarre depuis le dernier currentSample
-				restartPlaying(0);
-			}
-		} else {
-			restartPlaying(0);
-		}
-		 */
 	}
 
 	/**
@@ -1003,54 +939,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 		 */
 	}
 
-	void insertManualAnchor(final int motClicked, float seconds) {
-		ctrlbox.getPlayerGUI().stopPlaying();
-		long absms;
-		if (seconds<0) {
-			long relms = ctrlbox.getPlayerGUI().getTimePlayed();
-			System.out.println("insertanchor cursec = "+getCurPosInSec());
-			absms = (long)(getCurPosInSec()*1000f)+relms;
-		} else {
-			absms = (long)(1000f*seconds);
-		}
-		final int fr = TimeConverter.millisec2frame(absms);
-		System.out.println("insert anchor "+absms+" "+fr);
-
-		// c'est le AWT event thread qui appelle cette fonction: il ne faut pas le bloquer !
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
-				realignBeforeAnchor(motClicked,fr);
-				//		        alignement.addManualAnchorv2(motClicked);
-				// edit.souligne(edit.getListeElement().getMot(motClicked));
-				// aligne auto les mots suivants
-				// s4fastAutoAlign();
-				// relance le player
-				//		        startPlayingFrom(OldAlignment.frame2second(lastFrame)-2);
-				repaint();
-			}
-		}).start();
-
-		/*
-		final int lastFrame = OldAlignment.sample2frame(player.getLastSamplePlayed());
-		player.stopPlaying();
-
-		// c'est le AWT event thread qui appelle cette fonction: il ne faut pas le bloquer !
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
-				realignBeforeAnchor(motClicked,lastFrame);
-				//		        alignement.addManualAnchorv2(motClicked);
-				edit.souligne(edit.getListeElement().getMot(motClicked));
-				// aligne auto les mots suivants
-				s4fastAutoAlign();
-				// relance le player
-				//		        startPlayingFrom(OldAlignment.frame2second(lastFrame)-2);
-			}
-		}).start();
-		 */
-	}
-
 	private void getRecoResult(main.SpeechReco asr) {
 		List<String> lmots = getRecoResultOld(asr);
 		//    	alignement.merge(asr.fullalign,0);
@@ -1099,16 +987,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 		edit.setIgnoreRepaint(false);
 		edit.repaint();
 		return lmots;
-	}
-
-	// fonction activee par la touche X qui sert a afficher/debugger 
-	public void debug() {
-		//    	System.out.println(project.words.alignedGMMs);
-		//   	System.out.println(project.words.alignedGMMs.size());
-		//   	System.out.println(project.words.phones.size());
-		//  	System.out.println(project.words.states.size());
-		// 	SpeechReco asr = SpeechReco.getSpeechReco();
-		//   	asr.getGMMs(project.words);
 	}
 
 	public void asr() {
@@ -1196,13 +1074,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 				}
 			}
 		}).start();
-	}
-
-	/**
-	 * positionne l'audio et le texte à un endroit donné du texte
-	 */
-	public void gotoSourcePos(long posInText) {
-		clicAtCaretPosition((int)posInText,MouseEvent.BUTTON1);
 	}
 
 	public void biasAdapt() {
