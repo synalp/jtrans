@@ -631,14 +631,14 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 		anchor.seconds = newPos;
 
-		int[] range = project.clearAlignmentAround(anchor);
+		project.clearAlignmentAround(anchor);
 		setProject(project); // force refresh
 
 		int rc = JOptionPane.showConfirmDialog(jf, "Realign?",
 				"Anchor repositioned", JOptionPane.YES_NO_OPTION);
 
 		if (rc == JOptionPane.YES_OPTION)
-			alignBetweenAnchorsWithProgress(range[0], range[1]);
+			alignBetweenAnchorsWithProgress();
 	}
 	
 	void clicAtCaretPosition(int caretPos, int button) {
@@ -1195,17 +1195,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 		jf.setTitle(file.getName());
 		printInStatusBar("Ready");
 		return true;
-	}
-
-
-	public void alignBetweenAnchorsWithProgress(final int from, final int to) {
-		final ProgressDialog progress = new ProgressDialog(jf, null, "Aligning...");
-		progress.setRunnable(new Runnable() {
-			public void run() {
-				new AutoAligner(project, Aligneur.this).alignBetweenAnchors(progress, from, to);
-				setProject(project); // refresh
-			}});
-		progress.setVisible(true);
 	}
 
 	public void alignBetweenAnchorsWithProgress() {

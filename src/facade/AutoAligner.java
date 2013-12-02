@@ -272,19 +272,14 @@ public class AutoAligner {
 
 
 
-	public void alignBetweenAnchors(ProgressDialog progress) {
-		alignBetweenAnchors(progress, 0, project.elts.size()-1);
-	}
-
-
 	/**
 	 * Align words automatically between anchors set manually.
 	 * @param progress progress dialog to refresh
 	 */
-	public void alignBetweenAnchors(ProgressDialog progress, final int from, final int to) {
+	public void alignBetweenAnchors(ProgressDialog progress) {
 		progress.setMessage("Aligning...");
 
-		project.clearAlignmentInterval(from, to);
+		project.clearAlignment();
 
 		float alignFrom = 0;
 		int startWord = 0;
@@ -294,15 +289,7 @@ public class AutoAligner {
 
 		Overlap currentOverlap = null;
 
-		for (int i = 0; i < from; i++) {
-			Element e = project.elts.get(i);
-			if (e instanceof Element_Mot) {
-				word++;
-				startWord = word;
-			}
-		}
-
-		for (int i = from; i <= to; i++) {
+		for (int i = 0; i < project.elts.size(); i++) {
 			Element e = project.elts.get(i);
 
 			if (e instanceof Element_Mot) {
