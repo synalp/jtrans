@@ -103,8 +103,6 @@ public class AutoAligner {
 	 * It is not merged into the main alignment (use mergeOrder() for that).
 	 */
 	private S4AlignOrder partialBatchAlign(final int startWord, final int startFrame, final int endWord, final int endFrame) {
-		System.out.println("batch align "+startWord+"-"+endWord+" "+startFrame+":"+endFrame);
-
 		return (S4AlignOrder)Cache.cachedObject(
 				String.format("%05d_%05d_%05d_%05d.order", startWord, startFrame, endWord, endFrame),
 				new Cache.ObjectFactory() {
@@ -121,9 +119,6 @@ public class AutoAligner {
 	 */
 	private void mergeOrder(S4AlignOrder order, int startWord, int endWord) {
 		if (order.alignWords != null) {
-			System.out.println("================================= ALIGN FOUND");
-			System.out.println(order.alignWords.toString());
-
 			String[] alignedWords = new String[1 + endWord - startWord];
 			for (int i = 0; i < 1+endWord-startWord; i++)
 				alignedWords[i] = mots.get(i + startWord).getWordString();
@@ -325,13 +320,6 @@ public class AutoAligner {
 								project.words.getSegmentEndFrame(seg));
 
 						if (currentOverlap.overlapEnd > currentOverlap.overlapStart) {
-							System.out.println("Overlap: previous speaker starts speaking @"
-									+ currentOverlap.s1StartsSpeaking
-									+ ", gets overlapped @"
-									+ currentOverlap.overlapStart
-									+ ", stops speaking @"
-									+ currentOverlap.overlapEnd);
-
 							S4AlignOrder spk1Overlap = partialBatchAlign(
 									currentOverlap.s1FirstWord,
 									TimeConverter.second2frame(currentOverlap.s1StartsSpeaking),

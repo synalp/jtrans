@@ -137,7 +137,6 @@ public class Alignment implements Serializable {
 			}
 			mots2segidx[motidx]=walidx;
 		}
-		System.out.println("matchwithtext ended "+segidx+" "+motidx);
 		return mots2segidx;
 	}
 
@@ -195,7 +194,6 @@ public class Alignment implements Serializable {
 	 */
 	public int merge(Alignment al) {
 		int nsegsConservesDuPremier=getNbSegments();
-		System.out.println("merging "+nsegsConservesDuPremier+" "+ frameOffset +" "+al.frameOffset);
 		if (frameOffset < al.frameOffset) {
 			// il ne faut plus ajuster, car on l'a deja fait et on utilise les methodes de haut niveau pour acceder aux limites temporelles !
 			//			al.segs.addTimeOffset(al.frameOffset-frameOffset);
@@ -266,13 +264,10 @@ public class Alignment implements Serializable {
 	}
 
 	public void buildIndex() {
-		System.out.println("building index");
 		segEndFrames = new int[getNbSegments()];
 		for (int i=0;i<segEndFrames.length;i++) {
 			segEndFrames[i]=getSegmentEndFrame(i);
 		}
-		if (segEndFrames.length>0)
-			System.out.println("index updated "+segEndFrames.length+" "+segEndFrames[segEndFrames.length-1]);
 		setFirstSegmentAltered(-1);
 	}
 

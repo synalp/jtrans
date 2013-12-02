@@ -102,12 +102,10 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 		while (l>=0 && lastseg<0) {
 			lastseg = mots.get(l--).posInAlign;
 		}
-		System.out.println("indexmots lastseg "+lastseg);
 		seg2mot = new Element_Mot[lastseg+1];
 		for (Element_Mot m : mots) {
 			if (m.posInAlign>=0) seg2mot[m.posInAlign]=m;
 		}
-		System.out.println("index mots ok "+seg2mot.length);
 	}
 	public Element_Mot getMotAtSegment(int segidx) {
 		if (seg2mot==null) {
