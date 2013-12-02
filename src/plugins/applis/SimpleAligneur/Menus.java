@@ -42,7 +42,7 @@ public class Menus {
 	LiveSpeechReco gram;
 
 	private static final FileFilter
-			filterJTR = new FileNameExtensionFilter("JTrans Project (*.jtr)", "jtr"),
+			filterJTR = new FileNameExtensionFilter("JTrans Project (*.jtr, *.json)", "jtr", "json"),
 			filterTRS = new FileNameExtensionFilter("Transcriber (*.trs)", "trs"),
 			filterTextGrid = new FileNameExtensionFilter("Praat TextGrid (*.textgrid)", "textgrid"),
 			filterTextGridWordsOnly = new FileNameExtensionFilter("Praat TextGrid (*.textgrid) - Words only", "textgrid"),
@@ -227,6 +227,8 @@ public class Menus {
 		alignMenu.addSeparator();
 		alignMenu.add(clearAll);
 		alignMenu.add(clearFrom);
+
+		autoAnchors.setAccelerator(KeyStroke.getKeyStroke('A', modifier | InputEvent.SHIFT_MASK));
 
 		autoAnchors.addActionListener(new ActionListener() {
 			@Override
