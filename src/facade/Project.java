@@ -32,6 +32,9 @@ public class Project {
 	public List<S4AlignOrder> overlaps = new ArrayList<S4AlignOrder>();
 	public List<Byte> overlapSpeakers = new ArrayList<Byte>();
 
+	// TODO this setting should be saved to disk
+	public static boolean linebreakBeforeAnchors = false;
+
 
 	public void clearAlignment() {
 		words = new Alignment();
@@ -132,8 +135,13 @@ public class Project {
 		StringBuilder buf = new StringBuilder();
 
 		for (Element el: elts) {
-			if (buf.length() > 0)
-				buf.append(el instanceof Element_Locuteur ? '\n': ' ');
+			if (buf.length() > 0) {
+				if (el instanceof Element_Locuteur ||
+						(linebreakBeforeAnchors && el instanceof Element_Ancre))
+					buf.append('\n');
+				else
+					buf.append(' ');
+			}
 
 			int pos = buf.length();
 			String str;

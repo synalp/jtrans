@@ -20,9 +20,6 @@ Praat. Il faut aussi qu'on les sauvegarde dans le .jtr...
 FAIBLE PRIORITÉ
 ===============
 
-Switch pour basculer entre affichage des ancres par secondes flottantes (style
-praat) ou par minutes-secondes-millièmes (style actuel)
-
 Grammatiseur.java:62: la déserialisation de ressources/grammatiseur est ultra
 longue. Pourrait-elle être accélérée ?
 

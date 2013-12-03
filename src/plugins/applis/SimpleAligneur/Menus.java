@@ -22,10 +22,12 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 import edu.cmu.sphinx.result.Result;
 
+import facade.Project;
 import markup.*;
 import main.LiveSpeechReco;
 
 import plugins.sourceSignals.Mike2wav;
+import plugins.text.elements.Element_Ancre;
 import speechreco.RecoListener;
 import speechreco.adaptation.BiaisAdapt;
 import speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
@@ -216,6 +218,86 @@ public class Menus {
 		actionsm.add(gototime);
 
 		// //////////////////////////////////////////////////////////////
+		JMenu viewMenu = new JMenu("View");
+		JCheckBoxMenuItem phonemesInSpectro = new JCheckBoxMenuItem("Show phonemes in spectro");
+		JCheckBoxMenuItem minutesInAnchors = new JCheckBoxMenuItem("Show minutes in anchors");
+		JCheckBoxMenuItem linebreakBeforeAnchors = new JCheckBoxMenuItem("Linebreak before anchors");
+		JMenu fontSize = new JMenu("Font size");
+		JMenu fontFamily = new JMenu("Font family");
+		menubar.add(viewMenu);
+
+		viewMenu.add(phonemesInSpectro);
+		viewMenu.add(minutesInAnchors);
+		viewMenu.add(linebreakBeforeAnchors);
+		viewMenu.addSeparator();
+		viewMenu.add(fontSize);
+		viewMenu.add(fontFamily);
+
+		phonemesInSpectro.setSelected(aligneur.showPhones);
+		minutesInAnchors.setSelected(Element_Ancre.showMinutes);
+		linebreakBeforeAnchors.setSelected(Project.linebreakBeforeAnchors);
+
+		phonemesInSpectro.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				aligneur.showPhones = ((AbstractButton)e.getSource()).isSelected();
+			}
+		});
+
+		minutesInAnchors.addActionListener(new AbstractAction() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				Element_Ancre.showMinutes = ((AbstractButton)e.getSource()).isSelected();
+				aligneur.edit.setTextFromElements();
+			}
+		});
+
+		linebreakBeforeAnchors.addActionListener(new AbstractAction() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				Project.linebreakBeforeAnchors =  ((AbstractButton)e.getSource()).isSelected();
+				aligneur.edit.setTextFromElements();
+			}
+		});
+
+
+		ButtonGroup fontSizeGroup = new ButtonGroup();
+		for (final int points: FONT_SIZES) {
+			final JRadioButtonMenuItem jmi = new JRadioButtonMenuItem(points + " pt");
+			fontSize.add(jmi);
+			fontSizeGroup.add(jmi);
+
+			jmi.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					Font currentFont = aligneur.edit.getFont();
+					aligneur.edit.setFont(new Font(currentFont.getName(), Font.PLAIN, points));
+				}
+			});
+
+			if (points == TexteEditor.DEFAULT_FONT_SIZE)
+				jmi.setSelected(true);
+		}
+
+		ButtonGroup fontFamilyGroup = new ButtonGroup();
+		for (final String name: FONT_FAMILIES) {
+			final JRadioButtonMenuItem jmi = new JRadioButtonMenuItem(name);
+			fontFamily.add(jmi);
+			fontFamilyGroup.add(jmi);
+
+			jmi.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					Font currentFont = aligneur.edit.getFont();
+					aligneur.edit.setFont(new Font(name, Font.PLAIN, currentFont.getSize()));
+				}
+			});
+
+			if (name.equals(TexteEditor.DEFAULT_FONT_NAME))
+				jmi.setSelected(true);
+		}
+
+
+		// //////////////////////////////////////////////////////////////
 		JMenu alignMenu = new JMenu("Align");
 		JMenuItem autoAnchors = new JMenuItem("Auto-align between anchors...");
 		JMenuItem autoAll = new JMenuItem("Auto-align all (no anchors)...");
@@ -325,9 +407,6 @@ public class Menus {
 		JMenuItem mixers = new JMenuItem("Audio mixers");
 		JMenuItem mikerec = new JMenuItem("Record from mic");
 		JMenuItem liveasr = new JMenuItem("Live ASR");
-		JMenuItem gui3 = new JMenuItem("GUI: toggle words/phones");
-		JMenu fontSize = new JMenu("Font size");
-		JMenu fontFamily = new JMenu("Font family");
 		JMenuItem initGrammar = new JMenuItem("Initialize grammar...");
 		menubar.add(prefs);
 		//		JMenuItem mots = new JMenuItem("forward mots");
@@ -335,49 +414,8 @@ public class Menus {
 		prefs.add(mixers);
 		prefs.add(mikerec);
 		prefs.add(liveasr);
-		prefs.add(gui3);
-		prefs.addSeparator();
-		prefs.add(fontSize);
-		prefs.add(fontFamily);
 		prefs.addSeparator();
 		prefs.add(initGrammar);
-
-		ButtonGroup fontSizeGroup = new ButtonGroup();
-		for (final int points: FONT_SIZES) {
-			final JRadioButtonMenuItem jmi = new JRadioButtonMenuItem(points + " pt");
-			fontSize.add(jmi);
-			fontSizeGroup.add(jmi);
-
-			jmi.addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					Font currentFont = aligneur.edit.getFont();
-					aligneur.edit.setFont(new Font(currentFont.getName(), Font.PLAIN, points));
-				}
-			});
-
-			if (points == TexteEditor.DEFAULT_FONT_SIZE)
-				jmi.setSelected(true);
-		}
-
-		ButtonGroup fontFamilyGroup = new ButtonGroup();
-		for (final String name: FONT_FAMILIES) {
-			final JRadioButtonMenuItem jmi = new JRadioButtonMenuItem(name);
-			fontFamily.add(jmi);
-			fontFamilyGroup.add(jmi);
-
-			jmi.addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					Font currentFont = aligneur.edit.getFont();
-					aligneur.edit.setFont(new Font(name, Font.PLAIN, currentFont.getSize()));
-				}
-			});
-
-			if (name.equals(TexteEditor.DEFAULT_FONT_NAME))
-				jmi.setSelected(true);
-		}
-
 
 		liveasr.addActionListener(new ActionListener() {
 			@Override
@@ -385,29 +423,6 @@ public class Menus {
 				// asynchrone
 				LiveSpeechReco.doReco();
 				// TODO: wait for the user press the ESC key, then stop the reco and put the result in the text panel 
-			}
-		});
-
-		//		JMenuItem gui1 = new JMenuItem("GUI: view text only");
-		//		prefs.add(gui1);
-		//		JMenuItem gui2 = new JMenuItem("GUI: view signal");
-		//		prefs.add(gui2);
-
-		//		gui1.addActionListener(new ActionListener() {
-		//			public void actionPerformed(ActionEvent e) {
-		//				aligneur.GUIfast();
-		//			}
-		//		});
-		//		gui2.addActionListener(new ActionListener() {
-		//			public void actionPerformed(ActionEvent e) {
-		//				aligneur.GUIslow();
-		//			}
-		//		});
-		gui3.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				aligneur.toggleShowPhones();
-				//				TemporalSigPanel.showPhones=!TemporalSigPanel.showPhones;
-				//				aligneur.repaint();
 			}
 		});
 

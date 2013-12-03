@@ -121,6 +121,8 @@ public class TexteEditor extends JTextPane {
 			int type = el.getType();			
 			if (type >= 0 && type < project.types.size())
 				doc.setCharacterAttributes(el.start, el.end - el.start, attr[type], true);
+			if (el instanceof Element_Mot && ((Element_Mot) el).posInAlign >= 0)
+				doc.setCharacterAttributes(el.start, el.end - el.start, ALIGNED_STYLE, false);
 		}
 
 		setStyledDocument(doc);

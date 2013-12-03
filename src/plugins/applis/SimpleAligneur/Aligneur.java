@@ -544,10 +544,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 		repaint();
 	}
 
-	public void toggleShowPhones() {
-		showPhones=!showPhones;
-	}
-
 	// aligne tous les mots 
 	void doForceAnchor(float sec, int mot) {
 		/*
