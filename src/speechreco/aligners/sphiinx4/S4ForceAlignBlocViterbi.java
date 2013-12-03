@@ -546,13 +546,6 @@ public class S4ForceAlignBlocViterbi extends Thread {
 	 * @throws Exception
 	 */
 	public static void main(String args[]) throws Exception {
-		if (args.length>0 && args[0].equals("-unittest")) {
-			BufferedReader f = FileUtils.openFileUTF("alignbef.txt");
-			Alignment a = Alignment.load(f);
-			f.close();
-		}
-		
-		
 		// lance un alignement en ligne de commande
 		S4ForceAlignBlocViterbi aligner = null;
 

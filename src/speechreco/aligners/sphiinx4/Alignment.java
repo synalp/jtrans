@@ -7,9 +7,6 @@ http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html
 
 package speechreco.aligners.sphiinx4;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -149,42 +146,6 @@ public class Alignment implements Serializable {
 					segmentsFin.get(i) + frameOffset,
 					segments.get(i)));
 		return buf.toString();
-	}
-
-	public static Alignment load(BufferedReader f) {
-		Alignment a = new Alignment();
-		try {
-			String s = f.readLine();
-			if (s==null || s.trim().length()==0) return null;
-			a.frameOffset = Integer.parseInt(s);
-			// ------
-			s = f.readLine();
-			int n = Integer.parseInt(s);
-			for (int i=0;i<n;i++) {
-				s = f.readLine();
-				if (a.firstSegmentModified<0) a.firstSegmentModified=a.segments.size();
-				a.segments.add(s);
-				s = f.readLine();
-				String[] ss = s.split(" ");
-				a.segmentsDeb.add(Integer.parseInt(ss[0]));
-				a.segmentsFin.add(Integer.parseInt(ss[1]));
-				byte src=0;
-				if (ss.length>2) src=Byte.parseByte(ss[2]);
-				a.segmentsSource.add(src);
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return a;
-	}
-
-	public void save(PrintWriter f) {
-		f.println(frameOffset);
-		f.println(segments.size());
-		for (int i=0;i<segments.size();i++) {
-			f.println(segments.get(i));
-			f.println(segmentsDeb.get(i)+" "+segmentsFin.get(i)+" "+segmentsSource.get(i));
-		}
 	}
 
 	/**
