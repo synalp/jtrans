@@ -589,9 +589,6 @@ public class Menus {
 			}
 		});
 
-		aligneur.playerController = new PlayerListener(aligneur, 100);
-
-
 		quit.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				aligneur.quit();

@@ -61,7 +61,6 @@ import javax.swing.JComponent;
 import javax.swing.SwingUtilities;
 
 import plugins.applis.SimpleAligneur.Aligneur;
-import plugins.applis.SimpleAligneur.PlayerListener;
 import plugins.buffer.RoundBuffer;
 import plugins.text.ListeElement;
 import plugins.text.elements.Element;
@@ -1358,7 +1357,7 @@ System.out.println("debugsegtoprint "+segidx);
 				// sample sous le curseur:
 				long sample = e.getX()*hZoom+offsetStart;
 				if (aligneur==null||aligneur.project.words==null) return -1;
-				int segidx = aligneur.project.words.getSegmentAtFrame(PlayerListener.sample2frame(sample));
+				int segidx = aligneur.project.words.getSegmentAtFrame(TimeConverter.sample2frame(sample));
 				if (segidx>=0) {
 					int motidx=0;
 					for (Element_Mot m : aligneur.project.elts.getMots()) {

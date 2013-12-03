@@ -17,6 +17,7 @@ import java.util.*;
 import java.util.List;
 import javax.sound.sampled.*;
 import javax.swing.*;
+import javax.swing.Timer;
 import javax.swing.border.BevelBorder;
 
 import com.google.gson.JsonParseException;
@@ -35,8 +36,6 @@ import plugins.signalViewers.temporalSigPanel.ToolBarTemporalSig;
 import plugins.text.ListeElement;
 import speechreco.adaptation.BiaisAdapt;
 import speechreco.aligners.sphiinx4.*;
-import plugins.text.ColoriageEvent;
-import plugins.text.GriserWhilePlaying;
 import plugins.text.TexteEditor;
 import plugins.text.elements.*;
 import utils.*;
@@ -52,6 +51,8 @@ import tools.audio.PlayerGUI;
  */
 public class Aligneur extends JPanel implements PrintLogger {
 
+	public static final int KARAOKE_UPDATE_INTERVAL = 50; // milliseconds
+
 	public JFrame jf=null;
 
 	/**
@@ -63,7 +64,11 @@ public class Aligneur extends JPanel implements PrintLogger {
 	private SpectroControl sigpan=null;
 	public boolean showPhones=false;
 
-	private GriserWhilePlaying griserwhenplaying = new GriserWhilePlaying(null, null);
+	/* IMPORTANT: the karaoke highlighter *has* to be a Swing timer, not a
+	java.util.Timer. This is to ensure that the callback is called from
+	Swing's event dispatch thread. */
+	private Timer karaokeHighlighter = null;
+
 	private PlayerGUI playergui;
 
 	public int mixidx=0;
@@ -73,7 +78,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 	public TemporalSigPanel sigPanel = null;
 	public ToolBarTemporalSig toolbar = null;
 	public KeysManager kmgr = null;
-	PlayerListener playerController;
 
 	/** Audio file in a suitable format for processing */
 	public File convertedAudioFile = null;
@@ -113,18 +117,9 @@ public class Aligneur extends JPanel implements PrintLogger {
 	}
 
 	public void quit() {
-		if (edit!=null) edit.colorOrders.put(ColoriageEvent.endofthread);
-		Thread.yield();
-		if (playerController!=null) playerController.kill();
-		Thread.yield();
-		try {
-			Thread.sleep(100);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		System.out.println("before dispose");
+		if (karaokeHighlighter != null)
+			karaokeHighlighter.stop();
 		jf.dispose();
-		System.out.println("after dispose : exiting");
 		System.exit(0);
 	}
 
@@ -378,7 +373,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 			sigPanel.setProgressBar(0);
 		}
 		Element_Mot firstmot = project.elts.getMot(0);
-		edit.griseMot(firstmot);
+		edit.highlightWord(firstmot);
 	}
 
 	/**
@@ -417,65 +412,32 @@ public class Aligneur extends JPanel implements PrintLogger {
 	}
 
 	public void newplaystarted() {
-		if (project.words!=null) {
-			System.out.println("newplaystarted "+project.words.getNbSegments());
-			griserwhenplaying = new GriserWhilePlaying(playergui, edit);
-			griserwhenplaying.setAlignement(project.words);
-		} else
-			System.out.println("newplaystarted no align");
+		if (project.words != null) {
+			karaokeHighlighter = new Timer(KARAOKE_UPDATE_INTERVAL, new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					long curt = System.currentTimeMillis();
+					long t0 = playergui.getTimePlayStarted();
+					int curfr = TimeConverter.millisec2frame(curt-t0);
+					// ajoute le debut du segment joué
+					curfr += playergui.getRelativeStartingSec()*100;
+					int segidx = project.words.getSegmentAtFrame(curfr);
+					if (segidx < 0)
+						return;
+
+					Element_Mot mot = edit.getListeElement().getMotAtSegment(segidx);
+					if (mot != null && mot != edit.highlightedWord)
+						edit.highlightWord(mot);
+				}
+			});
+			karaokeHighlighter.start();
+		}
 	}
 	public void newplaystopped() {
-		griserwhenplaying.killit();
-	}
-
-	/**
-	 * 
-	 * @param nsec : nb de secondes de recul
-	 */
-	void restartPlaying(int nsec) {
-		System.out.println("restart playing");
-		caretSensible = true;
-		if (sigPanel != null) {
-			currentSample = sigPanel.getProgressBar();
-			nsec = 0;
-			//        } else if (project.words != null) {
-			//            int lastAlignedWord = project.words.getLastWordAligned();
-			//            if (wordSelectedIdx < 0 || project.words.getFrameFin(wordSelectedIdx) < 0) {
-			//                if (lastAlignedWord < 0) {
-			//                    currentSample = 0;
-			//                } else {
-			//                    currentSample = OldAlignment.frame2sample(project.words.getFrameFin(lastAlignedWord));
-			//                }
-			//            } else {
-			//                currentSample = OldAlignment.frame2sample(project.words.getFrameFin(wordSelectedIdx));
-			//            }
-		} else {
-			//            currentSample = 0;
+		if (karaokeHighlighter != null) {
+			karaokeHighlighter.stop();
+			karaokeHighlighter = null;
 		}
-
-		// recule de nsec secondes
-		currentSample -= 16000 * nsec;
-		if (currentSample < 0) {
-			currentSample = 0;
-		}
-		// positionne l'audio buffer
-		audiobuf.samplePosition = currentSample;
-		if (sigPanel != null) {
-			sigPanel.replayFrom(currentSample);
-		}
-		// relance le thread qui grise les mots
-		if (project.words != null) {
-			playerController.unpause();
-		}
-		// lance la lecture
-		/*
-		if (player==null) return;
-		player.play(mixidx,new plugins.player.PlayerListener() {
-			public void playerHasFinished() {
-				stopPlaying();
-			}
-		}, currentSample);
-		 */
 	}
 
 	public void startPlayingFrom(float nsec) {
@@ -617,7 +579,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 				cursec = TimeConverter.frame2sec(frame);
 				long currentSample = TimeConverter.frame2sample(frame);
 				if (currentSample<0) currentSample=0;
-				edit.griseMot(emot);
+				edit.highlightWord(emot);
 				// vieux panel
 				if (sigPanel!=null) {
 					sigPanel.setProgressBar(currentSample);
@@ -689,7 +651,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 		//    	rec=rec.trim();
 		//    	System.out.println("TEXT FROM RECO: "+rec);
 		edit.setText(sb.toString());
-		edit.lastSelectedWord = edit.lastSelectedWord2 = null;
+		edit.highlightedWord = null;
 		edit.setCaretPosition(0);
 		edit.textChanged = false;
 		edit.setIgnoreRepaint(false);

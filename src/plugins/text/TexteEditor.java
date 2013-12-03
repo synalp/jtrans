@@ -9,7 +9,6 @@ package plugins.text;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.util.concurrent.PriorityBlockingQueue;
 
 import javax.swing.*;
 import javax.swing.event.CaretEvent;
@@ -45,32 +44,9 @@ public class TexteEditor extends JTextPane {
 
 	//---------- State Flag ---------------
 	public boolean textChanged;
-	
-	//-------- R�f�rences de travail ---------
-	public Element_Mot lastSelectedWord=null;
-	public Element_Mot lastSelectedWord2=null;
 
-	// THREAD dont le role est de colorier le texte
-	// pour arreter ce thread, il faut appeler colorieur.interrupt()
-	class Coloriage extends Thread {
-		public Coloriage() {
-			super("coloriageThread");
-		}
-		public void run() {
-			try {
-				for (;;) {
-					ColoriageEvent e = colorOrders.take();
-					if (e==ColoriageEvent.endofthread) break;
-					e.colorie(TexteEditor.this);
-					e.coloriageDone.put(true);
-				}
-			} catch (InterruptedException e) {}
-			System.out.println("fin du process de coloriage");
-		}
-	}
-	Coloriage colorieur = null;
-	public final PriorityBlockingQueue<ColoriageEvent> colorOrders = new PriorityBlockingQueue<ColoriageEvent>();
-	
+	public Element_Mot highlightedWord = null;
+
 	//----------------------------------------------------------------
 	//------------------ Constructor --------------------------------
 	//---------------------------------------------------------------
@@ -82,13 +58,15 @@ public class TexteEditor extends JTextPane {
 		this.project = project;
 		
 		textChanged = false;
-		colorieur = new Coloriage();
-		colorieur.start();
-	}//Constructor
+	}
 
 	private static final AttributeSet ALIGNED_STYLE = new SimpleAttributeSet() {{
-		addAttribute(StyleConstants.CharacterConstants.Foreground, new Color(0x2018a8));
-		addAttribute(StyleConstants.CharacterConstants.Italic, true);
+		addAttribute(StyleConstants.Foreground, Color.BLUE.darker());
+		addAttribute(StyleConstants.Italic, true);
+	}};
+
+	private static final AttributeSet HIGHLIGHTED_STYLE = new SimpleAttributeSet() {{
+		addAttribute(StyleConstants.Background, Color.LIGHT_GRAY);
 	}};
 
 	/**
@@ -128,49 +106,33 @@ public class TexteEditor extends JTextPane {
 		setStyledDocument(doc);
 	}
 
-	public void degrise() {
-		try {
-			if (lastSelectedWord != null) {
-				if (lastSelectedWord2 != null) {
-					ColoriageEvent e = new ColoriageEvent(lastSelectedWord, lastSelectedWord2, Color.white, true, 10);
-					colorOrders.add(e);
-					e.waitForColoriageDone();
-				} else {
-					ColoriageEvent e = new ColoriageEvent(lastSelectedWord, lastSelectedWord, Color.white, true, 10);
-					colorOrders.add(e);
-					e.waitForColoriageDone();
-				}
-			}
-		} catch (InterruptedException e1) {
-			e1.printStackTrace();
-		}
-		lastSelectedWord2=null;
-		lastSelectedWord=null;
-	}
 	/**
-	 * on a un acces concurrent au textPane, par le thread du PlayerListerner (qui doit avoir la priorite !)
-	 * et par le thread de l'AutoAligner.
-	 * 
-	 * J'utilise donc une BlockingPriorityQueue pour les evenements de coloriage
-	 * et une SynchronizedQueue pour que l'appelant bloque jusqu'a ce que son coloriage ait ete fait
-	 * 
-	 * @param mot
+	 * Highlights a word by setting its background to another color.
+	 * Only one word may be highlighted at a time.
 	 */
-	public void griseMot(Element_Mot mot) {
-		if (mot==null) return;
+	public void highlightWord(Element_Mot word) {
+		if (word == null)
+			return;
 
-		// un seul mot a la fois peut etre grise
-		degrise();
-		
-		// le degrisage est legerement prioritaire, meme si on attend en fait qu'il soit termine !
-		ColoriageEvent e = new ColoriageEvent(mot, mot, Color.LIGHT_GRAY, true, 9);
-		colorOrders.add(e);
-		try {
-			e.waitForColoriageDone();
-		} catch (InterruptedException e1) {
-			e1.printStackTrace();
+		// Only highlight aligned words
+		assert word.posInAlign >= 0;
+
+		// Remove highlight on previously highlighted word
+		if (highlightedWord != null) {
+			getStyledDocument().setCharacterAttributes(
+					highlightedWord.start,
+					highlightedWord.end - highlightedWord.start,
+					ALIGNED_STYLE,
+					true);
 		}
-		lastSelectedWord=mot;
+
+		getStyledDocument().setCharacterAttributes(
+				word.start,
+				word.end - word.start,
+				HIGHLIGHTED_STYLE,
+				false);
+
+		highlightedWord = word;
 	}
 
 	/**
@@ -245,24 +207,6 @@ public class TexteEditor extends JTextPane {
 		getStyledDocument().setCharacterAttributes(from, to-from, ALIGNED_STYLE, true);
 	}
 
-	public void griseMotsRed(Element_Mot mot, Element_Mot mot2) {
-		degrise();
-		lastSelectedWord=mot;
-		lastSelectedWord2=mot2;
-		if (lastSelectedWord==null) return;
-		if (lastSelectedWord2==null) return;
-		setCaretPosition((lastSelectedWord.start + lastSelectedWord.end)/2);
-		select(lastSelectedWord.start, mot2.end);
-
-		setSelectedTextColor(Color.MAGENTA);
-		repaint();
-		/*
-		AttributeSet a = getCharacterAttributes();
-		AttributeSet b = styler.addAttribute(a, StyleConstants.ColorConstants.Background, Color.MAGENTA);
-		setCharacterAttributes(b, true);
-		*/
-	}
-
 	public String getMot(Element_Mot mot) {
 		try {
 			return getText(mot.start, mot.end-mot.start);
@@ -287,6 +231,5 @@ public class TexteEditor extends JTextPane {
 		this.project = project;
 		setEditable(false);
 		setTextFromElements();
-		colorizeAllAlignedWords();
 	}
 }//class TextEditor
