@@ -308,7 +308,7 @@ public class AutoAligner {
 			} else if (e instanceof Element_Ancre) {
 				float alignTo = ((Element_Ancre) e).seconds;
 
-				if (word >= 0 && word > startWord) {
+				if (word >= 0 && word >= startWord) {
 					setAlignWord(startWord, word, alignFrom, alignTo);
 
 					if (currentOverlap != null && currentOverlap.s2LastOverlappedWord >= 0) {
