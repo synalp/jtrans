@@ -33,6 +33,7 @@ import plugins.buffer.RoundBufferFrontEnd;
 import plugins.signalViewers.spectroPanel.SpectroControl;
 import plugins.signalViewers.temporalSigPanel.TemporalSigPanel;
 import plugins.signalViewers.temporalSigPanel.ToolBarTemporalSig;
+import plugins.text.ListeElement;
 import speechreco.adaptation.BiaisAdapt;
 import speechreco.aligners.sphiinx4.*;
 import speechreco.aligners.sphiinx4.Alignment;
@@ -628,6 +629,36 @@ public class Aligneur extends JPanel implements PrintLogger {
 			return;
 
 		float newPos = Float.parseFloat(newPosString);
+
+		// Make sure the requested position is legal...
+
+		if (newPos < 0) {
+			JOptionPane.showMessageDialog(jf,
+					"Can't set to negative position!",
+					"Illegal anchor position", JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+
+		ListeElement.Neighborhood<Element_Ancre> range =
+				project.elts.getNeighbors(anchor, Element_Ancre.class);
+
+		if (range.prev != null && range.prev.seconds > newPos) {
+			JOptionPane.showMessageDialog(jf,
+					"Can't move this anchor before the previous anchor\n" +
+					"(at " + range.prev.seconds + " seconds).",
+					"Illegal anchor position", JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+
+		if (range.next != null && range.next.seconds < newPos) {
+			JOptionPane.showMessageDialog(jf,
+					"Can't move this anchor past the next anchor\n" +
+					"(at " + range.next.seconds + " seconds).",
+					"Illegal anchor position", JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+
+		// ...Alright, we're safe now
 
 		anchor.seconds = newPos;
 
