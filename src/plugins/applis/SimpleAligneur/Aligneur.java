@@ -1252,32 +1252,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 	//==========================================================================
 
 	/**
-	 * Breaks down a linear alignment into parallel alignments by speaker.
-	 * Does not handle overlaps.
-	 */
-	private static Alignment[] breakDownBySpeaker(int speakers, Alignment speakerTurns, Alignment linearAlignment) {
-		Alignment[] spk = new Alignment[speakers];
-		for (int i = 0; i < speakers; i++)
-			spk[i] = new Alignment();
-
-		int[] seg2seg = linearAlignment.mapSegmentTimings(speakerTurns);
-
-		for (int i = 0; i < linearAlignment.getNbSegments(); i++) {
-			int spkCode = Integer.parseInt(speakerTurns.getSegmentLabel(seg2seg[i]));
-			if (spkCode < 0)
-				continue;
-			spk[spkCode].addRecognizedSegment(
-					linearAlignment.getSegmentLabel(i),
-					linearAlignment.getSegmentDebFrame(i),
-					linearAlignment.getSegmentEndFrame(i),
-					null,
-					null);
-		}
-
-		return spk;
-	}
-
-	/**
 	 * Generates a Praat tier for an alignment.
 	 * @param w Append text to this writer
 	 * @param id Tier ID (Praat tier numbering starts at 1 and is contiguous!)
@@ -1324,8 +1298,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 				.append("\nitem []:");
 
 		// Linear, non-overlapping tiers
-		if (withWords) spkWords = breakDownBySpeaker(speakers, speakerTurns, project.words);
-		if (withPhons) spkPhons = breakDownBySpeaker(speakers, speakerTurns, project.phons);
+		if (withWords) spkWords = project.words.breakDownBySpeaker(speakers, speakerTurns);
+		if (withPhons) spkPhons = project.phons.breakDownBySpeaker(speakers, speakerTurns);
 
 		// Account for overlaps
 		for (int i = 0; i < project.overlaps.size(); i++) {

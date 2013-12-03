@@ -535,4 +535,31 @@ public class Alignment implements Serializable {
 			return null;
 		}
 	}
+
+
+	/**
+	 * Breaks down a linear alignment into parallel alignments by speaker.
+	 * Does not handle overlaps.
+	 */
+	public Alignment[] breakDownBySpeaker(int speakers, Alignment speakerTurns) {
+		Alignment[] spk = new Alignment[speakers];
+		for (int i = 0; i < speakers; i++)
+			spk[i] = new Alignment();
+
+		int[] seg2seg = mapSegmentTimings(speakerTurns);
+
+		for (int i = 0; i < getNbSegments(); i++) {
+			int spkCode = Integer.parseInt(speakerTurns.getSegmentLabel(seg2seg[i]));
+			if (spkCode < 0)
+				continue;
+			spk[spkCode].addRecognizedSegment(
+					getSegmentLabel(i),
+					getSegmentDebFrame(i),
+					getSegmentEndFrame(i),
+					null,
+					null);
+		}
+
+		return spk;
+	}
 }
