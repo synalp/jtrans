@@ -26,6 +26,20 @@ import edu.cmu.sphinx.linguist.lextree.LexTreeLinguist.LexTreeHMMState;
  */
 public class Alignment implements Serializable {
 
+	private class Segment implements Serializable {
+		public int start, end;
+		public String string;
+		public byte source;
+
+		public Segment(int start, int end, String string, byte source) {
+			this.start = start;
+			this.end = end;
+			this.string = string;
+			this.source = source;
+		}
+	}
+
+
 	// Type codes for alignment sources
 	public static final byte ALIGNMENT_SOURCE_AUTOMATIC = 0;
 	public static final byte ALIGNMENT_SOURCE_MANUAL = 1;
@@ -40,11 +54,7 @@ public class Alignment implements Serializable {
 
 	private int firstSegmentModified;
 
-	// ne contient QUE des segments alignés
-	private List<String> segments;
-	private List<Integer> segmentsDeb;
-	private List<Integer> segmentsFin;
-	private List<Byte> segmentsSource;
+	private List<Segment> segments;
 
 	/**
 	 * L'index contient les limites des segments EN RELATIF par rapport au
@@ -90,19 +100,13 @@ public class Alignment implements Serializable {
 	public Alignment(Alignment other) {
 		frameOffset = other.frameOffset;
 		firstSegmentModified = other.firstSegmentModified;
-		segments = new ArrayList<String>(other.segments);
-		segmentsDeb = new ArrayList<Integer>(other.segmentsDeb);
-		segmentsFin = new ArrayList<Integer>(other.segmentsFin);
-		segmentsSource = new ArrayList<Byte>(other.segmentsSource);
+		segments = new ArrayList<Segment>(other.segments);
 	}
 
 	public void clear() {
 		frameOffset = 0;
 		firstSegmentModified = -1;
-		segments = new ArrayList<String>();
-		segmentsDeb = new ArrayList<Integer>();
-		segmentsFin = new ArrayList<Integer>();
-		segmentsSource = new ArrayList<Byte>();
+		segments = new ArrayList<Segment>();
 		clearIndex();
 	}
 
@@ -142,9 +146,9 @@ public class Alignment implements Serializable {
 		for (int i = 0; i < segments.size(); i++)
 			buf.append(String.format("%d : %d-%d:%s\n",
 					i,
-					segmentsDeb.get(i) + frameOffset,
-					segmentsFin.get(i) + frameOffset,
-					segments.get(i)));
+					segments.get(i).start + frameOffset,
+					segments.get(i).end   + frameOffset,
+					segments.get(i).string));
 		return buf.toString();
 	}
 
@@ -162,9 +166,9 @@ public class Alignment implements Serializable {
 			System.out.println("WARNING: merge alignement plus ancien !!");
 			// move segments
 			int deltat = frameOffset - al.frameOffset;
-			for (int i = 0; i < segments.size(); i++) {
-				segmentsDeb.set(i, segmentsDeb.get(i) + deltat);
-				segmentsFin.set(i, segmentsFin.get(i) + deltat);
+			for (Segment seg: segments) {
+				seg.start += deltat;
+				seg.end   += deltat;
 			}
 			frameOffset = al.frameOffset;
 		}
@@ -254,42 +258,39 @@ public class Alignment implements Serializable {
 		if (segidx<0||segidx>=getNbSegments()) return null;
 		assert segidx>=0;
 		assert segidx<segments.size();
-		return segments.get(segidx);
+		return segments.get(segidx).string;
 	}
 
 	public void setSegmentDebFrame(int segidx, int frame) {
 		if (segidx<0||segidx>=getNbSegments()) return;
-		segmentsDeb.set(segidx, frame);
+		segments.get(segidx).start = frame;
 	}
 
 	public void setSegmentEndFrame(int segidx, int frame) {
 		if (segidx<0||segidx>=getNbSegments()) return;
-		segmentsFin.set(segidx, frame);
+		segments.get(segidx).end = frame;
 	}
 
 	public void setSegmentSourceManu(int segidx) {
-		segmentsSource.set(segidx, ALIGNMENT_SOURCE_MANUAL);
+		segments.get(segidx).source = ALIGNMENT_SOURCE_MANUAL;
 	}
 
 	public void setSegmentSourceEqui(int segidx) {
-		segmentsSource.set(segidx, ALIGNMENT_SOURCE_LINEAR);
+		segments.get(segidx).source = ALIGNMENT_SOURCE_LINEAR;
 	}
 
 	public int getSegmentEndFrame(int segidx) {
 		if (segidx<0||segidx>=getNbSegments()) return -1;
-		return segmentsFin.get(segidx) + frameOffset;
+		return segments.get(segidx).end + frameOffset;
 	}
 
 	public int getSegmentDebFrame(int segidx) {
 		if (segidx<0||segidx>=getNbSegments()) return -1;
-		return segmentsDeb.get(segidx) + frameOffset;
+		return segments.get(segidx).start + frameOffset;
 	}
 
 	public void delSegment(int segidx) {
 		segments.remove(segidx);
-		segmentsDeb.remove(segidx);
-		segmentsFin.remove(segidx);
-		segmentsSource.remove(segidx);
 	}
 
 	public void adjustOffset(int tr) {
@@ -303,32 +304,31 @@ public class Alignment implements Serializable {
 		assert framedeb>=0;
 		assert frameend>framedeb;
 
-		for (int i=0;i<segments.size();i++) {
-			if (framedeb<segmentsFin.get(i)) {
-				if (frameend<segmentsDeb.get(i)) {
-					segments.add(i, mot);
-					segmentsDeb.add(i, framedeb);
-					segmentsFin.add(i, frameend);
-					segmentsSource.add(i, ALIGNMENT_SOURCE_AUTOMATIC);
-					if (firstSegmentModified<0) firstSegmentModified=i;
-					return i;
+		int i;
+
+		for (i = 0; i < segments.size(); i++) {
+			if (framedeb<segments.get(i).end) {
+				if (frameend<segments.get(i).start) {
+					break;
 				} else {
 					throw new Error("ERREUR ADD SEGMENT "+framedeb+" "+frameend+
-							" prev: "+i+" "+segmentsDeb.get(i)+"--"+segmentsFin.get(i));
+							" prev: "+i+" "+segments.get(i).start+"--"+segments.get(i).end);
 				}
 			}
 		}
-		if (firstSegmentModified<0) firstSegmentModified=segments.size();
-		segments.add(mot);
-		segmentsDeb.add(framedeb);
-		segmentsFin.add(frameend);
-		segmentsSource.add(ALIGNMENT_SOURCE_AUTOMATIC);
+
+		if (firstSegmentModified<0)
+			firstSegmentModified=i;
+
+		segments.add(i,
+				new Segment(framedeb, frameend, mot, ALIGNMENT_SOURCE_AUTOMATIC));
+
 		return segments.size()-1;
 	}
 
 	public void setSegmentLabel(int segidx, String newlabel) {
 		assert segidx<segments.size();
-		segments.set(segidx, newlabel);
+		segments.get(segidx).string = newlabel;
 	}
 
 	public int getStartFrame() {return frameOffset;}
@@ -338,12 +338,9 @@ public class Alignment implements Serializable {
 	 */
 	public void cutAfterFrame(int lastFrameAcceptable) {
 		for (int i=0;i<segments.size();i++) {
-			if (segmentsFin.get(i) > lastFrameAcceptable - frameOffset) {
+			if (segments.get(i).end > lastFrameAcceptable - frameOffset) {
 				if (firstSegmentModified<0) firstSegmentModified=i;
 				segments = segments.subList(0, i);
-				segmentsDeb = segmentsDeb.subList(0, i);
-				segmentsFin = segmentsFin.subList(0, i);
-				segmentsSource =  segmentsSource.subList(0, i);
 				break;
 			}
 		}
@@ -351,13 +348,8 @@ public class Alignment implements Serializable {
 
 	public void cutBeforeFrame(int fr) {
 		for (int i=segments.size()-1;i>=0;i--) {
-			if (segmentsDeb.get(i) < fr - frameOffset) {
-				i++;
-				int z = segments.size();
-				segments = segments.subList(i,z);
-				segmentsDeb = segmentsDeb.subList(i,z);
-				segmentsFin = segmentsFin.subList(i,z);
-				segmentsSource =  segmentsSource.subList(i, z);
+			if (segments.get(i).start < fr - frameOffset) {
+				segments = segments.subList(i + 1, segments.size());
 				break;
 			}
 		}
