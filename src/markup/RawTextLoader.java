@@ -33,78 +33,92 @@ public class RawTextLoader implements MarkupLoader {
 	 * defined in typeList.
 	 */
 	public static ListeElement parseString(String normedText, List<TypeElement> typeList) {
+		class NonTextSegment implements Comparable<NonTextSegment> {
+			public int start, end, type;
+
+			public NonTextSegment(int start, int end, int type) {
+				this.start = start;
+				this.end = end;
+				this.type = type;
+			}
+
+			public int compareTo(NonTextSegment other) {
+				if (start > other.start) return 1;
+				if (start < other.start) return -1;
+				return 0;
+			}
+		}
+
 		ListeElement listeElts = new ListeElement();
-		ArrayList<Segment> nonText = new ArrayList<Segment>();
+		ArrayList<NonTextSegment> nonText = new ArrayList<NonTextSegment>();
 
 		for (int type = 0; type < typeList.size(); type++) {
 			for (Pattern pat: typeList.get(type).getPatterns()) {
 				Matcher mat = pat.matcher(normedText);
 				while (mat.find())
-					nonText.add(new Segment(mat.start(), mat.end(), type));
+					nonText.add(new NonTextSegment(mat.start(), mat.end(), type));
 			}
 		}
 		Collections.sort(nonText);
 
-		// on transforme les elements obtenus par ce parsing en elements pour jtrans
-		int precfin = 0;
-		boolean parserCettePartie;
-		for (Segment seg: nonText){
-			parserCettePartie = true;
-			int deb = seg.deb;
-			int fin = seg.fin;
-			if (precfin > deb) {
+		// Turn the non-text segments into Elements
+		int prevEnd = 0;
+		for (NonTextSegment seg: nonText) {
+			int start = seg.start;
+			int end = seg.end;
+			if (prevEnd > start) {
 				//cas entrecroisé : {-----------[---}-------]
 				//on deplace de façon à avoir : {--------------}[-------]
-				if (fin > precfin) deb = precfin;
+				if (end > prevEnd) start = prevEnd;
 
-					//cas imbriqué : {------[---]----------}
-					//on ne parse pas l'imbriqu�
-				else parserCettePartie = false;
-			}//if (precfin > deb)
-
-			if(parserCettePartie){
-
-				// ligne de texte située avant
-				if (deb-precfin>0) {
-					String ligne = normedText.substring(precfin,deb);
-					parserListeMot(ligne, precfin, listeElts, normedText);
-				}//if (deb-precfin>0)
-
-				//l'élement en lui même
-				String sub = normedText.substring(deb, fin);
-				switch (seg.type) {
-					case 0: // LOCUTEUR
-						// TODO: allow creating new speakers in raw text files (not TRS/TextGrid!)
-						listeElts.add(new Element_Commentaire(sub));
-						break;
-					case 1: // COMMENT
-						listeElts.add(new Element_Commentaire(sub));
-						break;
-					case 2: // BRUIT
-						listeElts.add(new Element_Bruit(sub));
-						break;
-					case 3 : //Debut chevauchement
-						listeElts.add(new Element_DebutChevauchement());
-						break;
-					case 4 : //Fin de chevauchement
-						listeElts.add(new Element_FinChevauchement());
-						break;
-					case 5 : // ponctuation
-						listeElts.add(new Element_Ponctuation(sub.charAt(0)));
-						break;
-					default : System.err.println("HOUSTON, ON A UN PROBLEME ! TYPE PARSE INCONNU");
-				}
-				precfin = fin;
+				//cas imbriqué : {------[---]----------}
+				//on ne parse pas l'imbriqué
+				else continue;
 			}
+
+			// Line right before
+			if (start > prevEnd) {
+				String line = normedText.substring(prevEnd, start);
+				parserListeMot(line, prevEnd, listeElts, normedText);
+			}
+
+			// Create the actual element
+			String sub = normedText.substring(start, end);
+			switch (seg.type) {
+				case 0: // Speaker
+					// TODO: allow creating new speakers in raw text files (not TRS/TextGrid!)
+					listeElts.add(new Element_Commentaire(sub));
+					break;
+				case 1: // Comment
+					listeElts.add(new Element_Commentaire(sub));
+					break;
+				case 2: // Noise
+					listeElts.add(new Element_Bruit(sub));
+					break;
+				case 3: // Overlap Start
+					listeElts.add(new Element_DebutChevauchement());
+					break;
+				case 4: // Overlap End
+					listeElts.add(new Element_FinChevauchement());
+					break;
+				case 5: // Punctuation
+					listeElts.add(new Element_Ponctuation(sub.charAt(0)));
+					break;
+				default:
+					System.err.println("RawTextLoader: WARNING: unknown element type " + seg.type);
+			}
+
+			prevEnd = end;
 		}
 
-		//ligne de texte située après le dernier élément
-		if (normedText.length()-precfin>0) {
-			String ligne = normedText.substring(precfin);
-			parserListeMot(ligne, precfin, listeElts, normedText);
+		// Line after the last element
+		if (normedText.length() > prevEnd) {
+			String line = normedText.substring(prevEnd);
+			parserListeMot(line, prevEnd, listeElts, normedText);
 		}
+
 		return listeElts;
-	}//reparse
+	}
 
 
 	private static void parserListeMot(String ligne, int precfin, ListeElement listeElts, String text) {
