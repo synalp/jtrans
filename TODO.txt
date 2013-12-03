@@ -3,8 +3,6 @@
 
 - attention aux conflits de package !! jsafran.utils vs jtrans.utils sachant que jsafran est dans le classpath de jtrans !
 
-Import Praat 1-tier (corpus OFROM)
-
 GUI : sélectionner du texte et cliquer sur "modifier" ; ça ouvre une nouvelle
 fenêtre qui permet de rentrer le texte de remplacement. Puis, ça reparse la
 sélection (et la ré-aligne ?) - Attention si le texte sélectionné contient une
