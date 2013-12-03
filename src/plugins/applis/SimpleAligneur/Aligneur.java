@@ -86,7 +86,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 	long currentSample = 0;
 	public Project project = new Project();
 	int wordSelectedIdx = -1;
-	public boolean caretSensible = false;
+	public boolean caretSensible = true;
 	JLabel infoLabel = new JLabel("Welcome to JTrans");
 
 	public float getCurPosInSec() {return cursec;}
@@ -278,13 +278,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 			sigpan.setAudioInputStream(getCurPosInSec(),aud);
 			sigpan.refresh();
 		}
-	}
-
-	public void setEditionMode() {
-		caretSensible=false;
-		edit.setEditable(true);
-		edit.getHighlighter().removeAllHighlights();
-		System.out.println("seteditionmode");
 	}
 
 	private float lastSecClickedOnSpectro = 0;

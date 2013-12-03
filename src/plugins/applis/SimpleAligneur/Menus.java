@@ -205,15 +205,9 @@ public class Menus {
 
 		// //////////////////////////////////////////////////////////////
 		JMenu actionsm = new JMenu("Edit");
-		//JMenuItem parsestd = new JMenuItem("Parse text standard");
-		//JMenuItem parse = new JMenuItem("Parse text regexp");
-		JMenuItem editb = new JMenuItem("Edit text");
 		JMenuItem regexp = new JMenuItem("Regexps");
 		JMenuItem gototime = new JMenuItem("Go to time [sec]");
 		menubar.add(actionsm);
-		//actionsm.add(parsestd);
-		//actionsm.add(parse);
-		actionsm.add(editb);
 		actionsm.add(regexp);
 		actionsm.add(gototime);
 
@@ -514,16 +508,6 @@ public class Menus {
 			}
 		});
 
-		//		mots.addActionListener(new ActionListener() {
-		//			public void actionPerformed(ActionEvent e) {
-		//				new TextInputWindow("enter nb of words for auto. align",new UserInputProcessor() {
-		//					public void processInput(String txt) {
-		//						aligneur.setNwordsForward(Integer.parseInt(txt));
-		//					}
-		//				});
-		//			}
-		//		});
-		//		
 		regexp.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				new plugins.text.regexp.graphique.RegExpFrame(aligneur.project);
@@ -535,19 +519,6 @@ public class Menus {
 				aligneur.gototime();
 			}
 		});
-
-		editb.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				aligneur.setEditionMode();
-			}
-		});
-
-		//		batchalign.addActionListener(new ActionListener() {
-		//			public void actionPerformed(ActionEvent e) {
-		//				aligneur.batchAlign();
-		//			}
-		//		});
-
 
 		asr.addActionListener(new ActionListener() {
 			@Override
