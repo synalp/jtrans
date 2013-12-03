@@ -1,5 +1,6 @@
 package facade;
 
+import java.io.File;
 import java.util.*;
 
 import plugins.applis.SimpleAligneur.Aligneur;
@@ -103,15 +104,25 @@ public class AutoAligner {
 	 * It is not merged into the main alignment (use mergeOrder() for that).
 	 */
 	private S4AlignOrder partialBatchAlign(final int startWord, final int startFrame, final int endWord, final int endFrame) {
+		StringBuilder phrase = new StringBuilder();
+		String prefix = "";
+		for (int i = startWord; i <= endWord; i++) {
+			phrase.append(prefix).append(mots.get(i));
+			prefix = " ";
+		}
+
 		return (S4AlignOrder)Cache.cachedObject(
-				String.format("%05d_%05d_%05d_%05d.order", startWord, startFrame, endWord, endFrame),
+				"order",
+				"ser",
 				new Cache.ObjectFactory() {
 					public Object make() {
 						return createS4AlignOrder(startWord, startFrame, endWord, endFrame);
 					}
 				},
-				project.wavname,
-				aligneur.edit.getText());
+				new File(project.wavname), // make it a file to take into account its modification date
+				phrase.toString(),
+				startFrame,
+				endFrame);
 	}
 
 	/**

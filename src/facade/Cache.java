@@ -5,14 +5,13 @@ import java.io.*;
 /**
  * Static class for caching the result of expensive operations.
  *
- * Each cached object belongs to a unique combination of a WAVE file and a text,
- * which is identified by a unique hash.
+ * Each cached object belongs to a unique combination of "identifier" objects.
+ * Identifier objects must be hashable objects. Any modification in the
+ * identifiers must triggers a change in the hash of the combination, which, in
+ * turn, invalidates the cache.
  *
- * Cached objects are stored as files on disk in a subdirectory specific to the
- * combination.
- *
- * Any modification in the WAVE file or in the text triggers a change in the
- * hash of the combination, which, in turn, invalidates the cache.
+ * Cached objects are stored as files on disk; each cache filename matches a
+ * unique combination of identifiers.
  */
 public class Cache {
 
@@ -46,21 +45,30 @@ public class Cache {
 
 
 	/**
-	 * Generates a unique path for a combination of several objects.
+	 * Generates a unique path from the hash codes of a combination of several
+	 * objects.
 	 *
-	 * Each object in hashableComponents triggers the creation of a new cache
-	 * subdirectory named after a hash of the object. If any of the objects is
-	 * a file, its modification date is also accounted for in the hash.
+	 * If any of the objects is a file, its modification date is also
+	 * represented in the hash.
+	 *
+	 * @param cacheGroup name of the cache subdirectory
+	 * @param extension filename extension (without the period)
+	 * @param identifiers hashable objects to be used in generating
+	 *                    the unique hash
 	 */
-	public static File getCacheDir(Object... hashableComponents) {
-		File f = CACHE_DIR;
-		for (Object c: hashableComponents) {
+	private static File getCacheFile(String cacheGroup,
+									 String extension,
+									 Object... identifiers)
+	{
+		StringBuilder sb = new StringBuilder();
+		for (Object c: identifiers) {
 			int hash = c.hashCode();
 			if (c instanceof File)
 				hash = (int)(hash * 31 + ((File)c).lastModified());
-			f = new File(f, String.format("%08x.cache", hash));
+			sb.append(String.format("%08x", hash)).append('.');
 		}
-		return f;
+		sb.append(extension);
+		return new File(new File(CACHE_DIR, cacheGroup), sb.toString());
 	}
 
 
@@ -68,13 +76,18 @@ public class Cache {
 	 * Returns a cached object. If the requested object hasn't been cached yet,
 	 * it is created, written to the cache, and returned.
 	 *
-	 * @param objectName custom identifier for the requested object
+	 * @param cacheGroup name of the cache subdirectory
+	 * @param extension filename extension (without the period)
 	 * @param factory factory to create a new object if the cache is invalid
-	 * @param hashableComponents objects that will be hashed to find the
-	 *                           correct cache file
+	 * @param identifiers hashable objects to be used in generating
+	 *                    the unique hash
 	 */
-	public static Object cachedObject(String objectName, ObjectFactory factory, Object... hashableComponents) {
-		File cacheFile = new File(getCacheDir(hashableComponents), objectName);
+	public static Object cachedObject(String cacheGroup,
+									  String extension,
+									  ObjectFactory factory,
+									  Object... identifiers)
+	{
+		File cacheFile = getCacheFile(cacheGroup, extension, identifiers);
 
 		// Try to read object from cache
 		if (READ_FROM_CACHE && cacheFile.exists()) {
@@ -112,13 +125,18 @@ public class Cache {
 	 * Returns a cached file. If the requested file hasn't been cached yet,
 	 * it is created, written to the cache, and returned.
 	 *
-	 * @param fileName custom identifier for the requested file
+	 * @param cacheGroup name of the cache subdirectory
+	 * @param extension filename extension (without the period)
 	 * @param factory factory to create a new file if the cache is invalid
-	 * @param hashableComponents objects that will be hashed to find the
-	 *                           correct cache file
+	 * @param identifiers hashable objects to be used in generating
+	 *                    the unique hash
 	 */
-	public static File cachedFile(String fileName, FileFactory factory, Object... hashableComponents) {
-		File cacheFile = new File(getCacheDir(hashableComponents), fileName);
+	public static File cachedFile(String cacheGroup,
+								  String extension,
+								  FileFactory factory,
+								  Object... identifiers)
+	{
+		File cacheFile = getCacheFile(cacheGroup, extension, identifiers);
 
 		if (!READ_FROM_CACHE || !cacheFile.exists()) {
 			cacheFile.getParentFile().mkdirs();

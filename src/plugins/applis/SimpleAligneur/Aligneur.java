@@ -211,7 +211,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 			}
 		};
 
-		return Cache.cachedFile("converted.wav", factory, original);
+		return Cache.cachedFile("converted", "wav", factory, original);
 	}
 
 	/**
