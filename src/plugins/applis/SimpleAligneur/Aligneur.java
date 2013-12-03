@@ -10,7 +10,6 @@ package plugins.applis.SimpleAligneur;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.*;
@@ -20,7 +19,7 @@ import javax.sound.sampled.*;
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
 
-import com.google.gson.*;
+import com.google.gson.JsonParseException;
 import facade.AutoAligner;
 import facade.Cache;
 import facade.Project;
@@ -36,7 +35,6 @@ import plugins.signalViewers.temporalSigPanel.ToolBarTemporalSig;
 import plugins.text.ListeElement;
 import speechreco.adaptation.BiaisAdapt;
 import speechreco.aligners.sphiinx4.*;
-import speechreco.aligners.sphiinx4.Alignment;
 import plugins.text.ColoriageEvent;
 import plugins.text.GriserWhilePlaying;
 import plugins.text.TexteEditor;
@@ -130,17 +128,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 		System.exit(0);
 	}
 
-	public void saveRawText(File file) throws IOException {
-		List<Element_Mot> mots = project.elts.getMots();
-		try {
-			PrintWriter fout = FileUtils.writeFileUTF(file.getAbsolutePath());
-			for (Element_Mot m : mots)
-				fout.println(m);
-			fout.close();
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		}
-	}
 
 	/**
 	 * Saves a copy of the converted audio file.
@@ -291,38 +278,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 			sigpan.setAudioInputStream(getCurPosInSec(),aud);
 			sigpan.refresh();
 		}
-	}
-
-	/**
-	 * Returns a Gson object suitable for serializing and deserializing JTrans
-	 * projects to/from JSON.
-	 */
-	private static Gson newGson() {
-		GsonBuilder gb = new GsonBuilder();
-		gb.registerTypeAdapter(Element.class, new InterfaceAdapter<Element>("$TYPE$"));
-		gb.setPrettyPrinting();
-		return gb.create();
-	}
-
-	/**
-	 * Saves the project in JSON format.
-	 */
-	public void saveJsonProject(File file) throws IOException {
-		FileWriter w = new FileWriter(file);
-		newGson().toJson(project, w);
-		w.close();
-	}
-
-	public void loadJsonProject(File file) throws IOException{
-		FileReader r = new FileReader(file);
-		project = newGson().fromJson(r, Project.class);
-		r.close();
-
-		caretSensible = true;
-		setAudioSource(project.wavname);
-		project.refreshIndex();
-
-		setProject(project);
 	}
 
 	public void setEditionMode() {
@@ -1204,7 +1159,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 	public boolean friendlyLoadProject(File file) {
 		try {
 			printInStatusBar("Loading project");
-			loadJsonProject(file);
+			setProject(Project.fromJson(file));
+			caretSensible = true;
 		} catch (IOException ex) {
 			printInStatusBar("Couldn't load project");
 			ex.printStackTrace();
@@ -1246,87 +1202,9 @@ public class Aligneur extends JPanel implements PrintLogger {
 		progress.setVisible(true);
 	}
 
-
-	//==========================================================================
-	// PRAAT OUTPUT
-	//==========================================================================
-
-	/**
-	 * Generates a Praat tier for an alignment.
-	 * @param w Append text to this writer
-	 * @param id Tier ID (Praat tier numbering starts at 1 and is contiguous!)
-	 * @param name Tier name
-	 * @param finalFrame Final frame in the entire file
-	 */
-	private static void praatTier(Writer w, int id, String name, int finalFrame, Alignment al) throws IOException {
-		assert id > 0;
-		w.append("\n\titem [").append(Integer.toString(id)).append("]:")
-				.append("\n\t\tclass = \"IntervalTier\"")
-				.append("\n\t\tname = \"").append(name).append('"') // TODO escape strings
-				.append("\n\t\txmin = 0")
-				.append("\n\t\txmax = ").append(Float.toString(TimeConverter.frame2sec(finalFrame)))
-				.append("\n\t\tintervals: size = ")
-				.append("" + al.getNbSegments());
-		for (int j = 0; j < al.getNbSegments(); j++) {
-			w.append("\n\t\tintervals [").append(Integer.toString(j+1)).append("]:")
-					.append("\n\t\t\txmin = ")
-					.append(Float.toString(TimeConverter.frame2sec(al.getSegmentDebFrame(j))))
-					.append("\n\t\t\txmax = ")
-					.append(Float.toString(TimeConverter.frame2sec(al.getSegmentEndFrame(j))))
-					.append("\n\t\t\ttext = \"")
-					.append(al.getSegmentLabel(j)).append('"'); // TODO escape strings
-		}
-	}
-
-
-	public void savePraat(File f, boolean withWords, boolean withPhons) throws IOException {
-		int             speakers     = project.speakers.size();
-		int             tiers        = speakers * ((withWords?1:0) + (withPhons?1:0));
-		int             finalFrame   = project.words.getSegmentEndFrame(project.words.getNbSegments() - 1);
-		Alignment       speakerTurns = project.elts.getLinearSpeakerTimes(project.words);
-		Alignment[]     spkWords     = null;
-		Alignment[]     spkPhons     = null;
-		FileWriter      fw           = new FileWriter(f);
-
-		fw.append("File type = \"ooTextFile\"")
-				.append("\nObject class = \"TextGrid\"")
-				.append("\n")
-				.append("\nxmin = 0")
-				.append("\nxmax = ").append("" + TimeConverter.frame2sec(finalFrame))
-				.append("\ntiers? <exists>")
-				.append("\nsize = ").append("" + tiers)
-				.append("\nitem []:");
-
-		// Linear, non-overlapping tiers
-		if (withWords) spkWords = project.words.breakDownBySpeaker(speakers, speakerTurns);
-		if (withPhons) spkPhons = project.phons.breakDownBySpeaker(speakers, speakerTurns);
-
-		// Account for overlaps
-		for (int i = 0; i < project.overlaps.size(); i++) {
-			int speakerID = project.overlapSpeakers.get(i);
-			S4AlignOrder order = project.overlaps.get(i);
-			if (withWords)
-				spkWords[speakerID].overwrite(order.alignWords);
-			if (withPhons)
-				spkPhons[speakerID].overwrite(order.alignPhones);
-		}
-
-		// Now that we have the final segment count, generate Praat tiers
-		int id = 1;
-		for (int i = 0; i < speakers; i++) {
-			String name = project.speakers.get(i).getName();
-			if (withWords)
-				praatTier(fw, id++, name + " words", finalFrame, spkWords[i]);
-			if (withPhons)
-				praatTier(fw, id++, name + " phons", finalFrame, spkPhons[i]);
-		}
-
-		fw.close();
-	}
-
-
 	public void setProject(Project project) {
 		this.project = project;
+		setAudioSource(project.wavname);
 		edit.setProject(project);
 	}
 }

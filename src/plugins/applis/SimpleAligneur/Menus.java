@@ -145,7 +145,7 @@ public class Menus {
 				File file = fc.getSelectedFile();
 
 				try {
-					aligneur.saveJsonProject(file);
+					aligneur.project.saveJson(file);
 				} catch (IOException ex) {
 					JOptionPane.showMessageDialog(aligneur.jf,
 							"Couldn't save. An I/O error occured.\n\n" + ex,
@@ -184,11 +184,11 @@ public class Menus {
 
 				try {
 					if (ff == filterTXT) {
-						aligneur.saveRawText(file);
+						aligneur.project.saveRawText(file);
 					} else if (ff == filterTextGridWordsOnly) {
-						aligneur.savePraat(file, true, false);
+						aligneur.project.savePraat(file, true, false);
 					} else if (ff == filterTextGridWordsAndPhons) {
-						aligneur.savePraat(file, true, true);
+						aligneur.project.savePraat(file, true, true);
 					} else {
 						JOptionPane.showMessageDialog(aligneur.jf, "Unknown filter " + ff);
 					}
