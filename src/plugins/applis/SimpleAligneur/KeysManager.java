@@ -61,9 +61,6 @@ public class KeysManager {
 					if (!parms.startsWith("KEY_PRESSED,"))
 						return false;
 					switch (e.getKeyCode()) {
-					case 113: // F2
-						aligneur.alignManual();
-						break;
 					case 27: // ESC
 						aligneur.stopAll();
 //						if (aligneur.userShouldConfirm) aligneur.confirmAlign(false);

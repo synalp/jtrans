@@ -78,45 +78,6 @@ public class MouseManager {
 				}
 			}
 		});
-		
-		/*
-		principale.edit.getCaret().addChangeListener(new ChangeListener() {
-			public void stateChanged(ChangeEvent e) {
-				if (!principale.caretSensible) return;
-				principale.caretSensible=false;
-				int posCaret = ((Caret)e.getSource()).getDot();
-				Element_Mot mot = principale.edit.getListeElement().getMotAtTextPosi(posCaret);
-				int motidx = principale.edit.getListeElement().indiceMot;
-
-				principale.edit.getCaret().setSelectionVisible(false);
-
-				if (mot!=null) {
-					if (principale.player!=null&&principale.player.isPlaying()) {
-						principale.insertManualAnchor(motidx);
-						// mon pas encore align� !
-						// principale.edit.griseMotred(mot);
-						principale.edit.souligne(mot);
-					} else {
-						if (principale.kmgr.isShiftOn) {
-							principale.textSelection(motidx);
-						} else {
-							int frdeb = principale.alignement.getFrameDeb(motidx);
-							principale.wordSelectedIdx=motidx;
-							if (frdeb>=0) {
-								if (principale.sigPanel!=null)
-									principale.sigPanel.moveAtFrame(frdeb);
-								principale.edit.griseMot(mot);
-							} else {
-								// mon pas encore align� !
-								principale.edit.griseMotred(mot);
-							}
-						}
-					}
-				}
-				principale.caretSensible=true;
-			}
-		});
-*/
 	}
 	
 	private static void removeClicMenu() {
@@ -129,40 +90,5 @@ public class MouseManager {
 	
 	public static void clicMotMenu(final Aligneur a, final int mot) {
 		removeClicMenu();
-		Thread t = new Thread(new Runnable() {
-			
-			@Override
-			public void run() {
-				// TODO Auto-generated method stub
-				JPopupMenu clicmenu = new JPopupMenu("actions on word");
-				JMenuItem setTime = new JMenuItem("set Time Deb");
-				setTime.addActionListener(new ActionListener() {
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						removeClicMenu();
-						String s = JOptionPane.showInputDialog("Absolute Time in seconds:");
-						try {
-							Float tdeb = Float.parseFloat(s);
-							a.doForceAnchor(tdeb, mot);
-						} catch (Exception ee) {
-						}
-					}
-				});
-				clicmenu.add(setTime);
-				JMenuItem cancel = new JMenuItem("cancel");
-				cancel.addActionListener(new ActionListener() {
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						removeClicMenu();
-					}
-				});
-				clicmenu.add(cancel);
-				clicmenu.setSize(100, 300);
-				clicmenu.setLocation(lastMouseClicPos);
-				clicmenu.setVisible(true);
-				clicMenu=clicmenu;
-			}
-		});
-		t.start();
 	}
 }
