@@ -116,6 +116,58 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 		return seg2mot[segidx];
 	}
 
+
+	/**
+	 * Neighbors of an Element in the list
+	 * @param <T> subclass of Element
+	 */
+	public class Neighborhood<T extends Element> {
+		public final T prev;
+		public final T next;
+		public final int prevIdx;
+		public final int nextIdx;
+
+		private Neighborhood(int p, int n) {
+			prevIdx = p;
+			nextIdx = n;
+
+			prev = prevIdx>=0? (T)get(prevIdx): null;
+			next = nextIdx>=0? (T)get(nextIdx): null;
+		}
+	}
+
+	/**
+	 * Returns the surrounding neighbors (of a specific class) of an element.
+	 * @param central central element
+	 * @param surroundClass class of the surrounding neighbors
+	 * @param <T> should be the same type as surroundClass
+	 */
+	public <T extends Element> Neighborhood<T> getNeighbors(
+			Element central, Class<T> surroundClass)
+	{
+		int prev = -1;
+		int curr = -1;
+		int next = -1;
+
+		for (int i = 0; i < size(); i++) {
+			Element el = get(i);
+
+			if (el == central) {
+				curr = i;
+			} else if (!surroundClass.isInstance(el)) {
+				;
+			} else if (curr < 0) {
+				prev = i;
+			} else {
+				next = i;
+				break;
+			}
+		}
+
+		return new Neighborhood<T>(prev, next);
+	}
+
+
 	/**
 	 * Creates an alignment whose segments spans speaker turns.
 	 * This method does not account for overlaps, hence the produced

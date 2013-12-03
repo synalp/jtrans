@@ -61,27 +61,11 @@ public class Project {
 	 * @return an array of two integers representing the indices of the first
 	 * and last elements whose alignment was cleared
 	 */
-	public int[] clearAlignmentAround(Element_Ancre anchor) {
-		// anchor element indices
-		int prev = 0;
-		int curr = -1;
-		int next = 0;
+	public ListeElement.Neighborhood<Element_Ancre> clearAlignmentAround(Element_Ancre anchor) {
+		ListeElement.Neighborhood<Element_Ancre> range =
+				elts.getNeighbors(anchor, Element_Ancre.class);
 
-		for (int i = 0; i < elts.size(); i++) {
-			Element el = elts.get(i);
-			if (!(el instanceof Element_Ancre))
-				continue;
-			if (el == anchor) {
-				curr = i;
-			} else if (curr < 0) {
-				prev = i;
-			} else {
-				next = i;
-				break;
-			}
-		}
-
-		for (int i = prev; i <= next; i++) {
+		for (int i = range.prevIdx + 1; i <= range.nextIdx - 1; i++) {
 			Element el = elts.get(i);
 			if (!(el instanceof Element_Mot))
 				continue;
@@ -89,10 +73,11 @@ public class Project {
 			word.posInAlign = -1;
 		}
 
-		int start = ((Element_Ancre)elts.get(prev)).getFrame();
-		int end   = ((Element_Ancre)elts.get(next)).getFrame();
-		clearAlignmentInterval(start, end);
-		return new int[]{prev, next};
+		clearAlignmentInterval(
+				range.prev!=null? range.prev.getFrame(): 0,
+				range.next!=null? range.next.getFrame(): Integer.MAX_VALUE);
+
+		return range;
 	}
 
 
