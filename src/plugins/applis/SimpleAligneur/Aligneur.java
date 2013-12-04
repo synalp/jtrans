@@ -89,25 +89,33 @@ public class Aligneur extends JPanel implements PrintLogger {
 	// position lue pour la derniere fois dans le flux audio
 	long currentSample = 0;
 	public Project project = new Project();
-	public boolean caretSensible = true;
 	JLabel infoLabel = new JLabel("Welcome to JTrans");
 
-	public float getCurPosInSec() {return cursec;}
+	public float getCurPosInSec() {
+        return cursec;
+    }
+
 	public void setCurPosInSec(float sec) {
-		cursec=sec;
-		int fr = TimeConverter.second2frame(cursec);
-		int seg = project.words.getSegmentAtFrame(fr);
+		cursec = sec;
+		int frame = TimeConverter.second2frame(cursec);
+
+        // vieux panel
+        if (sigPanel!=null) {
+            long currentSample = TimeConverter.frame2sample(frame);
+            if (currentSample < 0) currentSample = 0;
+            sigPanel.setProgressBar(currentSample);
+        }
+
 		// nouveau panel
-		sigpan.setAudioInputStream(getCurPosInSec(), getAudioStreamFromSec(getCurPosInSec()));
+		sigpan.setAudioInputStream(cursec, getAudioStreamFromSec(cursec));
 		if (showPhones) {
-			int segphidx = project.phons.getSegmentAtFrame(fr);
 			sigpan.setAlign(project.phons);
-			sigpan.setFirstSeg(segphidx);
+			sigpan.setFirstSeg(project.phons.getSegmentAtFrame(frame));
 		} else {
-			sigpan.setFirstSeg(seg);
 			sigpan.setAlign(project.words);
-		}
-		repaint();
+            sigpan.setFirstSeg(project.words.getSegmentAtFrame(frame));
+        }
+
 		updateViewers();
 	}
 
@@ -376,7 +384,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 	void stopAll() {
 		stopPlaying();
 //		stopAlign();
-		caretSensible = true;
 		// attention ! ne pas modifier usersShouldConfirm !!
 	}
 
@@ -542,29 +549,10 @@ public class Aligneur extends JPanel implements PrintLogger {
         ctrlbox.getPlayerGUI().stopPlaying();
         Thread.yield();
 
-        // position pour le play
         if (word.posInAlign >= 0) {
             edit.highlightWord(word);
-
-            int frame = project.words.getSegmentDebFrame(word.posInAlign);
-            cursec = TimeConverter.frame2sec(frame);
-
-            // vieux panel
-            if (sigPanel!=null) {
-                long currentSample = TimeConverter.frame2sample(frame);
-                if (currentSample < 0) currentSample = 0;
-                sigPanel.setProgressBar(currentSample);
-            }
-
-            // nouveau panel
-            sigpan.setAudioInputStream(cursec, getAudioStreamFromSec(cursec));
-            if (showPhones) {
-                sigpan.setAlign(project.phons);
-                sigpan.setFirstSeg(project.phons.getSegmentAtFrame(frame));
-            } else {
-                sigpan.setAlign(project.words);
-                sigpan.setFirstSeg(word.posInAlign);
-            }
+            setCurPosInSec(TimeConverter.frame2sec(
+                    project.words.getSegmentDebFrame(word.posInAlign)));
         } else {
             System.err.println("warning: pas de segment associé au mot " + word.getWordString());
             replay=false;
@@ -751,7 +739,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 		try {
 			printInStatusBar("Loading project");
 			setProject(Project.fromJson(file));
-			caretSensible = true;
 		} catch (IOException ex) {
 			printInStatusBar("Couldn't load project");
 			ex.printStackTrace();

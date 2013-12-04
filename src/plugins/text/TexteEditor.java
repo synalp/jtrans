@@ -12,7 +12,6 @@ import java.awt.Font;
 import java.awt.event.*;
 
 import javax.swing.*;
-import javax.swing.event.CaretEvent;
 import javax.swing.text.*;
 
 
@@ -283,14 +282,6 @@ public class TexteEditor extends JTextPane {
 			e.printStackTrace();
 			return null;
 		}
-	}
-
-	public int getIndiceMotUnderCaret(CaretEvent e) {
-		return project.elts.getIndiceElementAtTextPosi(e.getDot());
-	}
-
-	public ListeElement getListeElement() {
-		return project.elts;
 	}
 
 	/**

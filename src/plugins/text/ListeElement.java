@@ -50,46 +50,9 @@ import java.util.List;
 import speechreco.aligners.sphiinx4.Alignment;
 import plugins.text.elements.*;
 
-/**
- * Le texte est stock� sous forme d'une liste d'Element.
- * Element est une interface d�finie pour englober tous les types
- * n�cessaires pour stocker les informations encod�s dans les fichier texte
- * ou dans les fichiers TRS.
- * 
- * Les Elements forment un arbre de type pattern Composite, 
- * m�me si il n'y a pas vraiment de composite pour l'instant. 
- * Il est bien entendu possible de rajouter 
- * ou supprimer facilement des �l�ments en fonction des besoins. 
- * (ajout de nouvelles conventions, etc)
- * Il faudra juste rajouter/supprimer ces �l�ments des parsers et des Visitors.
- * 
- * Le remplissage de la liste est assur� soit par des appels de m�thodes,
- * pour l'interaction interface graphique/liste de mot directe,
- * soit par des Parser, pour remplir la liste � partir d'un fichier.
- * 
- * Un Visitor, la classe ListeElementVisitor, 
- * impl�mante plusieurs fa�ons de parcourir cette liste.
- * Bien entendu, il est facile de rajouter d'autres Visitor, 
- * afin de g�rer de nouveaux formats.
- *
- * La fonction paint du temporalSigPanel implemente aussi un mini-Visitor
- * afin de parcourir et afficher les �l�ments de la liste qui doivent l'�tre.
- */
 public class ListeElement extends ArrayList<Element> implements Serializable {
 	private Element_Mot[] seg2mot = null;
 	// TODO: il faut mettre a jour l'index a la moindre modification !
-	
-	public int importAlign(int[] mots2segidx, int fromMot) {
-		List<Element_Mot> mots = getMots();
-		assert mots2segidx.length==mots.size();
-		int firstWordNotAligned=fromMot;
-		for (int i=mots.size()-1;i>=fromMot;i--) {
-			if (firstWordNotAligned==fromMot&&mots2segidx[i]>=0) firstWordNotAligned=i+1;
-			mots.get(i).posInAlign=mots2segidx[i];
-		}
-		return firstWordNotAligned;
-	}
-
 
 	/**
 	 * Refresh reverse index (segment indices to word indices).
@@ -224,13 +187,6 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 		}
 		return res;
 	}//getMots
-	public String[] getMotsInTab() {
-		List<Element_Mot> l = getMots();
-		String[] r = new String[l.size()];
-		for (int i=0;i<r.length;i++) r[i]=l.get(i).getWordString();
-		return r;
-	}
-	
 	
 	public Element_Mot getElementAvecDureePrecedent(int posi){
 		while(--posi > 0){
@@ -240,14 +196,6 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 		return null;
 	}//getMotPrecedent
 	
-	public int getIndiceElementAvecDureePrecedent(int posi){
-		while(--posi > 0){
-			if(get(posi) instanceof Element_Mot )
-				return posi;
-		}
-		return -1;
-	}
-	
 	public Element_Mot getElementAvecDureeSuivant(int posi){
 		while(posi++ > 0){
 			if(get(posi) instanceof Element_Mot )
@@ -255,119 +203,7 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 		}
 		return null;
 	}//getMotPrecedent
-	
-	
-	
-//	//TODO : remplacer par une recherche dichotomique ? => normalement faisable, 
-//	//puisque les mots sont cens�s �tre ordonn�s par endSample
-//	public Element_Mot getElementAtSample(int endSample){
-//		for (int i=0;i<size();i++) {
-//			Element e = get(i);
-//			if(e instanceof Element_Mot){
-//				Element_Mot ee=(Element_Mot)e;
-//				if(ee.endSample >= endSample) return ee; 
-//			}
-//		}
-//		return null;
-//	}//getElementAtSample
-	
-//	public int getIndiceAtSample(long endSample){
-//		int size = size();
-//		Element e;
-//		for(int i = 0; i < size; ++i){
-//			e = get(i);
-//			if(e instanceof Element_Mot){
-//				if( ((Element_Mot)e).endSample >= endSample) return i; 
-//			}
-//		}
-//		return -1;
-//	}//getIndiceAtSample
-//	
-	
-//	public void deplacerTousLesElementsDe(int posiDebut,int nbSampleDeplacement){
-//		int size = size();
-//		Element e;
-//		Element_Mot mot;
-//		for(int i = posiDebut; i < size; i++){
-//			e = get(i);
-//			if(e instanceof Element_Mot){
-//				mot = (Element_Mot)e;
-//				mot.endSample=mot.endSample+nbSampleDeplacement;
-//			}
-//		}//for
-//	}//deplacerTousLesElementsDe
-	
-//	public void cleanAlignFromElement(int eltidx) {
-//		Element element;
-//		int size = size();
-//		for(int i = eltidx; i < size; i++){
-//			element = get(i);
-//			if(element instanceof Element_Mot){
-//				Element_Mot seg = (Element_Mot)element;
-//				seg.endSample=-1;
-//			}
-//		}
-//	}
-	
-//	public void cleanAlignFromSample(long sample) {
-//		Element element;
-//		int size = size();
-//		boolean removeNext=false;
-//		for(int i = 0; i < size; i++){
-//			element = get(i);
-//			if(element instanceof Element_Mot){
-//				Element_Mot seg = (Element_Mot)element;
-//				long sampfin = seg.endSample;
-//				if (removeNext || sampfin>sample) {
-//					seg.endSample=-1;
-//					for (i++;i<size;i++) {
-//						element = get(i);
-//						if(element instanceof Element_Mot){
-//							seg = (Element_Mot)element;
-//							seg.endSample=-1;
-//						}
-//					}
-//					return;
-//				} else if (sampfin==sample) removeNext=true;
-//			}
-//		}
-//	}
-	
-//	public int getIndiceMotAtSample(long sample) {
-//		Element element;
-//		int size = size();
-//		for(int i = 0; i < size; i++){
-//			element = get(i);
-//			if(element instanceof Element_Mot){
-//				Element_Mot seg = (Element_Mot)element;
-//				long sampfin = seg.endSample;
-//				if (sampfin>sample) {
-//					// si ce n'est pas un mot, on retourne le mot precedent
-//					if (element instanceof Element_Mot) return i;
-//					else {
-//						for (i--;i>=0;i--) {
-//							element = get(i);
-//							if (element instanceof Element_Mot) return i;
-//						}
-//						return -1;
-//					}
-//				}
-//			}
-//		}
-//		return -1;
-//	}
-	
-	public Element_Mot getFirstMot() {
-		int size = size();
-		for(int i = 0; i < size; i++){
-			Element e = get(i);
-			if (e instanceof Element_Mot) {
-				Element_Mot ee = (Element_Mot)e;
-				return ee;
-			}
-		}		
-		return null;
-	}
+
 	public Element_Mot getMot(int motidx) {
 		int size = size();
 		for(int i = 0, imot=-1; i < size; i++){
@@ -382,15 +218,6 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 		}		
 		return null;
 	}
-	
-//	public Element_Mot getWordFromFirstWord(int motidx, Element_Mot firstWord) {
-//		Element_Mot e = firstWord;
-//		for (int i=0;i<motidx;i++) {
-//			e = e.nextEltInGram;
-//		}
-//		return e;
-//	}
-//	
 
 	/**
 	 * retourne l'indice de l'element dans la liste qui a ete selectionne (c'est un mot)
@@ -406,88 +233,4 @@ public class ListeElement extends ArrayList<Element> implements Serializable {
 		}
 		return -1;
 	}
-
-
-	public int getIndiceMotAtTextPosi(int posiDansLeTexte){
-		List<Element_Mot> mots = getMots();
-		for(int i = 0;i<mots.size(); i++) {
-			Element_Mot mot = mots.get(i);
-			if (mot.start <= posiDansLeTexte && mot.end >= posiDansLeTexte)
-				return i;
-		}
-		return -1;
-	}
-	
-	
-	public void decalerTextPosi(int valeur, int from){
-		//On parcourt la liste pour d�caler tous les indices des mots
-		int listeElementSize = size();
-		Element element; 
-		Element_Mot elementMot;
-		for(int i = from; i < listeElementSize; ++i ){
-			element = get(i);
-			if(element instanceof Element_Mot){
-				elementMot = (Element_Mot)element;
-				elementMot.start += valeur;
-				elementMot.end += valeur;
-			}
-		}//for
-	}
-	
-	
-	
-	//------------- Anciennes Fonctions stock�es ici, au cas o� elles serviraient un jour
-	/**
-	 * ajoute un element avant le Nieme mot (attention: N ne correspond pas a une
-	 * position dans la liste, mais a la position dans la liste des mots seulement
-	 * (telle que obtenue par getMots())
-	 * N commence a 0 : N=0 correspond donc au 1er mot de la liste
-	 */
-	/*
-	public void addElementAvantNiemeMot(int niemeMot, Element element) {
-		int idxMots=-1;
-		for (int i=0;i<size();i++) {
-			Element el = get(i);
-			if (el instanceof Element_Mot) {
-				idxMots++;
-				if (idxMots==niemeMot) {
-					add(i,element);
-					return;
-				}
-			}
-		}
-		System.err.println("WARNING: impossible d'ajouter le Nieme mot "+niemeMot+" "+size());
-	}//addMotAvantNiemeMot
-	*/
-	/*
-	public Element_Silence addSilenceAvantNiemeMot(int niemeMot, int endSample) {
-		int idxMots=-1;
-		Element_Silence res = new Element_Silence(endSample);
-		for (int i=0;i<size();i++) {
-			Element el = get(i);
-			if (el instanceof Element_Mot) {
-				idxMots++;
-				if (idxMots==niemeMot) {
-					add(i,res);
-					return res;
-				}
-			}
-		}
-		System.err.println("WARNING: impossible d'ajouter le Nieme silence "+niemeMot+" "+size());
-		return null;
-	}//addMotAvantNiemeMot
-	*/
-	/*
-	public void addMotAtPosi(int indiceMot, String mot, int endSample){
-		Element_Mot elementMot = new Element_Mot(mot,endSample);
-		
-		Element element = get(indiceMot);
-		if(element instanceof Element_Commentaire && 
-				((Element_Commentaire)element).getCommentaire().startsWith("pron")) {
-			indiceMot++;
-		}
-		add(indiceMot,elementMot);
-	}//addMotAtPosi
-	*/
-	
-}//class ListeElement
+}

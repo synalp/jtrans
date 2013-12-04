@@ -387,7 +387,6 @@ public class AutoAligner {
 			progress.setProgress((i+1) / (float)project.elts.size());
 		}
 
-		aligneur.caretSensible = true;
 		project.refreshIndex();
 	}
 
@@ -414,7 +413,6 @@ public class AutoAligner {
 			progress.setProgress(lastAlignedWord / ((float) mots.size() - 1));
 		}
 
-		aligneur.caretSensible = true;
 		project.refreshIndex();
 	}
 }
