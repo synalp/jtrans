@@ -47,44 +47,42 @@ public class Project {
 	}
 
 
-	public void clearAlignmentInterval(int startFrame, int endFrame) {
-		for (Element_Mot word: elts.getMots()) {
-			int seg = word.posInAlign;
-			if (word.posInAlign < 0)
-				continue;
-			if (words.getSegmentDebFrame(seg) >= startFrame &&
-					words.getSegmentEndFrame(seg) <= endFrame)
-				word.posInAlign = -1;
-		}
-
-		words.clearInterval(startFrame, endFrame);
-		phons.clearInterval(startFrame, endFrame);
-		// TODO: unalign phonemes, clear affected overlaps...
-
-		refreshIndex();
-	}
-
-
 	/**
 	 * Clears alignment around an anchor.
-	 * @return an array of two integers representing the indices of the first
-	 * and last elements whose alignment was cleared
+	 * @return the anchor's neighborhood, i.e. the range of elements
+	 * that got unaligned
 	 */
 	public ListeElement.Neighborhood<Element_Ancre> clearAlignmentAround(Element_Ancre anchor) {
 		ListeElement.Neighborhood<Element_Ancre> range =
 				elts.getNeighbors(anchor, Element_Ancre.class);
 
-		for (int i = range.prevIdx + 1; i <= range.nextIdx - 1; i++) {
+		int from = range.prev!=null? range.prevIdx: 0;
+		int to   = range.next!=null? range.nextIdx: elts.size()-1;
+
+		// Unalign the affected words
+		for (int i = from; i <= to; i++) {
+			Element el = elts.get(i);
+			if (el instanceof Element_Mot)
+				((Element_Mot) el).posInAlign = -1;
+		}
+
+		// Remove segments
+		int beforeRemoval = words.getNbSegments();
+		words.clearInterval(
+				range.prev != null ? range.prev.getFrame() : 0,
+				range.next != null ? range.next.getFrame() : Integer.MAX_VALUE);
+		int removed = beforeRemoval - words.getNbSegments();
+
+		// Adjust elements following the removal
+		for (int i = to+1; i < elts.size(); i++) {
 			Element el = elts.get(i);
 			if (!(el instanceof Element_Mot))
 				continue;
-			Element_Mot word = (Element_Mot)el;
-			word.posInAlign = -1;
+			((Element_Mot) el).posInAlign -= removed;
 		}
 
-		clearAlignmentInterval(
-				range.prev!=null? range.prev.getFrame(): 0,
-				range.next!=null? range.next.getFrame(): Integer.MAX_VALUE);
+		// TODO: unalign phonemes, clear affected overlaps...
+		refreshIndex();
 
 		return range;
 	}
