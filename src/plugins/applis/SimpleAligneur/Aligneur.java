@@ -492,6 +492,38 @@ public class Aligneur extends JPanel implements PrintLogger {
 		repaint();
 	}
 
+	/**
+	 * Ensures newPos is a valid position for an anchor within the given
+	 * range; if not, informs the user with error messages.
+	 * @return true if the position is valid
+	 */
+	public boolean enforceLegalAnchor(ListeElement.Neighborhood<Element_Ancre> range, float newPos) {
+		if (newPos < 0) {
+			JOptionPane.showMessageDialog(jf,
+					"Can't set to negative position!",
+					"Illegal anchor position", JOptionPane.ERROR_MESSAGE);
+			return false;
+		}
+
+		if (range.prev != null && range.prev.seconds > newPos) {
+			JOptionPane.showMessageDialog(jf,
+					"Can't set this anchor before the previous anchor\n" +
+							"(at " + range.prev.seconds + " seconds).",
+					"Illegal anchor position", JOptionPane.ERROR_MESSAGE);
+			return false;
+		}
+
+		if (range.next != null && range.next.seconds < newPos) {
+			JOptionPane.showMessageDialog(jf,
+					"Can't set this anchor past the next anchor\n" +
+							"(at " + range.next.seconds + " seconds).",
+					"Illegal anchor position", JOptionPane.ERROR_MESSAGE);
+			return false;
+		}
+
+		return true;
+	}
+
 	public void repositionAnchor(Element_Ancre anchor) {
 		String newPosString = JOptionPane.showInputDialog(jf,
 				"Enter new anchor position in seconds:",
@@ -502,46 +534,14 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 		float newPos = Float.parseFloat(newPosString);
 
-		// Make sure the requested position is legal...
-
-		if (newPos < 0) {
-			JOptionPane.showMessageDialog(jf,
-					"Can't set to negative position!",
-					"Illegal anchor position", JOptionPane.ERROR_MESSAGE);
+		if (!enforceLegalAnchor(
+				project.elts.getNeighbors(anchor, Element_Ancre.class), newPos))
 			return;
-		}
-
-		ListeElement.Neighborhood<Element_Ancre> range =
-				project.elts.getNeighbors(anchor, Element_Ancre.class);
-
-		if (range.prev != null && range.prev.seconds > newPos) {
-			JOptionPane.showMessageDialog(jf,
-					"Can't move this anchor before the previous anchor\n" +
-					"(at " + range.prev.seconds + " seconds).",
-					"Illegal anchor position", JOptionPane.ERROR_MESSAGE);
-			return;
-		}
-
-		if (range.next != null && range.next.seconds < newPos) {
-			JOptionPane.showMessageDialog(jf,
-					"Can't move this anchor past the next anchor\n" +
-					"(at " + range.next.seconds + " seconds).",
-					"Illegal anchor position", JOptionPane.ERROR_MESSAGE);
-			return;
-		}
-
-		// ...Alright, we're safe now
 
 		anchor.seconds = newPos;
 
 		project.clearAlignmentAround(anchor);
 		setProject(project); // force refresh
-
-		int rc = JOptionPane.showConfirmDialog(jf, "Realign?",
-				"Anchor repositioned", JOptionPane.YES_NO_OPTION);
-
-		if (rc == JOptionPane.YES_OPTION)
-			alignBetweenAnchorsWithProgress();
 	}
 
 	public void selectWord(Element_Mot word) {
