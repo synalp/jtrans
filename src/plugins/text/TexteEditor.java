@@ -9,13 +9,10 @@ package plugins.text;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 
 import javax.swing.*;
 import javax.swing.event.CaretEvent;
-import javax.swing.event.PopupMenuEvent;
-import javax.swing.event.PopupMenuListener;
 import javax.swing.text.*;
 
 
@@ -47,6 +44,7 @@ public class TexteEditor extends JTextPane {
 	public boolean textChanged;
 
 	private Element_Mot highlightedWord = null;
+    private JPopupMenu popup = null;
 
 	//----------------------------------------------------------------
 	//------------------ Constructor --------------------------------
@@ -70,18 +68,65 @@ public class TexteEditor extends JTextPane {
 	}
 
     private void click(MouseEvent e) {
+        if (popup != null && popup.isVisible()) {
+            popup.setVisible(false);
+            popup = null;
+            return;
+        }
+
         int caret = viewToModel(e.getPoint());
 
         int idx = project.elts.getIndiceElementAtTextPosi(caret);
         if (idx < 0)
             return;
-
         Element el = project.elts.get(idx);
-        if (el instanceof Element_Ancre) {
-            aligneur.anchorClicked((Element_Ancre)el);
-        } else if (el instanceof Element_Mot) {
-            aligneur.wordClicked((Element_Mot)el);
+
+        if (e.isPopupTrigger()) {
+            if (el instanceof Element_Ancre) {
+                anchorPopupMenu((Element_Ancre)el, e);
+            }
+        } else {
+            if (el instanceof Element_Mot) {
+                aligneur.selectWord((Element_Mot) el);
+            }
         }
+    }
+
+    private void anchorPopupMenu(final Element_Ancre anchor, MouseEvent event) {
+        popup = new JPopupMenu("Anchor");
+
+        popup.add(new JMenuItem("Adjust time") {{
+            addActionListener(new AbstractAction() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    aligneur.repositionAnchor(anchor);
+                }
+            });
+        }});
+
+        popup.add(new JMenuItem("Clear alignment around") {{
+            addActionListener(new AbstractAction() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    project.clearAlignmentAround(anchor);
+                    aligneur.setProject(project); // force refresh
+                }
+            });
+        }});
+
+
+        popup.add(new JMenuItem("Delete") {{
+            addActionListener(new AbstractAction() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    project.clearAlignmentAround(anchor);
+                    project.elts.remove(anchor);
+                    aligneur.setProject(project); // force refresh
+                }
+            });
+        }});
+
+        popup.show(this, event.getX(), event.getY());
     }
 
 	private static final AttributeSet ALIGNED_STYLE = new SimpleAttributeSet() {{

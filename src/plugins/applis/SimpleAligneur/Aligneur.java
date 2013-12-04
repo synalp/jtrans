@@ -485,7 +485,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 		repaint();
 	}
 
-	public void anchorClicked(Element_Ancre anchor) {
+	public void repositionAnchor(Element_Ancre anchor) {
 		String newPosString = JOptionPane.showInputDialog(jf,
 				"Enter new anchor position in seconds:",
 				Float.toString(anchor.seconds));
@@ -537,7 +537,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 			alignBetweenAnchorsWithProgress();
 	}
 
-	public void wordClicked(Element_Mot word) {
+	public void selectWord(Element_Mot word) {
         boolean replay = ctrlbox.getPlayerGUI().isPlaying();
         ctrlbox.getPlayerGUI().stopPlaying();
         Thread.yield();
