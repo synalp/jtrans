@@ -9,14 +9,20 @@ package plugins.text;
 
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 import javax.swing.*;
 import javax.swing.event.CaretEvent;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 import javax.swing.text.*;
 
 
 import facade.Project;
+import plugins.applis.SimpleAligneur.Aligneur;
 import plugins.text.elements.Element;
+import plugins.text.elements.Element_Ancre;
 import plugins.text.elements.Element_Mot;
 
 /**
@@ -34,15 +40,10 @@ public class TexteEditor extends JTextPane {
 
 	public static final String DEFAULT_FONT_NAME = Font.SANS_SERIF;
 	public static final int DEFAULT_FONT_SIZE = 13;
-	
-	//----------------------------------------------------------
-	//------------------ Private Fields ------------------------
-	//----------------------------------------------------------
-	
-	//----------- Objects externes -------------
+
+    private Aligneur aligneur;
 	private Project project;
 
-	//---------- State Flag ---------------
 	public boolean textChanged;
 
 	private Element_Mot highlightedWord = null;
@@ -50,15 +51,38 @@ public class TexteEditor extends JTextPane {
 	//----------------------------------------------------------------
 	//------------------ Constructor --------------------------------
 	//---------------------------------------------------------------
-	public TexteEditor(Project project) {
+	public TexteEditor(Aligneur aligneur) {
 		super();
 
 		setFont(new Font(DEFAULT_FONT_NAME, Font.PLAIN, DEFAULT_FONT_SIZE));
 
-		this.project = project;
+        this.aligneur = aligneur;
+		this.project = aligneur.project;
 		
 		textChanged = false;
+
+        addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                click(e);
+            }
+        });
 	}
+
+    private void click(MouseEvent e) {
+        int caret = viewToModel(e.getPoint());
+
+        int idx = project.elts.getIndiceElementAtTextPosi(caret);
+        if (idx < 0)
+            return;
+
+        Element el = project.elts.get(idx);
+        if (el instanceof Element_Ancre) {
+            aligneur.anchorClicked((Element_Ancre)el);
+        } else if (el instanceof Element_Mot) {
+            aligneur.wordClicked((Element_Mot)el);
+        }
+    }
 
 	private static final AttributeSet ALIGNED_STYLE = new SimpleAttributeSet() {{
 		addAttribute(StyleConstants.Foreground, Color.BLUE.darker());

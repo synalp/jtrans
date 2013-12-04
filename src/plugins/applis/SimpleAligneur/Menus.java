@@ -329,7 +329,8 @@ public class Menus {
 
 		clearFrom.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				aligneur.clearAlignFrom(aligneur.wordSelectedIdx);
+                //TODO aligneur.clearAlignFrom(aligneur.wordSelectedIdx);
+                JOptionPane.showMessageDialog(aligneur.jf, "Reimplement me!");
 			}
 		});
 

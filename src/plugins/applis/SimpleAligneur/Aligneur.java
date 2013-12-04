@@ -89,7 +89,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 	// position lue pour la derniere fois dans le flux audio
 	long currentSample = 0;
 	public Project project = new Project();
-	int wordSelectedIdx = -1;
 	public boolean caretSensible = true;
 	JLabel infoLabel = new JLabel("Welcome to JTrans");
 
@@ -307,14 +306,10 @@ public class Aligneur extends JPanel implements PrintLogger {
 		infoLabel.repaint();
 	}
 
-	public Aligneur(boolean withGUI) {
-		initPanel();
-		if (withGUI) createJFrame();
-	}
-
 	public Aligneur() {
 		initPanel();
 		createJFrame();
+        kmgr = new KeysManager(this);
 	}
 
 	private void createJFrame() {
@@ -342,7 +337,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 	private void initPanel() {
 		setLayout(new BorderLayout());
 
-		edit = new TexteEditor(project);
+		edit = new TexteEditor(this);
 		ctrlbox = new ControlBox(this);
 		playergui = ctrlbox.getPlayerGUI();
 		infoLabel.setBorder(new BevelBorder(BevelBorder.LOWERED));
@@ -368,7 +363,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 	void goHome() {
 		//		if (player.isPlaying()) return;
 		currentSample=0;
-		wordSelectedIdx=0;
 		if (sigPanel!=null) {
 			sigPanel.setProgressBar(0);
 		}
@@ -404,11 +398,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 			playerController.pause();
 		}
 		 */
-	}
-
-	public void inputControls() {
-		kmgr = new KeysManager(this);
-		new MouseManager(this);
 	}
 
 	public void newplaystarted() {
@@ -496,7 +485,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 		repaint();
 	}
 
-	void anchorClicked(Element_Ancre anchor) {
+	public void anchorClicked(Element_Ancre anchor) {
 		String newPosString = JOptionPane.showInputDialog(jf,
 				"Enter new anchor position in seconds:",
 				Float.toString(anchor.seconds));
@@ -547,63 +536,42 @@ public class Aligneur extends JPanel implements PrintLogger {
 		if (rc == JOptionPane.YES_OPTION)
 			alignBetweenAnchorsWithProgress();
 	}
-	
-	void clicAtCaretPosition(int caretPos, int button) {
-		int elementIdx = project.elts.getIndiceElementAtTextPosi(caretPos);
-		if (elementIdx < 0)
-			return;
 
-		Element el = project.elts.get(elementIdx);
-		if (el instanceof Element_Ancre) {
-			anchorClicked((Element_Ancre)el);
-			return;
-		} else if (!(el instanceof Element_Mot))
-			return;
+	public void wordClicked(Element_Mot word) {
+        boolean replay = ctrlbox.getPlayerGUI().isPlaying();
+        ctrlbox.getPlayerGUI().stopPlaying();
+        Thread.yield();
 
-		int mot = project.elts.getIndiceMotAtTextPosi(caretPos);
+        // position pour le play
+        if (word.posInAlign >= 0) {
+            edit.highlightWord(word);
 
-			// nouveau player:
-			boolean replay = ctrlbox.getPlayerGUI().isPlaying();
-			ctrlbox.getPlayerGUI().stopPlaying();
-			Thread.yield();
+            int frame = project.words.getSegmentDebFrame(word.posInAlign);
+            cursec = TimeConverter.frame2sec(frame);
 
-			// position pour le play
-			wordSelectedIdx=mot;
-			Element_Mot emot = project.elts.getMot(mot);
-			int segidx = emot.posInAlign;
-			if (segidx>=0) {
-				int frame = project.words.getSegmentDebFrame(segidx);
-				cursec = TimeConverter.frame2sec(frame);
-				long currentSample = TimeConverter.frame2sample(frame);
-				if (currentSample<0) currentSample=0;
-				edit.highlightWord(emot);
-				// vieux panel
-				if (sigPanel!=null) {
-					sigPanel.setProgressBar(currentSample);
-				}
-				// nouveau panel
-				sigpan.setAudioInputStream(getCurPosInSec(), getAudioStreamFromSec(getCurPosInSec()));
-				if (showPhones) {
-					int segphidx = project.phons.getSegmentAtFrame(frame);
-					sigpan.setAlign(project.phons);
-					sigpan.setFirstSeg(segphidx);
-				} else {
-					sigpan.setFirstSeg(segidx);
-					sigpan.setAlign(project.words);
-				}
-				repaint();
-			} else {
-				System.err.println("warning: pas de segment associé au mot "+emot.getWordString());
-				MouseManager.clicMotMenu(this,mot);
-				replay=false;
-			}
-			Thread.yield();
-			try {
-				Thread.sleep(50);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			if (replay) ctrlbox.getPlayerGUI().startPlaying();
+            // vieux panel
+            if (sigPanel!=null) {
+                long currentSample = TimeConverter.frame2sample(frame);
+                if (currentSample < 0) currentSample = 0;
+                sigPanel.setProgressBar(currentSample);
+            }
+
+            // nouveau panel
+            sigpan.setAudioInputStream(cursec, getAudioStreamFromSec(cursec));
+            if (showPhones) {
+                sigpan.setAlign(project.phons);
+                sigpan.setFirstSeg(project.phons.getSegmentAtFrame(frame));
+            } else {
+                sigpan.setAlign(project.words);
+                sigpan.setFirstSeg(word.posInAlign);
+            }
+        } else {
+            System.err.println("warning: pas de segment associé au mot " + word.getWordString());
+            replay=false;
+        }
+
+        if (replay)
+            ctrlbox.getPlayerGUI().startPlaying();
 	}
 
 	private void getRecoResult(main.SpeechReco asr) {
@@ -697,7 +665,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 		String markupFileName = null;
 		String audioFileName = null;
 
-		m.inputControls();
 		for (String arg: args) {
 			String lcarg = arg.toLowerCase();
 
