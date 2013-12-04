@@ -20,6 +20,7 @@ import plugins.applis.SimpleAligneur.Aligneur;
 import plugins.text.elements.Element;
 import plugins.text.elements.Element_Ancre;
 import plugins.text.elements.Element_Mot;
+import utils.TimeConverter;
 
 /**
  * permet de selectionner les differents elements pour interpreter le texte:
@@ -81,6 +82,9 @@ public class TexteEditor extends JTextPane {
         Element el = project.elts.get(idx);
 
         if (e.isPopupTrigger()) {
+			if (el instanceof Element_Mot) {
+				wordPopupMenu((Element_Mot)el, e);
+			}
             if (el instanceof Element_Ancre) {
                 anchorPopupMenu((Element_Ancre)el, e);
             }
@@ -90,6 +94,72 @@ public class TexteEditor extends JTextPane {
             }
         }
     }
+
+	/**
+	 * Dialog box to create an anchor before or after a certain word.
+	 * @param before If true, the new anchor will be placed before the word in
+	 *               the element list. If false, it'll be placed after the word.
+	 */
+	private void newAnchorNextToWord(Element_Mot word, boolean before) {
+		ListeElement.Neighborhood<Element_Ancre> range =
+				project.elts.getNeighbors(word, Element_Ancre.class);
+
+		float initialPos;
+
+		if (word.posInAlign < 0) {
+			float endOfAudio = TimeConverter.frame2sec((int)aligneur.audioSourceTotalFrames);
+			initialPos = before?
+					(range.prev!=null? range.prev.seconds: 0) :
+					(range.next!=null? range.next.seconds: endOfAudio);
+		} else if (before) {
+			initialPos = TimeConverter.frame2sec(
+					project.words.getSegmentDebFrame(word.posInAlign));
+		} else {
+			initialPos = TimeConverter.frame2sec(
+					project.words.getSegmentEndFrame(word.posInAlign));
+		}
+
+		String positionString = JOptionPane.showInputDialog(aligneur.jf,
+				String.format("Enter position for new anchor to be inserted\n%s '%s' (in seconds):",
+						before? "before": "after", word.getWordString()),
+				initialPos);
+
+		if (positionString == null)
+			return;
+
+		float newPos = Float.parseFloat(positionString);
+
+		if (aligneur.enforceLegalAnchor(range, newPos)) {
+			Element_Ancre anchor = new Element_Ancre(newPos);
+			project.elts.add(project.elts.indexOf(word) + (before?0:1), anchor);
+			project.clearAlignmentAround(anchor);
+			aligneur.setProject(project);
+		}
+	}
+
+	private void wordPopupMenu(final Element_Mot word, MouseEvent event) {
+		popup = new JPopupMenu("Word");
+
+		popup.add(new JMenuItem("New anchor before '" + word.getWordString() + "'") {{
+			addActionListener(new AbstractAction() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					newAnchorNextToWord(word, true);
+				}
+			});
+		}});
+
+		popup.add(new JMenuItem("New anchor after '" + word.getWordString() + "'") {{
+			addActionListener(new AbstractAction() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					newAnchorNextToWord(word, false);
+				}
+			});
+		}});
+
+		popup.show(this, event.getX(), event.getY());
+	}
 
     private void anchorPopupMenu(final Element_Ancre anchor, MouseEvent event) {
         popup = new JPopupMenu("Anchor");
