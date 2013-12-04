@@ -45,7 +45,7 @@ public class TexteEditor extends JTextPane {
 	//---------- State Flag ---------------
 	public boolean textChanged;
 
-	public Element_Mot highlightedWord = null;
+	private Element_Mot highlightedWord = null;
 
 	//----------------------------------------------------------------
 	//------------------ Constructor --------------------------------
@@ -111,7 +111,7 @@ public class TexteEditor extends JTextPane {
 	 * Only one word may be highlighted at a time.
 	 */
 	public void highlightWord(Element_Mot word) {
-		if (word == null)
+		if (word == null || highlightedWord == word)
 			return;
 
 		// Only highlight aligned words

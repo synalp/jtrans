@@ -424,10 +424,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 					int segidx = project.words.getSegmentAtFrame(curfr);
 					if (segidx < 0)
 						return;
-
-					Element_Mot mot = edit.getListeElement().getMotAtSegment(segidx);
-					if (mot != null && mot != edit.highlightedWord)
-						edit.highlightWord(mot);
+					edit.highlightWord(project.elts.getMotAtSegment(segidx));
 				}
 			});
 			karaokeHighlighter.start();
@@ -651,7 +648,6 @@ public class Aligneur extends JPanel implements PrintLogger {
 		//    	rec=rec.trim();
 		//    	System.out.println("TEXT FROM RECO: "+rec);
 		edit.setText(sb.toString());
-		edit.highlightedWord = null;
 		edit.setCaretPosition(0);
 		edit.textChanged = false;
 		edit.setIgnoreRepaint(false);
