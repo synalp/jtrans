@@ -7,21 +7,8 @@ http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html
 
 package speechreco.grammaire;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
-import java.io.Serializable;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
+import java.io.*;
+import java.util.*;
 import java.util.Map.Entry;
 
 import javax.swing.JOptionPane;
@@ -50,40 +37,15 @@ public class Grammatiseur implements Serializable {
 	public static Grammatiseur grammatiseur = null;
 
 	public static Grammatiseur getGrammatiseur() {
-		System.err.println("init grammar "+grammatiseur);
-		if (grammatiseur!=null) return grammatiseur;
-		try {
-//			InputStream is = FileUtils.getRessourceAsStream("plugins.speechreco.grammaire.Grammatiseur", "ressources/grammatiseur");
-			InputStream is = new FileInputStream("ressources/grammatiseur");
-			if (is!=null) {
-				ObjectInputStream f = new ObjectInputStream(is);
-				grammatiseur = (Grammatiseur) f.readObject();
-				f.close();
-				System.out.println("grammatiseur correctement charge "+grammatiseur.dictionnaire.getClass().getName());
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-			JOptionPane.showMessageDialog(null, "WARNING: error loading dictionary ! I'll use the phonetiser instead...");
-		} catch (Exception e) {
-			// cela arrive lorsqu'on charge un grammatiseur qui a ete enregistre
-			// avec une
-			// autre version de java
-			// Il faut regenrer le grammatiseur binaire !
-			System.err.println("invalid class: reload lexicon: "+e);
-		}
-		if (grammatiseur==null) {
+		if (grammatiseur == null) {
 			grammatiseur = new Grammatiseur();
-			System.err.println("save grammatiseur to grammatiseur; you should copy it into ressources/ !");
-			grammatiseur.serialize();
+			if (!fastLoading)
+				grammatiseur.initPhonetiseur();
 		}
-		if (!fastLoading)
-			grammatiseur.initPhonetiseur();
-		System.err.println("fin init grammar "+grammatiseur);
 		return grammatiseur;
 	}
 
 	private Grammatiseur() {
-		//        dictionnaire = new BDLex();
 		dictionnaire = new Morphalou();
 		String rule = dictionnaire.getRule("le");
 		if (rule==null||rule.length()==0)
@@ -727,37 +689,6 @@ public class Grammatiseur implements Serializable {
 		}
 	}
 
-	public static Grammatiseur deserialize(String fichnom) {
-		System.err.print("loading grammatiseur...");
-		System.err.flush();
-		Grammatiseur g = null;
-		try {
-			ObjectInputStream f = new ObjectInputStream(new FileInputStream(fichnom));
-			g = (Grammatiseur) f.readObject();
-			f.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		System.err.println("done !");
-		return g;
-	}
-
-	public void serialize() {
-		try {
-//			URL url = getClass().getResource("/jtrans.jar");
-//			int i=url.toString().indexOf("dist/jtrans.jar");
-			String prefix = "ressources/";
-//			if (i>=0) {
-//				prefix = (new URL(url.toString().substring(0,i)+"ressources/")).getPath();
-//			}
-			ObjectOutputStream f = new ObjectOutputStream(new FileOutputStream(prefix+"grammatiseur"));
-			f.writeObject(this);
-			f.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
 	static boolean unittest() {
 		Grammatiseur m = new Grammatiseur();
 		final String[] totest = {"12","il est 13h30","la FNAC chute de -4.568% en 1934","l' ANPE -4.5% à 10°C"};
@@ -777,16 +708,9 @@ public class Grammatiseur implements Serializable {
 		Grammatiseur m;
 
 		String list = null, unk = null, txt = null, outlist = null;
-		String gramfile = null;
 
 		for (int i = 0; i < args.length; i++) {
-			if (args[i].equals("-serialize")) {
-				m = new Grammatiseur();
-				m.serialize();
-				return;
-			} else if (args[i].equals("-deserialize")) {
-				gramfile = args[++i];
-			} else if (args[i].equals("-list")) {
+			if (args[i].equals("-list")) {
 				list = args[++i];
 			} else if (args[i].equals("-unk")) {
 				unk = args[++i];
@@ -797,11 +721,7 @@ public class Grammatiseur implements Serializable {
 			}
 		}
 
-		if (gramfile != null) {
-			m = Grammatiseur.deserialize(gramfile);
-		} else {
-			m = new Grammatiseur();
-		}
+		m = new Grammatiseur();
 
 		String gram = null;
 		if (list == null) {

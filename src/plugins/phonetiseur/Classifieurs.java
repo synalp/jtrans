@@ -417,7 +417,6 @@ public class Classifieurs {
                 }
                 tClassifieurSimplePhoneme[i] = (J48) oos.readObject();
                 oos.close();
-                System.gc();
             } catch (Exception e) {
                 // Fichier inconnu
             }
