@@ -53,7 +53,6 @@ import edu.cmu.sphinx.util.LogMath;
 import edu.cmu.sphinx.util.props.PropertyException;
 import edu.cmu.sphinx.util.props.PropertySheet;
 
-import jtrans.speechreco.adaptation.BiaisAdapt;
 import jtrans.speechreco.grammaire.Grammatiseur;
 import jtrans.speechreco.s4.*;
 import jtrans.utils.ProgressDialog;

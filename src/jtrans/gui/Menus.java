@@ -23,13 +23,12 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import edu.cmu.sphinx.result.Result;
 
 import jtrans.elements.Anchor;
-import jtrans.facade.Cache;
 import jtrans.facade.Project;
 import jtrans.speechreco.LiveSpeechReco;
 import jtrans.markup.*;
 
 import jtrans.speechreco.RecoListener;
-import jtrans.speechreco.adaptation.BiaisAdapt;
+import jtrans.speechreco.BiaisAdapt;
 import jtrans.speechreco.s4.S4ForceAlignBlocViterbi;
 import jtrans.speechreco.grammaire.Grammatiseur;
 import jtrans.utils.NicerFileChooser;

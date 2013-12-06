@@ -5,7 +5,7 @@ It is licensed under the terms of the INRIA Cecill-C licence, as described in:
 http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html
 */
 
-package jtrans.speechreco.frontEnd;
+package jtrans.speechreco;
 
 public interface FrontEnd {
 	public float[] getOneVector();

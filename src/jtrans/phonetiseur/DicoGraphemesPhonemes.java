@@ -114,7 +114,4 @@ public class DicoGraphemesPhonemes {
     public Hashtable<String, LinkedList<SuitePhonemes>> getDico() {
         return dico;
     }
-
-    public void afficherDico() {
-    }
 }

@@ -35,7 +35,7 @@ import jtrans.gui.signalViewers.spectroPanel.SpectroControl;
 import jtrans.gui.signalViewers.temporalSigPanel.TemporalSigPanel;
 import jtrans.gui.signalViewers.temporalSigPanel.ToolBarTemporalSig;
 import jtrans.elements.ElementList;
-import jtrans.speechreco.adaptation.BiaisAdapt;
+import jtrans.speechreco.BiaisAdapt;
 import jtrans.speechreco.s4.S4ForceAlignBlocViterbi;
 import jtrans.utils.ProgressDisplay;
 import jtrans.utils.TimeConverter;

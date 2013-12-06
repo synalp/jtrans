@@ -43,7 +43,7 @@ termes.
 
 package jtrans.buffer;
 
-import jtrans.speechreco.frontEnd.FrontEnd;
+import jtrans.speechreco.FrontEnd;
 import jtrans.utils.ProgressDisplay;
 
 /** Le RoundBuffer est le buffer circulaire des donnees

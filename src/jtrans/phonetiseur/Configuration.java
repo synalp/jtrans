@@ -7,13 +7,7 @@ http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html
 
 package jtrans.phonetiseur;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-
-import jtrans.utils.FileUtils;
-
 public class Configuration {
-
     public static final double EPSILON_ALIGNEMENT_GRAPHEME_PHONEME = 0.000000001;
     public static final String REPERTOIRE_CIBLE_FICHIERS_DONNEES = System.getProperty("user.dir") + System.getProperty("file.separator");
     public static final String REPERTOIRE_FICHIERS_POUR_LES_TESTS_PHONETISEUR = System.getProperty("user.dir") + System.getProperty("file.separator") + "test" + System.getProperty("file.separator") + "plugins" + System.getProperty("file.separator") + "phonetiseur" + System.getProperty("file.separator");
@@ -42,13 +36,4 @@ public class Configuration {
     public static final String NOM_FICHIER_MODEL_SIMPLE_PHONEME = "vecteursSimplePhoneme";
     public static final String NOM_FICHIER_MODEL_1er_DOUBLE_PHONEME = "vecteursDoublePhoneme1er";
     public static final String NOM_FICHIER_MODEL_2eme_DOUBLE_PHONEME = "vecteursDoublePhoneme2eme";
-    
-    public static void main(String args[]) throws IOException {
-    	System.out.println("check encoding "+GRAPHEME_DEBUT_DE_MOT_VECTEUR);
-    	System.out.println("check encoding "+GRAPHEME_FIN_DE_MOT_VECTEUR);
-    	PrintWriter f = FileUtils.writeFileUTF("checkenc.txt");
-    	f.println("check encoding "+GRAPHEME_DEBUT_DE_MOT_VECTEUR);
-    	f.println("check encoding "+GRAPHEME_FIN_DE_MOT_VECTEUR);
-    	f.close();
-    }
 }

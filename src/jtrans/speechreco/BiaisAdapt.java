@@ -1,4 +1,4 @@
-package jtrans.speechreco.adaptation;
+package jtrans.speechreco;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
