@@ -8,7 +8,6 @@ http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html
 package jtrans.phonetiseur;
 
 import java.io.*;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 
 import jtrans.utils.FileUtils;
@@ -16,6 +15,7 @@ import jtrans.utils.FileUtils;
 import weka.classifiers.Classifier;
 import weka.classifiers.trees.J48;
 import weka.core.*;
+import weka.core.converters.ArffLoader;
 import weka.core.converters.ConverterUtils.DataSource;
 import weka.filters.Filter;
 import weka.filters.unsupervised.attribute.Remove;
@@ -60,102 +60,39 @@ public class Classifieurs {
         filtreSimplePhoneme.setInvertSelection(true);
     }
 
-    /**
-     * TODO: ce n'est vraiment pas top, mais comme je ne sais pas comment DataSource
-     * fontionne dans weka, je suis oblige de convertir les fichiers de UTF8 au format
-     * natif du systeme !
-     * 
-     * @param s
-     * @return
-     */
-    private String getConvertedFich(String s) {
-    	{
-    		File fff = new File("tmpconvertdir/"+s);
-    		if (fff.exists()) return fff.getAbsolutePath();
-    	}
-    	File fff = new File(s);
-    	InputStream is;
-    	if (!fff.exists()) {
-    		is = getClass().getResourceAsStream("/"+s);
-    		System.out.println("phonetiseurs: looking for mods in .jar..."+is);
-    	} else {
-            try {
-				is = new FileInputStream(fff);
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
-				is=null;
-			}
-    	}
-    	// conversion
-    	BufferedReader f = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
-    	PrintWriter ff;
-    	try {
-    		fff = new File("tmpconvertdir/"+s);
-    		fff.getParentFile().mkdirs();
-    		ff = new PrintWriter(new FileWriter("tmpconvertdir/"+s));
-    		for (;;) {
-    			String ss = f.readLine();
-    			if (ss==null) break;
-    			ff.println(ss);
-    		}
-    		ff.close();
-    		f.close();
-    	} catch (IOException e) {
-    		e.printStackTrace();
-    	}
-		return "tmpconvertdir/"+s;
-    }
-    
-    private void initInstances() throws Exception {
-        // On "charge" les types des fichiers ARFF
-        DataSource source;
-        
-        
-        {
-        	String s = repertoireFichiersARFF + Configuration.NOM_FICHIER_ARFF_SIMPLE_OU_DOUBLE_PHONEME + ".arff";
-            String newfich = getConvertedFich(s);
-            source = new DataSource(newfich);
-            instancesSimpleOuDoublePhoneme = source.getStructure();
-            instancesSimpleOuDoublePhoneme.setClassIndex(instancesSimpleOuDoublePhoneme.numAttributes() - 1);
-            //instancesSimpleOuDoublePhoneme = appliquerFiltre(filtreSimpleOuDoublePhoneme, instancesSimpleOuDoublePhoneme);
-        }
+	private Instances loadInstances(String partialFilename)
+			throws IOException
+	{
+		final String filename = repertoireFichiersARFF + partialFilename + ".arff";
 
-        {
-        	String s = repertoireFichiersARFF + Configuration.NOM_FICHIER_ARFF_1er_DOUBLE_PHONEME + ".arff";
-            String newfich = getConvertedFich(s);
-            source = new DataSource(newfich);
-            instancesDoublePhoneme1er = source.getStructure();
-            instancesDoublePhoneme1er.setClassIndex(instancesDoublePhoneme1er.numAttributes() - 1);
-            //instancesDoublePhoneme1er = appliquerFiltre(filtreDoublePhoneme1er, instancesDoublePhoneme1er);
-        }
+		// This may be overkill, but since Weka doesn't specify what charset
+		// it will use, make sure we read the file as UTF-8.
+		ArffLoader loader = new ArffLoader() {{
+			m_sourceReader = new InputStreamReader(new FileInputStream(filename), "UTF-8");
+		}};
+		Instances i = loader.getStructure();
+		i.setClassIndex(i.numAttributes() - 1);
+		return i;
+	}
 
-        {
-        	String s = repertoireFichiersARFF + Configuration.NOM_FICHIER_ARFF_2eme_DOUBLE_PHONEME + ".arff";
-            String newfich = getConvertedFich(s);
-            source = new DataSource(newfich);
-            instancesDoublePhoneme2eme = source.getStructure();
-            instancesDoublePhoneme2eme.setClassIndex(instancesDoublePhoneme2eme.numAttributes() - 1);
-            //instancesDoublePhoneme2eme = appliquerFiltre(filtreDoublePhoneme2eme, instancesDoublePhoneme2eme);
-        }
+	private void initInstances() throws Exception {
+		instancesSimpleOuDoublePhoneme = loadInstances(
+				Configuration.NOM_FICHIER_ARFF_SIMPLE_OU_DOUBLE_PHONEME);
 
-        tInstancesSimplePhoneme = new Instances[lexique.getNbGraphemes()];
-        for (int i = 0; i < lexique.getNbGraphemes(); i++) {
-            String graphemeCourant = lexique.getGraphemeFromIndice(i);
-            
-//            System.out.println("accnent avant "+graphemeCourant);
-            graphemeCourant=convaccents(graphemeCourant);
-//            System.out.println("accnent apres "+graphemeCourant);
+		instancesDoublePhoneme1er = loadInstances(
+				Configuration.NOM_FICHIER_ARFF_1er_DOUBLE_PHONEME);
 
-            {
-            	String s = repertoireFichiersARFF + Configuration.NOM_FICHIER_ARFF_SIMPLE_PHONEME + "_" + graphemeCourant + ".arff";
-                String newfich = getConvertedFich(s);
-                source = new DataSource(newfich);
-                tInstancesSimplePhoneme[i] = source.getStructure();
-                tInstancesSimplePhoneme[i].setClassIndex(tInstancesSimplePhoneme[i].numAttributes() - 1);
-                //tInstancesSimplePhoneme[i] = appliquerFiltre(filtreSimplePhoneme, tInstancesSimplePhoneme[i]);
-            }
-        }
-    }
+		instancesDoublePhoneme2eme = loadInstances(
+				Configuration.NOM_FICHIER_ARFF_2eme_DOUBLE_PHONEME);
+
+		tInstancesSimplePhoneme = new Instances[lexique.getNbGraphemes()];
+		for (int i = 0; i < tInstancesSimplePhoneme.length; i++) {
+			tInstancesSimplePhoneme[i] = loadInstances(
+					Configuration.NOM_FICHIER_ARFF_SIMPLE_PHONEME
+							+ "_"
+							+ convaccents(lexique.getGraphemeFromIndice(i)));
+		}
+	}
 
     private static String convaccents(String c) {
     	String d = "";
