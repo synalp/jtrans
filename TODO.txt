@@ -1,25 +1,14 @@
 À FAIRE
 =======
 
-- attention aux conflits de package !! jsafran.utils vs jtrans.utils sachant que jsafran est dans le classpath de jtrans !
-
 GUI : sélectionner du texte et cliquer sur "modifier" ; ça ouvre une nouvelle
 fenêtre qui permet de rentrer le texte de remplacement. Puis, ça reparse la
 sélection (et la ré-aligne ?) - Attention si le texte sélectionné contient une
 ancre...
 
-Parser un fichier TextGrid. Boîte de dialogue demandant quel tier mots importer
-(un bouton radio par tier e.g. "Tier '%s' (%d intervals)"). Les autres tiers
-sont ignorés mais quand même conservés (en tant que String brut) pour ne perdre
-aucune information ; ces tiers sont réécrits tels quels lorsqu'on exporte en
-Praat. Il faut aussi qu'on les sauvegarde dans le .jtr...
-
 
 FAIBLE PRIORITÉ
 ===============
-
-Grammatiseur.java:62: la déserialisation de ressources/grammatiseur est ultra
-longue. Pourrait-elle être accélérée ?
 
 Prendre en compte la syntaxe spéciale entre slash type /vais,veux/
 
