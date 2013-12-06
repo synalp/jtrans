@@ -77,7 +77,6 @@ public class Aligneur extends JPanel implements PrintLogger, ProgressDisplay {
 	//	public Player player;
 	public TemporalSigPanel sigPanel = null;
 	public ToolBarTemporalSig toolbar = null;
-	public KeysManager kmgr = null;
 
 	/** Audio file in a suitable format for processing */
 	public File convertedAudioFile = null;
@@ -359,7 +358,6 @@ public class Aligneur extends JPanel implements PrintLogger, ProgressDisplay {
 	public Aligneur() {
 		initPanel();
 		createJFrame();
-        kmgr = new KeysManager(this);
 	}
 
 	private void createJFrame() {
