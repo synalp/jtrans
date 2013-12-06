@@ -16,8 +16,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import javax.swing.JFrame;
-
 import speechreco.grammaire.Grammatiseur;
 import edu.cmu.sphinx.jsgf.JSGFGrammar;
 import edu.cmu.sphinx.jsgf.JSGFGrammarException;
@@ -32,7 +30,7 @@ import edu.cmu.sphinx.linguist.language.grammar.GrammarNode;
 import edu.cmu.sphinx.util.LogMath;
 import edu.cmu.sphinx.util.props.PropertyException;
 import edu.cmu.sphinx.util.props.PropertySheet;
-import utils.ProgressDialog;
+import utils.ProgressDisplay;
 
 public class PhoneticForcedGrammar extends JSGFGrammar {
 	List<String> words0 = null;
@@ -130,19 +128,12 @@ public class PhoneticForcedGrammar extends JSGFGrammar {
 		initialNode=n;
 	}
 	
-	public void setWords (List<String> words) {
-		System.out.println("phooneticforcedgrammar.setWords "+words);
-		
+	public void setWords(List<String> words, ProgressDisplay progress) {
 		words0 = words;
 		wordRule.clear();
 		if (grammatiseur==null) {
-			ProgressDialog waiting = new ProgressDialog((JFrame)null, new Runnable() {
-				@Override
-				public void run() {
-					grammatiseur = Grammatiseur.getGrammatiseur();
-				}
-			}, "please wait: initializing grammars...");
-			waiting.setVisible(true);
+			progress.setIndeterminateProgress("Initializing grammar...");
+			grammatiseur = Grammatiseur.getGrammatiseur();
 		}
 		
 //		// on commence toujours par un silence !

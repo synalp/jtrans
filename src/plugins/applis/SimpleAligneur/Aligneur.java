@@ -18,7 +18,6 @@ import java.util.List;
 import javax.sound.sampled.*;
 import javax.swing.*;
 import javax.swing.Timer;
-import javax.swing.border.BevelBorder;
 
 import com.google.gson.JsonParseException;
 import facade.AutoAligner;
@@ -49,7 +48,8 @@ import tools.audio.PlayerGUI;
  * @author cerisara
  *
  */
-public class Aligneur extends JPanel implements PrintLogger {
+public class Aligneur extends JPanel implements PrintLogger, ProgressDisplay {
+
 
 	public static final int KARAOKE_UPDATE_INTERVAL = 50; // milliseconds
 
@@ -89,7 +89,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 	// position lue pour la derniere fois dans le flux audio
 	long currentSample = 0;
 	public Project project = new Project();
-	JLabel infoLabel = new JLabel("Welcome to JTrans");
+	private JProgressBar progressBar = new JProgressBar(0, 1000);
+	private JLabel infoLabel = new JLabel();
 
 	public float getCurPosInSec() {
         return cursec;
@@ -121,6 +122,44 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 	public void print(String msg) {
 		printInStatusBar(msg);
+	}
+
+	@Override
+	public void setIndeterminateProgress(final String message) {
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				infoLabel.setText(message);
+				progressBar.setEnabled(true);
+				progressBar.setIndeterminate(true);
+			}
+		});
+	}
+
+	@Override
+	public void setProgress(final String message, final float f) {
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				infoLabel.setText(message);
+				progressBar.setEnabled(true);
+				progressBar.setIndeterminate(false);
+				progressBar.setValue((int)(f*1000f));
+			}
+		});
+	}
+
+	@Override
+	public void setProgressDone() {
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				progressBar.setEnabled(false);
+				progressBar.setIndeterminate(false);
+				progressBar.setValue(0);
+				printInStatusBar("Ready");
+			}
+		});
 	}
 
 	public void quit() {
@@ -213,6 +252,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 		project.wavname = path;
 
 		if (path != null) {
+			setIndeterminateProgress("Loading audio...");
 			convertedAudioFile = suitableAudioFile(new File(project.wavname));
 
 			try {
@@ -228,6 +268,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 			}
 		} else
 			convertedAudioFile = null;
+
+		setProgressDone();
 	}
 	
 	public AudioInputStream getAudioStreamFromSec(float sec) {
@@ -348,7 +390,15 @@ public class Aligneur extends JPanel implements PrintLogger {
 		edit = new TexteEditor(this);
 		ctrlbox = new ControlBox(this);
 		playergui = ctrlbox.getPlayerGUI();
-		infoLabel.setBorder(new BevelBorder(BevelBorder.LOWERED));
+
+		infoLabel.setFont(new Font(Font.DIALOG, Font.PLAIN, 11));
+
+		final JPanel status = new JPanel(new BorderLayout(5, 0)) {{
+			setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+			add(new JSeparator(), BorderLayout.NORTH);
+			add(progressBar, BorderLayout.WEST);
+			add(infoLabel, BorderLayout.CENTER);
+		}};
 
 		sigpan = new SpectroControl(this);
 		AudioInputStream aud = getAudioStreamFromSec(getCurPosInSec());
@@ -364,7 +414,7 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 		add(new JPanel(new BorderLayout()) {{
 			add(sigpan, BorderLayout.NORTH);
-			add(infoLabel, BorderLayout.SOUTH);
+			add(status, BorderLayout.SOUTH);
 		}}, BorderLayout.SOUTH);
 	}
 
@@ -612,7 +662,8 @@ public class Aligneur extends JPanel implements PrintLogger {
 	}
 
 	public void asr() {
-		ProgressDialog waiting = new ProgressDialog(jf, new Runnable() {
+		setIndeterminateProgress("Transcribing...");
+		new Thread() {
 			@Override
 			public void run() {
 				final SpeechReco asr = SpeechReco.getSpeechReco();
@@ -624,15 +675,15 @@ public class Aligneur extends JPanel implements PrintLogger {
 				};
 				asr.doReco(convertedAudioFile.getAbsolutePath(), "");
 				getRecoResult(asr);
+				setProgressDone();
 			}
-		}, "please wait: transcribing...");
-		waiting.setVisible(true);
+		}.start();
 	}
 
 	String[] mots;
 	public S4ForceAlignBlocViterbi getS4aligner() {
 		// TODO: support for URL !!
-		S4ForceAlignBlocViterbi s4aligner = S4ForceAlignBlocViterbi.getS4Aligner(convertedAudioFile.getAbsolutePath());
+		S4ForceAlignBlocViterbi s4aligner = S4ForceAlignBlocViterbi.getS4Aligner(convertedAudioFile.getAbsolutePath(), this);
 		List<Element_Mot>  lmots = project.elts.getMots();
 		mots = new String[lmots.size()];
 		for (int i=0;i<lmots.size();i++) {
@@ -698,12 +749,11 @@ public class Aligneur extends JPanel implements PrintLogger {
 	 * @return true if the file was loaded with no errors
 	 */
 	public boolean friendlyLoadMarkup(MarkupLoader loader, File markupFile) {
-		printInStatusBar("Parsing markup");
+		setIndeterminateProgress("Parsing markup...");
 
 		try {
 			setProject(loader.parse(markupFile));
 		} catch (Exception ex) {
-			printInStatusBar("Couldn't parse markup");
 			ex.printStackTrace();
 
 			String message = "Couldn't parse \"" + markupFile.getName() +
@@ -721,11 +771,12 @@ public class Aligneur extends JPanel implements PrintLogger {
 
 			JOptionPane.showMessageDialog(jf, message + "\n\n" + ex,
 					"Parsing failed", JOptionPane.ERROR_MESSAGE);
+
+			setProgressDone();
 			return false;
 		}
 
-		jf.setTitle(markupFile.getName());
-		printInStatusBar("Ready");
+		setProgressDone();
 		return true;
 	}
 
@@ -736,11 +787,12 @@ public class Aligneur extends JPanel implements PrintLogger {
 	 * @return true if the file was loaded with no errors
 	 */
 	public boolean friendlyLoadProject(File file) {
+		setIndeterminateProgress("Loading JSON...");
+
 		try {
-			printInStatusBar("Loading project");
 			setProject(Project.fromJson(file));
+			jf.setTitle(file.getName());
 		} catch (IOException ex) {
-			printInStatusBar("Couldn't load project");
 			ex.printStackTrace();
 
 			JOptionPane.showMessageDialog(jf, "Couldn't open project \""
@@ -754,30 +806,33 @@ public class Aligneur extends JPanel implements PrintLogger {
 					+ file.getName() + "\"\nbecause it is not a valid JSON file.\n\n"
 					+ ex.getLocalizedMessage(),
 					"Couldn't open project", JOptionPane.ERROR_MESSAGE);
+
+			setProgressDone();
 			return false;
 		}
 
-		jf.setTitle(file.getName());
-		printInStatusBar("Ready");
+		setProgressDone();
 		return true;
 	}
 
 	public void alignBetweenAnchorsWithProgress() {
-		final ProgressDialog progress = new ProgressDialog(jf, null, "Aligning...");
-		progress.setRunnable(new Runnable() {
+		new Thread() {
+			@Override
 			public void run() {
-				new AutoAligner(project, Aligneur.this).alignBetweenAnchors(progress);
-			}});
-		progress.setVisible(true);
+				new AutoAligner(project, Aligneur.this).alignBetweenAnchors();
+				setProgressDone();
+			}
+		}.start();
 	}
 
 	public void alignAllWithProgress() {
-		final ProgressDialog progress = new ProgressDialog(jf, null, "Aligning...");
-		progress.setRunnable(new Runnable() {
+		new Thread() {
+			@Override
 			public void run() {
-				new AutoAligner(project, Aligneur.this).alignRaw(progress);
-			}});
-		progress.setVisible(true);
+				new AutoAligner(project, Aligneur.this).alignRaw();
+				setProgressDone();
+			}
+		}.start();
 	}
 
 	public void setProject(Project project) {

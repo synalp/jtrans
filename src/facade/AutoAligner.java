@@ -9,7 +9,6 @@ import speechreco.aligners.sphiinx4.S4AlignOrder;
 import speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
 import plugins.text.elements.*;
 import utils.TimeConverter;
-import utils.ProgressDialog;
 
 
 /**
@@ -285,10 +284,9 @@ public class AutoAligner {
 
 	/**
 	 * Align words automatically between anchors set manually.
-	 * @param progress progress dialog to refresh
 	 */
-	public void alignBetweenAnchors(ProgressDialog progress) {
-		progress.setMessage("Aligning...");
+	public void alignBetweenAnchors() {
+		aligneur.setIndeterminateProgress("Aligning...");
 
 		project.clearAlignment();
 
@@ -384,7 +382,9 @@ public class AutoAligner {
 				currentSpeaker = ((Element_Locuteur) e).getLocuteurID();
 			}
 
-			progress.setProgress((i+1) / (float)project.elts.size());
+			aligneur.setProgress(
+					"Aligning " + (i + 1) + "/" + project.elts.size() + "...",
+					(i + 1) / (float) project.elts.size());
 		}
 
 		project.refreshIndex();
@@ -393,11 +393,9 @@ public class AutoAligner {
 
 	/**
 	 * Aligns words automatically. Does not account for anchors.
-	 * @param progress progress dialog to refresh
 	 */
-	public void alignRaw(ProgressDialog progress) {
-		progress.setMessage("Aligning...");
-
+	public void alignRaw() {
+		aligneur.setIndeterminateProgress("Aligning...");
 		project.clearAlignment();
 
 		int lastAlignedWord = 0;
@@ -410,7 +408,9 @@ public class AutoAligner {
 			previousLAW = lastAlignedWord;
 			lastAlignedWord = getLastMotPrecAligned(mots.size()-1);
 
-			progress.setProgress(lastAlignedWord / ((float) mots.size() - 1));
+			aligneur.setProgress(
+					"Aligning " + (lastAlignedWord + 1) + "/" + project.elts.size() + "...",
+					(lastAlignedWord + 1) / (float) project.elts.size());
 		}
 
 		project.refreshIndex();

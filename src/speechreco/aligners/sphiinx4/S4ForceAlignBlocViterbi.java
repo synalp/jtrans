@@ -55,9 +55,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import javax.swing.JFrame;
-
-import utils.FileUtils;
 import edu.cmu.sphinx.decoder.FrameDecoder;
 import edu.cmu.sphinx.decoder.ResultListener;
 import edu.cmu.sphinx.decoder.pruner.Pruner;
@@ -88,7 +85,8 @@ import edu.cmu.sphinx.linguist.SearchStateArc;
 import edu.cmu.sphinx.linguist.acoustic.AcousticModel;
 import edu.cmu.sphinx.linguist.flat.FlatLinguist;
 import edu.cmu.sphinx.util.LogMath;
-import utils.ProgressDialog;
+import utils.ProgressDisplay;
+import utils.StdoutProgressDisplay;
 
 /**
  * utiliser Sphinx4 pour aligner et pour n'avoir qu'un seul ensemble de HMMs
@@ -103,6 +101,8 @@ import utils.ProgressDialog;
  *
  */
 public class S4ForceAlignBlocViterbi extends Thread {
+	private ProgressDisplay progress;
+
 	//	S4RoundBufferFrontEnd mfccs = null;
 	public S4mfccBuffer mfccs = null;
 	public FrameDecoder decoder=null;
@@ -124,11 +124,12 @@ public class S4ForceAlignBlocViterbi extends Thread {
 		mots=ms;
 	}
 
-	public static S4ForceAlignBlocViterbi getS4Aligner(String wavname) {
-		if (aligner==null) {
-			aligner = new S4ForceAlignBlocViterbi(wavname);
+	public static S4ForceAlignBlocViterbi getS4Aligner(String wavname, ProgressDisplay progress) {
+		if (aligner == null) {
+			aligner = new S4ForceAlignBlocViterbi(wavname, progress);
 			aligner.start();
-		} else if (wavname==null) {return aligner;
+		} else if (wavname==null) {
+			return aligner;
 		} else if (!wavname.equals(aligner.wavname)) {
 			aligner.setNewAudioFile(wavname);
 		}
@@ -136,20 +137,16 @@ public class S4ForceAlignBlocViterbi extends Thread {
 	}
 	private static S4ForceAlignBlocViterbi aligner = null;
 
-	private S4ForceAlignBlocViterbi(String wavname) {
+	private S4ForceAlignBlocViterbi(String wavname, ProgressDisplay progress) {
 		super("Sphinx4 force-align Bloc Viterbi");
 		this.wavname=wavname;
+		this.progress = progress;
 
 		System.out.println("create S4aligner with "+wavname+" "+Arrays.toString(mots));
 
 		if (wavname!=null) {
-			ProgressDialog waiting = new ProgressDialog((JFrame)null, new Runnable() {
-				@Override
-				public void run() {
-					initS4();
-				}
-			}, "please wait: initializing grammars...");
-			waiting.setVisible(true);
+			progress.setIndeterminateProgress("Initializing grammar...");
+			initS4();
 		}
 	}
 
@@ -232,33 +229,29 @@ public class S4ForceAlignBlocViterbi extends Thread {
 	public static int beamwidth = 0;
 
 	private void initNewGrammar(List<String> words) {
-		grammar.setWords(words);
+		grammar.setWords(words, progress);
 
 		if (decoder==null) {
-			ProgressDialog waiting = new ProgressDialog((JFrame)null, new Runnable() {
-				@Override
-				public void run() {
-					LogMath logMath = HMMModels.getLogMath();
-					AcousticModel mods = HMMModels.getAcousticModels();
-					FlatLinguist linguist = new FlatLinguist(mods, logMath, grammar, HMMModels.getUnitManager(), 1f, silprob, silprob, 1f, 1f, false, false, false, false, 1f, 1f, mods);
+			progress.setIndeterminateProgress("Initializing Sphinx...");
 
-					Pruner pruner = new SimplePruner();
-					ThreadedAcousticScorer scorer = new ThreadedAcousticScorer(mfccs, null, 1, false, 1, Thread.NORM_PRIORITY);
+			LogMath logMath = HMMModels.getLogMath();
+			AcousticModel mods = HMMModels.getAcousticModels();
+			FlatLinguist linguist = new FlatLinguist(mods, logMath, grammar, HMMModels.getUnitManager(), 1f, silprob, silprob, 1f, 1f, false, false, false, false, 1f, 1f, mods);
 
-					//					PartitionActiveListFactory activeList = new PartitionActiveListFactory(50, 1E-80, logMath);
-					PartitionActiveListFactory activeList = new PartitionActiveListFactory(beamwidth, 1E-300, logMath);
+			Pruner pruner = new SimplePruner();
+			ThreadedAcousticScorer scorer = new ThreadedAcousticScorer(mfccs, null, 1, false, 1, Thread.NORM_PRIORITY);
 
-					// je n'utilise pas un WordBreadth... car on travaille ici avec des phonemes et non des mots !
-					searchManager = new SimpleBreadthFirstSearchManager(logMath, linguist, pruner, scorer, activeList, false, 1E-60, 0, false);
+			//					PartitionActiveListFactory activeList = new PartitionActiveListFactory(50, 1E-80, logMath);
+			PartitionActiveListFactory activeList = new PartitionActiveListFactory(beamwidth, 1E-300, logMath);
 
-					ArrayList<ResultListener> listeners = new ArrayList<ResultListener>();
+			// je n'utilise pas un WordBreadth... car on travaille ici avec des phonemes et non des mots !
+			searchManager = new SimpleBreadthFirstSearchManager(logMath, linguist, pruner, scorer, activeList, false, 1E-60, 0, false);
 
-					//		decoder = new Decoder(searchManager, true, true, listeners, 50);
+			ArrayList<ResultListener> listeners = new ArrayList<ResultListener>();
 
-					decoder = new FrameDecoder(searchManager, false, true, listeners);
-				}
-			}, "please wait: initializing sphinx4...");
-			waiting.setVisible(true);
+			//		decoder = new Decoder(searchManager, true, true, listeners, 50);
+
+			decoder = new FrameDecoder(searchManager, false, true, listeners);
 
 		} // sinon la grammaire est chargee dynamiquement
 	}
@@ -569,7 +562,7 @@ public class S4ForceAlignBlocViterbi extends Thread {
 			f.close();
 			String[] ms = new String[mots.size()];
 			mots.toArray(ms);
-			aligner = S4ForceAlignBlocViterbi.getS4Aligner(wavfile);
+			aligner = S4ForceAlignBlocViterbi.getS4Aligner(wavfile, new StdoutProgressDisplay());
 			aligner.setMots(ms);
 
 			S4AlignOrder order = new S4AlignOrder(0, 0, mots.size()-1, -1);

@@ -34,7 +34,6 @@ import speechreco.aligners.sphiinx4.S4ForceAlignBlocViterbi;
 import speechreco.grammaire.Grammatiseur;
 import plugins.text.TexteEditor;
 import utils.NicerFileChooser;
-import utils.ProgressDialog;
 
 public class Menus {
 	Aligneur aligneur;
@@ -424,16 +423,15 @@ public class Menus {
 		initGrammar.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				ProgressDialog waiting = new ProgressDialog((JFrame) null, new Runnable() {
-					@Override
+				aligneur.setIndeterminateProgress("Initializing grammar...");
+
+				new Thread() {
 					public void run() {
 						Grammatiseur.getGrammatiseur();
+						aligneur.setProgressDone();
 					}
-				}, "please wait: initializing grammars...");
-				waiting.setVisible(true);
-			}
-		}
-		);
+				}.start();
+			}});
 
 		// //////////////////////////////////////////////////////////////
 		JMenu help = new JMenu("Help");

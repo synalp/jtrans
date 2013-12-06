@@ -24,6 +24,7 @@ import edu.cmu.sphinx.util.props.PropertySheet;
 import speechreco.aligners.sphiinx4.HMMModels;
 import speechreco.aligners.sphiinx4.PhoneticForcedGrammar;
 import junit.framework.TestCase;
+import utils.StdoutProgressDisplay;
 
 public class GramTest extends TestCase {
 	public void test() {
@@ -95,7 +96,7 @@ public class GramTest extends TestCase {
 		try {
 			gram = new PhoneticForcedGrammar();
 			String[] words = {"bonjour","il"};
-			gram.setWords(Arrays.asList(words));
+			gram.setWords(Arrays.asList(words), new StdoutProgressDisplay());
 			GrammarNode g = gram.getGram();
 			g.dump();
 		} catch (MalformedURLException e) {
