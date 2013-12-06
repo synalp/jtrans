@@ -39,13 +39,12 @@ import jtrans.speechreco.adaptation.BiaisAdapt;
 import jtrans.speechreco.s4.S4ForceAlignBlocViterbi;
 import jtrans.utils.ProgressDisplay;
 import jtrans.utils.TimeConverter;
-import jtrans.utils.PrintLogger;
 import jtrans.speechreco.RecoWord;
 
 /**
  * Main panel.
  */
-public class JTransGUI extends JPanel implements PrintLogger, ProgressDisplay {
+public class JTransGUI extends JPanel implements ProgressDisplay {
 
 
 	public static final int KARAOKE_UPDATE_INTERVAL = 50; // milliseconds
@@ -116,10 +115,6 @@ public class JTransGUI extends JPanel implements PrintLogger, ProgressDisplay {
 		updateViewers();
 	}
 
-	public void print(String msg) {
-		printInStatusBar(msg);
-	}
-
 	@Override
 	public void setIndeterminateProgress(final String message) {
 		SwingUtilities.invokeLater(new Runnable() {
@@ -150,10 +145,10 @@ public class JTransGUI extends JPanel implements PrintLogger, ProgressDisplay {
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
 			public void run() {
+				infoLabel.setText("Ready");
 				progressBar.setEnabled(false);
 				progressBar.setIndeterminate(false);
 				progressBar.setValue(0);
-				printInStatusBar("Ready");
 			}
 		});
 	}
@@ -345,11 +340,6 @@ public class JTransGUI extends JPanel implements PrintLogger, ProgressDisplay {
 		if (tt.length()==0) return;
 		Float sec = Float.parseFloat(tt);
 		setCurPosInSec(sec);
-	}
-
-	public void printInStatusBar(String msg) {
-		infoLabel.setText(msg);
-		infoLabel.repaint();
 	}
 
 	public JTransGUI() {

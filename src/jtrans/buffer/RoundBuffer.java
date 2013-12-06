@@ -43,13 +43,13 @@ termes.
 
 package jtrans.buffer;
 
-import jtrans.utils.PrintLogger;
+import jtrans.utils.ProgressDisplay;
 
 /** Le RoundBuffer est le buffer circulaire des donnees
  * en provenance du TemporalSig. */
 public class RoundBuffer implements JTemporalSig {
 
-	PrintLogger plog;
+	ProgressDisplay plog;
 	
 	//------------- Private Fields --------------
 	/** Buffer de stockage des donn�es */
@@ -73,7 +73,7 @@ public class RoundBuffer implements JTemporalSig {
 	final short[] sigout = new short[1];
 
 	//-------------- Constructors ---------------
-	public RoundBuffer(PrintLogger pl, int bufferSize){
+	public RoundBuffer(ProgressDisplay pl, int bufferSize){
 		plog = pl;
 		this.pointeur = 0;
 		samplePosition = 0;
@@ -122,7 +122,7 @@ public class RoundBuffer implements JTemporalSig {
 	public void fill(float ratio){
 		if (source==null) return;
 		System.err.println("refill "+ratio);
-		plog.print("please wait, filling in buffer...");
+		plog.setIndeterminateProgress("Filling in buffer...");
 		// TODO: utiliser un thread
 		isFilling = true;
 		short[] tab;
@@ -140,7 +140,7 @@ public class RoundBuffer implements JTemporalSig {
 				tailleMaxLueSoFar++; read++;
 			}
 		}
-		plog.print("ok buffer filled !");
+		plog.setProgressDone();
 		isFilling = false;
 	}//fill
 

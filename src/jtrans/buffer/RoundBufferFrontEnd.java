@@ -44,7 +44,7 @@ termes.
 package jtrans.buffer;
 
 import jtrans.speechreco.frontEnd.FrontEnd;
-import jtrans.utils.PrintLogger;
+import jtrans.utils.ProgressDisplay;
 
 /** Le RoundBuffer est le buffer circulaire des donnees
  * en provenance du TemporalSig. */
@@ -71,10 +71,10 @@ public class RoundBufferFrontEnd implements FrontEnd {
 	public int curFrame=0;
 	final short[] sigout = new short[1];
 
-	PrintLogger plog=null;
+	ProgressDisplay plog;
 	
 	//-------------- Constructors ---------------
-	public RoundBufferFrontEnd(PrintLogger pl, int bufferSize, int ncoefs){
+	public RoundBufferFrontEnd(ProgressDisplay pl, int bufferSize, int ncoefs){
 		plog=pl;
 		this.pointeur = 0;
 		curFrame = 0;
@@ -105,8 +105,7 @@ public class RoundBufferFrontEnd implements FrontEnd {
 	 * jusqu'� ce qu'il soit plein */
 	public void fill(float ratio){
 		System.err.println("refill "+ratio);
-		if (plog!=null)
-			plog.print("please wait, filling in buffer...");
+		plog.setIndeterminateProgress("Filling in buffer...");
 		// TODO: utiliser un thread
 		isFilling = true;
 		float[] tab;
@@ -126,8 +125,7 @@ public class RoundBufferFrontEnd implements FrontEnd {
 			tailleMaxLueSoFar++; read++;
 		}
 		isFilling = false;
-		if (plog!=null)
-			plog.print("mfcc buffer filled !");
+		plog.setProgressDone();
 		System.err.println("filled "+tailleMaxLueSoFar);
 	}//fill
 

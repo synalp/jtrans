@@ -48,7 +48,7 @@ import edu.cmu.sphinx.frontend.Data;
 import edu.cmu.sphinx.frontend.DataProcessingException;
 import edu.cmu.sphinx.frontend.DataStartSignal;
 
-import jtrans.utils.PrintLogger;
+import jtrans.utils.ProgressDisplay;
 
 /** Le RoundBuffer est le buffer circulaire des donnees
  * en provenance du TemporalSig. */
@@ -86,7 +86,7 @@ public class S4RoundBufferFrontEnd extends BaseDataProcessor {
 	private int curFrame=0;
 	final short[] sigout = new short[1];
 
-	PrintLogger plog=null;
+	ProgressDisplay plog=null;
 	
 	public boolean gotoFrame(int fr) {
 		if (fr<0||(fr>=curFrame&&endOfFileReached)) return false;
@@ -96,7 +96,7 @@ public class S4RoundBufferFrontEnd extends BaseDataProcessor {
 	}
 	
 	//-------------- Constructors ---------------
-	public S4RoundBufferFrontEnd(PrintLogger pl, int bufferSize){
+	public S4RoundBufferFrontEnd(ProgressDisplay pl, int bufferSize){
 		plog=pl;
 		this.pointeur = 0;
 		curFrame = 0;
@@ -123,8 +123,7 @@ public class S4RoundBufferFrontEnd extends BaseDataProcessor {
 	 * jusqu'� ce qu'il soit plein */
 	public void fill(float ratio){
 		System.err.println("refill "+ratio);
-		if (plog!=null)
-			plog.print("please wait, filling in buffer...");
+		plog.setIndeterminateProgress("Filling in MFCC buffer...");
 		// TODO: utiliser un thread
 		isFilling = true;
 		
@@ -144,8 +143,7 @@ public class S4RoundBufferFrontEnd extends BaseDataProcessor {
 			tailleMaxLueSoFar++; read++;
 		}
 		isFilling = false;
-		if (plog!=null)
-			plog.print("mfcc buffer filled !");
+		plog.setProgressDone();
 		System.err.println("filled "+tailleMaxLueSoFar);
 	}//fill
 
