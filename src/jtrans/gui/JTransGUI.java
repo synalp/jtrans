@@ -162,25 +162,6 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 
 
 	/**
-	 * Saves a copy of the converted audio file.
-	 */
-	public void saveWave(File outFile) throws IOException {
-		byte[] buf = new byte[1024];
-		int len;
-
-		InputStream in = new FileInputStream(convertedAudioFile);
-		OutputStream out = new FileOutputStream(outFile);
-
-		while ((len = in.read(buf)) > 0) {
-			out.write(buf, 0, len);
-		}
-
-		in.close();
-		out.close();
-	}
-
-
-	/**
 	 * Target audio format. Any input audio files that do not match this format
 	 * will be converted to it before being processed.
 	 */

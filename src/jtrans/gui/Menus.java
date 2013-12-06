@@ -23,6 +23,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import edu.cmu.sphinx.result.Result;
 
 import jtrans.elements.Anchor;
+import jtrans.facade.Cache;
 import jtrans.facade.Project;
 import jtrans.speechreco.LiveSpeechReco;
 import jtrans.markup.*;
@@ -74,17 +75,14 @@ public class Menus {
 		JMenuItem loadwav = new JMenuItem("Load audio...");
 		JMenuItem savejtr = new JMenuItem("Save project as...");
 		JMenuItem export  = new JMenuItem("Export alignment...");
-		JMenuItem savewav = new JMenuItem("Export audio...");
 		JMenuItem quit    = new JMenuItem("Quit");
 
 		menubar.add(file);
 		file.add(open);
+		file.add(loadwav);
 		file.addSeparator();
 		file.add(savejtr);
 		file.add(export);
-		file.addSeparator();
-		file.add(loadwav);
-		file.add(savewav);
 		file.addSeparator();
 		file.add(quit);
 
@@ -605,27 +603,6 @@ public class Menus {
 					}
 				}
 				System.out.println("load wav pb");
-			}
-		});
-		savewav.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				JFileChooser filechooser = new NicerFileChooser();
-				filechooser.setDialogTitle("Save .WAV...");
-				filechooser.setSelectedFile(new File("out.wav"));
-				int returnVal = filechooser.showSaveDialog(aligneur.jf);
-				if (returnVal != JFileChooser.APPROVE_OPTION)
-					return;
-
-				File file = filechooser.getSelectedFile();
-				try {
-					aligneur.saveWave(file);
-				} catch (IOException ex) {
-					ex.printStackTrace();
-					JOptionPane.showMessageDialog(aligneur.jf,
-							"I/O error when saving WAVE file",
-							"Error",
-							JOptionPane.ERROR_MESSAGE);
-				}
 			}
 		});
 
