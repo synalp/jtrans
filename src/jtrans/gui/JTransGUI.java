@@ -56,7 +56,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	public static final int KARAOKE_UPDATE_INTERVAL = 50; // milliseconds
 
 	private static final String RESOURCE_URL =
-			"http://talc1.loria.fr/users/cerisara/jtrans/res.jar";
+			"http://talc1.loria.fr/users/cerisara/jtrans/jtrans_res_20131209.zip";
 
 	public JFrame jf=null;
 

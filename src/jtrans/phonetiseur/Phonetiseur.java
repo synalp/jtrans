@@ -421,9 +421,9 @@ public class Phonetiseur {
      * Charge la matrice de proba a partir du fichier passe en parametre
      */
     public void chargerMatriceProbaEtLexique(String fichierMatrices) throws IOException {
-    	fichierMatrices = "ressources/"+fichierMatrices;
+    	fichierMatrices = "res/"+fichierMatrices;
         BufferedReader f;
-        System.out.println("looking for ressource "+fichierMatrices);
+        System.out.println("looking for resource "+fichierMatrices);
 //        String fpath = FileUtils.getRessource("plugins.phonetiseur.Phonetiseur", fichierMatrices);
         f = FileUtils.openFileUTF(fichierMatrices);
         String[] t;
@@ -799,8 +799,8 @@ public class Phonetiseur {
      * Charger les classifieurs dans des fichiers dans le repertoire passe en parametre
      */
     public void chargerClassifieurs(String chemineRepertoireARFF, String cheminRepertoireModel) throws Exception {
-    	chemineRepertoireARFF = "ressources/"+chemineRepertoireARFF;
-    	cheminRepertoireModel = "ressources/"+cheminRepertoireModel;
+    	chemineRepertoireARFF = "res/"+chemineRepertoireARFF;
+    	cheminRepertoireModel = "res/"+cheminRepertoireModel;
     	
     	if (chemineRepertoireARFF.charAt(chemineRepertoireARFF.length() - 1) != System.getProperty("file.separator").charAt(0)) {
             // S'il manque un separateur a la fin du chemin passe en parametre : on le rajoute

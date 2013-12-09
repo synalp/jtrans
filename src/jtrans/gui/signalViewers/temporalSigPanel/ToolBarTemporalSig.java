@@ -70,19 +70,19 @@ public class ToolBarTemporalSig extends JToolBar implements Observer {
 
 
 	//------ pour le selecteur de curseur ---------
-	private final ImageIcon iconeHand = new ImageIcon(getClass().getResource("/ressources/icones/hand.gif"));
-	private final ImageIcon iconeArrow = new ImageIcon(getClass().getResource("/ressources/icones/arrow.gif"));
+	private final ImageIcon iconeHand = new ImageIcon(getClass().getResource("/res/icones/hand.gif"));
+	private final ImageIcon iconeArrow = new ImageIcon(getClass().getResource("/res/icones/arrow.gif"));
 
 	private JToggleButton cursorHand;
 	private JToggleButton cursorNormal;
 	
 	//-------- pour la legende -----
-	private final ImageIcon iconeLegende = new ImageIcon(getClass().getResource("/ressources/icones/legende.png"));
+	private final ImageIcon iconeLegende = new ImageIcon(getClass().getResource("/res/icones/legende.png"));
 	
 	//------ pour le goto -------
-	private final ImageIcon iconeError = new ImageIcon(getClass().getResource("/ressources/icones/error.png"));
+	private final ImageIcon iconeError = new ImageIcon(getClass().getResource("/res/icones/error.png"));
 	private JTextField gotoTextField;
-	private final ImageIcon iconeNext = new ImageIcon(getClass().getResource("/ressources/icones/next.png"));
+	private final ImageIcon iconeNext = new ImageIcon(getClass().getResource("/res/icones/next.png"));
 	
 	//--------- Constructor -----------
 	public ToolBarTemporalSig(TemporalSigPanel temporalSig) {

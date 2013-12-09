@@ -22,16 +22,9 @@ public class Nombres implements Serializable {
 	private String segmentNormed = null;
 	
 	void load() {
-		String sx = "ressources/Nbrules.txt";
-//		String sx = FileUtils.getRessource("plugins.speechreco.grammaire.Nombres","ressources/Nbrules.txt");
-//		InputStream is = FileUtils.getRessourceAsStream("plugins.speechreco.grammaire.Nombres","ressources/Nbrules.txt");
-//		if (sx==null) {
-//			System.out.println("ERROR loading ressources/Nbrules.txt curdir="+(new File(".")).getAbsolutePath());
-//			return;
-//		}
+		String sx = "res/Nbrules.txt";
 		try {
 			BufferedReader f = FileUtils.openFileUTF(sx);
-//			BufferedReader f = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
 			for (;;) {
 				String s = f.readLine();
 				if (s==null) break;

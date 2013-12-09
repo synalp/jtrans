@@ -24,7 +24,7 @@ import java.util.Iterator;
 public class Morphalou extends PronunciationsLexicon {
 	private static final long serialVersionUID = 1L;
 	final static String corpdir[] = {
-		"ressources/ListeFinal_Morph_Dico_f.txt",
+		"res/ListeFinal_Morph_Dico_f.txt",
 		"D:/xtof/corpus/Morphalou/ListeFinal_Morph_Dico_f.txt",
 		"C:/xtof/corpus/Morphalou/ListeFinal_Morph_Dico_f.txt",
 		"/tmp/ListeFinal_Morph_Dico_f.txt",
