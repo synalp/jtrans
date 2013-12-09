@@ -317,7 +317,6 @@ public class Menus {
 		clearAll.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				aligneur.clearAlign();
-				aligneur.repaint();
 			}
 		});
 

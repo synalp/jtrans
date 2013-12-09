@@ -482,11 +482,10 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	}
 
 	public void clearAlign() {
-		clearAlignFrom(0);
-		// pour supprimer les SIL en debut de fichier
-		project.words.clear();
-		project.phons.clear();
+		project.clearAlignment();
+		setProject(project); // force refresh
 	}
+
 	void clearAlignFrom(int mot) {
 		// cherche le prochain mot qui est aligné
 		int seg4mot=-1;
