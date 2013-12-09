@@ -410,7 +410,7 @@ public class Menus {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				// asynchrone
-				LiveSpeechReco.doReco();
+				LiveSpeechReco.doReco(aligneur);
 				// TODO: wait for the user press the ESC key, then stop the reco and put the result in the text panel 
 			}
 		});
@@ -530,7 +530,7 @@ public class Menus {
 					gram = new LiveSpeechReco();
 					gram.wavfile = aligneur.convertedAudioFile.getAbsolutePath();
 					gram.loadVoc(vocfile);
-					gram.initGrammar();
+					gram.initGrammar(aligneur);
 					gram.gram=gram;
 					gram.addResultListener(new RecoListener() {
 						@Override

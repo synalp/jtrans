@@ -46,7 +46,7 @@ public class ControlBox extends JPanel implements ActionListener {
 		liveButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				LiveSpeechReco r = LiveSpeechReco.doReco();
+				LiveSpeechReco r = LiveSpeechReco.doReco(aligneur);
 				r.addResultListener(new TextAreaRecoListener(aligneur.edit));
 			}
 		});

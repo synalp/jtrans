@@ -13,7 +13,6 @@ import java.util.HashMap;
 import java.util.StringTokenizer;
 
 import javax.swing.JFileChooser;
-import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import edu.cmu.sphinx.decoder.FrameDecoder;
@@ -55,7 +54,8 @@ import edu.cmu.sphinx.util.props.PropertySheet;
 
 import jtrans.speechreco.grammaire.Grammatiseur;
 import jtrans.speechreco.s4.*;
-import jtrans.utils.ProgressDialog;
+import jtrans.utils.ProgressDisplay;
+import jtrans.utils.StdoutProgressDisplay;
 
 public class LiveSpeechReco extends PhoneticForcedGrammar {
 	public static LiveSpeechReco gram=null;
@@ -107,7 +107,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 			gram.mikeSource.stopRecording();
 		}
 	}
-	public static LiveSpeechReco doReco() {
+	public static LiveSpeechReco doReco(final ProgressDisplay progress) {
 		try {
 			gram = new LiveSpeechReco();
 			if (vocfile==null) {
@@ -119,12 +119,13 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 				}
 			}
 			gram.loadVoc(vocfile);
-			gram.initGrammar();
+			gram.initGrammar(progress);
 			System.out.println("********* MIKE GRAMMAR DEFINED");
 
 			Thread t = new Thread(new Runnable() {
 				@Override
 				public void run() {
+					progress.setIndeterminateProgress("Live speech recognition...");
 					if (wavfile!=null) {
 						System.out.println("perform wav reco");
 						gram.wavReco();
@@ -132,6 +133,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 						System.out.println("perform live reco");
 						gram.liveReco();
 					}
+					progress.setProgressDone();
 				}
 			},"liveRecoThread");
 			t.start();
@@ -411,17 +413,12 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		}
 	}
 
-	public void initGrammar() {
+	public void initGrammar(ProgressDisplay progress) {
 		if (tinyvocab==null) {
-			System.out.println("loading grammatiseur... "+tinyvocab);
-			if (super.grammatiseur==null) {
-				ProgressDialog waiting = new ProgressDialog((JFrame)null, new Runnable() {
-					@Override
-					public void run() {
-						grammatiseur = Grammatiseur.getGrammatiseur();
-					}
-				}, "please wait: initializing grammars...");
-				waiting.setVisible(true);
+			if (grammatiseur==null) {
+				progress.setIndeterminateProgress("Initializing grammars...");
+				grammatiseur = Grammatiseur.getGrammatiseur();
+				progress.setProgressDone();
 			}
 			finVocMain = voc.size();
 		} else {
@@ -634,7 +631,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		vocfile=new File("voc.txt");
 		try {
 			gram = new LiveSpeechReco();
-			gram.initGrammar();
+			gram.initGrammar(new StdoutProgressDisplay());
 			System.out.println("********* MIKE GRAMMAR DEFINED");
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
@@ -658,7 +655,9 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 
 	// test: fait la reco 2 fois
 	public static void testRecoNoGUI() {
-		LiveSpeechReco r = doReco();
+		ProgressDisplay progress = new StdoutProgressDisplay();
+
+		LiveSpeechReco r = doReco(progress);
 		r.addResultListener(new RecoListener() {
 			@Override
 			public void recoFinie(Result finalres, String res) {
@@ -679,7 +678,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		r.stopit();
 		System.out.println("after stop : relaunch");
 
-		r = doReco();
+		r = doReco(progress);
 		r.addResultListener(new RecoListener() {
 			@Override
 			public void recoFinie(Result finalres, String res) {
