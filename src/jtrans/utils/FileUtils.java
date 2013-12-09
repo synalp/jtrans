@@ -10,6 +10,7 @@ package jtrans.utils;
 import org.mozilla.universalchardet.UniversalDetector;
 
 import java.io.*;
+import java.net.*;
 
 public class FileUtils {
 	public static BufferedReader openFileUTF(String nom) throws UnsupportedEncodingException, FileNotFoundException {
@@ -107,5 +108,79 @@ public class FileUtils {
 			return new BufferedReader(new InputStreamReader(bis, encoding));
 		} else
 			return new BufferedReader(new InputStreamReader(bis));
+	}
+
+
+	/**
+	 * Downloads a file. The thread may be interrupted.
+	 * @param url         Data will be fetched from this address
+	 * @param target      Data will be saved in this file
+	 * @param progress    Receives periodic updates about completion rate
+	 *                    and transfer speed
+	 */
+	public static void downloadFile(URL url, File target, ProgressDisplay progress)
+			throws IOException, InterruptedException
+	{
+		URLConnection con = url.openConnection();
+		con.connect();
+
+		long len = con.getContentLength();
+		long downloadedLen = 0;
+
+		byte[] buf = new byte[8192];
+		int read;
+
+		InputStream in = null;
+		FileOutputStream os = null;
+
+		long lastSpeedUpdate = System.currentTimeMillis();
+		long accumBytes = 0;
+		int bps = 0;
+
+		try {
+			in = con.getInputStream();
+			os = new FileOutputStream(target);
+
+			while ((read = in.read(buf)) > 0) {
+				os.write(buf, 0, read);
+				downloadedLen += read;
+
+				long now = System.currentTimeMillis();
+				long window = now - lastSpeedUpdate;
+
+				if (window > 50) {
+					bps = (int)(accumBytes / (window / 1000f));
+
+					lastSpeedUpdate = now;
+					accumBytes = 0;
+				} else {
+					accumBytes += read;
+				}
+
+				progress.setProgress(
+						String.format("Downloading... (%d KB/s)", bps/1024),
+						(float)downloadedLen/(float)len);
+
+				// Allow cancellation
+				Thread.sleep(0);
+			}
+		} finally {
+			closeQuietly(os);
+			closeQuietly(in);
+		}
+	}
+
+
+	/**
+	 * Closes a stream without throwing an exception.
+	 */
+	public static void closeQuietly(Closeable closeable) {
+		if (closeable != null) {
+			try {
+				closeable.close();
+			} catch (IOException ex) {
+				ex.printStackTrace();
+			}
+		}
 	}
 }

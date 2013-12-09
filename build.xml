@@ -33,7 +33,7 @@
         <jar destfile="${jarfile}" basedir="${build}">
             <manifest>
                 <attribute name="Class-Path" value="${manifest.classpath}"/>
-                <attribute name="Main-Class" value="jtrans.gui.JTransInstall"/>
+                <attribute name="Main-Class" value="jtrans.gui.JTransGUI"/>
                 <attribute name="Implementation-Title" value="JTrans"/>
                 <attribute name="Implementation-Version" value="${version}"/>
                 <attribute name="Implementation-Vendor" value="Christophe Cerisara"/>
