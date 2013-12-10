@@ -22,8 +22,6 @@ public class CancelableProgressDialog extends JDialog implements ProgressDisplay
 	public CancelableProgressDialog(String title, boolean cancelable) {
 		super(null, title, ModalityType.APPLICATION_MODAL);
 
-		setLocationRelativeTo(null);
-
 		cancelButton = new JButton("Cancel");
 		cancelButton.addActionListener(new AbstractAction() {
 			@Override
@@ -137,6 +135,7 @@ public class CancelableProgressDialog extends JDialog implements ProgressDisplay
 	public void executeInForeground() throws InterruptedException, ExecutionException {
 		progressBar.setIndeterminate(true);
 		worker.execute();
+		setLocationByPlatform(true);
 		setVisible(true);
 		worker.get();
 	}

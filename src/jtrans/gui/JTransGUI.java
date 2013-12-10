@@ -232,7 +232,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		project.wavname = path;
 
 		if (path != null) {
-			setIndeterminateProgress("Loading audio...");
+			setIndeterminateProgress("Loading audio from " + path + "...");
 			convertedAudioFile = suitableAudioFile(new File(project.wavname));
 
 			try {
@@ -343,7 +343,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		if (System.getProperty("os.name").toLowerCase().contains("mac"))
 			System.setProperty("apple.laf.useScreenMenuBar", "true");
 
-		jf = new JFrame("jtrans 1.2");
+		jf = new JFrame("JTrans");
 		JMenuBar menubar = (new Menus(this)).menus();
 		jf.setJMenuBar(menubar);
 		jf.setContentPane(this);
@@ -355,6 +355,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 			}
 		});
 		jf.pack();
+		jf.setLocationByPlatform(true);
 		jf.setVisible(true);
 	}
 
