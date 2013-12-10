@@ -19,7 +19,6 @@ import java.util.List;
  * TODO: centralize project methods here
  */
 public class Project {
-	public List<Speaker> speakers = new ArrayList<Speaker>();
 	public List<Track> tracks = new ArrayList<Track>();
 	public String wavname;
 	public List<ElementType> types = new ArrayList<ElementType>(Arrays.asList(DEFAULT_TYPES));

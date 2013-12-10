@@ -2,7 +2,7 @@ package jtrans.markup;
 
 import jtrans.elements.*;
 import jtrans.facade.Project;
-import jtrans.facade.Speaker;
+import jtrans.facade.Track;
 import jtrans.gui.JTransGUI;
 import jtrans.speechreco.s4.Alignment;
 import jtrans.utils.FileUtils;
@@ -26,7 +26,7 @@ public class TextGridLoader implements MarkupLoader {
 		reader.close();
 
 		for (String name: machine.tierNames)
-			project.speakers.add(new Speaker((byte)project.speakers.size(), name));
+			project.tracks.add(new Track(name));
 
 		SegQueue currentTier = null;
 

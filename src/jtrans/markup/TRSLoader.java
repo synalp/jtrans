@@ -2,7 +2,6 @@ package jtrans.markup;
 
 import jtrans.elements.*;
 import jtrans.facade.Project;
-import jtrans.facade.Speaker;
 import jtrans.facade.Track;
 import org.w3c.dom.*;
 import org.w3c.dom.Element;
@@ -24,7 +23,6 @@ public class TRSLoader implements MarkupLoader {
 		Document doc;
 
 		// Map of Transcriber's speaker IDs to JTrans tracks
-		Map<String, Speaker> speakerIDMap = new HashMap<String, Speaker>();
 		Map<String, Track> trackIDMap = new HashMap<String, Track>();
 
 		try {
@@ -51,13 +49,7 @@ public class TRSLoader implements MarkupLoader {
 			String trsID   = el.getAttribute("id");
 			String name    = el.getAttribute("name");
 
-			byte internalID = (byte)project.speakers.size();
-
-			Speaker newSpeaker = new Speaker(internalID, name);
-			project.speakers.add(newSpeaker);
-			speakerIDMap.put(trsID, newSpeaker);
-
-			Track newTrack = new Track();
+			Track newTrack = new Track(name);
 			project.tracks.add(newTrack);
 			trackIDMap.put(trsID, newTrack);
 		}

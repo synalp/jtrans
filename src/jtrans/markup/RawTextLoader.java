@@ -2,7 +2,6 @@ package jtrans.markup;
 
 import jtrans.elements.*;
 import jtrans.facade.Project;
-import jtrans.facade.Speaker;
 import jtrans.facade.Track;
 import jtrans.utils.FileUtils;
 
@@ -152,9 +151,7 @@ public class RawTextLoader implements MarkupLoader {
 		BufferedReader reader = FileUtils.openFileAutoCharset(file);
 
 		// Add default speaker
-		Speaker speaker = new Speaker((byte)0, "L1");
-		project.speakers.add(speaker);
-		Track track = new Track();
+		Track track = new Track("L1");
 		project.tracks.add(track);
 
 		while (true) {

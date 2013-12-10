@@ -4,9 +4,14 @@ import jtrans.elements.*;
 import jtrans.speechreco.s4.Alignment;
 
 public class Track {
+	public String speakerName;
 	public ElementList elts = new ElementList();
 	public Alignment words = new Alignment();
 	public Alignment phons = new Alignment();
+
+	public Track(String speakerName) {
+		this.speakerName = speakerName;
+	}
 
 	public void clearAlignment() {
 		words = new Alignment();
