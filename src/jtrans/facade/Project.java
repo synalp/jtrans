@@ -1,12 +1,10 @@
 package jtrans.facade;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import jtrans.elements.*;
+import jtrans.markup.JTRLoader;
 import jtrans.speechreco.s4.Alignment;
 import jtrans.speechreco.s4.S4AlignOrder;
 import jtrans.utils.FileUtils;
-import jtrans.utils.InterfaceAdapter;
 import jtrans.utils.TimeConverter;
 
 import java.awt.*;
@@ -159,30 +157,10 @@ public class Project {
 	// LOAD/SAVE/EXPORT
 	//==========================================================================
 
-	/**
-	 * Returns a Gson object suitable for serializing and deserializing JTrans
-	 * projects to/from JSON.
-	 */
-	private static Gson newGson() {
-		GsonBuilder gb = new GsonBuilder();
-		gb.registerTypeAdapter(Element.class, new InterfaceAdapter<Element>("$TYPE$"));
-		gb.setPrettyPrinting();
-		return gb.create();
-	}
-
-
-	public static Project fromJson(File file) throws IOException {
-		FileReader r = new FileReader(file);
-		Project project = newGson().fromJson(r, Project.class);
-		r.close();
-		project.refreshIndex();
-		return project;
-	}
-
 
 	public void saveJson(File file) throws IOException {
 		FileWriter w = new FileWriter(file);
-		newGson().toJson(this, w);
+		JTRLoader.newGson().toJson(this, w);
 		w.close();
 	}
 

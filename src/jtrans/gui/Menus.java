@@ -108,18 +108,18 @@ public class Menus {
 					return;
 				FileFilter ff = fc.getFileFilter();
 				File file = fc.getSelectedFile();
+				MarkupLoader loader = null;
 
-				if (ff == filterJTR) {
-					aligneur.friendlyLoadProject(file);
-				} else if (ff == filterTRS) {
-					aligneur.friendlyLoadMarkup(new TRSLoader(), file);
-				} else if (ff == filterTextGrid) {
-					aligneur.friendlyLoadMarkup(new TextGridLoader(), file);
-				} else if (ff == filterTXT) {
-					aligneur.friendlyLoadMarkup(new RawTextLoader(), file);
-				} else {
+				if (ff == filterJTR)           loader = new JTRLoader();
+				else if (ff == filterTRS)      loader = new TRSLoader();
+				else if (ff == filterTextGrid) loader = new TextGridLoader();
+				else if (ff == filterTXT)      loader = new RawTextLoader();
+				else {
 					JOptionPane.showMessageDialog(aligneur.jf, "Unknown filter " + ff);
+					return;
 				}
+
+				aligneur.friendlyLoadMarkup(loader, file, null);
 			}
 		});
 

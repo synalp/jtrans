@@ -22,7 +22,6 @@ import javax.sound.sampled.*;
 import javax.swing.*;
 import javax.swing.Timer;
 
-import com.google.gson.JsonParseException;
 import jtrans.elements.Anchor;
 import jtrans.elements.Word;
 import jtrans.facade.AutoAligner;
@@ -250,6 +249,8 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		} else
 			convertedAudioFile = null;
 
+		updateViewers();
+
 		setProgressDone();
 	}
 	
@@ -345,7 +346,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		jf = new JFrame("jtrans 1.2");
 		JMenuBar menubar = (new Menus(this)).menus();
 		jf.setJMenuBar(menubar);
-		jf.getContentPane().add(this);
+		jf.setContentPane(this);
 
 		jf.addWindowListener(new WindowAdapter() {
 			@Override
@@ -681,12 +682,13 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		for (String arg: args) {
 			String lcarg = arg.toLowerCase();
 
-			if (lcarg.endsWith(".jtr")) {
-				m.friendlyLoadProject(new File(arg));
+			if (lcarg.endsWith(".wav")) {
+				audioFileName = arg;
 			}
 
-			else if (lcarg.endsWith(".wav")) {
-				audioFileName = arg;
+			else if (lcarg.endsWith(".jtr")) {
+				loader = new JTRLoader();
+				markupFileName = arg;
 			}
 
 			else if (lcarg.endsWith(".trs")) {
@@ -711,9 +713,9 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		}
 
 		if (loader != null)
-			m.friendlyLoadMarkup(loader, new File(markupFileName));
-
-		m.setAudioSource(audioFileName);
+			m.friendlyLoadMarkup(loader, new File(markupFileName), new File(audioFileName));
+		else
+			m.setAudioSource(audioFileName);
 	}
 
 
@@ -777,10 +779,16 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	 * Loads text markup file, refreshes indexes and updates the UI.
 	 * Displays a message dialog if an error occurs.
 	 * @param loader loader for the adequate markup format
+	 * @param markupFile file to be parsed
+	 * @param forcedAudioFile Sets this file as the project's audio source
+	 *                        even if the project specifies its own source.
+	 *                        If null, the project's own audio source is used.
 	 * @return true if the file was loaded with no errors
 	 */
-	public boolean friendlyLoadMarkup(MarkupLoader loader, File markupFile) {
-		setIndeterminateProgress("Parsing markup...");
+	public boolean friendlyLoadMarkup(MarkupLoader loader, File markupFile, File forcedAudioFile) {
+		setIndeterminateProgress("Parsing " + loader.getFormat() + "...");
+
+		Project previousProject = project;
 
 		try {
 			setProject(loader.parse(markupFile));
@@ -808,41 +816,55 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		}
 
 		setProgressDone();
-		return true;
-	}
+		jf.setTitle(markupFile.getName());
 
+		if (forcedAudioFile != null) {
+			setAudioSource(forcedAudioFile.getAbsolutePath());
+		} else if (project.wavname == null) {
+			// Try to detect audio file from the project's file name
+			String pfn = markupFile.getName();
+			File possibleAudio = new File(markupFile.getParentFile(),
+					pfn.substring(0, pfn.lastIndexOf('.')) + ".wav");
 
-	/**
-	 * Loads JTrans project file, refreshes indexes and updates the UI.
-	 * Displays a message dialog if an error occurs.
-	 * @return true if the file was loaded with no errors
-	 */
-	public boolean friendlyLoadProject(File file) {
-		setIndeterminateProgress("Loading JSON...");
+			if (possibleAudio.exists()) {
+				int rc = JOptionPane.showConfirmDialog(jf,
+						"Found an audio file with a similar name:\n" +
+						possibleAudio + "\n\n" +
+						"Would you like to load it?\n\n" +
+						"If you refuse, you can always set an audio source\n" +
+						"manually through \"File → Load audio.\"",
+						"Possible audio file",
+						JOptionPane.YES_NO_OPTION,
+						JOptionPane.QUESTION_MESSAGE);
+				if (rc == JOptionPane.YES_OPTION)
+					setAudioSource(possibleAudio.getAbsolutePath());
+			}
 
-		try {
-			setProject(Project.fromJson(file));
-			jf.setTitle(file.getName());
-		} catch (IOException ex) {
-			ex.printStackTrace();
+			// Try to recycle the previous project's audio file
+			if (project.wavname == null &&
+					previousProject != null &&
+					previousProject.wavname != null)
+			{
+				String[] choices =
+						"Keep this audio source;Use empty audio source".split(";");
 
-			JOptionPane.showMessageDialog(jf, "Couldn't open project \""
-					+ file.getName() + "\"\nbecause an I/O error occured.\n\n" + ex,
-					"Couldn't open project", JOptionPane.ERROR_MESSAGE);
-			return false;
-		} catch (JsonParseException ex) {
-			ex.printStackTrace();
+				int rc = JOptionPane.showOptionDialog(jf,
+						"The project you have just loaded has no audio file attached to it.\n\n" +
+						"However, this audio file was loaded up until now:\n" +
+						previousProject.wavname + "\n\n" +
+						"Would you like to keep it as the new project's audio source?",
+						"No audio source",
+						JOptionPane.YES_NO_OPTION,
+						JOptionPane.QUESTION_MESSAGE,
+						null,
+						choices,
+						choices[0]);
 
-			JOptionPane.showMessageDialog(jf, "Couldn't open project \""
-					+ file.getName() + "\"\nbecause it is not a valid JSON file.\n\n"
-					+ ex.getLocalizedMessage(),
-					"Couldn't open project", JOptionPane.ERROR_MESSAGE);
-
-			setProgressDone();
-			return false;
+				if (rc == 0)
+					setAudioSource(previousProject.wavname);
+			}
 		}
 
-		setProgressDone();
 		return true;
 	}
 
