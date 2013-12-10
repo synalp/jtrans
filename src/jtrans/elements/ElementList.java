@@ -131,49 +131,6 @@ public class ElementList extends ArrayList<Element> implements Serializable {
 
 
 	/**
-	 * Creates an alignment whose segments spans speaker turns.
-	 * This method does not account for overlaps, hence the produced
-	 * alignment is 'linear'.
-	 */
-	public Alignment getLinearSpeakerTimes(Alignment words) {
-		Alignment speakerAlignment = new Alignment();
-
-		int startSeg = 0;
-		int currSeg = 0;
-		byte currSpk = -1;
-
-		for (int i = 0; i < size(); i++) {
-			Element el = get(i);
-
-			// Switching to next speaker or reached the last element:
-			// add new speaker segment
-			if ((i == size()-1 || el instanceof SpeakerTurn) &&
-					currSpk != -1 && startSeg < currSeg)
-			{
-				speakerAlignment.addRecognizedSegment("" + currSpk,
-						words.getSegmentDebFrame(startSeg),
-						words.getSegmentEndFrame(currSeg),
-						null,
-						null);
-			}
-
-			// Adjust current segment
-			if (el instanceof SpeakerTurn) {
-				startSeg = currSeg + 1;
-				currSpk = ((SpeakerTurn) el).getLocuteurID();
-			} else if (el instanceof Word) {
-				int seg = ((Word) el).posInAlign;
-				// sometimes words get stuck at -1 because they couldn't be aligned
-				if (seg > currSeg)
-					currSeg = seg;
-			}
-		}
-
-		return speakerAlignment;
-	}
-
-
-	/**
 	 * Fonction permettant de r�cup�rer une ArrayList
 	 * contenant uniquement les �l�ments Element_Mot de la liste globale.
 	 * 

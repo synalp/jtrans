@@ -82,19 +82,14 @@ public class Project {
 			buf.append("\n\n*** NEW TRACK ***\n\n");
 			for (Element el: track.elts) {
 				if (buf.length() > 0) {
-					if (el instanceof SpeakerTurn ||
-							(linebreakBeforeAnchors && el instanceof Anchor))
+					if (linebreakBeforeAnchors && el instanceof Anchor)
 						buf.append('\n');
 					else
 						buf.append(' ');
 				}
 
 				int pos = buf.length();
-				String str;
-				if (el instanceof SpeakerTurn)
-					str = speakers.get(((SpeakerTurn)el).getLocuteurID()).getName();
-				else
-					str = el.toString();
+				String str = el.toString();
 				buf.append(str);
 
 				el.start = pos;
