@@ -17,6 +17,7 @@ import jtrans.utils.TimeConverter;
 public class AutoAligner {
 	private JTransGUI aligneur;
 	private Project project;
+	private Track track;
 	private List<Word> mots;
 	private S4ForceAlignBlocViterbi s4blocViterbi;
 
@@ -29,48 +30,13 @@ public class AutoAligner {
 	private static final boolean USE_LINEAR_ALIGNMENT = false;
 
 
-	public AutoAligner(Project project, JTransGUI aligneur) {
+	public AutoAligner(Project project, Track track, JTransGUI aligneur) {
 		this.project = project;
+		this.track = track;
 		this.aligneur = aligneur;
-		project.refreshIndex();
-		mots = project.elts.getMots();
+		track.refreshIndex();
+		mots = track.elts.getMots();
 	}
-
-
-	private class Overlap {
-		/**
-		 * ID of speaker #1 (the one who gets interrupted)
-		 */
-		byte s1;
-
-		// speaker 1 word indices
-		int s1FirstWord = -1;
-		int s1LastNonOverlappedWord = -1;
-		int s1LastWord = -1;
-
-		// speaker 2 word indices
-		int s2FirstWord = -1;
-		int s2LastOverlappedWord = -1;
-
-		// seconds
-		/**
-		 * When speaker #1 starts speaking alone.
-		 */
-		float s1StartsSpeaking = -1;
-
-		/**
-		 * When speaker #2 starts speaking (while speaker #1 is still
-		 * speaking). Start of overlapped speech.
-		 */
-		float overlapStart = -1;
-
-		/**
-		 * When speaker #1 stops speaking (while speaker #2 is still
-		 * speaking). End of overlapped speech.
-		 */
-		float overlapEnd = -1;
-	}
-
 
 	private S4AlignOrder createS4AlignOrder(int motdeb, int trdeb, int motfin, int trfin) {
 		if (s4blocViterbi == null)
@@ -135,7 +101,7 @@ public class AutoAligner {
 			int[] wordSegments = order.alignWords.matchWithText(alignedWords);
 
 			// Merge word segments into the main word alignment
-			int firstSegment = project.words.merge(order.alignWords);
+			int firstSegment = track.words.merge(order.alignWords);
 
 			// Adjust posInAlign for Word elements
 			for (int i = 0; i < wordSegments.length; i++) {
@@ -147,10 +113,10 @@ public class AutoAligner {
 
 				mots.get(i + startWord).posInAlign = idx;
 			}
-			project.refreshIndex();
+			track.refreshIndex();
 
 			// Merge phoneme segments into the main phoneme alignment
-			project.phons.merge(order.alignPhones);
+			track.phons.merge(order.alignPhones);
 		} else {
 			System.out.println("================================= ALIGN FOUND null");
 			// TODO
@@ -170,10 +136,10 @@ public class AutoAligner {
 				"can't align on fractions of frames! (frameDelta=" + frameDelta + ")";
 
 		for (int i = startWord; i <= endWord; i++) {
-			int newseg = project.words.addRecognizedSegment(
+			int newseg = track.words.addRecognizedSegment(
 					mots.get(i).getWordString(), startFrame, (int)currEndFrame, null, null);
 
-			project.words.setSegmentSourceEqui(newseg);
+			track.words.setSegmentSourceEqui(newseg);
 			mots.get(i).posInAlign = newseg;
 
 			startFrame = (int)currEndFrame;
@@ -205,7 +171,7 @@ public class AutoAligner {
 				if (startFrame < 0) {
 					// Start aligning at the end frame of the last aligned word.
 					int lastAlignedWordSeg = mots.get(lastAlignedWord).posInAlign;
-					startFrame = project.words.getSegmentEndFrame(lastAlignedWordSeg);
+					startFrame = track.words.getSegmentEndFrame(lastAlignedWordSeg);
 				}
 			}
 		}
@@ -224,10 +190,10 @@ public class AutoAligner {
 			}
 		} else {
 			// Only one word to align; create a new manual segment.
-			int newseg = project.words.addRecognizedSegment(
-					project.elts.getMot(word).getWordString(), startFrame, endFrame, null, null);
-			project.words.setSegmentSourceManu(newseg);
-			project.elts.getMot(word).posInAlign = newseg;
+			int newseg = track.words.addRecognizedSegment(
+					track.elts.getMot(word).getWordString(), startFrame, endFrame, null, null);
+			track.words.setSegmentSourceManu(newseg);
+			track.elts.getMot(word).posInAlign = newseg;
 		}
 
 		// Update GUI
@@ -272,8 +238,8 @@ public class AutoAligner {
 	public void setSilenceSegment(float secdeb, float secfin) {
 		int curdebfr = TimeConverter.second2frame(secdeb);
 		int curendfr = TimeConverter.second2frame(secfin);
-		setSilenceSegment(curdebfr, curendfr, project.words);
-		setSilenceSegment(curdebfr, curendfr, project.phons);
+		setSilenceSegment(curdebfr, curendfr, track.words);
+		setSilenceSegment(curdebfr, curendfr, track.phons);
 	}
 	public void clearAlignFromFrame(int fr) {
 		// TODO
@@ -288,18 +254,14 @@ public class AutoAligner {
 	public void alignBetweenAnchors() {
 		aligneur.setIndeterminateProgress("Aligning...");
 
-		project.clearAlignment();
+		track.clearAlignment();
 
 		float alignFrom = 0;
 		int startWord = 0;
 		int word = -1;
 
-		byte currentSpeaker = (byte)0xff;
-
-		Overlap currentOverlap = null;
-
-		for (int i = 0; i < project.elts.size(); i++) {
-			Element e = project.elts.get(i);
+		for (int i = 0; i < track.elts.size(); i++) {
+			Element e = track.elts.get(i);
 
 			if (e instanceof Word) {
 				word++;
@@ -308,86 +270,18 @@ public class AutoAligner {
 
 				if (word >= 0 && word >= startWord) {
 					setAlignWord(startWord, word, alignFrom, alignTo);
-
-					if (currentOverlap != null && currentOverlap.s2LastOverlappedWord >= 0) {
-						// Find when the overlapped speech ends.
-						int seg = mots.get(currentOverlap.s2LastOverlappedWord).posInAlign;
-						currentOverlap.overlapEnd = TimeConverter.frame2sec(
-								project.words.getSegmentEndFrame(seg));
-
-						if (currentOverlap.overlapEnd > currentOverlap.overlapStart) {
-							S4AlignOrder spk1Overlap = partialBatchAlign(
-									currentOverlap.s1FirstWord,
-									TimeConverter.second2frame(currentOverlap.s1StartsSpeaking),
-									currentOverlap.s1LastWord,
-									TimeConverter.second2frame(currentOverlap.overlapEnd));
-
-							if (!spk1Overlap.isEmpty()) {
-								project.overlaps.add(spk1Overlap);
-								project.overlapSpeakers.add(currentOverlap.s1);
-							}
-						}
-
-						currentOverlap = null;
-					}
 				}
 
 				alignFrom = alignTo;
 				startWord = word + 1;
-			} else if (e instanceof OverlapStart) {
-				// Skip straight to next speaker, i.e. skip current speaker's
-				// overlapped speech until next anchor
-				float alignTo = -1;
-				int nextWord = word;
-				for (; i < project.elts.size(); i++) {
-					Element e2 = project.elts.get(i);
-					if (e2 instanceof Anchor) {
-						alignTo = ((Anchor) e2).seconds;
-						break;
-					} else if (e2 instanceof Word) {
-						nextWord++;
-					}
-				}
-				setAlignWord(startWord, word, alignFrom, alignTo);
-
-				// TODO assert currentOverlap == null:
-				// TODO		"an overlap was already ongoing!";
-
-				// Don't start an overlap if the first speaker's overlapped
-				// section does not contain any word element.
-				if (nextWord > word) {
-					currentOverlap = new Overlap();
-
-					currentOverlap.s1 = currentSpeaker;
-
-					currentOverlap.s1FirstWord = startWord;
-					currentOverlap.s1LastNonOverlappedWord = word;
-					currentOverlap.s1LastWord = nextWord;
-
-					currentOverlap.s1StartsSpeaking = alignFrom;
-					currentOverlap.overlapStart = alignTo;
-				}
-
-				alignFrom = alignTo;
-				word = nextWord;
-				startWord = word + 1;
-			} else if (e instanceof OverlapEnd) {
-				if (currentOverlap == null) {
-					System.err.println("ERRONEOUS INPUT: no overlap is currently active!");
-				} else {
-					currentOverlap.s2FirstWord = startWord;
-					currentOverlap.s2LastOverlappedWord = word;
-				}
-			} else if (e instanceof SpeakerTurn) {
-				currentSpeaker = ((SpeakerTurn) e).getLocuteurID();
 			}
 
 			aligneur.setProgress(
-					"Aligning " + (i + 1) + "/" + project.elts.size() + "...",
-					(i + 1) / (float) project.elts.size());
+					"Aligning " + (i + 1) + "/" + track.elts.size() + "...",
+					(i + 1) / (float) track.elts.size());
 		}
 
-		project.refreshIndex();
+		track.refreshIndex();
 	}
 
 
@@ -396,7 +290,7 @@ public class AutoAligner {
 	 */
 	public void alignRaw() {
 		aligneur.setIndeterminateProgress("Aligning...");
-		project.clearAlignment();
+		track.clearAlignment();
 
 		int lastAlignedWord = 0;
 		int previousLAW = -1;
@@ -409,10 +303,10 @@ public class AutoAligner {
 			lastAlignedWord = getLastMotPrecAligned(mots.size()-1);
 
 			aligneur.setProgress(
-					"Aligning " + (lastAlignedWord + 1) + "/" + project.elts.size() + "...",
-					(lastAlignedWord + 1) / (float) project.elts.size());
+					"Aligning " + (lastAlignedWord + 1) + "/" + track.elts.size() + "...",
+					(lastAlignedWord + 1) / (float) track.elts.size());
 		}
 
-		project.refreshIndex();
+		track.refreshIndex();
 	}
 }

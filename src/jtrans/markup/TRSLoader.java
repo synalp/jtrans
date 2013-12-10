@@ -3,6 +3,7 @@ package jtrans.markup;
 import jtrans.elements.*;
 import jtrans.facade.Project;
 import jtrans.facade.Speaker;
+import jtrans.facade.Track;
 import org.w3c.dom.*;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -22,9 +23,9 @@ public class TRSLoader implements MarkupLoader {
 		Project project = new Project();
 		Document doc;
 
-		// Map of Transcriber's speaker IDs to Speaker objects
-		// (our own speaker IDs have nothing to do with Transcriber's)
+		// Map of Transcriber's speaker IDs to JTrans tracks
 		Map<String, Speaker> speakerIDMap = new HashMap<String, Speaker>();
+		Map<String, Track> trackIDMap = new HashMap<String, Track>();
 
 		try {
 			doc = newXMLDocumentBuilder().parse(file);
@@ -38,7 +39,7 @@ public class TRSLoader implements MarkupLoader {
 		// end time of last turn
 		float lastEnd = -1f;
 
-		// Add speakers and build speaker ID map
+		// Create speaker tracks and build ID map
 		for (Node spk = doc.getElementsByTagName("Speakers").item(0).getFirstChild();
 			 null != spk;
 			 spk = spk.getNextSibling())
@@ -51,9 +52,14 @@ public class TRSLoader implements MarkupLoader {
 			String name    = el.getAttribute("name");
 
 			byte internalID = (byte)project.speakers.size();
+
 			Speaker newSpeaker = new Speaker(internalID, name);
 			project.speakers.add(newSpeaker);
 			speakerIDMap.put(trsID, newSpeaker);
+
+			Track newTrack = new Track();
+			project.tracks.add(newTrack);
+			trackIDMap.put(trsID, newTrack);
 		}
 
 		// Extract relevant information (speech text, Sync tags...) from Turn tags.
@@ -61,8 +67,7 @@ public class TRSLoader implements MarkupLoader {
 		for (int i = 0; i < turnList.getLength(); i++) {
 			Element turn = (Element)turnList.item(i);
 			Node child = turn.getFirstChild();
-			Speaker currentSpeaker = speakerIDMap.get(turn.getAttribute("speaker"));
-			boolean currentSpeakerIntroduced = false;
+			Track currentTrack = trackIDMap.get(turn.getAttribute("speaker"));
 
 			float endTime = Float.parseFloat(turn.getAttribute("endTime"));
 			if (endTime > lastEnd)
@@ -75,24 +80,18 @@ public class TRSLoader implements MarkupLoader {
 				if (name.equals("#text")) {
 					String text = RawTextLoader.normalizeText(child.getTextContent().trim());
 					if (!text.isEmpty()) {
-						// Introduce current speaker
-						if (!currentSpeakerIntroduced) {
-							currentSpeakerIntroduced = true;
-							project.elts.add(new SpeakerTurn(currentSpeaker));
-						}
-
-						project.elts.addAll(RawTextLoader.parseString(text, project.types));
+						currentTrack.elts.addAll(RawTextLoader.parseString(text, project.types));
 					}
 				}
 
 				// Anchor. Placed on the last character in the word *PRECEDING* the sync point
 				else if (name.equals("Sync")) {
-					project.elts.add(new Anchor(
+					currentTrack.elts.add(new Anchor(
 							Float.parseFloat(((Element) child).getAttribute("time"))));
 				}
 
 				else if (name.equals("Comment")) {
-					project.elts.add(new jtrans.elements.Comment(
+					currentTrack.elts.add(new jtrans.elements.Comment(
 							((Element)child).getAttribute("desc")));
 				}
 
@@ -106,7 +105,8 @@ public class TRSLoader implements MarkupLoader {
 			}
 		}
 
-		project.elts.add(new Anchor(lastEnd));
+		for (Track track : project.tracks)
+			track.elts.add(new Anchor(lastEnd));
 		return project;
 	}
 

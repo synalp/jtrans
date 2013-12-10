@@ -153,6 +153,7 @@ public class Menus {
 
 		export.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				JTransGUI.REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
 				JOptionPane.showMessageDialog(aligneur.jf,
 						"By exporting the alignment to a foreign format,\n" +
 						"some JTrans-specific information may be lost.\n\n" +
@@ -177,7 +178,6 @@ public class Menus {
 
 				FileFilter ff = fc.getFileFilter();
 				File file = fc.getSelectedFile();
-
 				try {
 					if (ff == filterTXT) {
 						aligneur.project.saveRawText(file);
@@ -194,6 +194,7 @@ public class Menus {
 							"IOException",
 							JOptionPane.ERROR_MESSAGE);
 				}
+				*/
 			}
 		});
 
@@ -355,8 +356,10 @@ public class Menus {
 
 		map.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				JTransGUI.REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
 				BiaisAdapt a = new BiaisAdapt(aligneur);
 				a.adaptMAP(aligneur.project.phons);
+				*/
 			}
 		});
 

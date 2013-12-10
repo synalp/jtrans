@@ -74,6 +74,7 @@ public class TextArea extends JTextPane {
             return;
         }
 
+		JTransGUI.REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
         int caret = viewToModel(e.getPoint());
 
         int idx = project.elts.getIndiceElementAtTextPosi(caret);
@@ -93,6 +94,7 @@ public class TextArea extends JTextPane {
                 aligneur.selectWord((Word) el);
             }
         }
+        */
     }
 
 	/**
@@ -101,6 +103,7 @@ public class TextArea extends JTextPane {
 	 *               the element list. If false, it'll be placed after the word.
 	 */
 	private void newAnchorNextToWord(Word word, boolean before) {
+		JTransGUI.REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
 		ElementList.Neighborhood<Anchor> range =
 				project.elts.getNeighbors(word, Anchor.class);
 
@@ -135,6 +138,7 @@ public class TextArea extends JTextPane {
 			project.clearAlignmentAround(anchor);
 			aligneur.setProject(project);
 		}
+		*/
 	}
 
 	private void wordPopupMenu(final Word word, MouseEvent event) {
@@ -174,6 +178,7 @@ public class TextArea extends JTextPane {
         }});
 
         popup.add(new JMenuItem("Clear alignment around") {{
+			JTransGUI.REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
             addActionListener(new AbstractAction() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
@@ -181,10 +186,12 @@ public class TextArea extends JTextPane {
                     aligneur.setProject(project); // force refresh
                 }
             });
+            */
         }});
 
 
         popup.add(new JMenuItem("Delete") {{
+			JTransGUI.REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
             addActionListener(new AbstractAction() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
@@ -193,6 +200,7 @@ public class TextArea extends JTextPane {
                     aligneur.setProject(project); // force refresh
                 }
             });
+            */
         }});
 
         popup.show(this, event.getX(), event.getY());
@@ -232,6 +240,7 @@ public class TextArea extends JTextPane {
 			JOptionPane.showMessageDialog(this, ex.toString(), "BadLocationException", JOptionPane.ERROR_MESSAGE);
 		}
 
+		JTransGUI.REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
 		// Apply styles
 		for (Element el: project.elts) {
 			int type = el.getType();			
@@ -240,6 +249,7 @@ public class TextArea extends JTextPane {
 			if (el instanceof Word && ((Word) el).posInAlign >= 0)
 				doc.setCharacterAttributes(el.start, el.end - el.start, ALIGNED_STYLE, false);
 		}
+		*/
 
 		setStyledDocument(doc);
 	}
@@ -289,6 +299,7 @@ public class TextArea extends JTextPane {
 		int fromCh = -1;
 		int toCh = -1;
 
+		JTransGUI.REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
 		for (int i = 0; i < project.elts.size() && word < toWord; i++) {
 			Element el = project.elts.get(i);
 
@@ -305,6 +316,7 @@ public class TextArea extends JTextPane {
 				fromCh = -1;
 			}
 		}
+		*/
 
 		if (fromCh > 0)
 			colorizeAlignedChars(fromCh, toCh);
@@ -318,6 +330,7 @@ public class TextArea extends JTextPane {
 		int fromCh = -1;
 		int toCh = -1;
 
+		JTransGUI.REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
 		for (int i = 0; i < project.elts.size(); i++) {
 			Element el = project.elts.get(i);
 
@@ -331,6 +344,7 @@ public class TextArea extends JTextPane {
 				fromCh = -1;
 			}
 		}
+		*/
 
 		if (fromCh > 0)
 			colorizeAlignedChars(fromCh, toCh);

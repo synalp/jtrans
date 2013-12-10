@@ -14,7 +14,6 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.*;
 import java.net.URL;
-import java.util.*;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
@@ -24,7 +23,6 @@ import javax.swing.Timer;
 
 import jtrans.elements.Anchor;
 import jtrans.elements.Word;
-import jtrans.facade.AutoAligner;
 import jtrans.facade.Cache;
 import jtrans.facade.Project;
 import jtrans.speechreco.SpeechReco;
@@ -34,8 +32,6 @@ import jtrans.markup.TextGridLoader;
 import jtrans.buffer.RoundBuffer;
 import jtrans.buffer.RoundBufferFrontEnd;
 import jtrans.gui.signalViewers.spectroPanel.SpectroControl;
-import jtrans.gui.signalViewers.temporalSigPanel.TemporalSigPanel;
-import jtrans.gui.signalViewers.temporalSigPanel.ToolBarTemporalSig;
 import jtrans.elements.ElementList;
 import jtrans.speechreco.BiaisAdapt;
 import jtrans.speechreco.s4.S4ForceAlignBlocViterbi;
@@ -43,13 +39,32 @@ import jtrans.utils.CancelableProgressDialog;
 import jtrans.utils.FileUtils;
 import jtrans.utils.ProgressDisplay;
 import jtrans.utils.TimeConverter;
-import jtrans.speechreco.RecoWord;
 import org.fuin.utils4j.Utils4J;
 
 /**
  * Main panel.
  */
 public class JTransGUI extends JPanel implements ProgressDisplay {
+
+	/*
+	 * TODO THIS NEEDS TO BE FIXED ASAP
+	 */
+	public static void REIMPLEMENT_DEC2013() {
+		// TODO
+		System.err.println("REIMPLEMENT ME!");
+		new Throwable().printStackTrace();
+		JOptionPane.showMessageDialog(null,
+				"REIMPLEMENT ME!\n\n" +
+				"This feature is temporarily unavailable due\n" +
+				"to the ongoing (dec. 2013) refactoring to introduce\n" +
+				"truly parallel tracks.\n\n" +
+				"Please checkout the master branch if you\n" +
+				"need a stable version.\n\n" +
+				"Stack trace on stderr.",
+				"TODO",
+				JOptionPane.ERROR_MESSAGE);
+	}
+
 
 
 	public static final int KARAOKE_UPDATE_INTERVAL = 50; // milliseconds
@@ -79,8 +94,10 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 
 	public TextArea edit;
 	//	public Player player;
+	/* TODO PARALLEL TRACKS
 	public TemporalSigPanel sigPanel = null;
 	public ToolBarTemporalSig toolbar = null;
+	*/
 
 	/** Audio file in a suitable format for processing */
 	public File convertedAudioFile = null;
@@ -101,8 +118,8 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 
 	public void setCurPosInSec(float sec) {
 		cursec = sec;
+		REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
 		int frame = TimeConverter.second2frame(cursec);
-
         // vieux panel
         if (sigPanel!=null) {
             long currentSample = TimeConverter.frame2sample(frame);
@@ -119,6 +136,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 			sigpan.setAlign(project.words);
             sigpan.setFirstSeg(project.words.getSegmentAtFrame(frame));
         }
+*/
 
 		updateViewers();
 	}
@@ -394,6 +412,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	}
 
 	void goHome() {
+		REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
 		//		if (player.isPlaying()) return;
 		currentSample=0;
 		if (sigPanel!=null) {
@@ -401,6 +420,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		}
 		Word firstmot = project.elts.getMot(0);
 		edit.highlightWord(firstmot);
+*/
 	}
 
 	/**
@@ -433,6 +453,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	}
 
 	public void newplaystarted() {
+		REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
 		if (project.words != null) {
 			karaokeHighlighter = new Timer(KARAOKE_UPDATE_INTERVAL, new ActionListener() {
 				@Override
@@ -450,6 +471,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 			});
 			karaokeHighlighter.start();
 		}
+*/
 	}
 	public void newplaystopped() {
 		if (karaokeHighlighter != null) {
@@ -488,6 +510,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		setProject(project); // force refresh
 	}
 
+/* TODO PARALLEL TRACKS
 	void clearAlignFrom(int mot) {
 		// cherche le prochain mot qui est aligné
 		int seg4mot=-1;
@@ -515,6 +538,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		}
 		repaint();
 	}
+*/
 
 	/**
 	 * Ensures newPos is a valid position for an anchor within the given
@@ -549,6 +573,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	}
 
 	public void repositionAnchor(Anchor anchor) {
+		REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
 		String newPosString = JOptionPane.showInputDialog(jf,
 				"Enter new anchor position in seconds:",
 				Float.toString(anchor.seconds));
@@ -566,9 +591,11 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 
 		project.clearAlignmentAround(anchor);
 		setProject(project); // force refresh
+*/
 	}
 
 	public void selectWord(Word word) {
+		REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
         boolean replay = ctrlbox.getPlayerGUI().isPlaying();
         ctrlbox.getPlayerGUI().stopPlaying();
         Thread.yield();
@@ -584,6 +611,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 
         if (replay)
             ctrlbox.getPlayerGUI().startPlaying();
+            */
 	}
 
 	private void getRecoResult(SpeechReco asr) {
@@ -597,6 +625,8 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	}
 
 	private List<String> getRecoResultOld(SpeechReco asr) {
+		REIMPLEMENT_DEC2013();
+/*
 		StringBuilder sb = new StringBuilder();
 		ArrayList<String> lmots = new ArrayList<String>();
 
@@ -633,6 +663,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		edit.setIgnoreRepaint(false);
 		edit.repaint();
 		return lmots;
+*/ return null;
 	}
 
 	public void asr() {
@@ -656,6 +687,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 
 	String[] mots;
 	public S4ForceAlignBlocViterbi getS4aligner() {
+		REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
 		// TODO: support for URL !!
 		S4ForceAlignBlocViterbi s4aligner = S4ForceAlignBlocViterbi.getS4Aligner(convertedAudioFile.getAbsolutePath(), this);
 		List<Word>  lmots = project.elts.getMots();
@@ -665,6 +697,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		}
 		s4aligner.setMots(mots);
 		return s4aligner;
+*/ return null;
 	}
 
 	public void biasAdapt() {
@@ -873,6 +906,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	}
 
 	public void alignBetweenAnchorsWithProgress() {
+		REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
 		new Thread() {
 			@Override
 			public void run() {
@@ -880,9 +914,11 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 				setProgressDone();
 			}
 		}.start();
+*/
 	}
 
 	public void alignAllWithProgress() {
+		REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
 		new Thread() {
 			@Override
 			public void run() {
@@ -890,6 +926,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 				setProgressDone();
 			}
 		}.start();
+*/
 	}
 
 	public void setProject(Project project) {

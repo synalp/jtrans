@@ -3,6 +3,7 @@ package jtrans.markup;
 import jtrans.elements.*;
 import jtrans.facade.Project;
 import jtrans.facade.Speaker;
+import jtrans.facade.Track;
 import jtrans.utils.FileUtils;
 
 import java.io.*;
@@ -153,14 +154,15 @@ public class RawTextLoader implements MarkupLoader {
 		// Add default speaker
 		Speaker speaker = new Speaker((byte)0, "L1");
 		project.speakers.add(speaker);
-		project.elts.add(new SpeakerTurn(speaker));
+		Track track = new Track();
+		project.tracks.add(track);
 
 		while (true) {
 			String line = reader.readLine();
 			if (line == null)
 				break;
 			line = normalizeText(line.trim());
-			project.elts.addAll(parseString(line, project.types));
+			track.elts.addAll(parseString(line, project.types));
 		}
 
 		reader.close();

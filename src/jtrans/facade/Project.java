@@ -20,67 +20,18 @@ import java.util.List;
  */
 public class Project {
 	public List<Speaker> speakers = new ArrayList<Speaker>();
-	public ElementList elts = new ElementList();
+	public List<Track> tracks = new ArrayList<Track>();
 	public String wavname;
-	public Alignment words = new Alignment();
-	public Alignment phons = new Alignment();
 	public List<ElementType> types = new ArrayList<ElementType>(Arrays.asList(DEFAULT_TYPES));
-	public List<S4AlignOrder> overlaps = new ArrayList<S4AlignOrder>();
-	public List<Byte> overlapSpeakers = new ArrayList<Byte>();
 
 	// TODO this setting should be saved to disk
 	public static boolean linebreakBeforeAnchors = false;
 
 
 	public void clearAlignment() {
-		words = new Alignment();
-		phons = new Alignment();
-		overlaps = new ArrayList<S4AlignOrder>();
-		overlapSpeakers = new ArrayList<Byte>();
-		for (Word word: elts.getMots())
-			word.posInAlign = -1;
+		for (Track track : tracks)
+			track.clearAlignment();
 		refreshIndex();
-	}
-
-
-	/**
-	 * Clears alignment around an anchor.
-	 * @return the anchor's neighborhood, i.e. the range of elements
-	 * that got unaligned
-	 */
-	public ElementList.Neighborhood<Anchor> clearAlignmentAround(Anchor anchor) {
-		ElementList.Neighborhood<Anchor> range =
-				elts.getNeighbors(anchor, Anchor.class);
-
-		int from = range.prev!=null? range.prevIdx: 0;
-		int to   = range.next!=null? range.nextIdx: elts.size()-1;
-
-		// Unalign the affected words
-		for (int i = from; i <= to; i++) {
-			Element el = elts.get(i);
-			if (el instanceof Word)
-				((Word) el).posInAlign = -1;
-		}
-
-		// Remove segments
-		int beforeRemoval = words.getNbSegments();
-		words.clearInterval(
-				range.prev != null ? range.prev.getFrame() : 0,
-				range.next != null ? range.next.getFrame() : Integer.MAX_VALUE);
-		int removed = beforeRemoval - words.getNbSegments();
-
-		// Adjust elements following the removal
-		for (int i = to+1; i < elts.size(); i++) {
-			Element el = elts.get(i);
-			if (!(el instanceof Word))
-				continue;
-			((Word) el).posInAlign -= removed;
-		}
-
-		// TODO: unalign phonemes, clear affected overlaps...
-		refreshIndex();
-
-		return range;
 	}
 
 
@@ -115,9 +66,8 @@ public class Project {
 
 
 	public void refreshIndex() {
-		words.buildIndex();
-		phons.buildIndex();
-		elts.refreshIndex();
+		for (Track track : tracks)
+			track.refreshIndex();
 	}
 
 	/**
@@ -128,25 +78,28 @@ public class Project {
 	public String render() {
 		StringBuilder buf = new StringBuilder();
 
-		for (Element el: elts) {
-			if (buf.length() > 0) {
-				if (el instanceof SpeakerTurn ||
-						(linebreakBeforeAnchors && el instanceof Anchor))
-					buf.append('\n');
+		for (Track track : tracks) {
+			buf.append("\n\n*** NEW TRACK ***\n\n");
+			for (Element el: track.elts) {
+				if (buf.length() > 0) {
+					if (el instanceof SpeakerTurn ||
+							(linebreakBeforeAnchors && el instanceof Anchor))
+						buf.append('\n');
+					else
+						buf.append(' ');
+				}
+
+				int pos = buf.length();
+				String str;
+				if (el instanceof SpeakerTurn)
+					str = speakers.get(((SpeakerTurn)el).getLocuteurID()).getName();
 				else
-					buf.append(' ');
+					str = el.toString();
+				buf.append(str);
+
+				el.start = pos;
+				el.end = pos + str.length();
 			}
-
-			int pos = buf.length();
-			String str;
-			if (el instanceof SpeakerTurn)
-				str = speakers.get(((SpeakerTurn)el).getLocuteurID()).getName();
-			else
-				str = el.toString();
-			buf.append(str);
-
-			el.start = pos;
-			el.end = pos + str.length();
 		}
 
 		return buf.toString();
@@ -164,7 +117,7 @@ public class Project {
 		w.close();
 	}
 
-
+/* TODO PARALLEL TRACKS
 	public void saveRawText(File file) throws IOException {
 		PrintWriter w = FileUtils.writeFileUTF(file.getAbsolutePath());
 		String prefix = "";
@@ -233,6 +186,7 @@ public class Project {
 	 * @param name Tier name
 	 * @param finalFrame Final frame in the entire file
 	 */
+/* TODO
 	private static void praatTier(Writer w, int id, String name, int finalFrame, Alignment al) throws IOException {
 		assert id > 0;
 		w.append("\n\titem [").append(Integer.toString(id)).append("]:")
@@ -252,4 +206,5 @@ public class Project {
 					.append(al.getSegmentLabel(j)).append('"'); // TODO escape strings
 		}
 	}
+*/
 }

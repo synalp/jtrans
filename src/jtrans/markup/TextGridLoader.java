@@ -3,6 +3,7 @@ package jtrans.markup;
 import jtrans.elements.*;
 import jtrans.facade.Project;
 import jtrans.facade.Speaker;
+import jtrans.gui.JTransGUI;
 import jtrans.speechreco.s4.Alignment;
 import jtrans.utils.FileUtils;
 import jtrans.utils.TimeConverter;
@@ -10,9 +11,6 @@ import jtrans.utils.TimeConverter;
 import java.io.*;
 import java.util.*;
 import java.util.regex.*;
-
-
-
 
 
 /**
@@ -87,7 +85,7 @@ public class TextGridLoader implements MarkupLoader {
 			}
 
 			// Add elements
-
+			JTransGUI.REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
 			if (currentTier != earliest) {
 				project.elts.add(new SpeakerTurn(project.speakers.get(machine.tiers.indexOf(earliest))));
 				currentTier = earliest;
@@ -109,6 +107,7 @@ public class TextGridLoader implements MarkupLoader {
 
 			//TODO leave that there or not?
 			project.elts.add(new Anchor(TimeConverter.frame2sec(overlapEnd)));
+			*/
 		}
 
 		return project;
@@ -343,6 +342,8 @@ class TextGridStateMachine {
 					}
 					break;
 
+				case DONE:
+					break;
 				default:
 					throw new ParsingException("unknown state " + state);
 			}
