@@ -236,7 +236,7 @@ public class Menus {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				Anchor.showMinutes = ((AbstractButton)e.getSource()).isSelected();
-				aligneur.edit.setTextFromElements();
+				aligneur.refresh();
 			}
 		});
 
@@ -244,10 +244,11 @@ public class Menus {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				Project.linebreakBeforeAnchors =  ((AbstractButton)e.getSource()).isSelected();
-				aligneur.edit.setTextFromElements();
+				aligneur.refresh();
 			}
 		});
 
+		JTransGUI.REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
 
 		ButtonGroup fontSizeGroup = new ButtonGroup();
 		for (final int points: FONT_SIZES) {
@@ -284,6 +285,7 @@ public class Menus {
 			if (name.equals(TextArea.DEFAULT_FONT_NAME))
 				jmi.setSelected(true);
 		}
+		*/
 
 
 		// //////////////////////////////////////////////////////////////
@@ -577,8 +579,10 @@ public class Menus {
 							res.append(x[2]+" ");
 						}
 					}
+					JTransGUI.REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
 					aligneur.edit.setText(res.toString());
 					aligneur.edit.repaint();
+					*/
 				} catch (Exception ee) {
 					ee.printStackTrace();
 				}

@@ -20,28 +20,17 @@ import jtrans.facade.Project;
 import jtrans.elements.ElementList;
 import jtrans.elements.Element;
 import jtrans.elements.Anchor;
+import jtrans.facade.Track;
 import jtrans.utils.TimeConverter;
 
-/**
- * permet de selectionner les differents elements pour interpreter le texte:
- * locuteurs, recouvrements, bruits, etc.
- * 
- * En + du texte, on trouve des elements speciaux, qui sont:
- * - locuteur
- * - commentaires
- * - etc
- * 
- * Pour definir les elements "speciaux", il faut ajouter des expressions regulieres
- */
-public class TextArea extends JTextPane {
+public class TrackView extends JTextPane {
 
 	public static final String DEFAULT_FONT_NAME = Font.SANS_SERIF;
 	public static final int DEFAULT_FONT_SIZE = 13;
 
     private JTransGUI aligneur;
 	private Project project;
-
-	public boolean textChanged;
+	private Track track;
 
 	private Word highlightedWord = null;
     private JPopupMenu popup = null;
@@ -49,15 +38,13 @@ public class TextArea extends JTextPane {
 	//----------------------------------------------------------------
 	//------------------ Constructor --------------------------------
 	//---------------------------------------------------------------
-	public TextArea(JTransGUI aligneur) {
+	public TrackView(JTransGUI aligneur, Track track) {
 		super();
 
 		setFont(new Font(DEFAULT_FONT_NAME, Font.PLAIN, DEFAULT_FONT_SIZE));
 
         this.aligneur = aligneur;
-		this.project = aligneur.project;
-		
-		textChanged = false;
+		setTrack(aligneur.project, track);
 
         addMouseListener(new MouseAdapter() {
             @Override
@@ -218,7 +205,7 @@ public class TextArea extends JTextPane {
 	/**
 	 * Sets text from the list of elements and highlights non-text segments
 	 * according to the color defined in their respective types.
-	 * @see Project#render()
+	 * @see Track#render()
 	 */
 	public void setTextFromElements() {
 		// Create a new style for each type
@@ -235,21 +222,19 @@ public class TextArea extends JTextPane {
 		StyledDocument doc = new DefaultStyledDocument();
 
 		try {
-			doc.insertString(0, project.render(), null);
+			doc.insertString(0, track.render(), null);
 		} catch (BadLocationException ex) {
 			JOptionPane.showMessageDialog(this, ex.toString(), "BadLocationException", JOptionPane.ERROR_MESSAGE);
 		}
 
-		JTransGUI.REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
 		// Apply styles
-		for (Element el: project.elts) {
-			int type = el.getType();			
+		for (Element el: track.elts) {
+			int type = el.getType();
 			if (type >= 0 && type < project.types.size())
 				doc.setCharacterAttributes(el.start, el.end - el.start, attr[type], true);
 			if (el instanceof Word && ((Word) el).posInAlign >= 0)
 				doc.setCharacterAttributes(el.start, el.end - el.start, ALIGNED_STYLE, false);
 		}
-		*/
 
 		setStyledDocument(doc);
 	}
@@ -299,9 +284,8 @@ public class TextArea extends JTextPane {
 		int fromCh = -1;
 		int toCh = -1;
 
-		JTransGUI.REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
-		for (int i = 0; i < project.elts.size() && word < toWord; i++) {
-			Element el = project.elts.get(i);
+		for (int i = 0; i < track.elts.size() && word < toWord; i++) {
+			Element el = track.elts.get(i);
 
 			if (el instanceof Word) {
 				word++;
@@ -316,7 +300,6 @@ public class TextArea extends JTextPane {
 				fromCh = -1;
 			}
 		}
-		*/
 
 		if (fromCh > 0)
 			colorizeAlignedChars(fromCh, toCh);
@@ -330,9 +313,8 @@ public class TextArea extends JTextPane {
 		int fromCh = -1;
 		int toCh = -1;
 
-		JTransGUI.REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
-		for (int i = 0; i < project.elts.size(); i++) {
-			Element el = project.elts.get(i);
+		for (int i = 0; i < track.elts.size(); i++) {
+			Element el = track.elts.get(i);
 
 			if (el instanceof Word && ((Word) el).posInAlign > 0) {
 				toCh = el.end;
@@ -344,7 +326,6 @@ public class TextArea extends JTextPane {
 				fromCh = -1;
 			}
 		}
-		*/
 
 		if (fromCh > 0)
 			colorizeAlignedChars(fromCh, toCh);
@@ -371,8 +352,9 @@ public class TextArea extends JTextPane {
 	/**
 	 * Load text/elements into the text editor and colorize the relevant parts.
 	 */
-	public void setProject(Project project) {
+	public void setTrack(Project project, Track track) {
 		this.project = project;
+		this.track = track;
 		setEditable(false);
 		setTextFromElements();
 	}

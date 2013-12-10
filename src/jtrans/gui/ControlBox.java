@@ -46,8 +46,10 @@ public class ControlBox extends JPanel implements ActionListener {
 		liveButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				JTransGUI.REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
 				LiveSpeechReco r = LiveSpeechReco.doReco(aligneur);
 				r.addResultListener(new TextAreaRecoListener(aligneur.edit));
+				*/
 			}
 		});
 		JButton stopit = new JButton("Stop It !");

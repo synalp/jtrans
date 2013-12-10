@@ -197,7 +197,9 @@ public class AutoAligner {
 		}
 
 		// Update GUI
+		JTransGUI.REIMPLEMENT_DEC2013(); /*
 		aligneur.edit.colorizeWords(startWord, word);
+		*/
 	}
 
 	private void setAlignWord(int startWord, int endWord, float startSecond, float endSecond) {

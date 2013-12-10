@@ -24,7 +24,7 @@ public class Project {
 	public List<ElementType> types = new ArrayList<ElementType>(Arrays.asList(DEFAULT_TYPES));
 
 	// TODO this setting should be saved to disk
-	public static boolean linebreakBeforeAnchors = false;
+	public static boolean linebreakBeforeAnchors = true;
 
 
 	public void clearAlignment() {
@@ -67,36 +67,6 @@ public class Project {
 	public void refreshIndex() {
 		for (Track track : tracks)
 			track.refreshIndex();
-	}
-
-	/**
-	 * Renders the element list as a long string and sets element positions
-	 * accordingly.
-	 * @return the rendered string
-	 */
-	public String render() {
-		StringBuilder buf = new StringBuilder();
-
-		for (Track track : tracks) {
-			buf.append("\n\n*** NEW TRACK ***\n\n");
-			for (Element el: track.elts) {
-				if (buf.length() > 0) {
-					if (linebreakBeforeAnchors && el instanceof Anchor)
-						buf.append('\n');
-					else
-						buf.append(' ');
-				}
-
-				int pos = buf.length();
-				String str = el.toString();
-				buf.append(str);
-
-				el.start = pos;
-				el.end = pos + str.length();
-			}
-		}
-
-		return buf.toString();
 	}
 
 

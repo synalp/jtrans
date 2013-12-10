@@ -25,6 +25,7 @@ import jtrans.elements.Anchor;
 import jtrans.elements.Word;
 import jtrans.facade.Cache;
 import jtrans.facade.Project;
+import jtrans.facade.Track;
 import jtrans.speechreco.SpeechReco;
 import jtrans.markup.*;
 
@@ -92,7 +93,6 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 
 	public int mixidx=0;
 
-	public TextArea edit;
 	//	public Player player;
 	/* TODO PARALLEL TRACKS
 	public TemporalSigPanel sigPanel = null;
@@ -311,10 +311,6 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		}
 	}
 
-	public void setText(String s) {
-		edit.setText(s);
-		repaint();
-	}
 	private void updateViewers() {
 		// update spectro
 		AudioInputStream aud = getAudioStreamFromSec(getCurPosInSec());
@@ -378,9 +374,29 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	}
 
 	private void initPanel() {
+		removeAll();
 		setLayout(new BorderLayout());
 
-		edit = new TextArea(this);
+		JPanel centerPane = new JPanel(new GridLayout(1, project.tracks.size()));
+
+		for (Track t: project.tracks) {
+			final TrackView area = new TrackView(this, t);
+			final JScrollPane scroll = new JScrollPane(area);
+			final JLabel speakerLabel = new JLabel(t.speakerName,
+					SwingConstants.CENTER);
+			speakerLabel.setFont(new Font(Font.DIALOG, Font.BOLD, 24));
+			speakerLabel.setEnabled(false);
+
+			centerPane.add(
+					new JPanel(new BorderLayout()) {{
+						add(speakerLabel, BorderLayout.NORTH);
+						add(scroll, BorderLayout.CENTER);
+					}}
+			);
+		}
+
+		centerPane.setPreferredSize(new Dimension(centerPane.getWidth(), 500));
+
 		ctrlbox = new ControlBox(this);
 		playergui = ctrlbox.getPlayerGUI();
 
@@ -400,10 +416,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		// Add everything to the panel
 
 		add(ctrlbox, BorderLayout.NORTH);
-
-		add(new JScrollPane(edit) {{
-			setPreferredSize(new Dimension(edit.getWidth(), 300));
-		}}, BorderLayout.CENTER);
+		add(centerPane, BorderLayout.CENTER);
 
 		add(new JPanel(new BorderLayout()) {{
 			add(sigpan, BorderLayout.NORTH);
@@ -620,8 +633,10 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		//   	alignement.checkWithText(lmots, 0);
 
 		//    	System.out.println("debuglmots "+lmots.size()+" "+alignement.wordsIdx.size()+" "+alignement.wordsEnd.size());
+		REIMPLEMENT_DEC2013(); /*
 		edit.colorizeWords(0, lmots.size() - 1);
 		repaint();
+		*/
 	}
 
 	private List<String> getRecoResultOld(SpeechReco asr) {
@@ -932,6 +947,15 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	public void setProject(Project project) {
 		this.project = project;
 		setAudioSource(project.wavname);
-		edit.setProject(project);
+		initPanel();
+		jf.setContentPane(this);
+	}
+
+	/**
+	 * Forces refreshing the project view.
+	 */
+	public void refresh() {
+		// TODO - just a tad overkill?
+		setProject(project);
 	}
 }
