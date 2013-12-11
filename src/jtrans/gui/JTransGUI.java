@@ -474,26 +474,29 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	}
 
 	public void newplaystarted() {
-		REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
-		if (project.words != null) {
-			karaokeHighlighter = new Timer(KARAOKE_UPDATE_INTERVAL, new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					long curt = System.currentTimeMillis();
-					long t0 = playergui.getTimePlayStarted();
-					int curfr = TimeConverter.millisec2frame(curt-t0);
-					// ajoute le debut du segment joué
-					curfr += playergui.getRelativeStartingSec()*100;
-					int segidx = project.words.getSegmentAtFrame(curfr);
-					if (segidx < 0)
-						return;
-					edit.highlightWord(project.elts.getMotAtSegment(segidx));
+		karaokeHighlighter = new Timer(KARAOKE_UPDATE_INTERVAL, new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				long curt = System.currentTimeMillis();
+				long t0 = playergui.getTimePlayStarted();
+				int curfr = TimeConverter.millisec2frame(curt-t0);
+				// ajoute le debut du segment joué
+				curfr += playergui.getRelativeStartingSec()*100;
+
+				for (int i = 0; i < project.tracks.size(); i++) {
+					Track t = project.tracks.get(i);
+					int segidx = t.words.getSegmentAtFrame(curfr);
+					if (segidx < 0) {
+						// TODO: clear highlight
+					} else {
+						views.get(i).highlightWord(t.elts.getMotAtSegment(segidx));
+					}
 				}
-			});
-			karaokeHighlighter.start();
-		}
-*/
+			}
+		});
+		karaokeHighlighter.start();
 	}
+
 	public void newplaystopped() {
 		if (karaokeHighlighter != null) {
 			karaokeHighlighter.stop();
