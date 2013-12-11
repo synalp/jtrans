@@ -14,6 +14,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.*;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
@@ -23,6 +24,7 @@ import javax.swing.Timer;
 
 import jtrans.elements.Anchor;
 import jtrans.elements.Word;
+import jtrans.facade.AutoAligner;
 import jtrans.facade.Cache;
 import jtrans.facade.Project;
 import jtrans.facade.Track;
@@ -98,6 +100,8 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	public TemporalSigPanel sigPanel = null;
 	public ToolBarTemporalSig toolbar = null;
 	*/
+
+	List<TrackView> views;
 
 	/** Audio file in a suitable format for processing */
 	public File convertedAudioFile = null;
@@ -379,6 +383,8 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 
 		JPanel centerPane = new JPanel(new GridLayout(1, project.tracks.size()));
 
+		views = new ArrayList<TrackView>(project.tracks.size());
+
 		for (Track t: project.tracks) {
 			final TrackView area = new TrackView(this, t);
 			final JScrollPane scroll = new JScrollPane(area);
@@ -386,6 +392,8 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 					SwingConstants.CENTER);
 			speakerLabel.setFont(new Font(Font.DIALOG, Font.BOLD, 24));
 			speakerLabel.setEnabled(false);
+
+			views.add(area);
 
 			centerPane.add(
 					new JPanel(new BorderLayout()) {{
@@ -395,7 +403,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 			);
 		}
 
-		centerPane.setPreferredSize(new Dimension(centerPane.getWidth(), 500));
+		centerPane.setPreferredSize(new Dimension(1000, 500));
 
 		ctrlbox = new ControlBox(this);
 		playergui = ctrlbox.getPlayerGUI();
@@ -700,19 +708,17 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		}.start();
 	}
 
-	String[] mots;
-	public S4ForceAlignBlocViterbi getS4aligner() {
-		REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
-		// TODO: support for URL !!
-		S4ForceAlignBlocViterbi s4aligner = S4ForceAlignBlocViterbi.getS4Aligner(convertedAudioFile.getAbsolutePath(), this);
-		List<Word>  lmots = project.elts.getMots();
-		mots = new String[lmots.size()];
-		for (int i=0;i<lmots.size();i++) {
-			mots[i] = lmots.get(i).getWordString();
-		}
-		s4aligner.setMots(mots);
+	public S4ForceAlignBlocViterbi getS4aligner(Track track) {
+		// Create an array of word strings
+		List<Word> wordElements = track.elts.getMots();
+		String[] wordStrings = new String[wordElements.size()];
+		for (int i = 0; i < wordElements.size(); i++)
+			wordStrings[i] = wordElements.get(i).getWordString();
+		// Create the aligner
+		S4ForceAlignBlocViterbi s4aligner = S4ForceAlignBlocViterbi.getS4Aligner(
+				convertedAudioFile.getAbsolutePath(), this);
+		s4aligner.setMots(wordStrings);
 		return s4aligner;
-*/ return null;
 	}
 
 	public void biasAdapt() {
@@ -921,15 +927,19 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	}
 
 	public void alignBetweenAnchorsWithProgress() {
-		REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
 		new Thread() {
 			@Override
 			public void run() {
-				new AutoAligner(project, JTransGUI.this).alignBetweenAnchors();
+				for (int i = 0; i < project.tracks.size(); i++) {
+					new AutoAligner(project,
+							project.tracks.get(i),
+							JTransGUI.this,
+							views.get(i))
+					.alignBetweenAnchors();
+				}
 				setProgressDone();
 			}
 		}.start();
-*/
 	}
 
 	public void alignAllWithProgress() {

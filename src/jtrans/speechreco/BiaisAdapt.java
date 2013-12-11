@@ -68,6 +68,7 @@ public class BiaisAdapt {
 		System.out.println("MAPadapt: got in HMMs: "+ph2gauss.keySet());
 
 		ArrayList<float[]> mfccs=new ArrayList<float[]>();
+		JTransGUI.REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
 		aligneur.getS4aligner().mfccs.gotoFrame(0);
 		while(aligneur.getS4aligner().mfccs.noMoreFramesAvailable==false) {
 			Data d = aligneur.getS4aligner().mfccs.getData();
@@ -75,6 +76,7 @@ public class BiaisAdapt {
 				mfccs.add(((FloatData)d).getValues());
 			}
 		}
+		*/
 
 		for (int iter=0;iter<niters;iter++) {
 			// calcule loglike
@@ -288,14 +290,16 @@ public class BiaisAdapt {
 				}
 			}
 		}
-		aligneur.getS4aligner().mfccs.gotoFrame(0);
 		ArrayList<float[]> mfccs=new ArrayList<float[]>();
+		JTransGUI.REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
+		aligneur.getS4aligner().mfccs.gotoFrame(0);
 		while(aligneur.getS4aligner().mfccs.noMoreFramesAvailable==false) {
 			Data d = aligneur.getS4aligner().mfccs.getData();
 			if(!(d instanceof DataEndSignal) && !(d instanceof DataStartSignal)) {
 				mfccs.add(((FloatData) aligneur.getS4aligner().mfccs.getData()).getValues());
 			}
 		}
+		*/
 		//calcul du biais
 		int taille=means.get(1).length;
 		float[] mfcc=new float[taille];

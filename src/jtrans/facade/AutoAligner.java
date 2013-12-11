@@ -5,10 +5,13 @@ import java.util.*;
 
 import jtrans.elements.*;
 import jtrans.gui.JTransGUI;
+import jtrans.gui.TrackView;
 import jtrans.speechreco.s4.Alignment;
 import jtrans.speechreco.s4.S4AlignOrder;
 import jtrans.speechreco.s4.S4ForceAlignBlocViterbi;
 import jtrans.utils.TimeConverter;
+
+import javax.swing.*;
 
 
 /**
@@ -19,6 +22,7 @@ public class AutoAligner {
 	private Project project;
 	private Track track;
 	private List<Word> mots;
+	private TrackView view;
 	private S4ForceAlignBlocViterbi s4blocViterbi;
 
 
@@ -30,17 +34,18 @@ public class AutoAligner {
 	private static final boolean USE_LINEAR_ALIGNMENT = false;
 
 
-	public AutoAligner(Project project, Track track, JTransGUI aligneur) {
+	public AutoAligner(Project project, Track track, JTransGUI aligneur, TrackView view) {
 		this.project = project;
 		this.track = track;
 		this.aligneur = aligneur;
+		this.view = view;
 		track.refreshIndex();
 		mots = track.elts.getMots();
 	}
 
 	private S4AlignOrder createS4AlignOrder(int motdeb, int trdeb, int motfin, int trfin) {
 		if (s4blocViterbi == null)
-			s4blocViterbi = aligneur.getS4aligner();
+			s4blocViterbi = aligneur.getS4aligner(track);
 
 		S4AlignOrder order = new S4AlignOrder(motdeb, trdeb, motfin, trfin);
 
@@ -85,6 +90,7 @@ public class AutoAligner {
 					}
 				},
 				new File(project.wavname), // make it a file to take into account its modification date
+				track.speakerName,
 				phrase.toString(),
 				startFrame,
 				endFrame);
@@ -155,7 +161,7 @@ public class AutoAligner {
 	 * @param startFrame can be < 0, in which case use the last aligned word.
 	 * @param endFrame
 	 */
-	private void setAlignWord(int startWord, int word, int startFrame, int endFrame) {
+	private void setAlignWord(int startWord, final int word, int startFrame, int endFrame) {
 		assert endFrame >= 0;
 
 		if (startWord < 0) {
@@ -197,9 +203,13 @@ public class AutoAligner {
 		}
 
 		// Update GUI
-		JTransGUI.REIMPLEMENT_DEC2013(); /*
-		aligneur.edit.colorizeWords(startWord, word);
-		*/
+		final int fStartWord = startWord;
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				view.colorizeWords(fStartWord, word);
+			}
+		});
 	}
 
 	private void setAlignWord(int startWord, int endWord, float startSecond, float endSecond) {
@@ -254,7 +264,8 @@ public class AutoAligner {
 	 * Align words automatically between anchors set manually.
 	 */
 	public void alignBetweenAnchors() {
-		aligneur.setIndeterminateProgress("Aligning...");
+		aligneur.setIndeterminateProgress("Track \"" + track.speakerName
+				+ "\": starting alignment...");
 
 		track.clearAlignment();
 
@@ -278,9 +289,10 @@ public class AutoAligner {
 				startWord = word + 1;
 			}
 
-			aligneur.setProgress(
-					"Aligning " + (i + 1) + "/" + track.elts.size() + "...",
-					(i + 1) / (float) track.elts.size());
+			aligneur.setProgress(String.format(
+					"Track \"%s\": aligning element %d of %d...",
+					track.speakerName, i+1, track.elts.size()),
+					(i+1) / (float)track.elts.size());
 		}
 
 		track.refreshIndex();
