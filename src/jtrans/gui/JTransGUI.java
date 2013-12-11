@@ -713,10 +713,13 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 			}
 		}
 
-		if (loader != null)
-			m.friendlyLoadMarkup(loader, new File(markupFileName), new File(audioFileName));
-		else
+		if (loader != null) {
+			m.friendlyLoadMarkup(loader,
+					new File(markupFileName),
+					audioFileName==null? null: new File(audioFileName));
+		} else {
 			m.setAudioSource(audioFileName);
+		}
 	}
 
 
