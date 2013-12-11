@@ -25,89 +25,16 @@ public class TextGridLoader implements MarkupLoader {
 		TextGridStateMachine machine = new TextGridStateMachine(reader);
 		reader.close();
 
-		for (String name: machine.tierNames)
-			project.tracks.add(new Track(name));
-
-		SegQueue currentTier = null;
-
-		while (true) {
-			SegQueue earliest = null;
-			SegQueue overlappingTier = null;
-
-			ElementList eltsUnder = new ElementList();
-			ElementList eltsOver = new ElementList();
-
-			// TODO prevent 3-way overlap
-
-			// find earliest upcoming segment
-			for (SegQueue tier: machine.tiers) {
-				if (!tier.hasNext())
-					continue;
-				if (earliest == null || tier.peekStart() < earliest.peekStart())
-					earliest = tier;
+		for (int i = 0; i < machine.tiers.size(); i++) {
+			Track track = new Track(machine.tierNames.get(i));
+			Alignment queue = machine.tiers.get(i);
+			for (int j = 0; j < queue.getNbSegments(); j++) {
+				track.elts.add(new Anchor(TimeConverter.frame2sec(queue.getSegmentDebFrame(j))));
+				track.elts.addAll(RawTextLoader.parseString(
+						RawTextLoader.normalizeText(queue.getSegmentLabel(j)), project.types));
+				track.elts.add(new Anchor(TimeConverter.frame2sec(queue.getSegmentEndFrame(j))));
 			}
-
-			if (earliest == null) // All tiers exhausted
-				break;
-
-			eltsUnder.addAll(RawTextLoader.parseString(
-					RawTextLoader.normalizeText(earliest.peekText()), project.types));
-			int overlapStart = earliest.peekStart();
-			int overlapEnd = earliest.peekEnd();
-			earliest.pop();
-
-			// Find extent of overlap chain
-			int encompass = 1;
-			boolean growing = true;
-			while (growing) {
-				growing = false;
-
-				for (SegQueue tier: machine.tiers) {
-					if (tier.hasNext() && tier.peekStart() < overlapEnd) {
-						growing = true;
-						encompass++;
-						if (tier.peekEnd() > overlapEnd)
-							overlapEnd = tier.peekEnd();
-
-						ElementList parsed = RawTextLoader.parseString(
-								RawTextLoader.normalizeText(tier.peekText()), project.types);
-
-						if (tier == earliest) {
-							eltsUnder.addAll(parsed);
-						} else {
-							eltsOver.addAll(parsed);
-							overlappingTier = tier;
-						}
-
-						tier.pop();
-					}
-				}
-			}
-
-			// Add elements
-			JTransGUI.REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
-			if (currentTier != earliest) {
-				project.elts.add(new SpeakerTurn(project.speakers.get(machine.tiers.indexOf(earliest))));
-				currentTier = earliest;
-			}
-
-			if (encompass == 1) {
-				// no overlap
-				project.elts.add(new Anchor(TimeConverter.frame2sec(overlapStart)));
-				project.elts.addAll(eltsUnder);
-			} else {
-				project.elts.add(new OverlapStart());
-				project.elts.addAll(eltsUnder);
-				project.elts.add(new SpeakerTurn(project.speakers.get(machine.tiers.indexOf(overlappingTier))));
-				currentTier = overlappingTier;
-				project.elts.add(new Anchor(TimeConverter.frame2sec(overlapStart)));
-				project.elts.addAll(eltsOver);
-				project.elts.add(new OverlapEnd());
-			}
-
-			//TODO leave that there or not?
-			project.elts.add(new Anchor(TimeConverter.frame2sec(overlapEnd)));
-			*/
+			project.tracks.add(track);
 		}
 
 		return project;
@@ -119,39 +46,8 @@ public class TextGridLoader implements MarkupLoader {
 }
 
 
-
-class SegQueue extends Alignment {
-	private int upcoming = 0;
-
-	public int peek() {
-		return upcoming;
-	}
-
-	public boolean hasNext() {
-		return upcoming < getNbSegments();
-	}
-
-	public int peekStart() {
-		return getSegmentDebFrame(upcoming);
-	}
-
-	public int peekEnd() {
-		return getSegmentEndFrame(upcoming);
-	}
-
-	public String peekText() {
-		return getSegmentLabel(upcoming);
-	}
-
-	public int pop() {
-		return upcoming++;
-	}
-}
-
-
-
 class TextGridStateMachine {
-	List<SegQueue> tiers = new ArrayList<SegQueue>();
+	List<Alignment> tiers = new ArrayList<Alignment>();
 	List<String> tierNames = new ArrayList<String>();
 
 
@@ -227,7 +123,7 @@ class TextGridStateMachine {
 		State state = State.FILE_HEADER_1;
 		int lineNumber = 0;
 		Interval currentInterval = new Interval();
-		SegQueue currentTier = null;
+		Alignment currentTier = null;
 		int remainingIntervals = -1;
 
 		while (state != State.DONE) {
@@ -268,7 +164,7 @@ class TextGridStateMachine {
 				
 				case TIER_HEADER:
 					if (PAT_ITEM.matcher(lcline).matches()) {
-						currentTier = new SegQueue();
+						currentTier = new Alignment();
 						tiers.add(currentTier);
 						state = State.TIER_DESCRIPTION;
 					} else {
