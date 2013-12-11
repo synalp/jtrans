@@ -153,7 +153,6 @@ public class Menus {
 
 		export.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				JTransGUI.REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
 				JOptionPane.showMessageDialog(aligneur.jf,
 						"By exporting the alignment to a foreign format,\n" +
 						"some JTrans-specific information may be lost.\n\n" +
@@ -180,11 +179,13 @@ public class Menus {
 				File file = fc.getSelectedFile();
 				try {
 					if (ff == filterTXT) {
+						JTransGUI.REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
 						aligneur.project.saveRawText(file);
+						*/
 					} else if (ff == filterTextGridWordsOnly) {
-						aligneur.project.savePraat(file, true, false);
+						aligneur.project.savePraat(file, true, false, aligneur.audioSourceTotalFrames);
 					} else if (ff == filterTextGridWordsAndPhons) {
-						aligneur.project.savePraat(file, true, true);
+						aligneur.project.savePraat(file, true, true, aligneur.audioSourceTotalFrames);
 					} else {
 						JOptionPane.showMessageDialog(aligneur.jf, "Unknown filter " + ff);
 					}
@@ -194,7 +195,6 @@ public class Menus {
 							"IOException",
 							JOptionPane.ERROR_MESSAGE);
 				}
-				*/
 			}
 		});
 
