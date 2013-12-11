@@ -618,24 +618,22 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 */
 	}
 
-	public void selectWord(Word word) {
-		REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
-        boolean replay = ctrlbox.getPlayerGUI().isPlaying();
-        ctrlbox.getPlayerGUI().stopPlaying();
-        Thread.yield();
+	public void selectWord(Word word, Track track, TrackView view) {
+		PlayerGUI player = ctrlbox.getPlayerGUI();
+		boolean replay = player.isPlaying();
+		player.stopPlaying();
 
-        if (word.posInAlign >= 0) {
-            edit.highlightWord(word);
-            setCurPosInSec(TimeConverter.frame2sec(
-                    project.words.getSegmentDebFrame(word.posInAlign)));
-        } else {
-            System.err.println("warning: pas de segment associé au mot " + word.getWordString());
-            replay=false;
-        }
+		if (word.posInAlign >= 0) {
+			view.highlightWord(word);
+			setCurPosInSec(TimeConverter.frame2sec(
+					track.words.getSegmentDebFrame(word.posInAlign)));
+		} else {
+			System.err.println("warning: pas de segment associé au mot " + word.getWordString());
+			replay = false;
+		}
 
-        if (replay)
-            ctrlbox.getPlayerGUI().startPlaying();
-            */
+		if (replay)
+			player.startPlaying();
 	}
 
 	private void getRecoResult(SpeechReco asr) {

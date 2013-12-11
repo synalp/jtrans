@@ -46,43 +46,40 @@ public class TrackView extends JTextPane {
         this.aligneur = aligneur;
 		setTrack(aligneur.project, track);
 
-        addMouseListener(new MouseAdapter() {
-            @Override
-            public void mousePressed(MouseEvent e) {
-                click(e);
-            }
-        });
+		addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				click(e);
+			}
+		});
 	}
 
-    private void click(MouseEvent e) {
-        if (popup != null && popup.isVisible()) {
-            popup.setVisible(false);
-            popup = null;
-            return;
-        }
+	private void click(MouseEvent e) {
+		if (popup != null && popup.isVisible()) {
+			popup.setVisible(false);
+			popup = null;
+			return;
+		}
 
-		JTransGUI.REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
-        int caret = viewToModel(e.getPoint());
+		int caret = viewToModel(e.getPoint());
 
-        int idx = project.elts.getIndiceElementAtTextPosi(caret);
-        if (idx < 0)
-            return;
-        Element el = project.elts.get(idx);
+		int idx = track.elts.getIndiceElementAtTextPosi(caret);
+		if (idx < 0)
+			return;
+		Element el = track.elts.get(idx);
 
-        if (e.isPopupTrigger()) {
+		if (e.isPopupTrigger()) {
 			if (el instanceof Word) {
 				wordPopupMenu((Word)el, e);
+			} else if (el instanceof Anchor) {
+				anchorPopupMenu((Anchor)el, e);
 			}
-            if (el instanceof Anchor) {
-                anchorPopupMenu((Anchor)el, e);
-            }
-        } else {
-            if (el instanceof Word) {
-                aligneur.selectWord((Word) el);
-            }
-        }
-        */
-    }
+		} else {
+			if (el instanceof Word) {
+				aligneur.selectWord((Word)el, track, this);
+			}
+		}
+	}
 
 	/**
 	 * Dialog box to create an anchor before or after a certain word.
