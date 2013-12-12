@@ -14,7 +14,6 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.text.*;
 
-
 import jtrans.elements.Word;
 import jtrans.facade.Project;
 import jtrans.elements.ElementList;
@@ -26,25 +25,43 @@ import jtrans.utils.TimeConverter;
 public class TrackView extends JTextPane {
 
 	public static final String DEFAULT_FONT_NAME = Font.SANS_SERIF;
+
 	public static final int DEFAULT_FONT_SIZE = 13;
 
-    private JTransGUI aligneur;
+	private static final AttributeSet ALIGNED_STYLE =
+			new SimpleAttributeSet() {{
+				addAttribute(StyleConstants.Foreground, Color.BLUE.darker());
+				addAttribute(StyleConstants.Italic, true);
+			}};
+
+	private static final AttributeSet UNALIGNED_STYLE =
+			new SimpleAttributeSet() {{
+				addAttribute(StyleConstants.Foreground, Color.RED.darker());
+				addAttribute(StyleConstants.Underline, true);
+			}};
+
+	private static final AttributeSet HIGHLIGHTED_STYLE =
+			new SimpleAttributeSet() {{
+				addAttribute(StyleConstants.Background, Color.LIGHT_GRAY);
+			}};
+
+    private JTransGUI gui;
 	private Project project;
 	private Track track;
 
 	private Word highlightedWord = null;
     private JPopupMenu popup = null;
 
-	//----------------------------------------------------------------
-	//------------------ Constructor --------------------------------
-	//---------------------------------------------------------------
-	public TrackView(JTransGUI aligneur, Track track) {
+
+	public TrackView(JTransGUI gui, Track track) {
 		super();
 
 		setFont(new Font(DEFAULT_FONT_NAME, Font.PLAIN, DEFAULT_FONT_SIZE));
 
-        this.aligneur = aligneur;
-		setTrack(aligneur.project, track);
+        this.gui = gui;
+		this.project = gui.project;
+		this.track = track;
+		setEditable(false);
 
 		addMouseListener(new MouseAdapter() {
 			@Override
@@ -52,7 +69,15 @@ public class TrackView extends JTextPane {
 				click(e);
 			}
 		});
+
+		setTextFromElements();
 	}
+
+
+	//==========================================================================
+	// UI EVENTS
+	//==========================================================================
+
 
 	private void click(MouseEvent e) {
 		if (popup != null && popup.isVisible()) {
@@ -75,60 +100,18 @@ public class TrackView extends JTextPane {
 				anchorPopupMenu((Anchor)el, e);
 			}
 		} else {
-			if (el instanceof Word) {
-				aligneur.selectWord((Word)el, track, this);
-			}
+			if (el instanceof Word)
+				selectWord((Word)el);
 		}
 	}
 
-	/**
-	 * Dialog box to create an anchor before or after a certain word.
-	 * @param before If true, the new anchor will be placed before the word in
-	 *               the element list. If false, it'll be placed after the word.
-	 */
-	private void newAnchorNextToWord(Word word, boolean before) {
-		JTransGUI.REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
-		ElementList.Neighborhood<Anchor> range =
-				project.elts.getNeighbors(word, Anchor.class);
-
-		float initialPos;
-
-		if (word.posInAlign < 0) {
-			float endOfAudio = TimeConverter.frame2sec((int)aligneur.audioSourceTotalFrames);
-			initialPos = before?
-					(range.prev!=null? range.prev.seconds: 0) :
-					(range.next!=null? range.next.seconds: endOfAudio);
-		} else if (before) {
-			initialPos = TimeConverter.frame2sec(
-					project.words.getSegmentDebFrame(word.posInAlign));
-		} else {
-			initialPos = TimeConverter.frame2sec(
-					project.words.getSegmentEndFrame(word.posInAlign));
-		}
-
-		String positionString = JOptionPane.showInputDialog(aligneur.jf,
-				String.format("Enter position for new anchor to be inserted\n%s '%s' (in seconds):",
-						before? "before": "after", word.getWordString()),
-				initialPos);
-
-		if (positionString == null)
-			return;
-
-		float newPos = Float.parseFloat(positionString);
-
-		if (aligneur.enforceLegalAnchor(range, newPos)) {
-			Anchor anchor = new Anchor(newPos);
-			project.elts.add(project.elts.indexOf(word) + (before?0:1), anchor);
-			project.clearAlignmentAround(anchor);
-			aligneur.setProject(project);
-		}
-		*/
-	}
 
 	private void wordPopupMenu(final Word word, MouseEvent event) {
 		popup = new JPopupMenu("Word");
 
-		popup.add(new JMenuItem("New anchor before '" + word.getWordString() + "'") {{
+		popup.add(new JMenuItem(String.format("New anchor before '%s'",
+				word.getWordString()))
+		{{
 			addActionListener(new AbstractAction() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
@@ -137,7 +120,9 @@ public class TrackView extends JTextPane {
 			});
 		}});
 
-		popup.add(new JMenuItem("New anchor after '" + word.getWordString() + "'") {{
+		popup.add(new JMenuItem(String.format("New anchor after '%s'",
+				word.getWordString()))
+		{{
 			addActionListener(new AbstractAction() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
@@ -149,60 +134,181 @@ public class TrackView extends JTextPane {
 		popup.show(this, event.getX(), event.getY());
 	}
 
-    private void anchorPopupMenu(final Anchor anchor, MouseEvent event) {
-        popup = new JPopupMenu("Anchor");
 
-        popup.add(new JMenuItem("Adjust time") {{
-            addActionListener(new AbstractAction() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    aligneur.repositionAnchor(anchor);
-                }
-            });
-        }});
+	private void anchorPopupMenu(final Anchor anchor, MouseEvent event) {
+		popup = new JPopupMenu("Anchor");
 
-        popup.add(new JMenuItem("Clear alignment around") {{
-			JTransGUI.REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
-            addActionListener(new AbstractAction() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    project.clearAlignmentAround(anchor);
-                    aligneur.setProject(project); // force refresh
-                }
-            });
-            */
-        }});
+		popup.add(new JMenuItem("Adjust time") {{
+			addActionListener(new AbstractAction() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					repositionAnchor(anchor);
+					setTextFromElements();
+				}
+			});
+		}});
+
+		popup.add(new JMenuItem("Clear alignment around") {{
+			addActionListener(new AbstractAction() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					track.clearAlignmentAround(anchor);
+					setTextFromElements();
+				}
+			});
+		}});
 
 
-        popup.add(new JMenuItem("Delete") {{
-			JTransGUI.REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
-            addActionListener(new AbstractAction() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    project.clearAlignmentAround(anchor);
-                    project.elts.remove(anchor);
-                    aligneur.setProject(project); // force refresh
-                }
-            });
-            */
-        }});
+		popup.add(new JMenuItem("Delete") {{
+			addActionListener(new AbstractAction() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					track.clearAlignmentAround(anchor);
+					track.elts.remove(anchor);
+					setTextFromElements();
+				}
+			});
+		}});
 
-        popup.show(this, event.getX(), event.getY());
-    }
+		popup.show(this, event.getX(), event.getY());
+	}
 
-	private static final AttributeSet ALIGNED_STYLE = new SimpleAttributeSet() {{
-		addAttribute(StyleConstants.Foreground, Color.BLUE.darker());
-		addAttribute(StyleConstants.Italic, true);
-	}};
 
-	private static final AttributeSet UNALIGNED_STYLE = new SimpleAttributeSet() {{
-		addAttribute(StyleConstants.Foreground, Color.RED.darker());
-		addAttribute(StyleConstants.Underline, true);
-	}};
+	//==========================================================================
+	// UI ACTIONS
+	//==========================================================================
 
-	private static final AttributeSet HIGHLIGHTED_STYLE = new SimpleAttributeSet() {{
-		addAttribute(StyleConstants.Background, Color.LIGHT_GRAY);
-	}};
+	/**
+	 * Highlights a word and sets the playback position to the beginning of the
+	 * word.
+	 */
+	private void selectWord(Word word) {
+		PlayerGUI player = gui.ctrlbox.getPlayerGUI();
+		boolean replay = player.isPlaying();
+		player.stopPlaying();
+
+		if (word.posInAlign >= 0) {
+			highlightWord(word);
+			gui.setCurPosInSec(TimeConverter.frame2sec(
+					track.words.getSegmentDebFrame(word.posInAlign)));
+		} else {
+			replay = false;
+		}
+
+		if (replay)
+			player.startPlaying();
+	}
+
+
+	/**
+	 * Dialog box to create an anchor before or after a certain word.
+	 * @param before If true, the new anchor will be placed before the word in
+	 *               the element list. If false, it'll be placed after the word.
+	 */
+	private void newAnchorNextToWord(Word word, boolean before) {
+		ElementList.Neighborhood<Anchor> range =
+				track.elts.getNeighbors(word, Anchor.class);
+
+		float initialPos;
+
+		if (word.posInAlign < 0) {
+			float endOfAudio = TimeConverter.frame2sec((int) gui.audioSourceTotalFrames);
+			initialPos = before?
+					(range.prev!=null? range.prev.seconds: 0) :
+					(range.next!=null? range.next.seconds: endOfAudio);
+		} else if (before) {
+			initialPos = TimeConverter.frame2sec(
+					track.words.getSegmentDebFrame(word.posInAlign));
+		} else {
+			initialPos = TimeConverter.frame2sec(
+					track.words.getSegmentEndFrame(word.posInAlign));
+		}
+
+		String positionString = JOptionPane.showInputDialog(gui.jf,
+				String.format("Enter position for new anchor to be inserted\n"
+						+ "%s '%s' (in seconds):",
+						before? "before": "after", word.getWordString()),
+				initialPos);
+
+		if (positionString == null)
+			return;
+
+		float newPos = Float.parseFloat(positionString);
+
+		if (sanitizeAnchorPosition(range, newPos)) {
+			Anchor anchor = new Anchor(newPos);
+			track.elts.add(track.elts.indexOf(word) + (before?0:1), anchor);
+			track.clearAlignmentAround(anchor);
+			setTextFromElements();
+		}
+	}
+
+
+	/**
+	 * Dialog box to prompt the user where to reposition the anchor.
+	 * User input is sanitized with sanitizeAnchorPosition().
+	 */
+	private void repositionAnchor(Anchor anchor) {
+		String newPosString = JOptionPane.showInputDialog(gui.jf,
+				"Enter new anchor position in seconds:",
+				Float.toString(anchor.seconds));
+
+		if (newPosString == null)
+			return;
+
+		float newPos = Float.parseFloat(newPosString);
+
+		if (!sanitizeAnchorPosition(
+				track.elts.getNeighbors(anchor, Anchor.class), newPos))
+		{
+			return;
+		}
+
+		anchor.seconds = newPos;
+
+		track.clearAlignmentAround(anchor);
+	}
+
+
+	/**
+	 * Ensures newPos is a valid position for an anchor within the given
+	 * range; if not, informs the user with error messages.
+	 * @return true if the position is valid
+	 */
+	private boolean sanitizeAnchorPosition(
+			ElementList.Neighborhood<Anchor> range, float newPos)
+	{
+		if (newPos < 0) {
+			JOptionPane.showMessageDialog(gui.jf,
+					"Can't set to negative position!",
+					"Illegal anchor position", JOptionPane.ERROR_MESSAGE);
+			return false;
+		}
+
+		if (range.prev != null && range.prev.seconds > newPos) {
+			JOptionPane.showMessageDialog(gui.jf,
+					"Can't set this anchor before the previous anchor\n" +
+							"(at " + range.prev.seconds + " seconds).",
+					"Illegal anchor position", JOptionPane.ERROR_MESSAGE);
+			return false;
+		}
+
+		if (range.next != null && range.next.seconds < newPos) {
+			JOptionPane.showMessageDialog(gui.jf,
+					"Can't set this anchor past the next anchor\n" +
+							"(at " + range.next.seconds + " seconds).",
+					"Illegal anchor position", JOptionPane.ERROR_MESSAGE);
+			return false;
+		}
+
+		return true;
+	}
+
+
+	//==========================================================================
+	// TEXT STYLING
+	//==========================================================================
+
 
 	/**
 	 * Sets text from the list of elements and highlights non-text segments
@@ -226,7 +332,7 @@ public class TrackView extends JTextPane {
 		try {
 			doc.insertString(0, track.render(), null);
 		} catch (BadLocationException ex) {
-			JOptionPane.showMessageDialog(this, ex.toString(), "BadLocationException", JOptionPane.ERROR_MESSAGE);
+			ex.printStackTrace();
 		}
 
 		// Apply styles
@@ -300,32 +406,4 @@ public class TrackView extends JTextPane {
 			}
 		}
 	}
-
-	/**
-	 * Colorize range of characters with the "aligned" style
-	 * @param from first character to colorize
-	 * @param to last character to colorize (exclusive)
-	 */
-	private void colorizeAlignedChars(int from, int to) {
-		getStyledDocument().setCharacterAttributes(from, to-from, ALIGNED_STYLE, true);
-	}
-
-	public String getMot(Word mot) {
-		try {
-			return getText(mot.start, mot.end-mot.start);
-		} catch (BadLocationException e) {
-			e.printStackTrace();
-			return null;
-		}
-	}
-
-	/**
-	 * Load text/elements into the text editor and colorize the relevant parts.
-	 */
-	public void setTrack(Project project, Track track) {
-		this.project = project;
-		this.track = track;
-		setEditable(false);
-		setTextFromElements();
-	}
-}//class TextEditor
+}
