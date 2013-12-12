@@ -195,6 +195,11 @@ public class TrackView extends JTextPane {
 		addAttribute(StyleConstants.Italic, true);
 	}};
 
+	private static final AttributeSet UNALIGNED_STYLE = new SimpleAttributeSet() {{
+		addAttribute(StyleConstants.Foreground, Color.RED.darker());
+		addAttribute(StyleConstants.Underline, true);
+	}};
+
 	private static final AttributeSet HIGHLIGHTED_STYLE = new SimpleAttributeSet() {{
 		addAttribute(StyleConstants.Background, Color.LIGHT_GRAY);
 	}};
@@ -266,10 +271,9 @@ public class TrackView extends JTextPane {
 	}
 
 	/**
-	 * Colorizes range of words with the "aligned" style.
+	 * Colorizes a range of words with the "aligned" or "unaligned" style
+	 * according to their posInAlign.
 	 * Does not touch non-word elements.
-	 * This method does not care whether the word is actually aligned
-	 * (posInAlign) or not.
 	 *
 	 * @param fromWord number of the first word (in a list containing only
 	 *                    words) to colorize. This is NOT an element index!
@@ -277,55 +281,24 @@ public class TrackView extends JTextPane {
 	 *               NOT an element index!
 	 */
 	public void colorizeWords(int fromWord, int toWord) {
-		int word = -1;
-		int fromCh = -1;
-		int toCh = -1;
+		int word = 0;
+		StyledDocument doc = getStyledDocument();
 
-		for (int i = 0; i < track.elts.size() && word < toWord; i++) {
+		for (int i = 0; i < track.elts.size() && word <= toWord; i++) {
 			Element el = track.elts.get(i);
+			Word elWord = el instanceof Word? (Word)el: null;
 
-			if (el instanceof Word) {
-				word++;
+			if (elWord != null) {
 				if (word >= fromWord) {
-					toCh = el.end;
-					if (fromCh < 0)
-						fromCh = el.start;
+					doc.setCharacterAttributes(
+							elWord.start,
+							elWord.end-elWord.start,
+							elWord.posInAlign >= 0? ALIGNED_STYLE: UNALIGNED_STYLE,
+							true);
 				}
-			} else {
-				if (fromCh > 0)
-					colorizeAlignedChars(fromCh, toCh);
-				fromCh = -1;
+				word++;
 			}
 		}
-
-		if (fromCh > 0)
-			colorizeAlignedChars(fromCh, toCh);
-	}
-
-	/**
-	 * Colorizes all aligned words with the "aligned" style.
-	 * This method only colorizes words that are aligned properly (posInAlign).
-	 */
-	public void colorizeAllAlignedWords() {
-		int fromCh = -1;
-		int toCh = -1;
-
-		for (int i = 0; i < track.elts.size(); i++) {
-			Element el = track.elts.get(i);
-
-			if (el instanceof Word && ((Word) el).posInAlign > 0) {
-				toCh = el.end;
-				if (fromCh < 0)
-					fromCh = el.start;
-			} else {
-				if (fromCh > 0)
-					colorizeAlignedChars(fromCh, toCh);
-				fromCh = -1;
-			}
-		}
-
-		if (fromCh > 0)
-			colorizeAlignedChars(fromCh, toCh);
 	}
 
 	/**
