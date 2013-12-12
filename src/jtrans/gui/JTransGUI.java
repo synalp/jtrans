@@ -14,6 +14,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.*;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
@@ -98,6 +99,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	*/
 
 	public MultiTrackView multitrack;
+	public SpeakerVisibilityControl speakerVisibility;
 
 	/** Audio file in a suitable format for processing */
 	public File convertedAudioFile = null;
@@ -374,7 +376,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		setLayout(new BorderLayout());
 
 		multitrack = new MultiTrackView(project, this);
-		SpeakerVisibilityControl svc = new SpeakerVisibilityControl(project, multitrack);
+		speakerVisibility = new SpeakerVisibilityControl(project, multitrack);
 		multitrack.setPreferredSize(new Dimension(1000, 500));
 
 		ctrlbox = new ControlBox(this);
@@ -396,7 +398,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		// Add everything to the panel
 
 		add(ctrlbox, BorderLayout.PAGE_START);
-		add(svc, BorderLayout.LINE_END);
+		add(speakerVisibility, BorderLayout.LINE_END);
 		add(multitrack, BorderLayout.CENTER);
 
 		add(new JPanel(new BorderLayout()) {{
@@ -447,7 +449,9 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	}
 
 	public void newplaystarted() {
-		karaokeHighlighter = new Timer(KARAOKE_UPDATE_INTERVAL, new ActionListener() {
+		karaokeHighlighter = new Timer(KARAOKE_UPDATE_INTERVAL, new AbstractAction() {
+			Word[] hl = new Word[project.tracks.size()];
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				long curt = System.currentTimeMillis();
@@ -458,12 +462,21 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 
 				for (int i = 0; i < project.tracks.size(); i++) {
 					Track t = project.tracks.get(i);
-					int segidx = t.words.getSegmentAtFrame(curfr);
-					if (segidx < 0) {
-						// TODO: clear highlight
-					} else {
-						multitrack.getView(i).highlightWord(t.elts.getMotAtSegment(segidx));
+
+					Word newHl = t.elts.getMotAtSegment(
+							t.words.getSegmentAtFrame(curfr));
+
+					// Only update UI if the word wasn't already highlighted
+					if (hl[i] != newHl) {
+						if (newHl == null) {
+							// TODO clear
+						} else {
+							speakerVisibility.pulse(i);
+							multitrack.getView(i).highlightWord(newHl);
+						}
 					}
+
+					hl[i] = newHl;
 				}
 			}
 		});
