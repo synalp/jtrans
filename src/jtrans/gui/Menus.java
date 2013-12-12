@@ -39,6 +39,7 @@ public class Menus {
 	String reco;
 	boolean[] done = {false};
 	LiveSpeechReco gram;
+	private Font currentFont = new Font(TrackView.DEFAULT_FONT_NAME, Font.PLAIN, TrackView.DEFAULT_FONT_SIZE);
 
 	private static final FileFilter
 			filterJTR = new FileNameExtensionFilter("JTrans Project (*.jtr, *.json)", "jtr", "json"),
@@ -257,10 +258,8 @@ public class Menus {
 			jmi.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					for (TrackView view: aligneur.views) {
-						Font currentFont = view.getFont();
-						view.setFont(new Font(currentFont.getName(), Font.PLAIN, points));
-					}
+					currentFont = new Font(currentFont.getName(), Font.PLAIN, points);
+					aligneur.multitrack.setViewFont(currentFont);
 				}
 			});
 
@@ -277,10 +276,8 @@ public class Menus {
 			jmi.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					for (TrackView view: aligneur.views) {
-						Font currentFont = view.getFont();
-						view.setFont(new Font(name, Font.PLAIN, currentFont.getSize()));
-					}
+					currentFont = new Font(name, Font.PLAIN, currentFont.getSize());
+					aligneur.multitrack.setViewFont(currentFont);
 				}
 			});
 

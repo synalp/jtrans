@@ -14,7 +14,6 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.*;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
@@ -98,7 +97,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	public ToolBarTemporalSig toolbar = null;
 	*/
 
-	List<TrackView> views;
+	public MultiTrackView multitrack;
 
 	/** Audio file in a suitable format for processing */
 	public File convertedAudioFile = null;
@@ -374,29 +373,9 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		removeAll();
 		setLayout(new BorderLayout());
 
-		JPanel centerPane = new JPanel(new GridLayout(1, project.tracks.size()));
-
-		views = new ArrayList<TrackView>(project.tracks.size());
-
-		for (Track t: project.tracks) {
-			final TrackView area = new TrackView(this, t);
-			final JScrollPane scroll = new JScrollPane(area);
-			final JLabel speakerLabel = new JLabel(t.speakerName,
-					SwingConstants.CENTER);
-			speakerLabel.setFont(new Font(Font.DIALOG, Font.BOLD, 24));
-			speakerLabel.setEnabled(false);
-
-			views.add(area);
-
-			centerPane.add(
-					new JPanel(new BorderLayout()) {{
-						add(speakerLabel, BorderLayout.NORTH);
-						add(scroll, BorderLayout.CENTER);
-					}}
-			);
-		}
-
-		centerPane.setPreferredSize(new Dimension(1000, 500));
+		multitrack = new MultiTrackView(project, this);
+		SpeakerVisibilityControl svc = new SpeakerVisibilityControl(project, multitrack);
+		multitrack.setPreferredSize(new Dimension(1000, 500));
 
 		ctrlbox = new ControlBox(this);
 		playergui = ctrlbox.getPlayerGUI();
@@ -405,8 +384,8 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 
 		final JPanel status = new JPanel(new BorderLayout(5, 0)) {{
 			setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-			add(new JSeparator(), BorderLayout.NORTH);
-			add(progressBar, BorderLayout.WEST);
+			add(new JSeparator(), BorderLayout.PAGE_START);
+			add(progressBar, BorderLayout.LINE_START);
 			add(infoLabel, BorderLayout.CENTER);
 		}};
 
@@ -416,13 +395,14 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 
 		// Add everything to the panel
 
-		add(ctrlbox, BorderLayout.NORTH);
-		add(centerPane, BorderLayout.CENTER);
+		add(ctrlbox, BorderLayout.PAGE_START);
+		add(svc, BorderLayout.LINE_END);
+		add(multitrack, BorderLayout.CENTER);
 
 		add(new JPanel(new BorderLayout()) {{
-			add(sigpan, BorderLayout.NORTH);
-			add(status, BorderLayout.SOUTH);
-		}}, BorderLayout.SOUTH);
+			add(sigpan, BorderLayout.PAGE_START);
+			add(status, BorderLayout.PAGE_END);
+		}}, BorderLayout.PAGE_END);
 	}
 
 	void goHome() {
@@ -482,7 +462,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 					if (segidx < 0) {
 						// TODO: clear highlight
 					} else {
-						views.get(i).highlightWord(t.elts.getMotAtSegment(segidx));
+						multitrack.getView(i).highlightWord(t.elts.getMotAtSegment(segidx));
 					}
 				}
 			}
@@ -929,7 +909,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 					new AutoAligner(project,
 							project.tracks.get(i),
 							JTransGUI.this,
-							views.get(i))
+							multitrack.getView(i))
 					.alignBetweenAnchors();
 				}
 				setProgressDone();
