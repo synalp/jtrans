@@ -248,8 +248,6 @@ public class Menus {
 			}
 		});
 
-		JTransGUI.REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
-
 		ButtonGroup fontSizeGroup = new ButtonGroup();
 		for (final int points: FONT_SIZES) {
 			final JRadioButtonMenuItem jmi = new JRadioButtonMenuItem(points + " pt");
@@ -259,12 +257,14 @@ public class Menus {
 			jmi.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					Font currentFont = aligneur.edit.getFont();
-					aligneur.edit.setFont(new Font(currentFont.getName(), Font.PLAIN, points));
+					for (TrackView view: aligneur.views) {
+						Font currentFont = view.getFont();
+						view.setFont(new Font(currentFont.getName(), Font.PLAIN, points));
+					}
 				}
 			});
 
-			if (points == TextArea.DEFAULT_FONT_SIZE)
+			if (points == TrackView.DEFAULT_FONT_SIZE)
 				jmi.setSelected(true);
 		}
 
@@ -277,15 +277,16 @@ public class Menus {
 			jmi.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					Font currentFont = aligneur.edit.getFont();
-					aligneur.edit.setFont(new Font(name, Font.PLAIN, currentFont.getSize()));
+					for (TrackView view: aligneur.views) {
+						Font currentFont = view.getFont();
+						view.setFont(new Font(name, Font.PLAIN, currentFont.getSize()));
+					}
 				}
 			});
 
-			if (name.equals(TextArea.DEFAULT_FONT_NAME))
+			if (name.equals(TrackView.DEFAULT_FONT_NAME))
 				jmi.setSelected(true);
 		}
-		*/
 
 
 		// //////////////////////////////////////////////////////////////
