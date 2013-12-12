@@ -914,32 +914,24 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		return true;
 	}
 
-	public void alignBetweenAnchorsWithProgress() {
+	public void alignAllWithProgress(final boolean useAnchors) {
 		new Thread() {
 			@Override
 			public void run() {
 				for (int i = 0; i < project.tracks.size(); i++) {
-					new AutoAligner(project,
+					AutoAligner aa = new AutoAligner(
+							project,
 							project.tracks.get(i),
 							JTransGUI.this,
-							multitrack.getView(i))
-					.alignBetweenAnchors();
+							multitrack.getView(i));
+					if (useAnchors)
+						aa.alignBetweenAnchors();
+					else
+						aa.alignRaw();
 				}
 				setProgressDone();
 			}
 		}.start();
-	}
-
-	public void alignAllWithProgress() {
-		REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
-		new Thread() {
-			@Override
-			public void run() {
-				new AutoAligner(project, JTransGUI.this).alignRaw();
-				setProgressDone();
-			}
-		}.start();
-*/
 	}
 
 	public void setProject(Project project) {

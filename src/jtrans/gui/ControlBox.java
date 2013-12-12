@@ -19,7 +19,6 @@ import jtrans.speechreco.LiveSpeechReco;
 
 public class ControlBox extends JPanel implements ActionListener {
 	private JTransGUI aligneur;
-	private JButton alignButton;
 	private PlayerGUI playergui;
 	
 	public PlayerGUI getPlayerGUI() {return playergui;}
@@ -27,14 +26,6 @@ public class ControlBox extends JPanel implements ActionListener {
 	public ControlBox(JTransGUI main) {
 		aligneur = main;
 		playergui = new PlayerGUI(main);
-		
-		alignButton = new JButton("AutoAlign");
-		alignButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				aligneur.alignAllWithProgress();
-			}
-		});
 		JButton asrButton = new JButton("AutoTranscript");
 		asrButton.addActionListener(new ActionListener() {
 			@Override
@@ -66,8 +57,6 @@ public class ControlBox extends JPanel implements ActionListener {
 		b.add(Box.createGlue());
 		b.add(playergui);
 		b.add(Box.createGlue());
-		b.add(alignButton);
-		b.add(Box.createGlue());
 		b.add(asrButton);
 		b.add(Box.createGlue());
 		b.add(liveButton);
@@ -76,8 +65,6 @@ public class ControlBox extends JPanel implements ActionListener {
 		b.add(Box.createGlue());
 		
 		playergui.addActionListener(this);
-		
-		setMaximumSize(new Dimension(10000, alignButton.getPreferredSize().height+200));
 	}
 
 	// cette methode est appelee depuis le PlayerGUI

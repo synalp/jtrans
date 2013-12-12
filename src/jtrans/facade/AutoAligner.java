@@ -303,7 +303,9 @@ public class AutoAligner {
 	 * Aligns words automatically. Does not account for anchors.
 	 */
 	public void alignRaw() {
-		aligneur.setIndeterminateProgress("Aligning...");
+		aligneur.setIndeterminateProgress("Track \"" + track.speakerName
+				+ "\": aligning...");
+
 		track.clearAlignment();
 
 		int lastAlignedWord = 0;
@@ -316,9 +318,10 @@ public class AutoAligner {
 			previousLAW = lastAlignedWord;
 			lastAlignedWord = getLastMotPrecAligned(mots.size()-1);
 
-			aligneur.setProgress(
-					"Aligning " + (lastAlignedWord + 1) + "/" + track.elts.size() + "...",
-					(lastAlignedWord + 1) / (float) track.elts.size());
+			aligneur.setProgress(String.format(
+					"Track \"%s\": aligning element %d of %d...",
+					track.speakerName, lastAlignedWord+1, track.elts.size()),
+					(lastAlignedWord+1) / (float)track.elts.size());
 		}
 
 		track.refreshIndex();

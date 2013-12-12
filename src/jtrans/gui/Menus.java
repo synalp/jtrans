@@ -304,14 +304,14 @@ public class Menus {
 		autoAnchors.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				aligneur.alignBetweenAnchorsWithProgress();
+				aligneur.alignAllWithProgress(true);
 			}
 		});
 
 		autoAll.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				aligneur.alignAllWithProgress();
+				aligneur.alignAllWithProgress(false);
 			}
 		});
 
