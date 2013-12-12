@@ -38,10 +38,7 @@ import jtrans.gui.signalViewers.spectroPanel.SpectroControl;
 import jtrans.elements.ElementList;
 import jtrans.speechreco.BiaisAdapt;
 import jtrans.speechreco.s4.S4ForceAlignBlocViterbi;
-import jtrans.utils.CancelableProgressDialog;
-import jtrans.utils.FileUtils;
-import jtrans.utils.ProgressDisplay;
-import jtrans.utils.TimeConverter;
+import jtrans.utils.*;
 import org.fuin.utils4j.Utils4J;
 
 /**
@@ -357,10 +354,6 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	}
 
 	private void createJFrame() {
-		// Use OS X menu bar if possible
-		if (System.getProperty("os.name").toLowerCase().contains("mac"))
-			System.setProperty("apple.laf.useScreenMenuBar", "true");
-
 		jf = new JFrame("JTrans");
 		JMenuBar menubar = (new Menus(this)).menus();
 		jf.setJMenuBar(menubar);
@@ -728,6 +721,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	}
 	
 	public static void main(String args[]) {
+		CrossPlatformFixes.setNativeLookAndFeel();
 		checkResources();
 
 		JTransGUI m = new JTransGUI();
