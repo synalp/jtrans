@@ -12,3 +12,21 @@ FAIBLE PRIORITÉ
 
 Prendre en compte la syntaxe spéciale entre slash type /vais,veux/
 
++++++++++++++++++++++++++++++++++++++++++++++++
+from xtof:
+
+PRIO	TASK
+============
+
+1	Support <Word tags in TRE
+2	Move to GitHub / bitbucket
+2	Write user docs
+1	Write developper docs
+1	Non-regression tests (no GUI but command-line scripts) to check TCOF / ORFOM / simultaneous speakers / ?...
+1	Regular checks on Linux / Mac / Windows
+5	Alignment perfs evaluation (we have to wait for a gold seg for that)
+4	New function: anonymize audio from XML tag that identifies proper nouns
+9	Port to English (English models)
+9	New function: computer assisted transcription
+9	New function: acoustic model adaptation
+9	New function: language model adaptation
