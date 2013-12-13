@@ -28,12 +28,22 @@ public class TextGridLoader implements MarkupLoader {
 		for (int i = 0; i < machine.tiers.size(); i++) {
 			Track track = new Track(machine.tierNames.get(i));
 			Alignment queue = machine.tiers.get(i);
+			int endFrame = -1;
+
 			for (int j = 0; j < queue.getNbSegments(); j++) {
-				track.elts.add(new Anchor(TimeConverter.frame2sec(queue.getSegmentDebFrame(j))));
+				// Avoid redundant anchors - only create start anchor if
+				// different from previous anchor
+				int startFrame = queue.getSegmentDebFrame(j);
+				if (endFrame != startFrame)
+					track.elts.add(new Anchor(TimeConverter.frame2sec(startFrame)));
+
 				track.elts.addAll(RawTextLoader.parseString(
 						RawTextLoader.normalizeText(queue.getSegmentLabel(j)), project.types));
-				track.elts.add(new Anchor(TimeConverter.frame2sec(queue.getSegmentEndFrame(j))));
+
+				endFrame = queue.getSegmentEndFrame(j);
+				track.elts.add(new Anchor(TimeConverter.frame2sec(endFrame)));
 			}
+
 			project.tracks.add(track);
 		}
 
