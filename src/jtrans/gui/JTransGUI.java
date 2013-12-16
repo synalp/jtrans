@@ -867,6 +867,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		setAudioSource(project.wavname);
 		initPanel();
 		jf.setContentPane(this);
+		MultiTrackTable.createFrame(project).setVisible(true);
 	}
 
 	/**
