@@ -26,13 +26,47 @@ import java.awt.Rectangle;
 import javax.swing.JComponent;
 import javax.swing.plaf.basic.BasicTableUI;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumnModel;
 
 public class SpanTableUI extends BasicTableUI {
+	/** TODO not tested with column span */
+	private int getRowExtendingMostPastEdge(Rectangle r, boolean top) {
+		final TableColumnModel tcm = table.getColumnModel();
+		int x = r.x;
+		final int y = r.y + (top? 0: r.height);
+		int edgeRow = -1;
+
+		while (x < r.x + r.width) {
+			int row = table.rowAtPoint(new Point(x, y));
+			if ((top && row < edgeRow) || (!top && row > edgeRow))
+				edgeRow = row;
+
+			int col = tcm.getColumnIndexAtX(x);
+			x += tcm.getColumn(col).getWidth();
+		}
+
+		return edgeRow;
+	}
+
+	/**
+	 * Returns the row with the lowest Y coordinate within the given rectangle.
+	 */
+	public int getTopmostRow(Rectangle r) {
+		return getRowExtendingMostPastEdge(r, true);
+	}
+
+	/**
+	 * Returns the row with the highest Y coordinate within the given rectangle.
+	 */
+	public int getBottommostRow(Rectangle r) {
+		return getRowExtendingMostPastEdge(r, false);
+	}
+
 	@Override
 	public void paint(Graphics g, JComponent c) {
 		Rectangle r = g.getClipBounds();
-		int firstRow = table.rowAtPoint(new Point(r.x, r.y));
-		int lastRow = table.rowAtPoint(new Point(r.x, r.y + r.height));
+		int firstRow = getTopmostRow(r);
+		int lastRow = getBottommostRow(r);
 		// -1 is a flag that the ending point is outside the table:
 		if (lastRow < 0)
 			lastRow = table.getRowCount() - 1;
