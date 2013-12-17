@@ -1,13 +1,10 @@
 package jtrans.gui;
 
-import jtrans.elements.Anchor;
-import jtrans.elements.Element;
 import jtrans.facade.Project;
-import jtrans.facade.Track;
+import spantable.SpanTable;
 
 import java.awt.*;
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import javax.swing.table.*;
 
 
@@ -15,7 +12,7 @@ import javax.swing.table.*;
  * Represents tracks as columns.
  * Renders groups of words between two anchors as a JTextArea cell.
  */
-public class MultiTrackTable extends JTable {
+public class MultiTrackTable extends SpanTable {
 	public MultiTrackTable(Project project) {
 		super(new MultiTrackTableModel(project));
 		setEnabled(true);

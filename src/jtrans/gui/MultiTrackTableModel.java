@@ -4,13 +4,44 @@ import jtrans.elements.Anchor;
 import jtrans.elements.Element;
 import jtrans.facade.Project;
 import jtrans.facade.Track;
+import spantable.DefaultSpanModel;
+import spantable.Span;
+import spantable.SpanModel;
+import spantable.SpanTableModel;
 
+import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableModel;
 
 
-class MultiTrackTableModel extends DefaultTableModel {
+class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel {
+	private Project project;
+	private SpanModel spanModel = new DefaultSpanModel();
+	private String[][] data;
+
+	@Override
+	public int getRowCount() {
+		return data.length;
+	}
+
+	@Override
+	public int getColumnCount() {
+		return project.tracks.size();
+	}
+
+	@Override
+	public Object getValueAt(int rowIndex, int columnIndex) {
+		return data[rowIndex][columnIndex];
+	}
+
+	@Override
+	public String getColumnName(int column) {
+		return project.tracks.get(column).speakerName;
+	}
+
 	public MultiTrackTableModel(Project p) {
-		super(getData(p), getColumnNames(p));
+		super();
+		project = p;
+		refresh();
 	}
 
 
@@ -20,24 +51,22 @@ class MultiTrackTableModel extends DefaultTableModel {
 	}
 
 
-	private static String[] getColumnNames(Project project) {
-		String[] t = new String[project.tracks.size()];
-
-		for (int i = 0; i < t.length; i++)
-			t[i] = project.tracks.get(i).speakerName;
-
-		return t;
+	@Override
+	public SpanModel getSpanModel() {
+		return spanModel;
 	}
 
 
-	private static Object[][] getData(Project project) {
-		String[][] data;
+	public void refresh() {
+		spanModel.clear();
+		final int trackCount = project.tracks.size();
 
 		// Index of next anchor, by track. -1 means no more anchors.
-		int[] upNext = new int[project.tracks.size()];
+		int[] upNext = new int[trackCount];
+		Span[] curSpans = new Span[trackCount];
 
 		// Initialize upNext
-		for (int i = 0; i < project.tracks.size(); i++) {
+		for (int i = 0; i < trackCount; i++) {
 			Track track = project.tracks.get(i);
 			upNext[i] = -1;
 			for (int j = 0; j < track.elts.size(); j++) {
@@ -55,7 +84,7 @@ class MultiTrackTableModel extends DefaultTableModel {
 				if (el instanceof Anchor)
 					rows++;
 
-		data = new String[rows][project.tracks.size()];
+		data = new String[rows][trackCount];
 
 		for (int row = 0; row < rows; row++) {
 			float earliestSecond = Float.MAX_VALUE;
@@ -83,6 +112,14 @@ class MultiTrackTableModel extends DefaultTableModel {
 			StringBuilder sb = new StringBuilder()
 					.append("[").append(earliestSecond).append("] ");
 
+			// Add current span if needed
+			if (curSpans[trackId] != null && curSpans[trackId].getHeight() > 1)
+				spanModel.addSpan(curSpans[trackId]);
+
+			// Create Span for this cell. For now it doesn't span any other
+			// rows, but the row span can be lengthened in later iterations
+			curSpans[trackId] = new Span(row, trackId, 1, 1);
+
 			upNext[trackId]++;
 			while (true) {
 				if (upNext[trackId] >= track.elts.size()) {
@@ -98,8 +135,20 @@ class MultiTrackTableModel extends DefaultTableModel {
 			}
 
 			data[row][trackId] = sb.toString();
-		}
 
-		return data;
+			// Adjust span heights
+			for (int i = 0; i < trackCount; i++) {
+				if (i == trackId)
+					continue;
+				Span oldSpan = curSpans[i];
+				if (oldSpan == null)
+					continue;
+				curSpans[i] = new Span(
+						oldSpan.getRow(),
+						oldSpan.getColumn(),
+						oldSpan.getHeight()+1,
+						oldSpan.getWidth());
+			}
+		}
 	}
 }
