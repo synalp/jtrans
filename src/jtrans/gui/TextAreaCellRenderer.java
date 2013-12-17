@@ -7,9 +7,6 @@ import java.awt.*;
 
 
 class TextAreaCellRenderer extends JTextArea implements TableCellRenderer {
-	private static Color oddColor = new Color(0xE6E4E3);
-
-
 	public TextAreaCellRenderer() {
 		super();
 		setLineWrap(true);
@@ -31,7 +28,7 @@ class TextAreaCellRenderer extends JTextArea implements TableCellRenderer {
 			setBackground(table.getSelectionBackground());
 		} else {
 			setForeground(table.getForeground());
-			setBackground(row%2==1? oddColor: table.getBackground());
+			setBackground(table.getBackground());
 		}
 		setText(value==null? "": value.toString());
 		return this;

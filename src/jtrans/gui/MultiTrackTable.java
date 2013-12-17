@@ -16,8 +16,8 @@ public class MultiTrackTable extends SpanTable {
 	public MultiTrackTable(Project project) {
 		super(new MultiTrackTableModel(project));
 		setEnabled(false);
-		setShowGrid(false);
-		setIntercellSpacing(new Dimension(1, 0));
+		setShowGrid(true);
+		//setIntercellSpacing(new Dimension(1, 1));
 
 		TextAreaCellRenderer renderer = new TextAreaCellRenderer();
 		for (int i = 0; i < getColumnModel().getColumnCount(); i++)

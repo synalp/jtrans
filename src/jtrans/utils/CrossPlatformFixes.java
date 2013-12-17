@@ -1,6 +1,8 @@
 package jtrans.utils;
 
 import javax.swing.*;
+import javax.swing.plaf.ColorUIResource;
+import java.awt.*;
 import java.awt.event.KeyEvent;
 
 public class CrossPlatformFixes {
@@ -35,7 +37,11 @@ public class CrossPlatformFixes {
 			ex.printStackTrace();
 		}
 
-		if (isOSX)
+		if (isOSX) {
 			System.setProperty("apple.laf.useScreenMenuBar", "true");
+
+			// OS X sets grid color to white
+			UIManager.put("Table.gridColor", new ColorUIResource(Color.lightGray));
+		}
 	}
 }
