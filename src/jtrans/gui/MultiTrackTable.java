@@ -1,7 +1,7 @@
 package jtrans.gui;
 
 import jtrans.facade.Project;
-import spantable.SpanTable;
+import jtrans.utils.spantable.SpanTable;
 
 import java.awt.*;
 import javax.swing.*;
@@ -15,7 +15,7 @@ import javax.swing.table.*;
 public class MultiTrackTable extends SpanTable {
 	public MultiTrackTable(Project project) {
 		super(new MultiTrackTableModel(project));
-		setEnabled(true);
+		setEnabled(false);
 		setShowGrid(false);
 		setIntercellSpacing(new Dimension(1, 0));
 

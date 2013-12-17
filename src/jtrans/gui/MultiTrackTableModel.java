@@ -4,13 +4,12 @@ import jtrans.elements.Anchor;
 import jtrans.elements.Element;
 import jtrans.facade.Project;
 import jtrans.facade.Track;
-import spantable.DefaultSpanModel;
-import spantable.Span;
-import spantable.SpanModel;
-import spantable.SpanTableModel;
+import jtrans.utils.spantable.DefaultSpanModel;
+import jtrans.utils.spantable.Span;
+import jtrans.utils.spantable.SpanModel;
+import jtrans.utils.spantable.SpanTableModel;
 
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.DefaultTableModel;
 
 
 class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel {
