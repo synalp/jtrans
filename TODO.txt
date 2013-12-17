@@ -19,6 +19,7 @@ PRIO	TASK
 ============
 
 1	Support <Word tags in TRE
+1	Align all the corpora that we have and put the results on the web site
 2	Move to GitHub / bitbucket
 2	Write user docs
 1	Write developper docs
