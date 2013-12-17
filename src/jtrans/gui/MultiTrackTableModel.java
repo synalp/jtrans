@@ -10,6 +10,7 @@ import jtrans.utils.spantable.SpanModel;
 import jtrans.utils.spantable.SpanTableModel;
 
 import javax.swing.table.AbstractTableModel;
+import java.util.ListIterator;
 
 
 class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel {
@@ -56,25 +57,65 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 	}
 
 
+	/**
+	 * Keeps track of various variables when building table data for a Track.
+	 */
+	private class MetaTrack {
+		final Track track;
+		final int column;
+		final ListIterator<Element> iter;
+		float currentTime;
+		int lastRow = 0;
+
+		MetaTrack(int c) {
+			column = c;
+			track = project.tracks.get(c);
+			iter = track.elts.listIterator();
+
+			// Skip past first anchor and add initial row span if needed
+			ontoNextCell(0);
+		}
+
+		/**
+		 * Adjusts lastRow and currentTime.
+		 * Adds the current row span to the spanModel if needed.
+		 * @return contents of the current cell
+		 */
+		String ontoNextCell(int currentRow) {
+			int rowSpan = currentRow - lastRow;
+			if (rowSpan > 1)
+				spanModel.addSpan(new Span(lastRow, column, rowSpan, 1));
+			lastRow = currentRow;
+
+			StringBuilder sb = new StringBuilder()
+					.append("[").append(currentTime).append("] ");
+
+			// Invalidate currentTime
+			if (!iter.hasNext())
+				currentTime = Float.MAX_VALUE;
+
+			while (iter.hasNext()) {
+				Element next = iter.next();
+				if (next instanceof Anchor) {
+					currentTime = ((Anchor) next).seconds;
+					break;
+				}
+				sb.append(next.toString()).append(' ');
+			}
+
+			return sb.toString();
+		}
+	}
+
+
 	public void refresh() {
 		spanModel.clear();
 		final int trackCount = project.tracks.size();
 
-		// Index of next anchor, by track. -1 means no more anchors.
-		int[] upNext = new int[trackCount];
-		Span[] curSpans = new Span[trackCount];
-
-		// Initialize upNext
-		for (int i = 0; i < trackCount; i++) {
-			Track track = project.tracks.get(i);
-			upNext[i] = -1;
-			for (int j = 0; j < track.elts.size(); j++) {
-				if (track.elts.get(j) instanceof Anchor) {
-					upNext[i] = j;
-					break;
-				}
-			}
-		}
+		// Initialize track metadata
+		MetaTrack[] metaTracks = new MetaTrack[trackCount];
+		for (int i = 0; i < trackCount; i++)
+			metaTracks[i] = new MetaTrack(i);
 
 		// Count rows
 		int rows = 0;
@@ -86,68 +127,18 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 		data = new String[rows][trackCount];
 
 		for (int row = 0; row < rows; row++) {
-			float earliestSecond = Float.MAX_VALUE;
-			int trackId = -1;
+			MetaTrack meta = null;
 
 			// Find track containing the earliest upcoming anchor
-			for (int i = 0; i < upNext.length; i++) {
-				Track track = project.tracks.get(i);
-				if (upNext[i] < 0)
-					continue;
-				Element next = track.elts.get(upNext[i]);
-				if (next instanceof Anchor && ((Anchor) next).seconds < earliestSecond) {
-					earliestSecond = ((Anchor) next).seconds;
-					trackId = i;
-				}
-			}
+			for (MetaTrack m: metaTracks)
+				if (null == meta || m.currentTime < meta.currentTime)
+					meta = m;
 
 			// No more anchors in all tracks
-			if (trackId < 0)
+			if (null == meta)
 				break;
 
-			Track track = project.tracks.get(trackId);
-
-			// Build cell contents
-			StringBuilder sb = new StringBuilder()
-					.append("[").append(earliestSecond).append("] ");
-
-			// Add current span if needed
-			if (curSpans[trackId] != null && curSpans[trackId].getHeight() > 1)
-				spanModel.addSpan(curSpans[trackId]);
-
-			// Create Span for this cell. For now it doesn't span any other
-			// rows, but the row span can be lengthened in later iterations
-			curSpans[trackId] = new Span(row, trackId, 1, 1);
-
-			upNext[trackId]++;
-			while (true) {
-				if (upNext[trackId] >= track.elts.size()) {
-					upNext[trackId] = -1;
-					break;
-				}
-				Element next = track.elts.get(upNext[trackId]);
-				if (next instanceof Anchor) {
-					break;
-				}
-				sb.append(next.toString()).append(' ');
-				upNext[trackId]++;
-			}
-
-			data[row][trackId] = sb.toString();
-
-			// Adjust span heights
-			for (int i = 0; i < trackCount; i++) {
-				if (i == trackId)
-					continue;
-				Span oldSpan = curSpans[i];
-				if (oldSpan == null)
-					continue;
-				curSpans[i] = new Span(
-						oldSpan.getRow(),
-						oldSpan.getColumn(),
-						oldSpan.getHeight()+1,
-						oldSpan.getWidth());
-			}
+			data[row][meta.column] = meta.ontoNextCell(row);
 		}
 	}
 }
