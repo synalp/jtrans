@@ -13,13 +13,16 @@ import javax.swing.table.*;
  * Renders groups of words between two anchors as a JTextArea cell.
  */
 public class MultiTrackTable extends SpanTable {
+	private TextAreaCellRenderer renderer = new TextAreaCellRenderer();
+
+
 	public MultiTrackTable(Project project) {
 		super(new MultiTrackTableModel(project));
 		setEnabled(false);
 		setShowGrid(true);
+		getTableHeader().setReorderingAllowed(false);
 		//setIntercellSpacing(new Dimension(1, 1));
 
-		TextAreaCellRenderer renderer = new TextAreaCellRenderer();
 		for (int i = 0; i < getColumnModel().getColumnCount(); i++)
 			getColumnModel().getColumn(i).setCellRenderer(renderer);
 
@@ -57,14 +60,9 @@ public class MultiTrackTable extends SpanTable {
 	}
 
 
-	public static JFrame createFrame(Project project) {
-		JTable tbl = new MultiTrackTable(project);
-		JScrollPane sp = new JScrollPane(tbl);
-		sp.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-		JFrame f = new JFrame("MultiTrackTable");
-		f.setContentPane(sp);
-		f.pack();
-		return f;
+	public void setViewFont(Font font) {
+		renderer.setFont(font);
+		doLayout();
 	}
 }
 

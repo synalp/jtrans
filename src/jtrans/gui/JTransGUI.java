@@ -98,7 +98,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	public ToolBarTemporalSig toolbar = null;
 	*/
 
-	public MultiTrackView multitrack;
+	public MultiTrackTable multitrack;
 	public SpeakerVisibilityControl speakerVisibility;
 
 	/** Audio file in a suitable format for processing */
@@ -375,9 +375,11 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		removeAll();
 		setLayout(new BorderLayout());
 
-		multitrack = new MultiTrackView(project, this);
-		speakerVisibility = new SpeakerVisibilityControl(project, multitrack);
-		multitrack.setPreferredSize(new Dimension(1000, 500));
+		multitrack = new MultiTrackTable(project);
+		JScrollPane multiTrackScrollPane = new JScrollPane(multitrack);
+		multiTrackScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+//		speakerVisibility = new SpeakerVisibilityControl(project, multitrack);
+//		multitrack.setPreferredSize(new Dimension(1000, 500));
 
 		ctrlbox = new ControlBox(this);
 		playergui = ctrlbox.getPlayerGUI();
@@ -398,8 +400,8 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		// Add everything to the panel
 
 		add(ctrlbox, BorderLayout.PAGE_START);
-		add(speakerVisibility, BorderLayout.LINE_END);
-		add(multitrack, BorderLayout.CENTER);
+//TODO		add(speakerVisibility, BorderLayout.LINE_END);
+		add(multiTrackScrollPane, BorderLayout.CENTER);
 
 		add(new JPanel(new BorderLayout()) {{
 			add(sigpan, BorderLayout.PAGE_START);
@@ -472,7 +474,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 							// TODO clear
 						} else {
 							speakerVisibility.pulse(i);
-							multitrack.getView(i).highlightWord(newHl);
+// TODO							multitrack.getView(i).highlightWord(newHl);
 						}
 					}
 
@@ -851,7 +853,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 							project,
 							project.tracks.get(i),
 							JTransGUI.this,
-							multitrack.getView(i));
+							null/*TODO multitrack.getView(i)*/);
 					if (useAnchors)
 						aa.alignBetweenAnchors();
 					else
@@ -867,7 +869,6 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		setAudioSource(project.wavname);
 		initPanel();
 		jf.setContentPane(this);
-		MultiTrackTable.createFrame(project).setVisible(true);
 	}
 
 	/**
