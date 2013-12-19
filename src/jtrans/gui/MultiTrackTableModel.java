@@ -2,6 +2,7 @@ package jtrans.gui;
 
 import jtrans.elements.Anchor;
 import jtrans.elements.Element;
+import jtrans.elements.Word;
 import jtrans.facade.Project;
 import jtrans.facade.Track;
 import jtrans.utils.spantable.DefaultSpanModel;
@@ -10,9 +11,7 @@ import jtrans.utils.spantable.SpanModel;
 import jtrans.utils.spantable.SpanTableModel;
 
 import javax.swing.table.AbstractTableModel;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ListIterator;
+import java.util.*;
 
 
 class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel {
@@ -20,6 +19,9 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 	private SpanModel spanModel = new DefaultSpanModel();
 	private String[] columnNames;
 	private Cell[][] cells;
+	private int[] highlightedRows;
+	private int[] trackToColumn;
+	Map<Word, int[]> wordMap = new HashMap<Word, int[]>();
 	private int visibleColumns;
 
 
@@ -88,8 +90,8 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 		Anchor anchor;
 		int lastRow = 0;
 
-		MetaTrack(int trackNo, int column) {
-			this.column = column;
+		MetaTrack(int trackNo, int colNo) {
+			column = colNo;
 			track = project.tracks.get(trackNo);
 			iter = track.elts.listIterator();
 
@@ -100,6 +102,7 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 		/**
 		 * Adjusts lastRow and currentTime.
 		 * Adds the current row span to the spanModel if needed.
+		 * Updates wordMap.
 		 * @return contents of the current cell
 		 */
 		void ontoNextCell(int currentRow) {
@@ -120,6 +123,8 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 				if (next instanceof Anchor) {
 					anchor = (Anchor)next;
 					break;
+				} else if (next instanceof Word) {
+					wordMap.put((Word)next, new int[]{currentRow, column});
 				}
 				sb.append(next.toString()).append(' ');
 			}
@@ -135,17 +140,27 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 	public void refresh(boolean[] visibility) {
 		spanModel.clear();
 
-		// Count visible tracks and initialize track metadata
+		visibleColumns = 0;
+		trackToColumn = new int[project.tracks.size()];
 		List<MetaTrack> metaTracks = new ArrayList<MetaTrack>();
+
+		// Count visible tracks and initialize track metadata
 		for (int i = 0; i < visibility.length; i++) {
-			if (visibility[i])
-				metaTracks.add(new MetaTrack(i, metaTracks.size()));
+			if (visibility[i]) {
+				trackToColumn[i] = visibleColumns;
+				metaTracks.add(new MetaTrack(i, visibleColumns));
+				visibleColumns++;
+			} else {
+				trackToColumn[i] = -1;
+			}
 		}
-		visibleColumns = metaTracks.size();
 
 		columnNames = new String[visibleColumns];
 		for (int i = 0; i < visibleColumns; i++)
 			columnNames[i] = metaTracks.get(i).track.speakerName;
+
+		highlightedRows = new int[visibleColumns];
+		Arrays.fill(highlightedRows, -1);
 
 		// Count rows
 		int rows = 0;
@@ -174,5 +189,29 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 
 			meta.ontoNextCell(row);
 		}
+	}
+
+
+	public void highlightWord(int trackIdx, Word word) {
+		int col = trackToColumn[trackIdx];
+		if (col < 0) // hidden column
+			return;
+
+		int oldHLRow = highlightedRows[col];
+		int[] tc = wordMap.get(word);
+		int newHLRow = tc==null? -1: tc[0];
+
+		if (oldHLRow != newHLRow) {
+			if (oldHLRow >= 0)
+				fireTableCellUpdated(oldHLRow, col);
+			if (newHLRow >= 0)
+				fireTableCellUpdated(newHLRow, col);
+			highlightedRows[col] = newHLRow;
+		}
+
+	}
+
+	public int getHighlightedRow(int col) {
+		return highlightedRows[col];
 	}
 }

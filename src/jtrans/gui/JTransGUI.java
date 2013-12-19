@@ -470,12 +470,9 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 
 					// Only update UI if the word wasn't already highlighted
 					if (hl[i] != newHl) {
-						if (newHl == null) {
-							// TODO clear
-						} else {
+						multitrack.highlightWord(i, newHl);
+						if (newHl != null)
 							speakerVisibility.pulse(i);
-// TODO							multitrack.getView(i).highlightWord(newHl);
-						}
 					}
 
 					hl[i] = newHl;

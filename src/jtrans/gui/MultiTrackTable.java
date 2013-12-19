@@ -1,5 +1,6 @@
 package jtrans.gui;
 
+import jtrans.elements.Word;
 import jtrans.facade.Project;
 import jtrans.utils.spantable.SpanTable;
 
@@ -117,6 +118,11 @@ public class MultiTrackTable extends SpanTable {
 
 	public int getVisibleCount() {
 		return visibleCount;
+	}
+
+
+	public void highlightWord(int trackIdx, Word word) {
+		((MultiTrackTableModel)getModel()).highlightWord(trackIdx, word);
 	}
 }
 

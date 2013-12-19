@@ -7,6 +7,9 @@ import java.awt.*;
 
 
 class TextAreaCellRenderer extends JTextArea implements TableCellRenderer {
+	private static final Color KARAOKE_CELL_BG = new Color(0xF085B0);
+
+
 	public TextAreaCellRenderer() {
 		super();
 		setLineWrap(true);
@@ -23,14 +26,14 @@ class TextAreaCellRenderer extends JTextArea implements TableCellRenderer {
 			boolean isSelected, boolean hasFocus,
 			int row, int column)
 	{
-		if (isSelected) {
-			setForeground(table.getSelectionForeground());
-			setBackground(table.getSelectionBackground());
-		} else {
-			setForeground(table.getForeground());
-			setBackground(table.getBackground());
-		}
 		setText(value==null? "": value.toString());
+
+		MultiTrackTableModel mttm = (MultiTrackTableModel)table.getModel();
+		if (row == mttm.getHighlightedRow(column))
+			setBackground(KARAOKE_CELL_BG);
+		else
+			setBackground(table.getBackground());
+
 		return this;
 	}
 }
