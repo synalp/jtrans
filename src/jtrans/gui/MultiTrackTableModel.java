@@ -19,12 +19,29 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 	private Project project;
 	private SpanModel spanModel = new DefaultSpanModel();
 	private String[] columnNames;
-	private String[][] data;
+	private Cell[][] cells;
 	private int visibleColumns;
+
+
+	class Cell {
+		Anchor anchor;
+		String text;
+
+		public Cell(Anchor a, String t) {
+			anchor = a;
+			text = t;
+		}
+
+		@Override
+		public String toString() {
+			return "[" + anchor.seconds + "] " + text;
+		}
+	}
+
 
 	@Override
 	public int getRowCount() {
-		return data.length;
+		return cells.length;
 	}
 
 	@Override
@@ -34,7 +51,7 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 
 	@Override
 	public Object getValueAt(int rowIndex, int columnIndex) {
-		return data[rowIndex][columnIndex];
+		return cells[rowIndex][columnIndex];
 	}
 
 	@Override
@@ -68,7 +85,7 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 		final Track track;
 		final int column;
 		final ListIterator<Element> iter;
-		float currentTime;
+		Anchor anchor;
 		int lastRow = 0;
 
 		MetaTrack(int trackNo, int column) {
@@ -85,29 +102,32 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 		 * Adds the current row span to the spanModel if needed.
 		 * @return contents of the current cell
 		 */
-		String ontoNextCell(int currentRow) {
+		void ontoNextCell(int currentRow) {
 			int rowSpan = currentRow - lastRow;
 			if (rowSpan > 1)
 				spanModel.addSpan(new Span(lastRow, column, rowSpan, 1));
 			lastRow = currentRow;
 
-			StringBuilder sb = new StringBuilder()
-					.append("[").append(currentTime).append("] ");
+			Anchor cellStartAnchor = anchor;
+			StringBuilder sb = new StringBuilder();
 
 			// Invalidate currentTime
 			if (!iter.hasNext())
-				currentTime = Float.MAX_VALUE;
+				anchor = null;
 
 			while (iter.hasNext()) {
 				Element next = iter.next();
 				if (next instanceof Anchor) {
-					currentTime = ((Anchor) next).seconds;
+					anchor = (Anchor)next;
 					break;
 				}
 				sb.append(next.toString()).append(' ');
 			}
 
-			return sb.toString();
+			if (cells != null) {
+				cells[currentRow][column] =
+						new Cell(cellStartAnchor, sb.toString());
+			}
 		}
 	}
 
@@ -134,21 +154,25 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 				if (el instanceof Anchor)
 					rows++;
 
-		data = new String[rows][visibleColumns];
+		cells = new Cell[rows][visibleColumns];
 
 		for (int row = 0; row < rows; row++) {
 			MetaTrack meta = null;
 
 			// Find track containing the earliest upcoming anchor
-			for (MetaTrack m: metaTracks)
-				if (null == meta || m.currentTime < meta.currentTime)
+			for (MetaTrack m: metaTracks) {
+				if (m.anchor != null &&
+						(null == meta || m.anchor.seconds < meta.anchor.seconds))
+				{
 					meta = m;
+				}
+			}
 
 			// No more anchors in all tracks
 			if (null == meta)
 				break;
 
-			data[row][meta.column] = meta.ontoNextCell(row);
+			meta.ontoNextCell(row);
 		}
 	}
 }
