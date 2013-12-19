@@ -10,13 +10,17 @@ import jtrans.utils.spantable.SpanModel;
 import jtrans.utils.spantable.SpanTableModel;
 
 import javax.swing.table.AbstractTableModel;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ListIterator;
 
 
 class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel {
 	private Project project;
 	private SpanModel spanModel = new DefaultSpanModel();
+	private String[] columnNames;
 	private String[][] data;
+	private int visibleColumns;
 
 	@Override
 	public int getRowCount() {
@@ -25,7 +29,7 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 
 	@Override
 	public int getColumnCount() {
-		return project.tracks.size();
+		return visibleColumns;
 	}
 
 	@Override
@@ -35,13 +39,13 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 
 	@Override
 	public String getColumnName(int column) {
-		return project.tracks.get(column).speakerName;
+		return columnNames[column];
 	}
 
-	public MultiTrackTableModel(Project p) {
+	public MultiTrackTableModel(Project p, boolean[] visibility) {
 		super();
 		project = p;
-		refresh();
+		refresh(visibility);
 	}
 
 
@@ -67,9 +71,9 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 		float currentTime;
 		int lastRow = 0;
 
-		MetaTrack(int c) {
-			column = c;
-			track = project.tracks.get(c);
+		MetaTrack(int trackNo, int column) {
+			this.column = column;
+			track = project.tracks.get(trackNo);
 			iter = track.elts.listIterator();
 
 			// Skip past first anchor and add initial row span if needed
@@ -108,23 +112,29 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 	}
 
 
-	public void refresh() {
+	public void refresh(boolean[] visibility) {
 		spanModel.clear();
-		final int trackCount = project.tracks.size();
 
-		// Initialize track metadata
-		MetaTrack[] metaTracks = new MetaTrack[trackCount];
-		for (int i = 0; i < trackCount; i++)
-			metaTracks[i] = new MetaTrack(i);
+		// Count visible tracks and initialize track metadata
+		List<MetaTrack> metaTracks = new ArrayList<MetaTrack>();
+		for (int i = 0; i < visibility.length; i++) {
+			if (visibility[i])
+				metaTracks.add(new MetaTrack(i, metaTracks.size()));
+		}
+		visibleColumns = metaTracks.size();
+
+		columnNames = new String[visibleColumns];
+		for (int i = 0; i < visibleColumns; i++)
+			columnNames[i] = metaTracks.get(i).track.speakerName;
 
 		// Count rows
 		int rows = 0;
-		for (Track t: project.tracks)
-			for (Element el: t.elts)
+		for (MetaTrack mt: metaTracks)
+			for (Element el: mt.track.elts)
 				if (el instanceof Anchor)
 					rows++;
 
-		data = new String[rows][trackCount];
+		data = new String[rows][visibleColumns];
 
 		for (int row = 0; row < rows; row++) {
 			MetaTrack meta = null;

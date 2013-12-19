@@ -22,6 +22,7 @@ import java.awt.Rectangle;
 
 import javax.swing.JTable;
 import javax.swing.event.TableModelEvent;
+import javax.swing.table.TableModel;
 
 public class SpanTable extends JTable implements SpanListener {
 	private static final long serialVersionUID = 2474734650553132129L;
@@ -31,9 +32,21 @@ public class SpanTable extends JTable implements SpanListener {
 	 * @param tableModel Model of the table
 	 */
 	public SpanTable(SpanTableModel tableModel) {
-		super(tableModel);
-		tableModel.getSpanModel().addSpanListener(this);
-		setUI(new SpanTableUI());
+		super();
+		setModel(tableModel);
+	}
+
+	public SpanTable() {
+		super();
+	}
+
+	@Override
+	public void setModel(TableModel tableModel) {
+		super.setModel(tableModel);
+		if (tableModel instanceof SpanTableModel) {
+			((SpanTableModel)tableModel).getSpanModel().addSpanListener(this);
+			setUI(new SpanTableUI());
+		}
 	}
 
 	/**

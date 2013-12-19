@@ -87,7 +87,7 @@ public class SpeakerVisibilityControl extends JPanel {
 		}
 	}
 
-	public SpeakerVisibilityControl(Project project, final MultiTrackView mtv) {
+	public SpeakerVisibilityControl(Project project, final MultiTrackTable mtt) {
 		super();
 		setLayout(new GridLayout(project.tracks.size(), 1, 0, 5));
 
@@ -106,10 +106,10 @@ public class SpeakerVisibilityControl extends JPanel {
 				@Override
 				public void itemStateChanged(ItemEvent e) {
 					// Prevent hiding everything
-					if (!box.isSelected() && mtv.getVisibleCount() == 1) {
+					if (!box.isSelected() && mtt.getVisibleCount() == 1) {
 						box.setSelected(true);
 					} else {
-						mtv.setTrackVisible(finalIdx, box.isSelected());
+						mtt.setTrackVisible(finalIdx, box.isSelected());
 					}
 				}
 			});
