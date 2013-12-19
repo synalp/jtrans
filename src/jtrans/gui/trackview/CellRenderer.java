@@ -1,4 +1,4 @@
-package jtrans.gui;
+package jtrans.gui.trackview;
 
 import jtrans.elements.Word;
 
@@ -11,7 +11,7 @@ import javax.swing.text.StyleConstants;
 import java.awt.*;
 
 
-class TextAreaCellRenderer
+class CellRenderer
 		extends JTextPane implements TableCellRenderer
 {
 	private static final Color KARAOKE_CELL_BG = new Color(0xF085B0);
@@ -21,7 +21,7 @@ class TextAreaCellRenderer
 			addAttribute(StyleConstants.Background, Color.WHITE);
 		}};
 
-	public TextAreaCellRenderer() {
+	public CellRenderer() {
 		super();
 //		setLineWrap(true);
 //		setWrapStyleWord(true);
@@ -44,7 +44,7 @@ class TextAreaCellRenderer
 			setBackground(KARAOKE_CELL_BG);
 			Word w = mttm.getHighlightedWord(column);
 			if (w != null) {
-				MultiTrackTableModel.Cell c = (MultiTrackTableModel.Cell)mttm.getValueAt(row, column);
+				Cell c = mttm.getValueAt(row, column);
 				getStyledDocument().setCharacterAttributes(
 						c.wordStart[c.words.indexOf(w)],
 						w.getWordString().length(),

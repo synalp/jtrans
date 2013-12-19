@@ -1,6 +1,7 @@
 package jtrans.gui;
 
 import jtrans.facade.Project;
+import jtrans.gui.trackview.MultiTrackTable;
 import jtrans.utils.CrossPlatformFixes;
 
 import javax.swing.*;
@@ -13,7 +14,7 @@ import java.util.List;
  * Panel that allows hiding/showing specific speaker tracks in a MultiTrackView.
  * When a speaker is talking, their corresponding label in this panel pulses in
  * an attention-grabbing color.
- * @see jtrans.gui.MultiTrackView
+ * @see jtrans.gui.trackview.MultiTrackView
  */
 public class SpeakerVisibilityControl extends JPanel {
 	private List<PulsatingJCheckBox> boxes = new ArrayList<PulsatingJCheckBox>();

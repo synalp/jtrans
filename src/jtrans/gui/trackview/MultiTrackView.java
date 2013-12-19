@@ -1,7 +1,9 @@
-package jtrans.gui;
+package jtrans.gui.trackview;
 
 import jtrans.facade.Project;
 import jtrans.facade.Track;
+import jtrans.gui.JTransGUI;
+import jtrans.gui.TrackView;
 
 import javax.swing.*;
 import java.awt.*;

@@ -1,4 +1,4 @@
-package jtrans.gui;
+package jtrans.gui.trackview;
 
 import jtrans.elements.Word;
 import jtrans.facade.Project;
@@ -16,7 +16,8 @@ import javax.swing.table.*;
  */
 public class MultiTrackTable extends SpanTable {
 	private Project project;
-	private TextAreaCellRenderer renderer = new TextAreaCellRenderer();
+	private MultiTrackTableModel model;
+	private CellRenderer renderer = new CellRenderer();
 	private boolean[] visibility;
 	private int visibleCount;
 
@@ -43,7 +44,8 @@ public class MultiTrackTable extends SpanTable {
 	 * hidden or shown.
 	 */
 	private void refreshModel() {
-		setModel(new MultiTrackTableModel(project, visibility));
+		model = new MultiTrackTableModel(project, visibility);
+		setModel(model);
 	}
 
 
@@ -122,7 +124,7 @@ public class MultiTrackTable extends SpanTable {
 
 
 	public void highlightWord(int trackIdx, Word word) {
-		((MultiTrackTableModel)getModel()).highlightWord(trackIdx, word);
+		model.highlightWord(trackIdx, word);
 	}
 }
 

@@ -1,4 +1,4 @@
-package jtrans.gui;
+package jtrans.gui.trackview;
 
 import jtrans.elements.Anchor;
 import jtrans.elements.Element;
@@ -26,35 +26,6 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 	private int visibleColumns;
 
 
-	class Cell {
-		Anchor anchor;
-		String text;
-		List<Word> words;
-		int[] wordStart;
-
-		public Cell(Anchor a, List<Word> wordList) {
-			anchor = a;
-
-			words = wordList;
-			wordStart = new int[words.size()];
-
-			StringBuilder sb = new StringBuilder();
-			sb.append('[').append(anchor.seconds).append(']');
-			for (int i = 0; i < words.size(); i++) {
-				sb.append(' ');
-				wordStart[i] = sb.length();
-				sb.append(words.get(i).getWordString());
-			}
-			text = sb.toString();
-		}
-
-		@Override
-		public String toString() {
-			return text;
-		}
-	}
-
-
 	@Override
 	public int getRowCount() {
 		return cells.length;
@@ -66,7 +37,7 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 	}
 
 	@Override
-	public Object getValueAt(int rowIndex, int columnIndex) {
+	public Cell getValueAt(int rowIndex, int columnIndex) {
 		return cells[rowIndex][columnIndex];
 	}
 
