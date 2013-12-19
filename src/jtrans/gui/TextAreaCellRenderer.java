@@ -1,19 +1,30 @@
 package jtrans.gui;
 
+import jtrans.elements.Word;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
 import java.awt.*;
 
 
-class TextAreaCellRenderer extends JTextArea implements TableCellRenderer {
+class TextAreaCellRenderer
+		extends JTextPane implements TableCellRenderer
+{
 	private static final Color KARAOKE_CELL_BG = new Color(0xF085B0);
 
+	private static final AttributeSet HIGHLIGHTED_STYLE =
+		new SimpleAttributeSet() {{
+			addAttribute(StyleConstants.Background, Color.WHITE);
+		}};
 
 	public TextAreaCellRenderer() {
 		super();
-		setLineWrap(true);
-		setWrapStyleWord(true);
+//		setLineWrap(true);
+//		setWrapStyleWord(true);
 		setBorder(BorderFactory.createCompoundBorder(
 				getBorder(),
 				new EmptyBorder(5, 5, 5, 5)));
@@ -29,9 +40,18 @@ class TextAreaCellRenderer extends JTextArea implements TableCellRenderer {
 		setText(value==null? "": value.toString());
 
 		MultiTrackTableModel mttm = (MultiTrackTableModel)table.getModel();
-		if (row == mttm.getHighlightedRow(column))
+		if (row == mttm.getHighlightedRow(column)) {
 			setBackground(KARAOKE_CELL_BG);
-		else
+			Word w = mttm.getHighlightedWord(column);
+			if (w != null) {
+				MultiTrackTableModel.Cell c = (MultiTrackTableModel.Cell)mttm.getValueAt(row, column);
+				getStyledDocument().setCharacterAttributes(
+						c.wordStart[c.words.indexOf(w)],
+						w.getWordString().length(),
+						HIGHLIGHTED_STYLE,
+						false);
+			}
+		} else
 			setBackground(table.getBackground());
 
 		return this;

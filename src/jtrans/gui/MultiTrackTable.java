@@ -75,7 +75,7 @@ public class MultiTrackTable extends SpanTable {
 				TableColumn tableCol = tcm.getColumn(col);
 				Component cell = prepareRenderer(tableCol.getCellRenderer(), row, col);
 
-				if (cell instanceof JTextArea) {
+				if (cell instanceof JTextPane) {
 					cell.setSize(
 							tableCol.getWidth() - getIntercellSpacing().width,
 							cell.getPreferredSize().height);

@@ -20,6 +20,7 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 	private String[] columnNames;
 	private Cell[][] cells;
 	private int[] highlightedRows;
+	private Word[] highlightedWords;
 	private int[] trackToColumn;
 	Map<Word, int[]> wordMap = new HashMap<Word, int[]>();
 	private int visibleColumns;
@@ -28,15 +29,28 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 	class Cell {
 		Anchor anchor;
 		String text;
+		List<Word> words;
+		int[] wordStart;
 
-		public Cell(Anchor a, String t) {
+		public Cell(Anchor a, List<Word> wordList) {
 			anchor = a;
-			text = t;
+
+			words = wordList;
+			wordStart = new int[words.size()];
+
+			StringBuilder sb = new StringBuilder();
+			sb.append('[').append(anchor.seconds).append(']');
+			for (int i = 0; i < words.size(); i++) {
+				sb.append(' ');
+				wordStart[i] = sb.length();
+				sb.append(words.get(i).getWordString());
+			}
+			text = sb.toString();
 		}
 
 		@Override
 		public String toString() {
-			return "[" + anchor.seconds + "] " + text;
+			return text;
 		}
 	}
 
@@ -112,12 +126,12 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 			lastRow = currentRow;
 
 			Anchor cellStartAnchor = anchor;
-			StringBuilder sb = new StringBuilder();
 
 			// Invalidate currentTime
 			if (!iter.hasNext())
 				anchor = null;
 
+			List<Word> words = new ArrayList<Word>();
 			while (iter.hasNext()) {
 				Element next = iter.next();
 				if (next instanceof Anchor) {
@@ -125,14 +139,12 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 					break;
 				} else if (next instanceof Word) {
 					wordMap.put((Word)next, new int[]{currentRow, column});
+					words.add((Word)next);
 				}
-				sb.append(next.toString()).append(' ');
 			}
 
-			if (cells != null) {
-				cells[currentRow][column] =
-						new Cell(cellStartAnchor, sb.toString());
-			}
+			if (cells != null)
+				cells[currentRow][column] = new Cell(cellStartAnchor, words);
 		}
 	}
 
@@ -161,6 +173,7 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 
 		highlightedRows = new int[visibleColumns];
 		Arrays.fill(highlightedRows, -1);
+		highlightedWords = new Word[visibleColumns];
 
 		// Count rows
 		int rows = 0;
@@ -201,17 +214,24 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 		int[] tc = wordMap.get(word);
 		int newHLRow = tc==null? -1: tc[0];
 
-		if (oldHLRow != newHLRow) {
+		// if newHLRow>=0: don't un-highlight cell if null word
+		if (oldHLRow != newHLRow && newHLRow >= 0) {
 			if (oldHLRow >= 0)
 				fireTableCellUpdated(oldHLRow, col);
-			if (newHLRow >= 0)
-				fireTableCellUpdated(newHLRow, col);
 			highlightedRows[col] = newHLRow;
 		}
+
+		highlightedWords[col] = word;
+		if (newHLRow >= 0)
+			fireTableCellUpdated(newHLRow, col);
 
 	}
 
 	public int getHighlightedRow(int col) {
 		return highlightedRows[col];
+	}
+
+	public Word getHighlightedWord(int col) {
+		return highlightedWords[col];
 	}
 }
