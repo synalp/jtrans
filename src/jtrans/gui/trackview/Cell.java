@@ -31,4 +31,15 @@ class Cell {
 	public String toString() {
 		return text;
 	}
+
+	public Word getWordAtCaret(int caret) {
+		for (int i = 0; i < wordStart.length; i++) {
+			if (caret < wordStart[i])
+				continue;
+			Word w = words.get(i);
+			if (caret < wordStart[i] + w.getWordString().length())
+				return w;
+		}
+		return null;
+	}
 }

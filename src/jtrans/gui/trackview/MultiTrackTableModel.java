@@ -22,6 +22,7 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 	private int[] highlightedRows;
 	private Word[] highlightedWords;
 	private int[] trackToColumn;
+	private int[] columnToTrack;
 	Map<Word, int[]> wordMap = new HashMap<Word, int[]>();
 	private int visibleColumns;
 
@@ -139,8 +140,11 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 		}
 
 		columnNames = new String[visibleColumns];
-		for (int i = 0; i < visibleColumns; i++)
+		columnToTrack = new int[visibleColumns];
+		for (int i = 0; i < visibleColumns; i++) {
 			columnNames[i] = metaTracks.get(i).track.speakerName;
+			columnToTrack[i] = metaTracks.get(i).column;
+		}
 
 		highlightedRows = new int[visibleColumns];
 		Arrays.fill(highlightedRows, -1);
@@ -204,5 +208,9 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 
 	public Word getHighlightedWord(int col) {
 		return highlightedWords[col];
+	}
+
+	public int getTrackForColumn(int col) {
+		return columnToTrack[col];
 	}
 }

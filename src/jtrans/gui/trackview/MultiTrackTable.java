@@ -5,6 +5,8 @@ import jtrans.facade.Project;
 import jtrans.utils.spantable.SpanTable;
 
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.Arrays;
 import javax.swing.*;
 import javax.swing.table.*;
@@ -36,6 +38,31 @@ public class MultiTrackTable extends SpanTable {
 		//setIntercellSpacing(new Dimension(1, 1));
 		setPreferredScrollableViewportSize(new Dimension(512, 512));
 		doLayout();
+
+		addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				Point p = e.getPoint();
+				int row = rowAtPoint(p);
+				int col = columnAtPoint(p);
+
+				if (row < 0 || col < 0)
+					return;
+
+				TableCellRenderer tcr = getCellRenderer(row, col);
+				Cell cell = model.getValueAt(row, col);
+				Rectangle rect = getCellRect(row, col, false);
+
+				CellRenderer renderer = (CellRenderer)tcr.getTableCellRendererComponent(
+						MultiTrackTable.this, cell, true, true, row, col);
+
+				renderer.setSize((int)rect.getWidth(), (int)rect.getHeight());
+
+				Point fakeClick = new Point(p.x-rect.x, p.y-rect.y);
+				int caret = renderer.viewToModel(fakeClick);
+				highlightWord(model.getTrackForColumn(col), cell.getWordAtCaret(caret));
+			}
+		});
 	}
 
 
