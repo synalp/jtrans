@@ -5,13 +5,21 @@ import jtrans.elements.Word;
 
 import java.util.List;
 
-class Cell {
-	Anchor anchor;
-	String text;
-	List<Word> words;
-	int[] wordStart;
 
-	public Cell(Anchor a, List<Word> wordList) {
+/**
+ * Distilled information about a track portion between two anchors.
+ * Ready for use in a MultiTrackTableModel.
+ */
+class Cell {
+	final int track;
+	final Anchor anchor;
+	final String text;
+	final List<Word> words;
+	final int[] wordStart;
+
+
+	public Cell(int t, Anchor a, List<Word> wordList) {
+		track = t;
 		anchor = a;
 
 		words = wordList;
@@ -27,10 +35,12 @@ class Cell {
 		text = sb.toString();
 	}
 
+
 	@Override
 	public String toString() {
 		return text;
 	}
+
 
 	public Word getWordAtCaret(int caret) {
 		for (int i = 0; i < wordStart.length; i++) {

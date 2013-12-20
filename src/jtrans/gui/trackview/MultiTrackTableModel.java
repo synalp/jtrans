@@ -56,7 +56,7 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 
 	@Override
 	public boolean isCellEditable(int row, int column) {
-		return false;
+		return cells[row][column] != null;
 	}
 
 
@@ -71,12 +71,14 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 	 */
 	private class MetaTrack {
 		final Track track;
+		final int trackNo;
 		final int column;
 		final ListIterator<Element> iter;
 		Anchor anchor;
 		int lastRow = 0;
 
 		MetaTrack(int trackNo, int colNo) {
+			this.trackNo = trackNo;
 			column = colNo;
 			track = project.tracks.get(trackNo);
 			iter = track.elts.listIterator();
@@ -116,7 +118,8 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 			}
 
 			if (cells != null)
-				cells[currentRow][column] = new Cell(cellStartAnchor, words);
+				cells[currentRow][column] = new Cell(
+						trackNo, cellStartAnchor, words);
 		}
 	}
 

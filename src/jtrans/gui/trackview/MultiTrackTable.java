@@ -5,10 +5,7 @@ import jtrans.facade.Project;
 import jtrans.utils.spantable.SpanTable;
 
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.util.Arrays;
-import javax.swing.*;
 import javax.swing.table.*;
 
 
@@ -19,7 +16,7 @@ import javax.swing.table.*;
 public class MultiTrackTable extends SpanTable {
 	private Project project;
 	private MultiTrackTableModel model;
-	private CellRenderer renderer = new CellRenderer();
+	private CellRenditor renditor;
 	private boolean[] visibility;
 	private int visibleCount;
 
@@ -31,38 +28,17 @@ public class MultiTrackTable extends SpanTable {
 		Arrays.fill(visibility, true);
 		visibleCount = visibility.length;
 
+		renditor = new CellRenditor(this);
+
 		refreshModel();
-		setEnabled(false);
+		setEnabled(true);
 		setShowGrid(true);
 		getTableHeader().setReorderingAllowed(false);
 		//setIntercellSpacing(new Dimension(1, 1));
 		setPreferredScrollableViewportSize(new Dimension(512, 512));
+		setFillsViewportHeight(true);
+
 		doLayout();
-
-		addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				Point p = e.getPoint();
-				int row = rowAtPoint(p);
-				int col = columnAtPoint(p);
-
-				if (row < 0 || col < 0)
-					return;
-
-				TableCellRenderer tcr = getCellRenderer(row, col);
-				Cell cell = model.getValueAt(row, col);
-				Rectangle rect = getCellRect(row, col, false);
-
-				CellRenderer renderer = (CellRenderer)tcr.getTableCellRendererComponent(
-						MultiTrackTable.this, cell, true, true, row, col);
-
-				renderer.setSize((int)rect.getWidth(), (int)rect.getHeight());
-
-				Point fakeClick = new Point(p.x-rect.x, p.y-rect.y);
-				int caret = renderer.viewToModel(fakeClick);
-				highlightWord(model.getTrackForColumn(col), cell.getWordAtCaret(caret));
-			}
-		});
 	}
 
 
@@ -82,8 +58,10 @@ public class MultiTrackTable extends SpanTable {
 	@Override
 	public void setModel(TableModel tm) {
 		super.setModel(tm);
-		for (int i = 0; i < getColumnModel().getColumnCount(); i++)
-			getColumnModel().getColumn(i).setCellRenderer(renderer);
+		for (int i = 0; i < getColumnModel().getColumnCount(); i++) {
+			getColumnModel().getColumn(i).setCellRenderer(renditor);
+			getColumnModel().getColumn(i).setCellEditor(renditor);
+		}
 	}
 
 
@@ -92,6 +70,8 @@ public class MultiTrackTable extends SpanTable {
 	 */
 	@Override
 	public void doLayout() {
+		System.out.println("Do Layout");
+
 		TableColumnModel tcm = getColumnModel();
 
 		for (int row = 0; row < getRowCount(); row++) {
@@ -102,16 +82,16 @@ public class MultiTrackTable extends SpanTable {
 					continue;
 
 				TableColumn tableCol = tcm.getColumn(col);
-				Component cell = prepareRenderer(tableCol.getCellRenderer(), row, col);
+				Component cell = prepareRenderer(tableCol.getCellRenderer(),
+						row, col);
 
-				if (cell instanceof JTextPane) {
-					cell.setSize(
-							tableCol.getWidth() - getIntercellSpacing().width,
-							cell.getPreferredSize().height);
-					int h = cell.getPreferredSize().height + getIntercellSpacing().height;
-					if (h > newRowHeight)
-						newRowHeight = h;
-				}
+				cell.setSize(
+						tableCol.getWidth() - getIntercellSpacing().width,
+						cell.getPreferredSize().height);
+
+				int h = cell.getPreferredSize().height + getIntercellSpacing().height;
+				if (h > newRowHeight)
+					newRowHeight = h;
 
 				col++;
 			}
@@ -123,7 +103,7 @@ public class MultiTrackTable extends SpanTable {
 
 
 	public void setViewFont(Font font) {
-		renderer.setFont(font);
+		renditor.setFont(font);
 		doLayout();
 	}
 
