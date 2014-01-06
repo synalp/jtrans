@@ -9,6 +9,7 @@ import jtrans.gui.TrackView;
 import jtrans.speechreco.s4.Alignment;
 import jtrans.speechreco.s4.S4AlignOrder;
 import jtrans.speechreco.s4.S4ForceAlignBlocViterbi;
+import jtrans.utils.ProgressDisplay;
 import jtrans.utils.TimeConverter;
 
 import javax.swing.*;
@@ -18,8 +19,8 @@ import javax.swing.*;
  * Handles automatic alignment
  */
 public class AutoAligner {
-	private JTransGUI aligneur;
 	private Project project;
+	private ProgressDisplay progress;
 	private Track track;
 	private List<Word> mots;
 	private TrackView view;
@@ -34,18 +35,37 @@ public class AutoAligner {
 	private static final boolean USE_LINEAR_ALIGNMENT = false;
 
 
-	public AutoAligner(Project project, Track track, JTransGUI aligneur, TrackView view) {
+	/**
+	 * @param view UI component to update. May be null for headless mode.
+	 */
+	public AutoAligner(Project project, Track track, ProgressDisplay progress, TrackView view) {
 		this.project = project;
 		this.track = track;
-		this.aligneur = aligneur;
+		this.progress = progress;
 		this.view = view;
 		track.refreshIndex();
 		mots = track.elts.getMots();
 	}
 
+
+	private S4ForceAlignBlocViterbi getS4aligner(Track track)
+	{
+		// Create an array of word strings
+		List<Word> wordElements = track.elts.getMots();
+		String[] wordStrings = new String[wordElements.size()];
+		for (int i = 0; i < wordElements.size(); i++)
+			wordStrings[i] = wordElements.get(i).getWordString();
+		// Create the aligner
+		S4ForceAlignBlocViterbi s4aligner = S4ForceAlignBlocViterbi.getS4Aligner(
+				project.convertedAudioFile.getAbsolutePath(), progress);
+		s4aligner.setMots(wordStrings);
+		return s4aligner;
+	}
+
+
 	private S4AlignOrder createS4AlignOrder(int motdeb, int trdeb, int motfin, int trfin) {
 		if (s4blocViterbi == null)
-			s4blocViterbi = aligneur.getS4aligner(track);
+			s4blocViterbi = getS4aligner(track);
 
 		S4AlignOrder order = new S4AlignOrder(motdeb, trdeb, motfin, trfin);
 
@@ -203,13 +223,15 @@ public class AutoAligner {
 		}
 
 		// Update GUI
-		final int fStartWord = startWord;
-		SwingUtilities.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-				view.colorizeWords(fStartWord, word);
-			}
-		});
+		if (view != null) {
+			final int fStartWord = startWord;
+			SwingUtilities.invokeLater(new Runnable() {
+				@Override
+				public void run() {
+					view.colorizeWords(fStartWord, word);
+				}
+			});
+		}
 	}
 
 	private void setAlignWord(int startWord, int endWord, float startSecond, float endSecond) {
@@ -264,7 +286,7 @@ public class AutoAligner {
 	 * Align words automatically between anchors set manually.
 	 */
 	public void alignBetweenAnchors() {
-		aligneur.setIndeterminateProgress("Track \"" + track.speakerName
+		progress.setIndeterminateProgress("Track \"" + track.speakerName
 				+ "\": starting alignment...");
 
 		track.clearAlignment();
@@ -289,7 +311,7 @@ public class AutoAligner {
 				startWord = word + 1;
 			}
 
-			aligneur.setProgress(String.format(
+			progress.setProgress(String.format(
 					"Track \"%s\": aligning element %d of %d...",
 					track.speakerName, i+1, track.elts.size()),
 					(i+1) / (float)track.elts.size());
@@ -303,7 +325,7 @@ public class AutoAligner {
 	 * Aligns words automatically. Does not account for anchors.
 	 */
 	public void alignRaw() {
-		aligneur.setIndeterminateProgress("Track \"" + track.speakerName
+		progress.setIndeterminateProgress("Track \"" + track.speakerName
 				+ "\": aligning...");
 
 		track.clearAlignment();
@@ -313,12 +335,12 @@ public class AutoAligner {
 
 		// Keep going until all words are aligned or the aligner gets stuck
 		while (lastAlignedWord < mots.size() && lastAlignedWord > previousLAW) {
-			setAlignWord(-1, mots.size()-1, -1, aligneur.audioSourceTotalFrames);
+			setAlignWord(-1, mots.size()-1, -1, project.audioSourceTotalFrames);
 
 			previousLAW = lastAlignedWord;
 			lastAlignedWord = getLastMotPrecAligned(mots.size()-1);
 
-			aligneur.setProgress(String.format(
+			progress.setProgress(String.format(
 					"Track \"%s\": aligning element %d of %d...",
 					track.speakerName, lastAlignedWord+1, track.elts.size()),
 					(lastAlignedWord+1) / (float)track.elts.size());

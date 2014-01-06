@@ -99,10 +99,6 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	public MultiTrackTable multitrack;
 	public SpeakerVisibilityControl speakerVisibility;
 
-	/** Audio file in a suitable format for processing */
-	public File convertedAudioFile = null;
-	public long audioSourceTotalFrames = -1;
-
 	public RoundBuffer audiobuf = new RoundBuffer(this, 10000000);
 	public RoundBufferFrontEnd mfccbuf;
 
@@ -188,98 +184,25 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 
 
 	/**
-	 * Target audio format. Any input audio files that do not match this format
-	 * will be converted to it before being processed.
-	 */
-	private static final AudioFormat SUITABLE_AUDIO_FORMAT =
-			new AudioFormat(16000, 16, 1, true, false);
-
-
-	/**
-	 * Return an audio file in a suitable format for JTrans. If the original
-	 * file isn't in the right format, convert it and cache it.
-	 */
-	public static File suitableAudioFile(final File original) {
-		AudioFormat af;
-
-		try {
-			af = AudioSystem.getAudioFileFormat(original).getFormat();
-		} catch (UnsupportedAudioFileException ex) {
-			ex.printStackTrace();
-			return original;
-		} catch (IOException ex) {
-			ex.printStackTrace();
-			return original;
-		}
-
-		if (af.matches(SUITABLE_AUDIO_FORMAT)) {
-			System.out.println("suitableAudioFile: no conversion needed!");
-			return original;
-		}
-
-		System.out.println("suitableAudioFile: need conversion, trying to get one from the cache");
-
-		Cache.FileFactory factory = new Cache.FileFactory() {
-			public void write(File f) throws IOException {
-				System.out.println("suitableAudioFile: no cache found... creating one");
-
-				AudioInputStream originalStream;
-				try {
-					originalStream = AudioSystem.getAudioInputStream(original);
-				} catch (UnsupportedAudioFileException ex) {
-					ex.printStackTrace();
-					throw new Error("Unsupported audio file; should've been caught above!");
-				}
-
-				AudioSystem.write(
-						AudioSystem.getAudioInputStream(SUITABLE_AUDIO_FORMAT, originalStream),
-						AudioFileFormat.Type.WAVE,
-						f);
-			}
-		};
-
-		return Cache.cachedFile("converted", "wav", factory, original);
-	}
-
-	/**
 	 * Sets the sound source file and converts it to a suitable format for
 	 * JTrans if needed.
 	 * @param path path to the sound file
 	 */
 	public void setAudioSource(String path) {
-		project.wavname = path;
-
-		if (path != null) {
-			setIndeterminateProgress("Loading audio from " + path + "...");
-			convertedAudioFile = suitableAudioFile(new File(project.wavname));
-
-			try {
-				AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(convertedAudioFile);
-				AudioFormat format = audioInputStream.getFormat();
-				long frames = audioInputStream.getFrameLength();
-				double durationInSeconds = (frames+0.0) / format.getFrameRate();
-				audioSourceTotalFrames = TimeConverter.second2frame((float)durationInSeconds);
-			} catch (IOException ex) {
-				audioSourceTotalFrames = -1;
-			} catch (UnsupportedAudioFileException ex) {
-				audioSourceTotalFrames = -1;
-			}
-		} else
-			convertedAudioFile = null;
-
+		setIndeterminateProgress("Loading audio from " + path + "...");
+		project.setAudio(path);
 		updateViewers();
-
 		setProgressDone();
 	}
 	
 	public AudioInputStream getAudioStreamFromSec(float sec) {
-		if (convertedAudioFile == null)
+		if (project.convertedAudioFile == null)
 			return null;
 
 		AudioInputStream ais;
 
 		try {
-			ais = AudioSystem.getAudioInputStream(convertedAudioFile);
+			ais = AudioSystem.getAudioInputStream(project.convertedAudioFile);
 		} catch (UnsupportedAudioFileException ex) {
 			ex.printStackTrace();
 			ais = null;
@@ -290,7 +213,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 
 		if (ais == null) {
 			JOptionPane.showMessageDialog(jf,
-					"No audio stream from " + convertedAudioFile,
+					"No audio stream from " + project.convertedAudioFile,
 					"Error",
 					JOptionPane.ERROR_MESSAGE);
 			return null;
@@ -613,24 +536,11 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 						getRecoResult(asr);
 					}
 				};
-				asr.doReco(convertedAudioFile.getAbsolutePath(), "");
+				asr.doReco(project.convertedAudioFile.getAbsolutePath(), "");
 				getRecoResult(asr);
 				setProgressDone();
 			}
 		}.start();
-	}
-
-	public S4ForceAlignBlocViterbi getS4aligner(Track track) {
-		// Create an array of word strings
-		List<Word> wordElements = track.elts.getMots();
-		String[] wordStrings = new String[wordElements.size()];
-		for (int i = 0; i < wordElements.size(); i++)
-			wordStrings[i] = wordElements.get(i).getWordString();
-		// Create the aligner
-		S4ForceAlignBlocViterbi s4aligner = S4ForceAlignBlocViterbi.getS4Aligner(
-				convertedAudioFile.getAbsolutePath(), this);
-		s4aligner.setMots(wordStrings);
-		return s4aligner;
 	}
 
 	public void biasAdapt() {

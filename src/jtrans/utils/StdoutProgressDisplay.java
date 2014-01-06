@@ -9,7 +9,7 @@ public class StdoutProgressDisplay implements ProgressDisplay {
 	@Override
 	public void setProgress(String message, float f) {
 		System.out.println(String.format(
-				"%s (%.2f%%)", message, f));
+				"%s (%.2f%%)", message, f*100f));
 	}
 
 	@Override

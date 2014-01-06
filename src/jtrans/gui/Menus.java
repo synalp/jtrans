@@ -184,9 +184,9 @@ public class Menus {
 						aligneur.project.saveRawText(file);
 						*/
 					} else if (ff == filterTextGridWordsOnly) {
-						aligneur.project.savePraat(file, true, false, aligneur.audioSourceTotalFrames);
+						aligneur.project.savePraat(file, true, false);
 					} else if (ff == filterTextGridWordsAndPhons) {
-						aligneur.project.savePraat(file, true, true, aligneur.audioSourceTotalFrames);
+						aligneur.project.savePraat(file, true, true);
 					} else {
 						JOptionPane.showMessageDialog(aligneur.jf, "Unknown filter " + ff);
 					}
@@ -530,7 +530,7 @@ public class Menus {
 					Grammatiseur.fastLoading=true;
 					Grammatiseur.grammatiseur=null;
 					gram = new LiveSpeechReco();
-					gram.wavfile = aligneur.convertedAudioFile.getAbsolutePath();
+					gram.wavfile = aligneur.project.convertedAudioFile.getAbsolutePath();
 					gram.loadVoc(vocfile);
 					gram.initGrammar(aligneur);
 					gram.gram=gram;

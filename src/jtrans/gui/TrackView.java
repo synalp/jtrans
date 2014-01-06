@@ -212,7 +212,7 @@ public class TrackView extends JTextPane {
 		float initialPos;
 
 		if (word.posInAlign < 0) {
-			float endOfAudio = TimeConverter.frame2sec((int) gui.audioSourceTotalFrames);
+			float endOfAudio = TimeConverter.frame2sec((int) project.audioSourceTotalFrames);
 			initialPos = before?
 					(range.prev!=null? range.prev.seconds: 0) :
 					(range.next!=null? range.next.seconds: endOfAudio);
