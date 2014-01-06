@@ -293,7 +293,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		removeAll();
 		setLayout(new BorderLayout());
 
-		multitrack = new MultiTrackTable(project);
+		multitrack = new MultiTrackTable(project, this);
 		JScrollPane multiTrackScrollPane = new JScrollPane(multitrack);
 		multiTrackScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 		speakerVisibility = new SpeakerVisibilityControl(project, multitrack);

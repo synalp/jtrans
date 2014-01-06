@@ -36,9 +36,8 @@ public class CellRenditor
 		editorPane.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mousePressed(MouseEvent e) {
-				//highlight(cell.getWordAtCaret(viewToModel(e.getPoint())));
 				mtt.getCellEditor().stopCellEditing();
-				mtt.highlightWord(editorCell.track,
+				mtt.selectWord(editorCell.track,
 						editorCell.getWordAtCaret(editorPane.viewToModel(e.getPoint())));
 			}
 		});

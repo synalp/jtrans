@@ -2,6 +2,9 @@ package jtrans.gui.trackview;
 
 import jtrans.elements.Word;
 import jtrans.facade.Project;
+import jtrans.gui.JTransGUI;
+import jtrans.gui.PlayerGUI;
+import jtrans.utils.TimeConverter;
 import jtrans.utils.spantable.SpanTable;
 
 import java.awt.*;
@@ -15,14 +18,16 @@ import javax.swing.table.*;
  */
 public class MultiTrackTable extends SpanTable {
 	private Project project;
+	private JTransGUI gui; // used in UI callbacks
 	private MultiTrackTableModel model;
 	private CellRenditor renditor;
 	private boolean[] visibility;
 	private int visibleCount;
 
 
-	public MultiTrackTable(Project project) {
+	public MultiTrackTable(Project project, JTransGUI gui) {
 		this.project = project;
+		this.gui = gui;
 
 		visibility = new boolean[project.tracks.size()];
 		Arrays.fill(visibility, true);
@@ -132,6 +137,28 @@ public class MultiTrackTable extends SpanTable {
 
 	public void highlightWord(int trackIdx, Word word) {
 		model.highlightWord(trackIdx, word);
+	}
+
+
+	/**
+	 * Highlights a word and sets the playback position to the beginning of the
+	 * word.
+	 */
+	public void selectWord(int trackIdx, Word word) {
+		PlayerGUI player = gui.ctrlbox.getPlayerGUI();
+		boolean replay = player.isPlaying();
+		player.stopPlaying();
+
+		if (word.posInAlign >= 0) {
+			model.highlightWord(trackIdx, word);
+			gui.setCurPosInSec(TimeConverter.frame2sec(
+					project.tracks.get(trackIdx).words.getSegmentDebFrame(word.posInAlign)));
+		} else {
+			replay = false;
+		}
+
+		if (replay)
+			player.startPlaying();
 	}
 }
 
