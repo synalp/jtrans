@@ -22,10 +22,7 @@ import javax.swing.*;
 import javax.swing.Timer;
 
 import jtrans.elements.Word;
-import jtrans.facade.AutoAligner;
-import jtrans.facade.Cache;
-import jtrans.facade.Project;
-import jtrans.facade.Track;
+import jtrans.facade.*;
 import jtrans.gui.trackview.MultiTrackTable;
 import jtrans.speechreco.SpeechReco;
 import jtrans.markup.*;
@@ -552,50 +549,15 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		CrossPlatformFixes.setNativeLookAndFeel();
 		checkResources();
 
+		JTransCLI cli = new JTransCLI(args);
 		JTransGUI m = new JTransGUI();
-		MarkupLoader loader = null;
-		String markupFileName = null;
-		String audioFileName = null;
 
-		for (String arg: args) {
-			String lcarg = arg.toLowerCase();
-
-			if (lcarg.endsWith(".wav")) {
-				audioFileName = arg;
-			}
-
-			else if (lcarg.endsWith(".jtr")) {
-				loader = new JTRLoader();
-				markupFileName = arg;
-			}
-
-			else if (lcarg.endsWith(".trs")) {
-				loader = new TRSLoader();
-				markupFileName = arg;
-			}
-
-			else if (lcarg.endsWith(".textgrid")) {
-				loader = new TextGridLoader();
-				markupFileName = arg;
-			}
-
-			else if (lcarg.endsWith(".txt")) {
-				loader = new RawTextLoader();
-				markupFileName = arg;
-			}
-
-			else {
-				System.err.println("args error: dont know what to do with " + arg);
-				return;
-			}
-		}
-
-		if (loader != null) {
-			m.friendlyLoadMarkup(loader,
-					new File(markupFileName),
-					audioFileName==null? null: new File(audioFileName));
+		if (cli.loader != null) {
+			m.friendlyLoadMarkup(cli.loader,
+					new File(cli.markupFileName),
+					cli.audioFileName==null? null: new File(cli.audioFileName));
 		} else {
-			m.setAudioSource(audioFileName);
+			m.setAudioSource(cli.audioFileName);
 		}
 	}
 
