@@ -59,7 +59,20 @@ public class TRSLoader implements MarkupLoader {
 		for (int i = 0; i < turnList.getLength(); i++) {
 			Element turn = (Element)turnList.item(i);
 			Node child = turn.getFirstChild();
-			Track currentTrack = trackIDMap.get(turn.getAttribute("speaker"));
+
+			// Map IDs of speakers active in this turn to tracks
+			String[] turnSpeakers = turn.getAttribute("speaker").split(" ");
+			Track[] turnTracks = new Track[turnSpeakers.length];
+			for (int j = 0; j < turnSpeakers.length; j++) {
+				turnTracks[j] = trackIDMap.get(turnSpeakers[j]);
+			}
+
+			// Start with the first speaker in case the first "Who" tag is missing
+			Track currentTrack = turnTracks[0];
+
+			// The same speaker may be repeated in the speaker attribute
+			Set<Track> uniqueTurnTracks =
+					new HashSet<Track>(Arrays.asList(turnTracks));
 
 			float endTime = Float.parseFloat(turn.getAttribute("endTime"));
 			if (endTime > lastEnd)
@@ -78,8 +91,16 @@ public class TRSLoader implements MarkupLoader {
 
 				// Anchor. Placed on the last character in the word *PRECEDING* the sync point
 				else if (name.equals("Sync")) {
-					currentTrack.elts.add(new Anchor(
-							Float.parseFloat(((Element) child).getAttribute("time"))));
+					float time = Float.parseFloat(((Element)child).getAttribute("time"));
+					for (Track t: uniqueTurnTracks)
+						addUniqueAnchor(t, time);
+				}
+
+				// Change speakers in a multi-speaker turn
+				else if (name.equals("Who")) {
+					// Speaker numbering starts at 1 in the XML file
+					currentTrack = turnTracks[
+							Integer.parseInt(((Element)child).getAttribute("nb")) - 1];
 				}
 
 				else if (name.equals("Comment")) {
@@ -115,6 +136,20 @@ public class TRSLoader implements MarkupLoader {
 		dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
 		dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
 		return dbf.newDocumentBuilder();
+	}
+
+
+	/**
+	 * Adds an anchor to a track only if it hasn't been added to it already.
+	 */
+	private static void addUniqueAnchor(Track t, float seconds) {
+		if (!t.elts.isEmpty()) {
+			jtrans.elements.Element lastEl = t.elts.get(t.elts.size()-1);
+			if (lastEl instanceof Anchor && ((Anchor) lastEl).seconds == seconds)
+				return;
+		}
+
+		t.elts.add(new Anchor(seconds));
 	}
 
 

@@ -5,7 +5,6 @@ URGENT	Remove TrackView and TextAreaRecoListener (but implement missing methods 
 URGENT	Usable headless/batch mode
 URGENT	Element types in new MultiTrackTable
 
-1	Support <Word tags in TRE
 1	Align all the corpora that we have and put the results on the web site
 1	Write developper docs
 1	Non-regression tests (no GUI but command-line scripts) to check TCOF / ORFOM / simultaneous speakers / ?...
