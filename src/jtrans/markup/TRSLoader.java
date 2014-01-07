@@ -116,10 +116,11 @@ public class TRSLoader implements MarkupLoader {
 				// Onto next Turn child
 				child = child.getNextSibling();
 			}
+
+			for (Track t: uniqueTurnTracks)
+				addUniqueAnchor(t, endTime);
 		}
 
-		for (Track track : project.tracks)
-			track.elts.add(new Anchor(lastEnd));
 		return project;
 	}
 
