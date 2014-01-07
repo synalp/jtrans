@@ -1,5 +1,7 @@
 package jtrans.gui.trackview;
 
+import jtrans.elements.Anchor;
+import jtrans.elements.ElementList;
 import jtrans.elements.Word;
 import jtrans.facade.Project;
 import jtrans.facade.Track;
@@ -9,6 +11,7 @@ import jtrans.utils.TimeConverter;
 import jtrans.utils.spantable.SpanTable;
 
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Arrays;
@@ -185,11 +188,116 @@ public class MultiTrackTable extends SpanTable {
 	private void wordPopupMenu(final Track track, final Word word, MouseEvent event) {
 		JPopupMenu popup = new JPopupMenu("Word/Anchor");
 
+		if (word != null) {
+			popup.add(new JMenuItem(String.format("New anchor before '%s'",
+					word.getWordString()))
+			{{
+					addActionListener(new AbstractAction() {
+						@Override
+						public void actionPerformed(ActionEvent e) {
+							newAnchorNextToWord(track, word, true);
+						}
+					});
+				}});
+
+			popup.add(new JMenuItem(String.format("New anchor after '%s'",
+					word.getWordString()))
+			{{
+					addActionListener(new AbstractAction() {
+						@Override
+						public void actionPerformed(ActionEvent e) {
+							newAnchorNextToWord(track, word, false);
+						}
+					});
+			}});
+
+			popup.addSeparator();
+		}
+
 		popup.add("Test");
 		popup.add("Test");
 		popup.add("Test");
 
 		popup.show(this, event.getX(), event.getY());
+	}
+
+
+	/**
+	 * Dialog box to create an anchor before or after a certain word.
+	 * @param before If true, the new anchor will be placed before the word in
+	 *               the element list. If false, it'll be placed after the word.
+	 */
+	private void newAnchorNextToWord(Track track, Word word, boolean before) {
+		ElementList.Neighborhood<Anchor> range =
+				track.elts.getNeighbors(word, Anchor.class);
+
+		float initialPos;
+
+		if (word.posInAlign < 0) {
+			float endOfAudio = TimeConverter.frame2sec((int) project.audioSourceTotalFrames);
+			initialPos = before?
+					(range.prev!=null? range.prev.seconds: 0) :
+					(range.next!=null? range.next.seconds: endOfAudio);
+		} else if (before) {
+			initialPos = TimeConverter.frame2sec(
+					track.words.getSegmentDebFrame(word.posInAlign));
+		} else {
+			initialPos = TimeConverter.frame2sec(
+					track.words.getSegmentEndFrame(word.posInAlign));
+		}
+
+		String positionString = JOptionPane.showInputDialog(gui.jf,
+				String.format("Enter position for new anchor to be inserted\n"
+						+ "%s '%s' (in seconds):",
+						before? "before": "after", word.getWordString()),
+				initialPos);
+
+		if (positionString == null)
+			return;
+
+		float newPos = Float.parseFloat(positionString);
+
+		if (sanitizeAnchorPosition(range, newPos)) {
+			Anchor anchor = new Anchor(newPos);
+			track.elts.add(track.elts.indexOf(word) + (before?0:1), anchor);
+			track.clearAlignmentAround(anchor);
+			refreshModel(); //setTextFromElements();
+		}
+	}
+
+
+	/**
+	 * Ensures newPos is a valid position for an anchor within the given
+	 * range; if not, informs the user with error messages.
+	 * @return true if the position is valid
+	 */
+	private boolean sanitizeAnchorPosition(
+			ElementList.Neighborhood<Anchor> range, float newPos)
+	{
+		if (newPos < 0) {
+			JOptionPane.showMessageDialog(gui.jf,
+					"Can't set to negative position!",
+					"Illegal anchor position", JOptionPane.ERROR_MESSAGE);
+			return false;
+		}
+
+		if (range.prev != null && range.prev.seconds > newPos) {
+			JOptionPane.showMessageDialog(gui.jf,
+					"Can't set this anchor before the previous anchor\n" +
+							"(at " + range.prev.seconds + " seconds).",
+					"Illegal anchor position", JOptionPane.ERROR_MESSAGE);
+			return false;
+		}
+
+		if (range.next != null && range.next.seconds < newPos) {
+			JOptionPane.showMessageDialog(gui.jf,
+					"Can't set this anchor past the next anchor\n" +
+							"(at " + range.next.seconds + " seconds).",
+					"Illegal anchor position", JOptionPane.ERROR_MESSAGE);
+			return false;
+		}
+
+		return true;
 	}
 
 
