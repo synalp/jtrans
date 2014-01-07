@@ -43,5 +43,8 @@ public class CrossPlatformFixes {
 			// OS X sets grid color to white
 			UIManager.put("Table.gridColor", new ColorUIResource(Color.lightGray));
 		}
+
+		// Prevent triggering accidental events when clicking outside a popup menu
+		UIManager.put("PopupMenu.consumeEventOnClose", Boolean.TRUE);
 	}
 }

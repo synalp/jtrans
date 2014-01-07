@@ -2,13 +2,17 @@ package jtrans.gui.trackview;
 
 import jtrans.elements.Word;
 import jtrans.facade.Project;
+import jtrans.facade.Track;
 import jtrans.gui.JTransGUI;
 import jtrans.gui.PlayerGUI;
 import jtrans.utils.TimeConverter;
 import jtrans.utils.spantable.SpanTable;
 
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.Arrays;
+import javax.swing.*;
 import javax.swing.table.*;
 
 
@@ -33,7 +37,7 @@ public class MultiTrackTable extends SpanTable {
 		Arrays.fill(visibility, true);
 		visibleCount = visibility.length;
 
-		renditor = new CellRenditor(this);
+		renditor = new CellRenditor();
 
 		refreshModel();
 		setEnabled(true);
@@ -43,7 +47,45 @@ public class MultiTrackTable extends SpanTable {
 		setPreferredScrollableViewportSize(new Dimension(512, 512));
 		setFillsViewportHeight(true);
 
+		addMouseListener(new MultiTrackTableMouseAdapter());
+		putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
+
 		doLayout();
+	}
+
+
+	class MultiTrackTableMouseAdapter extends MouseAdapter {
+		@Override
+		public void mousePressed(MouseEvent e) {
+			int row = rowAtPoint(e.getPoint());
+			int col = columnAtPoint(e.getPoint());
+
+			Cell cell = model.getValueAt(row, col);
+			if (cell == null)
+				return;
+
+			// Convert click to cell coordinate system
+			Rectangle cprect = getCellRect(row, col, true);
+			Point p = e.getPoint();
+			p.translate(-cprect.x, -cprect.y);
+
+			// Start editing: necessary to get proper layout in editor pane
+			// (especially when right-clicking)
+			editCellAt(row, col);
+			CellPane pane = (CellPane)prepareEditor(renditor, row, col);
+
+			Word word = cell.getWordAtCaret(pane.viewToModel(p));
+
+			// Stop editing now, otherwise future mouse events will be
+			// consumed by the editor and won't be seen by the table
+			renditor.stopCellEditing();
+
+			if (e.isPopupTrigger()) {
+				wordPopupMenu(project.tracks.get(cell.track), word, e);
+			} else if (word != null) {
+				selectWord(cell.track, word);
+			}
+		}
 	}
 
 
@@ -137,6 +179,17 @@ public class MultiTrackTable extends SpanTable {
 
 	public void highlightWord(int trackIdx, Word word) {
 		model.highlightWord(trackIdx, word);
+	}
+
+
+	private void wordPopupMenu(final Track track, final Word word, MouseEvent event) {
+		JPopupMenu popup = new JPopupMenu("Word/Anchor");
+
+		popup.add("Test");
+		popup.add("Test");
+		popup.add("Test");
+
+		popup.show(this, event.getX(), event.getY());
 	}
 
 

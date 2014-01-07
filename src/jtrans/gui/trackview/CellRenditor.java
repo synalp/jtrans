@@ -4,8 +4,6 @@ import javax.swing.*;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 
 /**
  * "Renderer" + "Editor" for Cells in a MultiTrackTable.
@@ -29,24 +27,13 @@ public class CellRenditor
 	private Cell editorCell;
 
 
-	public CellRenditor(final MultiTrackTable mtt) {
+	public CellRenditor() {
 		renderPane = new CellPane();
 		editorPane = new CellPane();
-
-		editorPane.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mousePressed(MouseEvent e) {
-				mtt.getCellEditor().stopCellEditing();
-				mtt.selectWord(editorCell.track,
-						editorCell.getWordAtCaret(editorPane.viewToModel(e.getPoint())));
-			}
-		});
-
 
 		emptyPane = new JPanel();
 		emptyPane.setBackground(Color.DARK_GRAY);
 		emptyPane.setForeground(Color.LIGHT_GRAY);
-
 	}
 
 
@@ -64,7 +51,6 @@ public class CellRenditor
 		} else {
 			return null;
 		}
-
 	}
 
 
