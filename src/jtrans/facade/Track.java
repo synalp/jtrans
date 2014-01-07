@@ -69,4 +69,9 @@ public class Track {
 		// TODO: unalign phonemes, clear affected overlaps...
 		refreshIndex();
 	}
+
+	@Override
+	public String toString() {
+		return speakerName;
+	}
 }

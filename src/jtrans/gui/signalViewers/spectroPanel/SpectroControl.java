@@ -1,22 +1,17 @@
 package jtrans.gui.signalViewers.spectroPanel;
 
-import java.awt.Dimension;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
-import javax.swing.Box;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JSlider;
+import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import jtrans.facade.Track;
 import jtrans.gui.JTransGUI;
 import jtrans.speechreco.s4.Alignment;
 import jtrans.utils.TimeConverter;
@@ -29,6 +24,7 @@ import jtrans.utils.TimeConverter;
  *
  */
 public class SpectroControl extends JPanel {
+	float startSeconds = 0;
 	SpectroPanel spectro = new SpectroPanel();
 	TimelineWords words = new TimelineWords();
 	JButton refresh = new JButton("refresh");
@@ -38,6 +34,8 @@ public class SpectroControl extends JPanel {
 	JButton p1s = new JButton("+1sec");
 	JButton m1s = new JButton("-1sec");
 	JTransGUI aligneur;
+	private JComboBox<Track> trackChooser;
+	private Track currentTrack;
 
 	public SpectroControl(JTransGUI main) {
 		aligneur=main;
@@ -45,16 +43,18 @@ public class SpectroControl extends JPanel {
 		spectro.aligneur=aligneur;
 	}
 
-	public void setAlign(Alignment al) {
-		words.setAlign(al);
-		words.repaint();
+	public void setTrack(Track t) {
+		currentTrack = t;
+		refreshWords();
 	}
 
-	public void setFirstSeg(int seg) {
-		words.setFirstSeg(seg);
-	}
-	public void setFirstFrame(int fr) {
-		words.setFirstFrame(fr);
+	public void refreshWords() {
+		Alignment align = aligneur.showPhones?
+				currentTrack.phons: currentTrack.words;
+		words.setAlign(align);
+		int frame = TimeConverter.second2frame(startSeconds);
+		words.setFirstSeg(align.getSegmentAtFrame(frame));
+		words.repaint();
 	}
 
 	public SpectroControl(){
@@ -67,26 +67,30 @@ public class SpectroControl extends JPanel {
 	//	}
 	//	
 	private void initgui() {
-		Box b0 = Box.createVerticalBox();
-		add(b0);
-		Box ba = Box.createHorizontalBox();
-		b0.add(ba);
-		ba.add(spectro);
-		ba.add(Box.createHorizontalGlue());
-		Box bb = Box.createHorizontalBox();
-		b0.add(bb);
-		bb.add(words);
-		bb.add(Box.createHorizontalGlue());
-		b0.add(Box.createVerticalGlue());
-		Box b1 = Box.createHorizontalBox();
-		b0.add(b1);
-		b0.add(Box.createVerticalGlue());
+		trackChooser = new JComboBox<Track>();
+		for (Track t: aligneur.project.tracks) {
+			trackChooser.addItem(t);
+		}
 
+		trackChooser.addActionListener(new AbstractAction() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				setTrack((Track)trackChooser.getSelectedItem());
+			}
+		});
+
+		setLayout(new BorderLayout());
+		add(new JPanel(new BorderLayout()) {{
+			add(spectro, BorderLayout.CENTER);
+			add(words, BorderLayout.PAGE_END);
+		}}, BorderLayout.CENTER);
+
+
+		Box b1 = Box.createHorizontalBox();
+		b1.add(trackChooser);
 		b1.add(Box.createHorizontalGlue());
 		b1.add(posdeb);
-		b1.add(Box.createHorizontalGlue());
 		b1.add(p1s);
-		b1.add(Box.createHorizontalGlue());
 		b1.add(m1s);
 		b1.add(Box.createHorizontalGlue());
 		b1.add(zoom);
@@ -95,6 +99,8 @@ public class SpectroControl extends JPanel {
 		b1.add(Box.createHorizontalGlue());
 		b1.add(offset);
 		b1.add(Box.createHorizontalGlue());
+
+		add(b1, BorderLayout.PAGE_END);
 
 		p1s.addActionListener(new ActionListener() {
 			@Override
@@ -151,11 +157,6 @@ public class SpectroControl extends JPanel {
 		}
 	}
 
-	private void gottosec(float s) {
-		int fr = TimeConverter.second2frame(s);
-		setFirstFrame(fr);
-	}
-
 	public void refresh() {
 		// on a un X-pixel = 1 frame = 0.01s, et avec le zoom: 1 frame = zoom xpixel
 		// pour afficher toute la largeur, il faut donc calculer width/zoom frames
@@ -172,16 +173,12 @@ public class SpectroControl extends JPanel {
 		validate();
 	}
 
-	public void setAudioInputStream(float debsec, AudioInputStream a) {
-		try {
-			posdeb.setText(""+debsec);
-			spectro.setAudioInputStream(a);
-			refresh();
-			repaint();
-		} catch (Exception e) {
-			e.printStackTrace();
-			JOptionPane.showMessageDialog(null, "pas de sphinx4.jarfdfdf  ? "+e);
-		}
+	public void setAudioInputStream(float startSeconds, AudioInputStream a) {
+		this.startSeconds = startSeconds;
+		posdeb.setText(String.format("%.3f", startSeconds));
+		spectro.setAudioInputStream(a);
+		refresh();
+		repaint();
 	}
 
 	public static void main(String[] args) throws Exception {

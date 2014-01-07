@@ -227,6 +227,7 @@ public class Menus {
 		phonemesInSpectro.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				aligneur.showPhones = ((AbstractButton)e.getSource()).isSelected();
+				aligneur.sigpan.refreshWords();
 			}
 		});
 

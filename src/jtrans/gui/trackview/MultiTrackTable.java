@@ -382,11 +382,13 @@ public class MultiTrackTable extends SpanTable {
 		PlayerGUI player = gui.ctrlbox.getPlayerGUI();
 		boolean replay = player.isPlaying();
 		player.stopPlaying();
+		Track track = project.tracks.get(trackIdx);
 
 		if (word.posInAlign >= 0) {
 			model.highlightWord(trackIdx, word);
 			gui.setCurPosInSec(TimeConverter.frame2sec(
-					project.tracks.get(trackIdx).words.getSegmentDebFrame(word.posInAlign)));
+					track.words.getSegmentDebFrame(word.posInAlign)));
+			gui.sigpan.setTrack(track);
 		} else {
 			replay = false;
 		}

@@ -75,7 +75,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	 */
 	private float cursec = 0;
 	public ControlBox ctrlbox;
-	private SpectroControl sigpan=null;
+	public SpectroControl sigpan;
 	public boolean showPhones=false;
 
 	/* IMPORTANT: the karaoke highlighter *has* to be a Swing timer, not a
@@ -111,7 +111,8 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 
 	public void setCurPosInSec(float sec) {
 		cursec = sec;
-		REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
+
+		/*
 		int frame = TimeConverter.second2frame(cursec);
         // vieux panel
         if (sigPanel!=null) {
@@ -119,17 +120,10 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
             if (currentSample < 0) currentSample = 0;
             sigPanel.setProgressBar(currentSample);
         }
+		*/
 
 		// nouveau panel
 		sigpan.setAudioInputStream(cursec, getAudioStreamFromSec(cursec));
-		if (showPhones) {
-			sigpan.setAlign(project.phons);
-			sigpan.setFirstSeg(project.phons.getSegmentAtFrame(frame));
-		} else {
-			sigpan.setAlign(project.words);
-            sigpan.setFirstSeg(project.words.getSegmentAtFrame(frame));
-        }
-*/
 
 		updateViewers();
 	}
