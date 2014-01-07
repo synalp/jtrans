@@ -69,32 +69,4 @@ public class Track {
 		// TODO: unalign phonemes, clear affected overlaps...
 		refreshIndex();
 	}
-
-	/**
-	 * Renders the element list as a long string and sets element positions
-	 * accordingly.
-	 * @return the rendered string
-	 */
-	public String render() {
-		StringBuilder buf = new StringBuilder();
-		buf.append(buf);
-
-		for (Element el: elts) {
-			if (buf.length() > 0) {
-				if (Project.linebreakBeforeAnchors && el instanceof Anchor)
-					buf.append('\n');
-				else
-					buf.append(' ');
-			}
-
-			int pos = buf.length();
-			String str = el.toString();
-			buf.append(str);
-
-			el.start = pos;
-			el.end = pos + str.length();
-		}
-
-		return buf.toString();
-	}
 }
