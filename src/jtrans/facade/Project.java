@@ -35,9 +35,6 @@ public class Project {
 	public transient File convertedAudioFile = null;
 	public transient long audioSourceTotalFrames = -1;
 
-	// TODO this setting should be saved to disk
-	public static boolean linebreakBeforeAnchors = true;
-
 
 	public void clearAlignment() {
 		for (Track track : tracks)

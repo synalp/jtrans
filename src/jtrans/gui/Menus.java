@@ -23,7 +23,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import edu.cmu.sphinx.result.Result;
 
 import jtrans.elements.Anchor;
-import jtrans.facade.Project;
+import jtrans.gui.trackview.CellRenditor;
 import jtrans.speechreco.LiveSpeechReco;
 import jtrans.markup.*;
 
@@ -39,7 +39,7 @@ public class Menus {
 	String reco;
 	boolean[] done = {false};
 	LiveSpeechReco gram;
-	private Font currentFont = new Font(TrackView.DEFAULT_FONT_NAME, Font.PLAIN, TrackView.DEFAULT_FONT_SIZE);
+	private Font currentFont = CellRenditor.DEFAULT_FONT;
 
 	private static final FileFilter
 			filterJTR = new FileNameExtensionFilter("JTrans Project (*.jtr, *.json)", "jtr", "json"),
@@ -210,22 +210,19 @@ public class Menus {
 		// //////////////////////////////////////////////////////////////
 		JMenu viewMenu = new JMenu("View");
 		JCheckBoxMenuItem phonemesInSpectro = new JCheckBoxMenuItem("Show phonemes in spectro");
-		JCheckBoxMenuItem minutesInAnchors = new JCheckBoxMenuItem("Show minutes in anchors");
-		JCheckBoxMenuItem linebreakBeforeAnchors = new JCheckBoxMenuItem("Linebreak before anchors");
+		JCheckBoxMenuItem minutesInAnchors = new JCheckBoxMenuItem("Show minutes in anchor timestamps");
 		JMenu fontSize = new JMenu("Font size");
 		JMenu fontFamily = new JMenu("Font family");
 		menubar.add(viewMenu);
 
 		viewMenu.add(phonemesInSpectro);
 		viewMenu.add(minutesInAnchors);
-		viewMenu.add(linebreakBeforeAnchors);
 		viewMenu.addSeparator();
 		viewMenu.add(fontSize);
 		viewMenu.add(fontFamily);
 
 		phonemesInSpectro.setSelected(aligneur.showPhones);
 		minutesInAnchors.setSelected(Anchor.showMinutes);
-		linebreakBeforeAnchors.setSelected(Project.linebreakBeforeAnchors);
 
 		phonemesInSpectro.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -237,14 +234,6 @@ public class Menus {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				Anchor.showMinutes = ((AbstractButton)e.getSource()).isSelected();
-				aligneur.refresh();
-			}
-		});
-
-		linebreakBeforeAnchors.addActionListener(new AbstractAction() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				Project.linebreakBeforeAnchors =  ((AbstractButton)e.getSource()).isSelected();
 				aligneur.refresh();
 			}
 		});
@@ -263,7 +252,7 @@ public class Menus {
 				}
 			});
 
-			if (points == TrackView.DEFAULT_FONT_SIZE)
+			if (points == currentFont.getSize())
 				jmi.setSelected(true);
 		}
 
@@ -281,7 +270,7 @@ public class Menus {
 				}
 			});
 
-			if (name.equals(TrackView.DEFAULT_FONT_NAME))
+			if (name.equals(currentFont.getName()))
 				jmi.setSelected(true);
 		}
 

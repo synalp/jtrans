@@ -26,7 +26,7 @@ class Cell {
 		wordStart = new int[words.size()];
 
 		StringBuilder sb = new StringBuilder();
-		sb.append('[').append(anchor.seconds).append(']');
+		sb.append('[').append(anchor).append(']');
 		for (int i = 0; i < words.size(); i++) {
 			sb.append(' ');
 			wordStart[i] = sb.length();

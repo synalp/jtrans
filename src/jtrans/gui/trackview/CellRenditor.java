@@ -26,6 +26,9 @@ public class CellRenditor
 	private Object editorValue;
 	private Cell editorCell;
 
+	public static final Font DEFAULT_FONT =
+			new Font(Font.SANS_SERIF, Font.PLAIN, 13);
+
 
 	public CellRenditor() {
 		renderPane = new CellPane();
