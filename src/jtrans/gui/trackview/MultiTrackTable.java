@@ -63,6 +63,7 @@ public class MultiTrackTable extends SpanTable {
 			int row = rowAtPoint(e.getPoint());
 			int col = columnAtPoint(e.getPoint());
 
+			renditor.stopCellEditing();
 			Cell cell = model.getValueAt(row, col);
 			if (cell == null)
 				return;
@@ -84,7 +85,7 @@ public class MultiTrackTable extends SpanTable {
 			renditor.stopCellEditing();
 
 			if (e.isPopupTrigger()) {
-				wordPopupMenu(project.tracks.get(cell.track), word, e);
+				wordPopupMenu(cell.anchor, project.tracks.get(cell.track), word, e);
 			} else if (word != null) {
 				selectWord(cell.track, word);
 			}
@@ -185,40 +186,112 @@ public class MultiTrackTable extends SpanTable {
 	}
 
 
-	private void wordPopupMenu(final Track track, final Word word, MouseEvent event) {
+	private void wordPopupMenu(final Anchor anchor, final Track track, final Word word, MouseEvent event) {
 		JPopupMenu popup = new JPopupMenu("Word/Anchor");
 
-		if (word != null) {
-			popup.add(new JMenuItem(String.format("New anchor before '%s'",
-					word.getWordString()))
-			{{
-					addActionListener(new AbstractAction() {
-						@Override
-						public void actionPerformed(ActionEvent e) {
-							newAnchorNextToWord(track, word, true);
-						}
-					});
-				}});
+		final ElementList.Neighborhood<Anchor> ancRange =
+				track.elts.getNeighbors(anchor, Anchor.class);
 
-			popup.add(new JMenuItem(String.format("New anchor after '%s'",
-					word.getWordString()))
-			{{
-					addActionListener(new AbstractAction() {
-						@Override
-						public void actionPerformed(ActionEvent e) {
-							newAnchorNextToWord(track, word, false);
-						}
-					});
-			}});
+		String wordString = word == null?
+				"<no word selected>":
+				String.format("'%s'", word.getWordString());
 
-			popup.addSeparator();
-		}
+		popup.add(new JMenuItem("New anchor before " + wordString) {{
+			setEnabled(word != null);
+			addActionListener(new AbstractAction() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					newAnchorNextToWord(track, word, true);
+				}
+			});
+		}});
 
-		popup.add("Test");
-		popup.add("Test");
-		popup.add("Test");
+		popup.add(new JMenuItem("New anchor after " + wordString) {{
+			setEnabled(word != null);
+			addActionListener(new AbstractAction() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					newAnchorNextToWord(track, word, false);
+				}
+			});
+		}});
+
+		popup.addSeparator();
+
+		popup.add(new JMenuItem("Adjust anchor time (" + anchor.seconds + ")") {{
+			addActionListener(new AbstractAction() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					repositionAnchor(anchor, track);
+				}
+			});
+		}});
+
+		popup.add(new JMenuItem("Clear alignment here") {{
+			addActionListener(new AbstractAction() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					track.clearAlignmentBetween(anchor, ancRange.next);
+					refreshModel(); //setTextFromElements();
+				}
+			});
+		}});
+
+		popup.add(new JMenuItem("Merge with previous anchor") {{
+			setEnabled(ancRange.prev != null);
+
+			addActionListener(new AbstractAction() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					track.clearAlignmentBetween(ancRange.prev, ancRange.next);
+					track.elts.remove(anchor);
+					refreshModel(); //setTextFromElements();
+				}
+			});
+		}});
+
+		popup.add(new JMenuItem("Merge with next anchor") {{
+			setEnabled(ancRange.next != null);
+
+			addActionListener(new AbstractAction() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					track.clearAlignmentAround(ancRange.next);
+					track.elts.remove(ancRange.next);
+					refreshModel(); //setTextFromElements();
+				}
+			});
+		}});
 
 		popup.show(this, event.getX(), event.getY());
+	}
+
+
+	/**
+	 * Dialog box to prompt the user where to reposition the anchor.
+	 * User input is sanitized with sanitizeAnchorPosition().
+	 */
+	private void repositionAnchor(Anchor anchor, Track track) {
+		String newPosString = JOptionPane.showInputDialog(gui.jf,
+				"Enter new anchor position in seconds:",
+				Float.toString(anchor.seconds));
+
+		if (newPosString == null)
+			return;
+
+		float newPos = Float.parseFloat(newPosString);
+
+		if (!sanitizeAnchorPosition(
+				track.elts.getNeighbors(anchor, Anchor.class), newPos))
+		{
+			return;
+		}
+
+		anchor.seconds = newPos;
+
+		track.clearAlignmentAround(anchor);
+
+		refreshModel();
 	}
 
 

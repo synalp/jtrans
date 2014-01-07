@@ -28,16 +28,21 @@ public class Track {
 	}
 
 	/**
-	 * Clears alignment around an anchor.
-	 * @return the anchor's neighborhood, i.e. the range of elements
-	 * that got unaligned
+	 * Clears alignment between two anchors surrounding the given anchor.
 	 */
-	public ElementList.Neighborhood<Anchor> clearAlignmentAround(Anchor anchor) {
+	public void clearAlignmentAround(Anchor anchor) {
 		ElementList.Neighborhood<Anchor> range =
 				elts.getNeighbors(anchor, Anchor.class);
+		clearAlignmentBetween(range.prev, range.next);
+	}
 
-		int from = range.prev!=null? range.prevIdx: 0;
-		int to   = range.next!=null? range.nextIdx: elts.size()-1;
+	/**
+	 * Clears alignment between two anchors.
+	 */
+	public void clearAlignmentBetween(Anchor a, Anchor b) {
+		int from = a!=null? elts.indexOf(a): 0;
+		int to   = b!=null? elts.indexOf(b): elts.size()-1;
+		assert from < to;
 
 		// Unalign the affected words
 		for (int i = from; i <= to; i++) {
@@ -49,8 +54,8 @@ public class Track {
 		// Remove segments
 		int beforeRemoval = words.getNbSegments();
 		words.clearInterval(
-				range.prev != null ? range.prev.getFrame() : 0,
-				range.next != null ? range.next.getFrame() : Integer.MAX_VALUE);
+				a!=null? a.getFrame(): 0,
+				b!=null? b.getFrame(): Integer.MAX_VALUE);
 		int removed = beforeRemoval - words.getNbSegments();
 
 		// Adjust elements following the removal
@@ -63,8 +68,6 @@ public class Track {
 
 		// TODO: unalign phonemes, clear affected overlaps...
 		refreshIndex();
-
-		return range;
 	}
 
 	/**
