@@ -720,7 +720,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 							project,
 							project.tracks.get(i),
 							JTransGUI.this,
-							null/*TODO multitrack.getView(i)*/);
+							multitrack);
 					if (useAnchors)
 						aa.alignBetweenAnchors();
 					else

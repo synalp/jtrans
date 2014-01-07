@@ -4,8 +4,7 @@ import java.io.File;
 import java.util.*;
 
 import jtrans.elements.*;
-import jtrans.gui.JTransGUI;
-import jtrans.gui.TrackView;
+import jtrans.gui.trackview.MultiTrackTable;
 import jtrans.speechreco.s4.Alignment;
 import jtrans.speechreco.s4.S4AlignOrder;
 import jtrans.speechreco.s4.S4ForceAlignBlocViterbi;
@@ -23,7 +22,7 @@ public class AutoAligner {
 	private ProgressDisplay progress;
 	private Track track;
 	private List<Word> mots;
-	private TrackView view;
+	private MultiTrackTable view;
 	private S4ForceAlignBlocViterbi s4blocViterbi;
 
 
@@ -38,7 +37,11 @@ public class AutoAligner {
 	/**
 	 * @param view UI component to update. May be null for headless mode.
 	 */
-	public AutoAligner(Project project, Track track, ProgressDisplay progress, TrackView view) {
+	public AutoAligner(Project project,
+					   Track track,
+					   ProgressDisplay progress,
+					   MultiTrackTable view)
+	{
 		this.project = project;
 		this.track = track;
 		this.progress = progress;
@@ -221,17 +224,6 @@ public class AutoAligner {
 			track.words.setSegmentSourceManu(newseg);
 			track.elts.getMot(word).posInAlign = newseg;
 		}
-
-		// Update GUI
-		if (view != null) {
-			final int fStartWord = startWord;
-			SwingUtilities.invokeLater(new Runnable() {
-				@Override
-				public void run() {
-					view.colorizeWords(fStartWord, word);
-				}
-			});
-		}
 	}
 
 	private void setAlignWord(int startWord, int endWord, float startSecond, float endSecond) {
@@ -315,6 +307,16 @@ public class AutoAligner {
 					"Track \"%s\": aligning element %d of %d...",
 					track.speakerName, i+1, track.elts.size()),
 					(i+1) / (float)track.elts.size());
+
+			// Update GUI
+			if (view != null) {
+				SwingUtilities.invokeLater(new Runnable() {
+					@Override
+					public void run() {
+						view.repaint();
+					}
+				});
+			}
 		}
 
 		track.refreshIndex();
