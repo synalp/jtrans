@@ -720,6 +720,13 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 					else
 						aa.alignRaw();
 				}
+				SwingUtilities.invokeLater(new Runnable() {
+					@Override
+					public void run() {
+						multitrack.refreshModel();
+					}
+				});
+
 				setProgressDone();
 			}
 		}.start();

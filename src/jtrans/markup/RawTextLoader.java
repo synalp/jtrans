@@ -132,6 +132,8 @@ public class RawTextLoader implements MarkupLoader {
 		Track track = new Track("L1");
 		project.tracks.add(track);
 
+		track.elts.add(new Anchor(0));
+
 		while (true) {
 			String line = reader.readLine();
 			if (line == null)

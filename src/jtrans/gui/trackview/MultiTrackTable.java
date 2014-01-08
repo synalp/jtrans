@@ -171,7 +171,7 @@ public class MultiTrackTable
 	 * Refreshes the MultiTrackTableModel. Should be called after a column is
 	 * hidden or shown.
 	 */
-	private void refreshModel() {
+	public void refreshModel() {
 		model = new MultiTrackTableModel(project, visibility);
 		setModel(model);
 	}

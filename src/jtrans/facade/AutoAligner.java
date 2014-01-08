@@ -319,6 +319,12 @@ public class AutoAligner {
 			}
 		}
 
+		// Align any remaining words until the end of the audio file
+		if (word >= 0 && word >= startWord) {
+			setAlignWord(startWord, word, alignFrom,
+					TimeConverter.frame2sec((int)project.audioSourceTotalFrames));
+		}
+
 		track.refreshIndex();
 	}
 
