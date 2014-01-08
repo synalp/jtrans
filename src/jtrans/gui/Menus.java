@@ -23,7 +23,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import edu.cmu.sphinx.result.Result;
 
 import jtrans.elements.Anchor;
-import jtrans.gui.trackview.CellRenditor;
+import jtrans.gui.trackview.MultiTrackTable;
 import jtrans.speechreco.LiveSpeechReco;
 import jtrans.markup.*;
 
@@ -39,7 +39,7 @@ public class Menus {
 	String reco;
 	boolean[] done = {false};
 	LiveSpeechReco gram;
-	private Font currentFont = CellRenditor.DEFAULT_FONT;
+	private Font currentFont = MultiTrackTable.DEFAULT_FONT;
 
 	private static final FileFilter
 			filterJTR = new FileNameExtensionFilter("JTrans Project (*.jtr, *.json)", "jtr", "json"),

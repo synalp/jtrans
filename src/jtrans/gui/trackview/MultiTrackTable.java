@@ -18,18 +18,31 @@ import java.util.Arrays;
 import javax.swing.*;
 import javax.swing.table.*;
 
+/* Implementation notes: JTable's standard "editing" mode doesn't play nice with
+MultiTrackTable's heavily customized view. Mouse events worked haphazardly.
+We decided to completely eschew cell editors in favor of panels acting as both
+renderers and "editors". */
 
 /**
  * Represents tracks as columns.
  * Renders groups of words between two anchors as a JTextArea cell.
  */
-public class MultiTrackTable extends SpanTable {
+public class MultiTrackTable
+		extends SpanTable
+		implements TableCellRenderer
+{
+	public static final Font DEFAULT_FONT =
+			new Font(Font.SANS_SERIF, Font.PLAIN, 13);
+
 	private Project project;
 	private JTransGUI gui; // used in UI callbacks
 	private MultiTrackTableModel model;
-	private CellRenditor renditor;
 	private boolean[] visibility;
 	private int visibleCount;
+
+	// Cell rendering attributes
+	private JPanel emptyPane;
+	private CellPane renderPane;
 
 
 	public MultiTrackTable(Project project, JTransGUI gui) {
@@ -39,8 +52,6 @@ public class MultiTrackTable extends SpanTable {
 		visibility = new boolean[project.tracks.size()];
 		Arrays.fill(visibility, true);
 		visibleCount = visibility.length;
-
-		renditor = new CellRenditor();
 
 		refreshModel();
 		setEnabled(true);
@@ -53,7 +64,39 @@ public class MultiTrackTable extends SpanTable {
 		addMouseListener(new MultiTrackTableMouseAdapter());
 		putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
 
+		//----------------------------------------------------------------------
+		// Cell rendering panes
+
+		renderPane = new CellPane();
+
+		emptyPane = new JPanel();
+		emptyPane.setBackground(Color.DARK_GRAY);
+		emptyPane.setForeground(Color.LIGHT_GRAY);
+
+		//----------------------------------------------------------------------
+
 		doLayout();
+	}
+
+
+	@Override
+	public Component getTableCellRendererComponent(
+			JTable table, Object value,
+			boolean isSelected, boolean hasFocus,
+			int row, int column)
+	{
+		if (value instanceof Cell) {
+			renderPane.setCell((Cell) value);
+
+			MultiTrackTableModel model = (MultiTrackTableModel)table.getModel();
+			if (model.getHighlightedRow(column) == row) {
+				renderPane.highlight(model.getHighlightedWord(column));
+			}
+
+			return renderPane;
+		} else {
+			return emptyPane;
+		}
 	}
 
 
@@ -63,7 +106,6 @@ public class MultiTrackTable extends SpanTable {
 			int row = rowAtPoint(e.getPoint());
 			int col = columnAtPoint(e.getPoint());
 
-			renditor.stopCellEditing();
 			Cell cell = model.getValueAt(row, col);
 			if (cell == null)
 				return;
@@ -73,16 +115,10 @@ public class MultiTrackTable extends SpanTable {
 			Point p = e.getPoint();
 			p.translate(-cprect.x, -cprect.y);
 
-			// Start editing: necessary to get proper layout in editor pane
-			// (especially when right-clicking)
-			editCellAt(row, col);
-			CellPane pane = (CellPane)prepareEditor(renditor, row, col);
+			CellPane pane = (CellPane)prepareRenderer(MultiTrackTable.this, row, col);
+			pane.setSize(getColumnModel().getColumn(col).getWidth(), getRowHeight(row));
 
 			Word word = cell.getWordAtCaret(pane.viewToModel(p));
-
-			// Stop editing now, otherwise future mouse events will be
-			// consumed by the editor and won't be seen by the table
-			renditor.stopCellEditing();
 
 			if (e.isPopupTrigger()) {
 				wordPopupMenu(cell.anchor, project.tracks.get(cell.track), word, e);
@@ -110,8 +146,7 @@ public class MultiTrackTable extends SpanTable {
 	public void setModel(TableModel tm) {
 		super.setModel(tm);
 		for (int i = 0; i < getColumnModel().getColumnCount(); i++) {
-			getColumnModel().getColumn(i).setCellRenderer(renditor);
-			getColumnModel().getColumn(i).setCellEditor(renditor);
+			getColumnModel().getColumn(i).setCellRenderer(this);
 		}
 	}
 
@@ -154,7 +189,7 @@ public class MultiTrackTable extends SpanTable {
 
 
 	public void setViewFont(Font font) {
-		renditor.setFont(font);
+		renderPane.setFont(font);
 		doLayout();
 	}
 

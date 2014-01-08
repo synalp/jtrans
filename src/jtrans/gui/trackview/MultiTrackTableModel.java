@@ -14,6 +14,9 @@ import javax.swing.table.AbstractTableModel;
 import java.util.*;
 
 
+/**
+ * Non-editable model.
+ */
 class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel {
 	private Project project;
 	private SpanModel spanModel = new DefaultSpanModel();
@@ -23,8 +26,10 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 	private Word[] highlightedWords;
 	private int[] trackToColumn;
 	private int[] columnToTrack;
-	Map<Word, int[]> wordMap = new HashMap<Word, int[]>();
 	private int visibleColumns;
+
+	/** Used to highlight words */
+	Map<Word, int[]> wordMap = new HashMap<Word, int[]>();
 
 
 	@Override
@@ -52,13 +57,6 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 		project = p;
 		refresh(visibility);
 	}
-
-
-	@Override
-	public boolean isCellEditable(int row, int column) {
-		return cells[row][column] != null;
-	}
-
 
 	@Override
 	public SpanModel getSpanModel() {
@@ -91,7 +89,6 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 		 * Adjusts lastRow and currentTime.
 		 * Adds the current row span to the spanModel if needed.
 		 * Updates wordMap.
-		 * @return contents of the current cell
 		 */
 		void ontoNextCell(int currentRow) {
 			int rowSpan = currentRow - lastRow;
