@@ -79,24 +79,26 @@ public class CellPane extends JTextPane {
 
 
 	private void setDefaultStyle(int i, Element el) {
-		AttributeSet style;
+		AttributeSet style = null;
 
 		if (el instanceof Word) {
-			style = ((Word) el).posInAlign >= 0 ? ALIGNED_STYLE : UNALIGNED_STYLE;
+			style = ((Word) el).posInAlign >= 0 ?
+					ALIGNED_STYLE : UNALIGNED_STYLE;
 
-		} else {
-			final ElementType et = project.types.get(el.getType());
-			style = styleCache.get(et);
+		} else if (el instanceof Comment) {
+			final ElementType type = project.types.get(((Comment) el).getType());
+			style = styleCache.get(type);
 
 			if (style == null) {
 				style = new SimpleAttributeSet() {{
-					addAttribute(StyleConstants.Background, et.getColor());
+					addAttribute(StyleConstants.Background, type.getColor());
 				}};
-				styleCache.put(et, style);
+				styleCache.put(type, style);
 			}
 		}
 
-		setStyle(i, style, true);
+		if (style != null)
+			setStyle(i, style, true);
 	}
 
 

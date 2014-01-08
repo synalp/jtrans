@@ -2,7 +2,7 @@ package jtrans.elements;
 
 import jtrans.utils.TimeConverter;
 
-public class Anchor extends Element {
+public class Anchor implements Element {
 	public float seconds;
 
 	// TODO this setting should be saved to disk
@@ -27,9 +27,5 @@ public class Anchor extends Element {
 
 	public int getFrame() {
 		return TimeConverter.second2frame(seconds);
-	}
-
-	public int getType() {
-		return 6;
 	}
 }

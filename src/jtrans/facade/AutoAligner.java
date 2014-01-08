@@ -57,7 +57,7 @@ public class AutoAligner {
 		List<Word> wordElements = track.elts.getMots();
 		String[] wordStrings = new String[wordElements.size()];
 		for (int i = 0; i < wordElements.size(); i++)
-			wordStrings[i] = wordElements.get(i).getWordString();
+			wordStrings[i] = wordElements.get(i).toString();
 		// Create the aligner
 		S4ForceAlignBlocViterbi s4aligner = S4ForceAlignBlocViterbi.getS4Aligner(
 				project.convertedAudioFile.getAbsolutePath(), progress);
@@ -126,7 +126,7 @@ public class AutoAligner {
 		if (order.alignWords != null) {
 			String[] alignedWords = new String[1 + endWord - startWord];
 			for (int i = 0; i < 1+endWord-startWord; i++)
-				alignedWords[i] = mots.get(i + startWord).getWordString();
+				alignedWords[i] = mots.get(i + startWord).toString();
 			int[] wordSegments = order.alignWords.matchWithText(alignedWords);
 
 			// Merge word segments into the main word alignment
@@ -166,7 +166,7 @@ public class AutoAligner {
 
 		for (int i = startWord; i <= endWord; i++) {
 			int newseg = track.words.addRecognizedSegment(
-					mots.get(i).getWordString(), startFrame, (int)currEndFrame, null, null);
+					mots.get(i).toString(), startFrame, (int)currEndFrame, null, null);
 
 			track.words.setSegmentSourceEqui(newseg);
 			mots.get(i).posInAlign = newseg;
@@ -220,7 +220,7 @@ public class AutoAligner {
 		} else {
 			// Only one word to align; create a new manual segment.
 			int newseg = track.words.addRecognizedSegment(
-					track.elts.getMot(word).getWordString(), startFrame, endFrame, null, null);
+					track.elts.getMot(word).toString(), startFrame, endFrame, null, null);
 			track.words.setSegmentSourceManu(newseg);
 			track.elts.getMot(word).posInAlign = newseg;
 		}

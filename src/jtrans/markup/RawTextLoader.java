@@ -83,29 +83,7 @@ public class RawTextLoader implements MarkupLoader {
 
 			// Create the actual element
 			String sub = normedText.substring(start, end);
-			switch (seg.type) {
-				case 0: // Speaker
-					// TODO: allow creating new speakers in raw text files (not TRS/TextGrid!)
-					listeElts.add(new Comment(sub));
-					break;
-				case 1: // Comment
-					listeElts.add(new Comment(sub));
-					break;
-				case 2: // Noise
-					listeElts.add(new Noise(sub));
-					break;
-				case 3: // Overlap Start
-					listeElts.add(new OverlapStart());
-					break;
-				case 4: // Overlap End
-					listeElts.add(new OverlapEnd());
-					break;
-				case 5: // Punctuation
-					listeElts.add(new Punctuation(sub.charAt(0)));
-					break;
-				default:
-					System.err.println("RawTextLoader: WARNING: unknown element type " + seg.type);
-			}
+			listeElts.add(new Comment(sub, seg.type));
 
 			prevEnd = end;
 		}

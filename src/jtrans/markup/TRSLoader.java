@@ -1,6 +1,7 @@
 package jtrans.markup;
 
 import jtrans.elements.*;
+import jtrans.elements.Comment;
 import jtrans.facade.Project;
 import jtrans.facade.Track;
 import org.w3c.dom.*;
@@ -104,8 +105,9 @@ public class TRSLoader implements MarkupLoader {
 				}
 
 				else if (name.equals("Comment")) {
-					currentTrack.elts.add(new jtrans.elements.Comment(
-							((Element)child).getAttribute("desc")));
+					// TODO: fix hardcoded '0' (generic comment type code)
+					currentTrack.elts.add(new Comment(
+							((Element)child).getAttribute("desc"), 0));
 				}
 
 				// Ignore unknown tag

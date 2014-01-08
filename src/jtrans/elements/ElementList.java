@@ -47,8 +47,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import jtrans.speechreco.s4.Alignment;
-
 public class ElementList extends ArrayList<Element> implements Serializable {
 	private Word[] seg2mot = null;
 	// TODO: il faut mettre a jour l'index a la moindre modification !
@@ -143,22 +141,6 @@ public class ElementList extends ArrayList<Element> implements Serializable {
 		}
 		return res;
 	}//getMots
-	
-	public Word getElementAvecDureePrecedent(int posi){
-		while(--posi > 0){
-			if(get(posi) instanceof Word)
-				return (Word) get(posi);
-		}
-		return null;
-	}//getMotPrecedent
-	
-	public Word getElementAvecDureeSuivant(int posi){
-		while(posi++ > 0){
-			if(get(posi) instanceof Word)
-				return (Word) get(posi);
-		}
-		return null;
-	}//getMotPrecedent
 
 	public Word getMot(int motidx) {
 		int size = size();
@@ -173,20 +155,5 @@ public class ElementList extends ArrayList<Element> implements Serializable {
 			}
 		}		
 		return null;
-	}
-
-	/**
-	 * retourne l'indice de l'element dans la liste qui a ete selectionne (c'est un mot)
-	 * 
-	 * @param posiDansLeTexte
-	 * @return
-	 */
-	public int getIndiceElementAtTextPosi(int posiDansLeTexte) {
-		for (int i = 0; i < size(); i++) {
-			Element el = get(i);
-			if (el.start <= posiDansLeTexte && el.end >= posiDansLeTexte)
-				return i;
-		}
-		return -1;
 	}
 }

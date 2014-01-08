@@ -44,21 +44,19 @@ public class Project {
 
 
 	public static final ElementType DEFAULT_TYPES[] = {
-			new ElementType("Speaker", Color.GREEN,
-					"(^|\\n)(\\s)*\\w\\d+\\s"),
-
-			new ElementType("Comment", Color.YELLOW,
+			new ElementType("Generic Comment", Color.YELLOW,
 					"\\{[^\\}]*\\}",
 					"\\[[^\\]]*\\]",
 					"\\+"),
 
+			new ElementType("Speaker", Color.GREEN,
+					"(^|\\n)(\\s)*\\w\\d+\\s"),
+
 			new ElementType("Noise", Color.CYAN,
 					"\\*+"),
 
-			new ElementType("Overlap Start", Color.PINK,
-					"<"),
-
-			new ElementType("Overlap End", Color.PINK,
+			new ElementType("Overlap", Color.PINK,
+					"<",
 					">"),
 
 			new ElementType("Punctuation", Color.ORANGE,
@@ -68,8 +66,6 @@ public class Project {
 					"\\,",
 					"\\.",
 					"\\!"),
-
-			new ElementType("Anchor", new Color(0xddffaa)),
 	};
 
 

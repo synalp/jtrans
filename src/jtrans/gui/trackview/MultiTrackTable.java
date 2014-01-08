@@ -232,8 +232,7 @@ public class MultiTrackTable
 				track.elts.getNeighbors(anchor, Anchor.class);
 
 		String wordString = word == null?
-				"<no word selected>":
-				String.format("'%s'", word.getWordString());
+				"<no word selected>": String.format("'%s'", word);
 
 		popup.add(new JMenuItem("New anchor before " + wordString) {{
 			setEnabled(word != null);
@@ -361,7 +360,7 @@ public class MultiTrackTable
 		String positionString = JOptionPane.showInputDialog(gui.jf,
 				String.format("Enter position for new anchor to be inserted\n"
 						+ "%s '%s' (in seconds):",
-						before? "before": "after", word.getWordString()),
+						before? "before": "after", word),
 				initialPos);
 
 		if (positionString == null)

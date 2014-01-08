@@ -43,20 +43,5 @@ termes.
 
 package jtrans.elements;
 
-public abstract class Element {
-	/**
-	 * Start of element in the large string.
-	 */
-	public transient int start = -1;
-
-	/**
-	 * End of element in the large string.
-	 */
-	public transient int end = -1;
-
-	/**
-	 * ElementType ID.
-	 * TODO this is an ugly stop-gap
-	 */
-	public abstract int getType();
+public interface Element {
 }

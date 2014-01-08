@@ -43,24 +43,19 @@ termes.
 
 package jtrans.elements;
 
-public class Word extends Element {
-	public final String word;
+/**
+ * Text element that must be aligned with the recording.
+ */
+public class Word implements Element {
+	private final String word;
 
 	/**
 	 * contient le segment du mot dans alignement
 	 */
 	public int posInAlign=-1;
 
-	public String getWordString() {
-		return word;
-	}
-
 	public Word(String word) {
 		this.word = word;
-	}
-
-	public int getType() {
-		return -1; // not a special element
 	}
 
 	public String toString() {
