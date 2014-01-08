@@ -32,12 +32,16 @@ public class SpanTableUI extends BasicTableUI {
 	/** TODO not tested with column span */
 	private int getRowExtendingMostPastEdge(Rectangle r, boolean top) {
 		final TableColumnModel tcm = table.getColumnModel();
+
 		int x = r.x;
 		final int y = r.y + (top? 0: r.height);
 		int edgeRow = -1;
 
 		while (x < r.x + r.width) {
 			int row = table.rowAtPoint(new Point(x, y));
+			if (row < 0)
+				break;
+
 			if ((top && row < edgeRow) || (!top && row > edgeRow))
 				edgeRow = row;
 

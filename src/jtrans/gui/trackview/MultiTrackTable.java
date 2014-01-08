@@ -125,6 +125,9 @@ public class MultiTrackTable
 			Track track = project.tracks.get(model.getTrackForColumn(col));
 			JPopupMenu popup = null;
 
+			if (row < 0 || col < 0)
+				return;
+
 			Object cell = model.getValueAt(row, col);
 			if (cell == null)
 				return;
