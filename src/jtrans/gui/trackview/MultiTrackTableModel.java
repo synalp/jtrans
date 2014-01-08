@@ -21,7 +21,7 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 	private Project project;
 	private SpanModel spanModel = new DefaultSpanModel();
 	private String[] columnNames;
-	private Cell[][] cells;
+	private Object[][] cells;
 	private int[] highlightedRows;
 	private Word[] highlightedWords;
 	private int[] trackToColumn;
@@ -43,7 +43,7 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 	}
 
 	@Override
-	public Cell getValueAt(int rowIndex, int columnIndex) {
+	public Object getValueAt(int rowIndex, int columnIndex) {
 		return cells[rowIndex][columnIndex];
 	}
 
@@ -86,19 +86,17 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 		}
 
 		/**
-		 * Adjusts lastRow and currentTime.
+		 * Adjusts lastRow and anchor, updates wordMap.
 		 * Adds the current row span to the spanModel if needed.
-		 * Updates wordMap.
 		 */
 		void ontoNextCell(int currentRow) {
 			int rowSpan = currentRow - lastRow;
 			if (rowSpan > 1)
 				spanModel.addSpan(new Span(lastRow, column, rowSpan, 1));
-			lastRow = currentRow;
+			lastRow = currentRow+1;
 
 			Anchor cellStartAnchor = anchor;
 
-			// Invalidate currentTime
 			if (!iter.hasNext())
 				anchor = null;
 
@@ -111,13 +109,15 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 				} else {
 					elts.add(next);
 					if (next instanceof Word)
-						wordMap.put((Word)next, new int[]{currentRow, column});
+						wordMap.put((Word)next, new int[]{currentRow+1, column});
 				}
 			}
 
-			if (cells != null)
-				cells[currentRow][column] = new Cell(
+			if (cells != null) {
+				cells[currentRow][column] = cellStartAnchor;
+				cells[currentRow+1][column] = new TextCell(
 						trackNo, cellStartAnchor, elts);
+			}
 		}
 	}
 
@@ -156,11 +156,11 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 		for (MetaTrack mt: metaTracks)
 			for (Element el: mt.track.elts)
 				if (el instanceof Anchor)
-					rows++;
+					rows += 2;
 
-		cells = new Cell[rows][visibleColumns];
+		cells = new Object[rows][visibleColumns];
 
-		for (int row = 0; row < rows; row++) {
+		for (int row = 0; row < rows; row += 2) {
 			MetaTrack meta = null;
 
 			// Find track containing the earliest upcoming anchor

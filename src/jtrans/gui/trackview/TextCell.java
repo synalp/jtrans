@@ -10,8 +10,9 @@ import java.util.List;
  * Distilled information about a track portion between two anchors.
  * Ready for use in a MultiTrackTableModel.
  */
-class Cell {
+class TextCell {
 	final int track;
+	/** Anchor before the text */
 	final Anchor anchor;
 	final String text;
 
@@ -19,7 +20,7 @@ class Cell {
 	final int[] elStart;
 	final int[] elEnd;
 
-	public Cell(int t, Anchor a, List<Element> elList) {
+	public TextCell(int t, Anchor a, List<Element> elList) {
 		track = t;
 		anchor = a;
 
@@ -28,7 +29,6 @@ class Cell {
 		elEnd = new int[elList.size()];
 
 		StringBuilder sb = new StringBuilder();
-		sb.append(a).append(' ');
 
 		for (int i = 0; i < elts.size(); i++) {
 			elStart[i] = sb.length();

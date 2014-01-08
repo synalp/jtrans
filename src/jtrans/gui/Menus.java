@@ -235,7 +235,7 @@ public class Menus {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				Anchor.showMinutes = ((AbstractButton)e.getSource()).isSelected();
-				aligneur.refresh();
+				aligneur.multitrack.repaint();
 			}
 		});
 

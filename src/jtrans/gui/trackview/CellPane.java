@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Component representing a Cell in a MultiTrackTable.
+ * Component representing a TextCell in a MultiTrackTable.
  *
  * In compliance with JTable guidelines, a unique instance of this class can
  * (and should) be reused for an entire MultiTrackTable instance.
@@ -40,7 +40,7 @@ public class CellPane extends JTextPane {
 
 	private final Project project;
 	private final Color normalBG;
-	private Cell cell;
+	private TextCell cell;
 	private Word highlighted;
 	private Map<ElementType, AttributeSet> styleCache = new HashMap<ElementType, AttributeSet>();
 
@@ -56,7 +56,7 @@ public class CellPane extends JTextPane {
 	}
 
 
-	public void setCell(Cell c) {
+	public void setCell(TextCell c) {
 		if (cell == c)
 			return;
 

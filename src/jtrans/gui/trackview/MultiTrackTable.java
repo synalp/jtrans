@@ -42,8 +42,9 @@ public class MultiTrackTable
 	private int visibleCount;
 
 	// Cell rendering attributes
-	private JPanel emptyPane;
-	private CellPane renderPane;
+	private JPanel silenceComp;
+	private JLabel anchorComp;
+	private CellPane textComp;
 
 
 	public MultiTrackTable(Project project, JTransGUI gui) {
@@ -68,11 +69,17 @@ public class MultiTrackTable
 		//----------------------------------------------------------------------
 		// Cell rendering panes
 
-		renderPane = new CellPane(project);
+		textComp = new CellPane(project);
 
-		emptyPane = new JPanel();
-		emptyPane.setBackground(Color.DARK_GRAY);
-		emptyPane.setForeground(Color.LIGHT_GRAY);
+		silenceComp = new JPanel();
+		silenceComp.setBackground(Color.DARK_GRAY);
+		silenceComp.setForeground(Color.LIGHT_GRAY);
+
+		anchorComp = new JLabel("ANCHOR");
+		anchorComp.setOpaque(true);
+		anchorComp.setBackground(Color.LIGHT_GRAY);
+		anchorComp.setForeground(Color.DARK_GRAY);
+		anchorComp.setHorizontalAlignment(SwingConstants.CENTER);
 
 		//----------------------------------------------------------------------
 
@@ -86,17 +93,24 @@ public class MultiTrackTable
 			boolean isSelected, boolean hasFocus,
 			int row, int column)
 	{
-		if (value instanceof Cell) {
-			renderPane.setCell((Cell) value);
+		if (value instanceof TextCell) {
+			textComp.setCell((TextCell) value);
 
 			MultiTrackTableModel model = (MultiTrackTableModel)table.getModel();
 			if (model.getHighlightedRow(column) == row) {
-				renderPane.highlight(model.getHighlightedWord(column));
+				textComp.highlight(model.getHighlightedWord(column));
 			}
 
-			return renderPane;
-		} else {
-			return emptyPane;
+			return textComp;
+		}
+
+		else if (value instanceof Anchor) {
+			anchorComp.setText(value.toString());
+			return anchorComp;
+		}
+
+		else {
+			return silenceComp;
 		}
 	}
 
@@ -106,8 +120,10 @@ public class MultiTrackTable
 		public void mousePressed(MouseEvent e) {
 			int row = rowAtPoint(e.getPoint());
 			int col = columnAtPoint(e.getPoint());
+			Track track = project.tracks.get(model.getTrackForColumn(col));
+			JPopupMenu popup = null;
 
-			Cell cell = model.getValueAt(row, col);
+			Object cell = model.getValueAt(row, col);
 			if (cell == null)
 				return;
 
@@ -116,19 +132,32 @@ public class MultiTrackTable
 			Point p = e.getPoint();
 			p.translate(-cprect.x, -cprect.y);
 
-			CellPane pane = (CellPane)prepareRenderer(MultiTrackTable.this, row, col);
-			pane.setSize(getColumnModel().getColumn(col).getWidth(), getRowHeight(row));
+			if (cell instanceof TextCell) {
+				CellPane pane = (CellPane)prepareRenderer(MultiTrackTable.this, row, col);
+				pane.setSize(getColumnModel().getColumn(col).getWidth(), getRowHeight(row));
 
-			Element el = cell.getElementAtCaret(pane.viewToModel(p));
-			Word word = null;
-			if (el instanceof Word)
-				word = (Word)el;
+				TextCell textCell = (TextCell)cell;
+				Element el = textCell.getElementAtCaret(pane.viewToModel(p));
 
-			if (e.isPopupTrigger()) {
-				wordPopupMenu(cell.anchor, project.tracks.get(cell.track), word, e);
-			} else if (word != null) {
-				selectWord(cell.track, word);
+				Word word = null;
+				if (el instanceof Word)
+					word = (Word)el;
+
+				if (e.isPopupTrigger()) {
+					popup = wordPopupMenu(textCell.anchor, track, word);
+				} else if (word != null) {
+					selectWord(textCell.track, word);
+				}
 			}
+
+			else if (cell instanceof Anchor) {
+				if (e.isPopupTrigger()) {
+					popup = anchorPopupMenu((Anchor)cell, track);
+				}
+			}
+
+			if (popup != null)
+				popup.show(MultiTrackTable.this, e.getX(), e.getY());
 		}
 	}
 
@@ -193,7 +222,7 @@ public class MultiTrackTable
 
 
 	public void setViewFont(Font font) {
-		renderPane.setFont(font);
+		textComp.setFont(font);
 		doLayout();
 	}
 
@@ -225,11 +254,36 @@ public class MultiTrackTable
 	}
 
 
-	private void wordPopupMenu(final Anchor anchor, final Track track, final Word word, MouseEvent event) {
-		JPopupMenu popup = new JPopupMenu("Word/Anchor");
 
-		final ElementList.Neighborhood<Anchor> ancRange =
-				track.elts.getNeighbors(anchor, Anchor.class);
+	private JPopupMenu anchorPopupMenu(final Anchor anchor, final Track track) {
+		JPopupMenu popup = new JPopupMenu("Anchor");
+
+		popup.add(new JMenuItem("Adjust anchor time (" + anchor.seconds + ")") {{
+			addActionListener(new AbstractAction() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					repositionAnchor(anchor, track);
+				}
+			});
+		}});
+
+		popup.add(new JMenuItem("Delete anchor") {{
+			addActionListener(new AbstractAction() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					track.clearAlignmentAround(anchor);
+					track.elts.remove(anchor);
+					refreshModel();
+				}
+			});
+		}});
+
+		return popup;
+	}
+
+
+	private JPopupMenu wordPopupMenu(final Anchor anchor, final Track track, final Word word) {
+		JPopupMenu popup = new JPopupMenu("Word");
 
 		String wordString = word == null?
 				"<no word selected>": String.format("'%s'", word);
@@ -254,54 +308,19 @@ public class MultiTrackTable
 			});
 		}});
 
-		popup.addSeparator();
-
-		popup.add(new JMenuItem("Adjust anchor time (" + anchor.seconds + ")") {{
+		popup.add(new JMenuItem("Clear alignment in this cell") {{
 			addActionListener(new AbstractAction() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					repositionAnchor(anchor, track);
-				}
-			});
-		}});
-
-		popup.add(new JMenuItem("Clear alignment here") {{
-			addActionListener(new AbstractAction() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
+					ElementList.Neighborhood<Anchor> ancRange =
+							track.elts.getNeighbors(anchor, Anchor.class);
 					track.clearAlignmentBetween(anchor, ancRange.next);
-					refreshModel(); //setTextFromElements();
+					MultiTrackTable.this.repaint();
 				}
 			});
 		}});
 
-		popup.add(new JMenuItem("Merge with previous anchor") {{
-			setEnabled(ancRange.prev != null);
-
-			addActionListener(new AbstractAction() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					track.clearAlignmentBetween(ancRange.prev, ancRange.next);
-					track.elts.remove(anchor);
-					refreshModel(); //setTextFromElements();
-				}
-			});
-		}});
-
-		popup.add(new JMenuItem("Merge with next anchor") {{
-			setEnabled(ancRange.next != null);
-
-			addActionListener(new AbstractAction() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					track.clearAlignmentAround(ancRange.next);
-					track.elts.remove(ancRange.next);
-					refreshModel(); //setTextFromElements();
-				}
-			});
-		}});
-
-		popup.show(this, event.getX(), event.getY());
+		return popup;
 	}
 
 
