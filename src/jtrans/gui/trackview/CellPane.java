@@ -1,13 +1,15 @@
 package jtrans.gui.trackview;
 
-import jtrans.elements.Word;
+import jtrans.elements.*;
+import jtrans.elements.Element;
+import jtrans.facade.Project;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.text.*;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Component representing a Cell in a MultiTrackTable.
@@ -36,12 +38,15 @@ public class CellPane extends JTextPane {
 			}};
 
 
+	private final Project project;
 	private final Color normalBG;
 	private Cell cell;
 	private Word highlighted;
+	private Map<ElementType, AttributeSet> styleCache = new HashMap<ElementType, AttributeSet>();
 
 
-	public CellPane() {
+	public CellPane(Project project) {
+		this.project = project;
 		normalBG = getBackground();
 
 		setEditable(false);
@@ -66,23 +71,40 @@ public class CellPane extends JTextPane {
 			ex.printStackTrace();
 		}
 
-		for (int i = 0; i < cell.words.size(); i++)
-			setDefaultWordStyle(i, cell.words.get(i));
+		for (int i = 0; i < cell.elts.size(); i++)
+			setDefaultStyle(i, cell.elts.get(i));
 
 		setBackground(normalBG);
 	}
 
 
-	private void setDefaultWordStyle(int i, Word w) {
-		setWordStyle(i, w,
-				w.posInAlign >= 0 ? ALIGNED_STYLE : UNALIGNED_STYLE,
-				true);
+	private void setDefaultStyle(int i, Element el) {
+		AttributeSet style;
+
+		if (el instanceof Word) {
+			style = ((Word) el).posInAlign >= 0 ? ALIGNED_STYLE : UNALIGNED_STYLE;
+
+		} else {
+			final ElementType et = project.types.get(el.getType());
+			style = styleCache.get(et);
+
+			if (style == null) {
+				style = new SimpleAttributeSet() {{
+					addAttribute(StyleConstants.Background, et.getColor());
+				}};
+				styleCache.put(et, style);
+			}
+		}
+
+		setStyle(i, style, true);
 	}
 
 
-	private void setWordStyle(int i, Word w, AttributeSet style, boolean replace) {
-		getStyledDocument().setCharacterAttributes(cell.wordStart[i],
-				w.getWordString().length(), style,
+	private void setStyle(int i, AttributeSet style, boolean replace) {
+		getStyledDocument().setCharacterAttributes(
+				cell.elStart[i],
+				cell.elEnd[i] - cell.elStart[i],
+				style,
 				replace);
 	}
 
@@ -91,11 +113,11 @@ public class CellPane extends JTextPane {
 		setBackground(KARAOKE_CELL_BG);
 
 		if (highlighted != null) {
-			setDefaultWordStyle(cell.words.indexOf(highlighted), highlighted);
+			setDefaultStyle(cell.elts.indexOf(highlighted), highlighted);
 		}
 
 		if (w != null) {
-			setWordStyle(cell.words.indexOf(w), w, HIGHLIGHTED_STYLE, false);
+			setStyle(cell.elts.indexOf(w), HIGHLIGHTED_STYLE, false);
 		}
 
 		highlighted = w;

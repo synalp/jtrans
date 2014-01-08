@@ -102,21 +102,22 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 			if (!iter.hasNext())
 				anchor = null;
 
-			List<Word> words = new ArrayList<Word>();
+			List<Element> elts = new ArrayList<Element>();
 			while (iter.hasNext()) {
 				Element next = iter.next();
 				if (next instanceof Anchor) {
 					anchor = (Anchor)next;
 					break;
-				} else if (next instanceof Word) {
-					wordMap.put((Word)next, new int[]{currentRow, column});
-					words.add((Word)next);
+				} else {
+					elts.add(next);
+					if (next instanceof Word)
+						wordMap.put((Word)next, new int[]{currentRow, column});
 				}
 			}
 
 			if (cells != null)
 				cells[currentRow][column] = new Cell(
-						trackNo, cellStartAnchor, words);
+						trackNo, cellStartAnchor, elts);
 		}
 	}
 

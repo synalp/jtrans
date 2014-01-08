@@ -1,7 +1,7 @@
 package jtrans.gui.trackview;
 
 import jtrans.elements.Anchor;
-import jtrans.elements.Word;
+import jtrans.elements.Element;
 
 import java.util.List;
 
@@ -14,24 +14,28 @@ class Cell {
 	final int track;
 	final Anchor anchor;
 	final String text;
-	final List<Word> words;
-	final int[] wordStart;
 
+	final List<Element> elts;
+	final int[] elStart;
+	final int[] elEnd;
 
-	public Cell(int t, Anchor a, List<Word> wordList) {
+	public Cell(int t, Anchor a, List<Element> elList) {
 		track = t;
 		anchor = a;
 
-		words = wordList;
-		wordStart = new int[words.size()];
+		elts = elList;
+		elStart = new int[elList.size()];
+		elEnd = new int[elList.size()];
 
 		StringBuilder sb = new StringBuilder();
-		sb.append('[').append(anchor).append(']');
-		for (int i = 0; i < words.size(); i++) {
-			sb.append(' ');
-			wordStart[i] = sb.length();
-			sb.append(words.get(i).getWordString());
+		sb.append(a).append(' ');
+
+		for (int i = 0; i < elts.size(); i++) {
+			elStart[i] = sb.length();
+			sb.append(elts.get(i)).append(' ');
+			elEnd[i] = sb.length();
 		}
+
 		text = sb.toString();
 	}
 
@@ -42,13 +46,12 @@ class Cell {
 	}
 
 
-	public Word getWordAtCaret(int caret) {
-		for (int i = 0; i < wordStart.length; i++) {
-			if (caret < wordStart[i])
+	public Element getElementAtCaret(int caret) {
+		for (int i = 0; i < elts.size(); i++) {
+			if (caret < elStart[i])
 				continue;
-			Word w = words.get(i);
-			if (caret < wordStart[i] + w.getWordString().length())
-				return w;
+			if (caret < elEnd[i])
+				return elts.get(i);
 		}
 		return null;
 	}

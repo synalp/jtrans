@@ -1,6 +1,7 @@
 package jtrans.gui.trackview;
 
 import jtrans.elements.Anchor;
+import jtrans.elements.Element;
 import jtrans.elements.ElementList;
 import jtrans.elements.Word;
 import jtrans.facade.Project;
@@ -67,7 +68,7 @@ public class MultiTrackTable
 		//----------------------------------------------------------------------
 		// Cell rendering panes
 
-		renderPane = new CellPane();
+		renderPane = new CellPane(project);
 
 		emptyPane = new JPanel();
 		emptyPane.setBackground(Color.DARK_GRAY);
@@ -118,7 +119,10 @@ public class MultiTrackTable
 			CellPane pane = (CellPane)prepareRenderer(MultiTrackTable.this, row, col);
 			pane.setSize(getColumnModel().getColumn(col).getWidth(), getRowHeight(row));
 
-			Word word = cell.getWordAtCaret(pane.viewToModel(p));
+			Element el = cell.getElementAtCaret(pane.viewToModel(p));
+			Word word = null;
+			if (el instanceof Word)
+				word = (Word)el;
 
 			if (e.isPopupTrigger()) {
 				wordPopupMenu(cell.anchor, project.tracks.get(cell.track), word, e);

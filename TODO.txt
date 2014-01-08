@@ -3,7 +3,6 @@ PRIO	TASK
 
 URGENT	Remove TrackView and TextAreaRecoListener (but implement missing methods in MultiTrackTable & friends first!)
 URGENT	Usable headless/batch mode
-URGENT	Element types in new MultiTrackTable
 
 1	Align all the corpora that we have and put the results on the web site
 1	Write developper docs
