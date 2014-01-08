@@ -27,6 +27,7 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 	private int[] trackToColumn;
 	private int[] columnToTrack;
 	private int visibleColumns;
+	private int nonEmptyRowCount;
 
 	/** Used to highlight words */
 	Map<Word, int[]> wordMap = new HashMap<Word, int[]>();
@@ -34,7 +35,7 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 
 	@Override
 	public int getRowCount() {
-		return cells.length;
+		return nonEmptyRowCount;
 	}
 
 	@Override
@@ -74,6 +75,7 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 		final ListIterator<Element> iter;
 		Anchor anchor;
 		int lastRow = 0;
+		boolean lastCellWasText = false;
 
 		MetaTrack(int trackNo, int colNo) {
 			this.trackNo = trackNo;
@@ -86,15 +88,19 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 		}
 
 		/**
-		 * Adjusts lastRow and anchor, updates wordMap.
 		 * Adds the current row span to the spanModel if needed.
+		 * Only TextCells may span multiple rows.
 		 */
-		void ontoNextCell(int currentRow) {
+		void addRowSpan(int currentRow) {
 			int rowSpan = currentRow - lastRow;
-			if (rowSpan > 1)
+			if (rowSpan > 1 && lastCellWasText)
 				spanModel.addSpan(new Span(lastRow, column, rowSpan, 1));
-			lastRow = currentRow+1;
+		}
 
+		/**
+		 * Adjusts lastRow and anchor, updates wordMap.
+		 */
+		int ontoNextCell(int currentRow) {
 			Anchor cellStartAnchor = anchor;
 
 			if (!iter.hasNext())
@@ -115,9 +121,20 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 
 			if (cells != null) {
 				cells[currentRow][column] = cellStartAnchor;
-				cells[currentRow+1][column] = new TextCell(
-						trackNo, cellStartAnchor, elts);
+
+				if (!elts.isEmpty()) {
+					cells[currentRow+1][column] = new TextCell(
+							trackNo, cellStartAnchor, elts);
+					lastCellWasText = true;
+					lastRow = currentRow + 1;
+					return 2;
+				} else {
+					lastCellWasText = false;
+					lastRow = currentRow;
+					return 1;
+				}
 			}
+			return 0;
 		}
 	}
 
@@ -160,7 +177,8 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 
 		cells = new Object[rows][visibleColumns];
 
-		for (int row = 0; row < rows; row += 2) {
+		int row = 0;
+		while (row < rows) {
 			MetaTrack meta = null;
 
 			// Find track containing the earliest upcoming anchor
@@ -176,8 +194,11 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 			if (null == meta)
 				break;
 
-			meta.ontoNextCell(row);
+			meta.addRowSpan(row);
+			row += meta.ontoNextCell(row);
 		}
+
+		nonEmptyRowCount = row;
 	}
 
 

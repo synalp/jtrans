@@ -58,13 +58,16 @@ public class MultiTrackTable
 		refreshModel();
 		setEnabled(true);
 		setShowGrid(true);
+		setIntercellSpacing(new Dimension(1, 0));
 		getTableHeader().setReorderingAllowed(false);
-		//setIntercellSpacing(new Dimension(1, 1));
 		setPreferredScrollableViewportSize(new Dimension(512, 512));
 		setFillsViewportHeight(true);
 
 		addMouseListener(new MultiTrackTableMouseAdapter());
 		putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
+
+		setBackground(Color.DARK_GRAY);
+		setGridColor(getBackground());
 
 		//----------------------------------------------------------------------
 		// Cell rendering panes
@@ -72,8 +75,7 @@ public class MultiTrackTable
 		textComp = new CellPane(project);
 
 		silenceComp = new JPanel();
-		silenceComp.setBackground(Color.DARK_GRAY);
-		silenceComp.setForeground(Color.LIGHT_GRAY);
+		silenceComp.setBackground(getBackground());
 
 		anchorComp = new JLabel("ANCHOR");
 		anchorComp.setOpaque(true);

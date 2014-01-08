@@ -39,9 +39,6 @@ public class CrossPlatformFixes {
 
 		if (isOSX) {
 			System.setProperty("apple.laf.useScreenMenuBar", "true");
-
-			// OS X sets grid color to white
-			UIManager.put("Table.gridColor", new ColorUIResource(Color.lightGray));
 		}
 
 		// Prevent triggering accidental events when clicking outside a popup menu
