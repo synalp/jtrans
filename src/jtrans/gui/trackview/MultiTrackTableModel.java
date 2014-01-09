@@ -177,28 +177,54 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 
 		cells = new Object[rows][visibleColumns];
 
+		nonEmptyRowCount = populateRows(metaTracks);
+	}
+
+
+	private int populateRows(List<MetaTrack> metaTracks) {
 		int row = 0;
-		while (row < rows) {
-			MetaTrack meta = null;
+
+		// For tracks with simultaneous anchors,
+		// cells will be inserted at the same row
+		List<MetaTrack> simultaneous = new ArrayList<MetaTrack>();
+
+		while (row < cells.length) {
+			simultaneous.clear();
 
 			// Find track containing the earliest upcoming anchor
 			for (MetaTrack m: metaTracks) {
-				if (m.anchor != null &&
-						(null == meta || m.anchor.seconds < meta.anchor.seconds))
-				{
-					meta = m;
+				if (m.anchor == null)
+					continue;
+
+				if (simultaneous.isEmpty()) {
+					simultaneous.add(m);
+				} else {
+					int cmp = Float.compare(
+							m.anchor.seconds, simultaneous.get(0).anchor.seconds);
+
+					if (cmp < 0) {
+						simultaneous.clear();
+						simultaneous.add(m);
+					} else if (cmp == 0) {
+						simultaneous.add(m);
+					}
 				}
 			}
 
 			// No more anchors in all tracks
-			if (null == meta)
+			if (simultaneous.isEmpty())
 				break;
 
-			meta.addRowSpan(row);
-			row += meta.ontoNextCell(row);
+			int maxDelta = 0;
+			for (MetaTrack m: simultaneous) {
+				m.addRowSpan(row);
+				int d = m.ontoNextCell(row);
+				maxDelta = Math.max(d, maxDelta);
+			}
+			row += maxDelta;
 		}
 
-		nonEmptyRowCount = row;
+		return row;
 	}
 
 
