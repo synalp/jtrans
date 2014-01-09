@@ -110,6 +110,13 @@ public class TRSLoader implements MarkupLoader {
 							((Element)child).getAttribute("desc"), 0));
 				}
 
+				else if (name.equals("Event")) {
+					String desc = ((Element)child).getAttribute("desc");
+					String type = ((Element)child).getAttribute("type");
+					currentTrack.elts.add(new Comment(desc,
+							type.equals("noise")? 2: 0)); // TODO: fix hardcoded comment type codes
+				}
+
 				// Ignore unknown tag
 				else {
 					System.out.println("TRS WARNING: Ignoring inknown tag " + name);

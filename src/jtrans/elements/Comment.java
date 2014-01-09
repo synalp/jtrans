@@ -17,6 +17,6 @@ public class Comment implements Element {
 	}
 
 	public String toString() {
-		return text;
+		return "[" + text + "]";
 	}
 }
