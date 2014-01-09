@@ -61,7 +61,7 @@ public class MultiTrackTable
 		setShowGrid(true);
 		setIntercellSpacing(new Dimension(1, 0));
 		getTableHeader().setReorderingAllowed(false);
-		setPreferredScrollableViewportSize(new Dimension(512, 512));
+		setPreferredScrollableViewportSize(new Dimension(900, 400));
 		setFillsViewportHeight(true);
 
 		addMouseListener(new MultiTrackTableMouseAdapter());

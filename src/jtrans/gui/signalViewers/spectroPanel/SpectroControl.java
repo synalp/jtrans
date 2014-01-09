@@ -164,10 +164,10 @@ public class SpectroControl extends JPanel {
 		//		int nfr = (int)((float)getWidth()*0.6f/spectro.getZoom());
 		spectro.computeSpectrogram(0, 500);
 		int w = (int)((float)getWidth()*0.9f);
-		int h = 150;
+		int h = 80;
 		spectro.setSize(new Dimension(w, h));
 		spectro.setPreferredSize(new Dimension(w, h));
-		int h2=50;
+		int h2 = 40;
 		words.setSize(new Dimension(w, h2));
 		words.setPreferredSize(new Dimension(w, h2));
 		validate();
