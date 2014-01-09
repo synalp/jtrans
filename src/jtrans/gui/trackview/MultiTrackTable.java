@@ -8,6 +8,7 @@ import jtrans.facade.Project;
 import jtrans.facade.Track;
 import jtrans.gui.JTransGUI;
 import jtrans.gui.PlayerGUI;
+import jtrans.utils.CrossPlatformFixes;
 import jtrans.utils.TimeConverter;
 import jtrans.utils.spantable.SpanTable;
 
@@ -120,6 +121,8 @@ public class MultiTrackTable
 	class MultiTrackTableMouseAdapter extends MouseAdapter {
 		@Override
 		public void mousePressed(MouseEvent e) {
+			boolean isPopupTrigger = CrossPlatformFixes.isPopupTrigger(e);
+
 			int row = rowAtPoint(e.getPoint());
 			int col = columnAtPoint(e.getPoint());
 			Track track = project.tracks.get(model.getTrackForColumn(col));
@@ -148,7 +151,7 @@ public class MultiTrackTable
 				if (el instanceof Word)
 					word = (Word)el;
 
-				if (e.isPopupTrigger()) {
+				if (isPopupTrigger) {
 					popup = wordPopupMenu(textCell.anchor, track, word);
 				} else if (word != null) {
 					selectWord(textCell.track, word);
@@ -156,9 +159,8 @@ public class MultiTrackTable
 			}
 
 			else if (cell instanceof Anchor) {
-				if (e.isPopupTrigger()) {
+				if (isPopupTrigger)
 					popup = anchorPopupMenu((Anchor)cell, track);
-				}
 			}
 
 			if (popup != null)

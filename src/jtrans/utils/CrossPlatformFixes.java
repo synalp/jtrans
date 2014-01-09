@@ -1,9 +1,9 @@
 package jtrans.utils;
 
 import javax.swing.*;
-import javax.swing.plaf.ColorUIResource;
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
 
 public class CrossPlatformFixes {
 	public static final String
@@ -43,5 +43,19 @@ public class CrossPlatformFixes {
 
 		// Prevent triggering accidental events when clicking outside a popup menu
 		UIManager.put("PopupMenu.consumeEventOnClose", Boolean.TRUE);
+	}
+
+	/**
+	 * Reliably returns whether a mouse event is a popup trigger, regardless of
+	 * the MouseListener method that intercepted the event.
+	 *
+	 * Normally, popup triggers should be checked in both mousePressed and
+	 * mouseReleased because there is no standard way to do it across different
+	 * platforms. However, this method makes checking for popup triggers
+	 * possible in either callback method (at the cost of a slightly lesser
+	 * "native" feel on some systems).
+	 */
+	public static boolean isPopupTrigger(MouseEvent e) {
+		return (e.getModifiers() & Event.META_MASK) != 0;
 	}
 }
