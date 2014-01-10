@@ -1,4 +1,4 @@
-package jtrans.gui;
+package jtrans.gui.trackview;
 
 import jtrans.facade.Project;
 import jtrans.gui.trackview.MultiTrackTable;

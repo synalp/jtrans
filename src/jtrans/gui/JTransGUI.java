@@ -24,15 +24,14 @@ import javax.swing.Timer;
 import jtrans.elements.Word;
 import jtrans.facade.*;
 import jtrans.gui.trackview.MultiTrackTable;
+import jtrans.gui.trackview.SpeakerVisibilityControl;
 import jtrans.speechreco.SpeechReco;
 import jtrans.markup.*;
 
-import jtrans.markup.TextGridLoader;
 import jtrans.buffer.RoundBuffer;
 import jtrans.buffer.RoundBufferFrontEnd;
 import jtrans.gui.signalViewers.spectroPanel.SpectroControl;
 import jtrans.speechreco.BiaisAdapt;
-import jtrans.speechreco.s4.S4ForceAlignBlocViterbi;
 import jtrans.utils.*;
 import org.fuin.utils4j.Utils4J;
 
