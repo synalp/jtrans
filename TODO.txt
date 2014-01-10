@@ -1,17 +1,12 @@
 PRIO	TASK
 ============
 
-URGENT	Remove TrackView and TextAreaRecoListener (but implement missing methods in MultiTrackTable & friends first!)
-URGENT	Usable headless/batch mode
-
-1	Align all the corpora that we have and put the results on the web site
-1	Write developper docs
 1	Non-regression tests (no GUI but command-line scripts) to check TCOF / ORFOM / simultaneous speakers / ?...
-1	Regular checks on Linux / Mac / Windows
 
 2	Move to GitHub / bitbucket
 2	Get rid of REIMPLEMENT_DEC2013()
 2	Threaded alignment process
+2	Reintroduce auto transcript
 
 3	Clean up ControlBox
 
