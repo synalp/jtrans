@@ -45,6 +45,7 @@ public class SpectroControl extends JPanel {
 
 	public void setTrack(Track t) {
 		currentTrack = t;
+		trackChooser.setSelectedItem(t);
 		refreshWords();
 	}
 
