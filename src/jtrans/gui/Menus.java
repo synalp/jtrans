@@ -281,13 +281,11 @@ public class Menus {
 		JMenuItem autoAnchors = new JMenuItem("Auto-align between anchors...");
 		JMenuItem autoAll = new JMenuItem("Auto-align all (no anchors)...");
 		JMenuItem clearAll = new JMenuItem("Clear entire alignment");
-		JMenuItem clearFrom  = new JMenuItem("Clear alignment from selected word");
 		menubar.add(alignMenu);
 		alignMenu.add(autoAnchors);
 		alignMenu.add(autoAll);
 		alignMenu.addSeparator();
 		alignMenu.add(clearAll);
-		alignMenu.add(clearFrom);
 
 		autoAnchors.setAccelerator(KeyStroke.getKeyStroke('A', modifier | InputEvent.SHIFT_MASK));
 
@@ -308,13 +306,6 @@ public class Menus {
 		clearAll.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				aligneur.clearAlign();
-			}
-		});
-
-		clearFrom.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-                //TODO aligneur.clearAlignFrom(aligneur.wordSelectedIdx);
-                JOptionPane.showMessageDialog(aligneur.jf, "Reimplement me!");
 			}
 		});
 
@@ -420,36 +411,6 @@ public class Menus {
 				}.start();
 			}});
 
-		// //////////////////////////////////////////////////////////////
-		JMenu help = new JMenu("Help");
-		menubar.add(help);
-		JMenuItem tuto = new JMenuItem("Tutorial");
-		help.add(tuto);
-		tuto.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-
-				try {
-					JEditorPane pane = new JEditorPane((new File("tutorial.html")).toURI().toURL());
-					pane.setEditable(false);
-					pane.setSize(800, 800);
-					JFrame helpframe = new JFrame("Help JTrans");
-					JScrollPane hh = new JScrollPane(pane);
-					helpframe.getContentPane().add(hh);
-					helpframe.setSize(600, 800);
-					helpframe.setVisible(true);
-				} catch (MalformedURLException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-				//				HTMLEditorKit helpwin = new HTMLEditorKit();
-				//				helpwin.in
-				//				View v = helpwin.getViewFactory().create(helpwin.createDefaultDocument().getDefaultRootElement());
-			}
-		});
 
 		// //////////////////////////////////////////////////////////////
 		// //////////////////////////////////////////////////////////////

@@ -21,8 +21,8 @@ import jtrans.utils.Player;
  */
 public class PlayerGUI extends JPanel {
 	private Player player=new Player();
-	private JToggleButton playstop = new JToggleButton("play");
-	private JButton rewind = new JButton("rewind");
+	private JToggleButton playstop = new JToggleButton("Play");
+	private JButton rewind = new JButton("Rewind");
 	/**
 	 * cursec indique, en secondes, le temps de début du play, et le temps de fin du play uniquement.
 	 * Il est donc mis à jour seulement 2 fois par play: au début et à la fin.
@@ -57,7 +57,7 @@ public class PlayerGUI extends JPanel {
 			timePlayStartedMs=System.currentTimeMillis();
 			timeIntervalPlayed=0;
 		}
-		playstop.setText("stop");
+		playstop.setText("Stop");
 		playstop.setSelected(true);
 		repaint();
 	}
@@ -69,7 +69,7 @@ public class PlayerGUI extends JPanel {
 		timePlayStartedMs=-1;
 		ActionEvent ev = new ActionEvent(this, 0, "playstop");
 		for (ActionListener al : listeners) al.actionPerformed(ev);
-		playstop.setText("play");
+		playstop.setText("Play");
 		playstop.setSelected(false);
 		repaint();
 	}

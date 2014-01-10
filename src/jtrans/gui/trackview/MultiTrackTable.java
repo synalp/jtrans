@@ -86,6 +86,7 @@ public class MultiTrackTable
 
 		//----------------------------------------------------------------------
 
+		setViewFont(DEFAULT_FONT);
 		doLayout();
 	}
 

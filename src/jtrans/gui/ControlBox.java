@@ -26,6 +26,16 @@ public class ControlBox extends JPanel implements ActionListener {
 	public ControlBox(JTransGUI main) {
 		aligneur = main;
 		playergui = new PlayerGUI(main);
+
+		JButton alignButton = new JButton("Align");
+		alignButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				aligneur.alignAllWithProgress(true);
+			}
+		});
+
+		/*
 		JButton asrButton = new JButton("AutoTranscript");
 		asrButton.addActionListener(new ActionListener() {
 			@Override
@@ -40,7 +50,7 @@ public class ControlBox extends JPanel implements ActionListener {
 				JTransGUI.REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
 				LiveSpeechReco r = LiveSpeechReco.doReco(aligneur);
 				r.addResultListener(new TextAreaRecoListener(aligneur.edit));
-				*/
+				*//*
 			}
 		});
 		JButton stopit = new JButton("Stop It !");
@@ -51,17 +61,21 @@ public class ControlBox extends JPanel implements ActionListener {
 				LiveSpeechReco.stopall();
 			}
 		});
+		*/
 		
 		Box b = Box.createHorizontalBox();
 		add(b);
 		b.add(Box.createGlue());
 		b.add(playergui);
 		b.add(Box.createGlue());
+		b.add(alignButton);
+		/*
 		b.add(asrButton);
 		b.add(Box.createGlue());
 		b.add(liveButton);
 		b.add(Box.createGlue());
 		b.add(stopit);
+		*/
 		b.add(Box.createGlue());
 		
 		playergui.addActionListener(this);
