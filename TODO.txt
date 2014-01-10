@@ -10,7 +10,6 @@ URGENT	Usable headless/batch mode
 1	Regular checks on Linux / Mac / Windows
 
 2	Move to GitHub / bitbucket
-2	Write user docs
 2	Get rid of REIMPLEMENT_DEC2013()
 2	Threaded alignment process
 

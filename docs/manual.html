@@ -1,0 +1,366 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>JTrans User Manual</title>
+
+<style>
+#interactive-screenshot {
+	display: table;
+}
+
+#interactive-screenshot img {
+	display: table-cell;
+	margin-right: -50px;
+	margin-left: -57px;
+	margin-top: -20px;
+	margin-bottom: -20px;
+}
+
+#map-caption {
+	display: table-cell;
+	vertical-align: top;
+	padding-top: 50px;
+	padding-left: 20px;
+}
+
+noscript {
+	color: red;
+	font-weight: bold;
+}
+</style>
+
+<script>
+
+var MAP_STRINGS = {
+	anchor: {
+		title: "Anchor",
+		description: "<p>Anchors guide the alignment process (see above for an explanation).</p> <p>Right-clicking on an anchor will open a pop-up menu letting you adjust its position or delete it.</p> <p>Deleting an anchor causes the two cells around it to merge.</p> <p>Please note that modifying an anchor will automatically clear the adjacent alignment.</p>",
+	},
+
+	redcell: {
+		title: "Cell with 'red' (unaligned) text",
+		description: "<p>The text in this cell is red because it is not aligned.</p> <p>You can create anchors before or after any word by right-clicking on it.</p> <p>Unaligned text may happen, among other things, if poor sound quality, undecipherable words, or erroneous timing information confuse JTrans. You may want to adjust the neighboring anchors and try aligning again.</p>",
+	},
+
+	bluecell: {
+		title: "Cell with 'blue' (aligned) text",
+		description: "<p>The text in this cell is blue because it has been aligned. That is, JTrans has computed the start time and end time for each blue word.</p> <p>Right-clicking on a word lets you create anchors around that word.</p> <p>Right-clicking anywhere in the cell lets you clear the alignment in this cell.</p> <p>To select a word by left-clicking, please see 'Highlighted cell.'</p>"
+	},
+
+	selcell: {
+		title: "Highlighted cell",
+		description: "<p>During playback, the currently-uttered words are highlighted (kind of like a karaoke).</p> <p>You may also left-click on aligned words at any time (whether the file is being played back or not). Left-clicking on an aligned word selects it, which moves the playback position to the word's position, and updates the spectrogram.</p><p>Selecting an unaligned word has no effect.</p>",
+	},
+
+	spectro: {
+		title: "Spectrogram",
+		description: "A graphical rendition of the sound around the currently selected word. The word timeline shows the aligned words in the selected track."
+	},
+
+	visspk: {
+		title: "Visible Speakers",
+		description: "<p>Some transcripts involve many speakers which speak sporadically. You may want to gain some screen real estate by hiding some speakers from the main view by unchecking the corresponding boxes.</p> <p>During playback, a rectangle flashes around currently-speaking speakers, so you don't miss them even if they're hidden from the main view.</p>",
+	},
+
+	blank: {
+		title: "Silence",
+		description: "This area is blank because the speaker is not uttering any words between the two surrounding anchors.",
+	},
+
+	spkhdr: {
+		title: "Speaker track names",
+		description: "You may resize each column."
+	},
+}
+
+window.onload = function() {
+	makeTableOfContents();
+	makeScreenshotCallbacks();
+
+}
+
+function makeScreenshotCallbacks() {
+	var caption = document.getElementById("map-caption");
+	var areas = document.getElementsByTagName("area");
+	for (var i = 0; i < areas.length; i++) {
+		areas[i].onmouseover = function() {
+			var str = MAP_STRINGS[this.className];
+			caption.innerHTML = "<h3>" + str.title + "</h3>" + str.description;
+		}
+		areas[i].onmouseout = function() {
+			caption.innerHTML = "";
+		}
+	}
+}
+
+function makeTableOfContents() {
+	var toc = "";
+	var level = 0;
+
+	var article = document.getElementsByTagName("article")[0];
+
+	article.innerHTML = article.innerHTML.replace(
+			/<h([\d])>([^<]+)<\/h([\d])>/gi,
+			function (str, openLevel, titleText, closeLevel) {
+				if (openLevel != closeLevel) {
+					return str;
+				}
+
+				if (openLevel > level) {
+					toc += (new Array(openLevel - level + 1)).join("<ul>");
+				} else if (openLevel < level) {
+					toc += (new Array(level - openLevel + 1)).join("</ul>");
+				}
+
+				level = parseInt(openLevel);
+
+				var anchor = titleText.replace(/ /g, "_");
+				toc += "<li><a href=\"#" + anchor + "\">" + titleText
+						+ "</a></li>";
+
+				return "<h" + openLevel + "><a name=\"" + anchor + "\">"
+						+ titleText + "</a></h" + closeLevel + ">";
+			}
+	);
+
+	if (level) {
+		toc += (new Array(level + 1)).join("</ul>");
+	}
+
+	document.getElementById("toc").innerHTML += toc;
+};
+</script>
+
+
+<h1>JTrans: text-to-speech alignment software</h1>
+<h1>User Manual</h1>
+
+<h2>Table of contents</h2>
+<div id="toc"></div>
+
+
+<article>
+
+
+<h2>Overview of text-to-speech alignment</h2>
+
+<p>"Text-to-speech" alignment is a speech processing task that is related to
+the well-known "speech recognition" task. However, unlike speech recognition,
+text-to-speech alignment requires the text that is pronounced to be already
+known. All that remains to do is to align the words onto the speech signal,
+i.e., find the milliseconds at which every word starts and ends in the audio
+file.</p>
+
+<p>This is very useful for example to synchronize the lips
+animation of a cartoon character with the recording of an actor, or to
+build "Karaoke"-like applications, or yet to quickly find where an utterance
+occurs in a video database.</p>
+
+<p>Text-to-speech alignment is technically easier to achieve than speech
+recognition, thanks to the additional information provided by the (approximate)
+transcription. Therefore, this technology is more precise and more efficient
+than speech recognition for many corpora where the sound quality is not good
+enough and where speech recognition fails.</p>
+
+
+<h2>JTrans: Main features</h2>
+
+<ul>
+
+	<li>Integrates 3 levels of phonetisation: dictionary-based, rule-based
+and decision-tree based.</li>
+
+	<li>Generates alignments at the phoneme level and at the word
+level.</li>
+
+	<li>Handles alignment of simultaneous speech to some extent.</li>
+
+	<li>Can export the resulting alignments to Praat.</li>
+
+</ul>
+
+
+<h2>System requirements</h2>
+
+<p>To run JTrans, you need the Java 7 runtime environment (JRE).</p>
+
+<p>For developers: JTrans depends on the following libraries:</p>
+
+<ul>
+	<li>Sphinx 4: automatic alignment.</li>
+	<li>Gson: JSON I/O.</li>
+	<li>juniversalchardet: encoding detection.</li>
+	<li>Weka: automatic phonetisation.</li>
+	<li>Tritonus and JavaLayer: MP3 support.</li>
+</ul>
+
+
+<h2>How to run JTrans</h2>
+
+<p>Run <tt>jtrans.jar</tt>. The first time you open JTrans, it will attempt to
+download and install the resources it needs to function properly. This is a 400
+MB download.</p>
+
+
+<h2>Project structure</h2>
+
+<p>A JTrans project consists of <strong>parallel* speaker tracks</strong>, each
+of which containing <strong>text</strong>. The text is peppered with
+<strong>timing anchors</strong> to aid the alignment process**.</p>
+
+<p>* "Parallel" means that several speakers may speak simultaneously.</p>
+
+<p>** In "hectic" parts of a sound file, JTrans may have trouble aligning every
+word. Placing manual timing anchors tells JTrans where exactly a group of words
+starts and ends, and therefore enhances the precision with which each
+individual phoneme is aligned.</p>
+
+
+<h2>Workflow</h2>
+
+
+<h3>Importing text markup</h3>
+
+<p>JTrans can create a project by importing a file in either of the following
+text markup formats:</p>
+
+<ul>
+
+	<li>JTrans's native format (.jtr). (This is a JSON-based format.)</li>
+
+	<li>Transcriber (.trs). Anchors will be generated at the start and end
+of each <em>Turn</em>, and for each <em>Sync</em> tag.</li>
+
+	<li>Praat (.textgrid), assuming each tier maps to a speaker. Anchors
+will be generated at the start and end of each <em>interval</em>.</li>
+
+	<li>Raw text (.txt). You will need to create the anchors manually.</li>
+
+</ul>
+
+
+<h3>Importing a sound file</h3>
+
+<p>After loading text markup, JTrans will attempt to detect a sound file
+bearing the same name as the markup file. If it has found one, you will be
+asked if you want to use it.</p>
+
+<p>You can change a project's audio file at any time through <em>"File &rarr;
+Load audio."</em></p>
+
+
+<h3>Alignment</h3>
+
+<p>When your project has both text and a sound file, you can try to start
+aligning.</p>
+
+<p>If your project contains <strong>anchors</strong>, you can align the words
+by clicking the <em>Align</em> button in the main window, or via the <em>"Align
+&rarr; Auto-align between anchors"</em> menu item.</p>
+
+<p>If the project does not contain any anchors, you can start an alignment via
+the <em>"Align &rarr; Auto-align all (no anchors)".</em> Please bear in mind
+that, without any anchors, an alignment will probably be sub-optimal.</p>
+
+<p>Aligning a file for the first time takes about one minute. The actual
+duration depends on the length of the file, the number of speakers,
+and the power of your computer. Subsequent alignments will take less time
+because partial alignments are cached.</p>
+
+
+<h3>Saving and exporting a project</h3>
+
+<p>Please note the distinction between the terms "saving" and "exporting":</p>
+
+<ul>
+
+	<li><strong>Saving</strong> means saving the project in JTrans's custom
+JSON format (file suffix: <tt>.jtr</tt>). This ensures that no JTrans-specific
+information is lost.</li>
+
+	<li><strong>Exporting</strong> means saving the project in a foreign
+format. By exporting to a foreign format, some JTrans-specific information may
+be lost. Currently, JTrans may only <em>export</em> a project to Praat's format
+(TextGrid).</li>
+
+</ul>
+
+<p>You can save or export projects in the <tt>File</tt> menu.</p>
+
+
+<h2>Main window</h2>
+
+<p>Each speaker is assigned a distinct <strong>speech track</strong>. Speech
+tracks are shown as parallel vertical bands in the main window.</p>
+
+<p>Tracks contain text shown in cells arranged chronologically from
+top to bottom. Each <strong>speech cell</strong> is delimited by two
+surrounding <strong>time anchors</strong>. Speech cells contain text; text can
+either be aligned (shown in blue) or unaligned (shown in red).</p>
+
+<p>Anchors guide the alignment process as mentioned earlier.</p>
+
+
+<h3>Screenshot</h3>
+
+<p>Move your mouse over an item in the screenshot to obtain a description.
+<noscript>JavaScript is required.</noscript></p>
+
+<div id="interactive-screenshot">
+<img src="window.png" usemap="#map">
+
+<div id="map-caption"></div>
+
+<map name="map">
+<area shape="rect" coords="547,123,634,407" class="visspk" />
+<area shape="rect" coords="57 ,426,634,544" class="spectro" />
+<area shape="rect" coords="57 ,124,528,140" class="anchor" />
+<area shape="rect" coords="57 ,182,528,198" class="anchor" />
+<area shape="rect" coords="57 ,240,528,255" class="anchor" />
+<area shape="rect" coords="294,281,528,297" class="anchor" />
+<area shape="rect" coords="294,323,528,338" class="anchor" />
+<area shape="rect" coords="294,366,528,382" class="anchor" />
+<area shape="rect" coords="294,409,528,424" class="anchor" />
+<area shape="rect" coords="294,197,528,238" class="blank" />
+<area shape="rect" coords="57 ,256,293,424" class="blank" />
+<area shape="rect" coords="294,256,528,281" class="selcell" />
+<area shape="rect" coords="57 ,197,293,238" class="redcell" />
+<area shape="rect" coords="57 ,141,528,181" class="bluecell" />
+<area shape="rect" coords="294,297,528,323" class="bluecell" />
+<area shape="rect" coords="294,339,528,366" class="bluecell" />
+<area shape="rect" coords="294,382,528,409" class="bluecell" />
+<area shape="rect" coords="57 ,106,528,124" class="spkhdr" />
+</map>
+</div>
+
+
+<h2>Opening files in the GUI from the command line</h2>
+
+<pre>java -jar jtrans.jar [MARKUP] [AUDIO]</pre>
+<ul>
+	<li><code>MARKUP</code>: (optional) create a new project containing this
+		markup file</li>
+	<li><code>AUDIO</code>: (optional) set this audio file for the project</li>
+</ul>
+
+<p>If you provide a markup file but no audio file, JTrans will attempt to
+detect an audio file with a similar name.</p>
+
+<p>The parsing format is deduced from the markup file's suffix (jtr, trs,
+textgrid).</p>
+
+
+<h2>Clearing the cache</h2>
+
+<p>JTrans caches partial alignments and converted audio files on disk. This
+speeds up some tasks considerably.</p>
+
+<p>However, if you work with a lot of different files, the size of JTrans's
+cache can blow up quickly. You may safely clear JTrans's cache at any time to
+save disk space.</p>
+
+<p>To do that, simply delete the contents of the <tt>cache</tt> directory next
+to the <tt>jtrans.jar</tt> file.</p>
+
+
+</article>
+
