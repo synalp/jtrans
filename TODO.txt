@@ -7,6 +7,7 @@ URGENT	Element types in new MultiTrackTable
 
 1	Refresh MultiTrackTable during alignment
 1	Support <Word tags in TRE
+1	Also support the old format < x | y > because <Word tags won't be always there
 1	Align all the corpora that we have and put the results on the web site
 1	Write developper docs
 1	Non-regression tests (no GUI but command-line scripts) to check TCOF / ORFOM / simultaneous speakers / ?...
@@ -20,8 +21,15 @@ URGENT	Element types in new MultiTrackTable
 3	Clean up ControlBox
 
 4	New function: anonymize audio from XML tag that identifies proper nouns
+	WARNING: we must just pass to a Praat script the alignment info for proper nouns.
+	The Praat script will do the job of modifying the audio file.
 
-5	Alignment perf evaluation (we have to wait for a gold seg for that)
+4	Support alignment of long files without any anchors !!
+	Long-term but very important and very challenging: possible ways to do it (to discuss):
+	- confidence measures, e.g., finding common inter-systems word sequences
+	- unsupervised model-free alignment *** (preferred ? ==> paper)
+
+7	Alignment perf evaluation (we have to wait for a gold seg for that)
 
 9	Port to English (English models)
 9	New function: computer assisted transcription
