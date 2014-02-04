@@ -111,7 +111,7 @@ public class Project {
 	 * file isn't in the right format, convert it and cache it.
 	 */
 	public static File suitableAudioFile(final File original) {
-		AudioFormat af;
+		final AudioFormat af;
 
 		try {
 			af = AudioSystem.getAudioFileFormat(original).getFormat();
@@ -134,18 +134,41 @@ public class Project {
 			public void write(File f) throws IOException {
 				System.out.println("suitableAudioFile: no cache found... creating one");
 
-				AudioInputStream originalStream;
+				AudioInputStream stream;
 				try {
-					originalStream = AudioSystem.getAudioInputStream(original);
+					stream = AudioSystem.getAudioInputStream(original);
 				} catch (UnsupportedAudioFileException ex) {
 					ex.printStackTrace();
 					throw new Error("Unsupported audio file; should've been caught above!");
 				}
 
+				System.out.println("suitableAudioFile: source format " + af);
+
+				// Workaround for sound library bug - Formats with an unknown
+				// sample size (such as OGG and MP3) cannot be converted to the
+				// suitable format in one pass. First, the stream must be
+				// converted to a fixed sample size (e.g. 16-bit) while keeping
+				// the sample rate and channel count intact. Only *then* can we
+				// up/downsample and/or downmix the stream.
+
+				if (af.getSampleSizeInBits() == AudioSystem.NOT_SPECIFIED) {
+					System.out.println("suitableAudioFile: 16-bit conversion first");
+					stream = AudioSystem.getAudioInputStream(
+						new AudioFormat(
+								af.getSampleRate(),
+								SUITABLE_AUDIO_FORMAT.getSampleSizeInBits(),
+								af.getChannels(),
+								true,
+								false),
+						stream);
+				}
+
 				AudioSystem.write(
-						AudioSystem.getAudioInputStream(SUITABLE_AUDIO_FORMAT, originalStream),
+						AudioSystem.getAudioInputStream(SUITABLE_AUDIO_FORMAT, stream),
 						AudioFileFormat.Type.WAVE,
 						f);
+
+				System.out.println("suitableAudioFile: written!");
 			}
 		};
 
