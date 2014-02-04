@@ -62,18 +62,21 @@ public class TRSLoader implements MarkupLoader {
 			Node child = turn.getFirstChild();
 
 			// Map IDs of speakers active in this turn to tracks
-			String[] turnSpeakers = turn.getAttribute("speaker").split(" ");
-			Track[] turnTracks = new Track[turnSpeakers.length];
-			for (int j = 0; j < turnSpeakers.length; j++) {
-				turnTracks[j] = trackIDMap.get(turnSpeakers[j]);
+			String speakerAttr = turn.getAttribute("speaker");
+			if (speakerAttr.isEmpty()) {
+				System.out.println("TRS WARNING: skipping turn without any speakers");
+				continue;
 			}
 
+			List<Track> turnTracks = new ArrayList<Track>();
+			for (String turnSpeaker: speakerAttr.split(" "))
+				turnTracks.add(trackIDMap.get(turnSpeaker));
+
 			// Start with the first speaker in case the first "Who" tag is missing
-			Track currentTrack = turnTracks[0];
+			Track currentTrack = turnTracks.get(0);
 
 			// The same speaker may be repeated in the speaker attribute
-			Set<Track> uniqueTurnTracks =
-					new HashSet<Track>(Arrays.asList(turnTracks));
+			Set<Track> uniqueTurnTracks = new HashSet<Track>(turnTracks);
 
 			float endTime = Float.parseFloat(turn.getAttribute("endTime"));
 			if (endTime > lastEnd)
@@ -100,8 +103,8 @@ public class TRSLoader implements MarkupLoader {
 				// Change speakers in a multi-speaker turn
 				else if (name.equals("Who")) {
 					// Speaker numbering starts at 1 in the XML file
-					currentTrack = turnTracks[
-							Integer.parseInt(((Element)child).getAttribute("nb")) - 1];
+					int nb = Integer.parseInt(((Element)child).getAttribute("nb"));
+					currentTrack = turnTracks.get(nb - 1);
 				}
 
 				else if (name.equals("Comment")) {
