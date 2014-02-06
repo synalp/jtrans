@@ -1,4 +1,4 @@
-<project name="jtrans" default="compile" basedir=".">
+<project xmlns:ivy="antlib:org.apache.ivy.ant" name="jtrans" default="compile" basedir=".">
     <tstamp/>
 
     <property name="src" location="src"/>
@@ -49,20 +49,12 @@
         <delete file="${jarfile}"/>
     </target>
 
-<!--
-    <target name="digest"
-        description="getdown" >
-	<property file="certificate.properties"/>
-	<digest appdir="getdown/jtrans" keystore="${sign.keystore}" storepass="${sign.storepass}" alias="${sign.alias}"/>
-	<signjar keystore="${sign.keystore}" alias="${sign.alias}" storepass="${sign.storepass}">
-  		<fileset dir="getdown" includes="getdown-client-1.2.jar"/>
-	</signjar>
-    </target>
+	<target name="ivy-retrieve-binaries">
+		<ivy:retrieve pattern="${libs}/[artifact]-[revision](-[classifier]).[ext]" type="jar"/>
+	</target>
 
-<taskdef name="digest" classname="com.threerings.getdown.tools.DigesterTask"
-         classpath="../../softs/getdown-tools-1.2.jar"/>
-
--->
+	<target name="ivy-retrieve-sources">
+		<ivy:retrieve pattern="${libs}/[artifact]-[revision](-[classifier]).[ext]" type="source"/>
+	</target>
 </project>
-
 
