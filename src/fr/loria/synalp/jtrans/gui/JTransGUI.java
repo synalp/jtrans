@@ -659,10 +659,17 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		} else if (project.wavname == null) {
 			// Try to detect audio file from the project's file name
 			String pfn = markupFile.getName();
-			File possibleAudio = new File(markupFile.getParentFile(),
-					pfn.substring(0, pfn.lastIndexOf('.')) + ".wav");
+			File possibleAudio = null;
+			for (String ext: "wav,ogg,mp3".split(",")) {
+				File f = new File(markupFile.getParentFile(),
+						pfn.substring(0, pfn.lastIndexOf('.')) + "." + ext);
+				if (f.exists()) {
+					possibleAudio = f;
+					break;
+				}
+			}
 
-			if (possibleAudio.exists()) {
+			if (possibleAudio != null) {
 				int rc = JOptionPane.showConfirmDialog(jf,
 						"Found an audio file with a similar name:\n" +
 						possibleAudio + "\n\n" +
