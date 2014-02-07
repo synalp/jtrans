@@ -1,0 +1,21 @@
+# This file is meant to contain project-wide rules. Rules specific to your
+# personal setup (extra files created by your IDE, etc.) should be mentioned in
+# .git/info/exclude.
+
+# files and directories created by JTrans
+res
+cache
+erreurenc.txt
+detgrammar.gram
+sr.cfg
+wavout.wav
+out*.wav
+
+# build products
+jtrans.jar
+build
+
+# non-binary libraries
+lib/*-sources.jar
+lib/*-javadoc.jar
+
