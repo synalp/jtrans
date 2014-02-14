@@ -1,16 +1,15 @@
 PRIO	TASK
 ============
 
-1	Support <Word tags in TRE
-1	Also support the old format < x | y > because <Word tags won't be always there
 1	Non-regression tests (no GUI but command-line scripts) to check TCOF / ORFOM / simultaneous speakers / ?...
+1	Export non-alignable elements to TextGrid point tiers
 
-2	Move to GitHub / bitbucket
 2	Get rid of REIMPLEMENT_DEC2013()
 2	Threaded alignment process
 2	Reintroduce auto transcript
 
-3	Clean up ControlBox
+3	Align 1 word between 2 anchors -> no phones
+3	Avoid writing tiny JSGF grammars on disk
 
 4	New function: anonymize audio from XML tag that identifies proper nouns
 	WARNING: we must just pass to a Praat script the alignment info for proper nouns.
