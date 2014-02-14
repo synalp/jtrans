@@ -82,6 +82,10 @@ public class TCOFWhoifier {
 			boolean hangingOverlap = reportOverlap != null;
 			final boolean multiSpeakerTurn = hangingOverlap;
 
+			// "Empty" means the turn does not contain any significant children.
+			// Sync tags and whitespace #text are not significant by themselves.
+			boolean emptyTurn = reportOverlap == null && reportScrapped == null;
+
 			String singleSpeaker = turn.getAttribute("speaker");
 			if (singleSpeaker.isEmpty() || 1 != singleSpeaker.split(" ").length)
 				throw new Error("speaker count != 1. If >0, already whoified");
@@ -95,10 +99,9 @@ public class TCOFWhoifier {
 			if (reportScrapped != null) {
 				if (singleSpeaker.equals(previousSpeaker)) {
 					NodeList rscn = reportScrapped.getChildNodes();
-					for (int j = rscn.getLength()-1; j >= 0; j--) {
-						System.out.println("   " + rscn.item(j).getTextContent());
+					for (int j = rscn.getLength()-1; j >= 0; j--)
 						turn.insertBefore(rscn.item(j), turn.getFirstChild());
-					}
+
 					turn.setAttribute("startTime", reportScrapped.getAttribute("startTime"));
 				} else {
 					turn = (Element)turn.getParentNode().insertBefore(reportScrapped, turn);
@@ -158,10 +161,20 @@ public class TCOFWhoifier {
 
 					reportOverlap = scrap(child.getNextSibling());
 					reportOverlap.add(0, doc.createTextNode(text.substring(chevronPos)));
+
+					// Don't leave an empty turn
+					if (emptyTurn && beforeChevron.trim().isEmpty()) {
+						turn.getParentNode().removeChild(turn);
+						turnNo--;
+					}
+
 					break;
 				}
 
 				else {
+					if (!name.equals("Sync") && (!name.equals("#text") || !text.trim().isEmpty()))
+						emptyTurn = false;
+
 					child = child.getNextSibling();
 				}
 			}
