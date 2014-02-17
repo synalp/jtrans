@@ -63,7 +63,6 @@ import edu.cmu.sphinx.decoder.scorer.ThreadedAcousticScorer;
 import edu.cmu.sphinx.decoder.search.PartitionActiveListFactory;
 import edu.cmu.sphinx.decoder.search.SimpleBreadthFirstSearchManager;
 import edu.cmu.sphinx.decoder.search.Token;
-import edu.cmu.sphinx.frontend.BaseDataProcessor;
 import edu.cmu.sphinx.frontend.Data;
 import edu.cmu.sphinx.frontend.DataBlocker;
 import edu.cmu.sphinx.frontend.DataEndSignal;
@@ -162,11 +161,9 @@ public class S4ForceAlignBlocViterbi extends Thread {
 		}
 	}
 
-	private void initS4Mike() {
+	public static FrontEnd getFrontEnd(DataProcessor source) {
 		ArrayList<DataProcessor> frontEndList = new ArrayList<DataProcessor>();
-		mikeSource = new Microphone(16000, 16, 1, true, true, false, 10, false, "average", 0, "default", 6400);
-		mikeSource.initialize();
-		frontEndList.add(mikeSource);
+		frontEndList.add(source);
 		frontEndList.add(new Dither(2,false,Double.MAX_VALUE,-Double.MAX_VALUE));
 		frontEndList.add(new DataBlocker(50));
 		frontEndList.add(new Preemphasizer(0.97));
@@ -176,32 +173,22 @@ public class S4ForceAlignBlocViterbi extends Thread {
 		frontEndList.add(new DiscreteCosineTransform(40,13));
 		frontEndList.add(new LiveCMN(12,100,160));
 		frontEndList.add(new DeltasFeatureExtractor(3));
-
-		BaseDataProcessor mfcc = new FrontEnd(frontEndList);
-		//		mfccs = new S4RoundBufferFrontEnd(null, 10000);
-		mfccs = new S4mfccBuffer();
-		mfccs.setSource(mfcc);
+		return new FrontEnd(frontEndList);
 	}
+
+	private void initS4Mike() {
+		mikeSource = new Microphone(16000, 16, 1, true, true, false, 10, false, "average", 0, "default", 6400);
+		mikeSource.initialize();
+		mfccs = new S4mfccBuffer();
+		mfccs.setSource(getFrontEnd(mikeSource));
+	}
+
 	private void initS4() {
-		ArrayList<DataProcessor> frontEndList = new ArrayList<DataProcessor>();
 		wavfile = new AudioFileDataSource(3200,null);
 		System.out.println("wavname "+wavname);
 		wavfile.setAudioFile(new File(wavname), null);
-		frontEndList.add(wavfile);
-		frontEndList.add(new Dither(2,false,Double.MAX_VALUE,-Double.MAX_VALUE));
-		frontEndList.add(new DataBlocker(50));
-		frontEndList.add(new Preemphasizer(0.97));
-		frontEndList.add(new RaisedCosineWindower(0.46f,25.625f,10f));
-		frontEndList.add(new DiscreteFourierTransform(512, false));
-		frontEndList.add(new MelFrequencyFilterBank(133.33334, 6855.4976, 40));
-		frontEndList.add(new DiscreteCosineTransform(40,13));
-		frontEndList.add(new LiveCMN(12,100,160));
-		frontEndList.add(new DeltasFeatureExtractor(3));
-
-		BaseDataProcessor mfcc = new FrontEnd(frontEndList);
-		//		mfccs = new S4RoundBufferFrontEnd(null, 10000);
 		mfccs = new S4mfccBuffer();
-		mfccs.setSource(mfcc);
+		mfccs.setSource(getFrontEnd(wavfile));
 
 		if (false) {
 			// debug pour connaitre le nb de trames
