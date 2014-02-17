@@ -10,6 +10,7 @@ detgrammar.gram
 sr.cfg
 wavout.wav
 out*.wav
+grammar_graph.dot
 
 # build products
 jtrans.jar
