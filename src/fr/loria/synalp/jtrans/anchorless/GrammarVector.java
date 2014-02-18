@@ -16,13 +16,7 @@ import java.util.*;
 /**
  * Sweeping grammar vector for the experimental anchorless algorithm.
  */
-public class GrammarVector implements Iterable<GrammarVector.Cell> {
-
-	public class Cell {
-		String word = null;
-		List<Cell> transitions = new ArrayList<Cell>();
-	}
-
+public class GrammarVector implements Iterable<Cell> {
 
 	private List<Cell> cells = new ArrayList<Cell>();
 
@@ -33,22 +27,35 @@ public class GrammarVector implements Iterable<GrammarVector.Cell> {
 	}
 
 
+	public Cell getRoot() {
+		return cells.get(0);
+	}
+
+
 	/**
 	 * Build up the vector by traversing the grammar graph recursively.
 	 * @param node node of the graph to visit
 	 * @param seen set of visited nodes
 	 */
 	private Cell recursiveTraversal(GrammarNode node, Map<GrammarNode, Cell> seen) {
-		if (seen.containsKey(node))
-			return seen.get(node);
+		Cell cell = seen.get(node);
 
-		Cell cell = new Cell();
-		seen.put(node, cell);
+		if (null != cell)
+			return cell;
 
 		if (!node.isEmpty()) {
-			cell.word = node.getWord().getSpelling();
+			String w = node.getWord().getSpelling();
+			// word boundary hack
+			if (w.startsWith("XZ"))
+				w = w.substring(1+w.indexOf('Y'));
+			cell = new Cell(w);
+
 			cells.add(cell);
+		} else {
+			cell = new Cell(null);
 		}
+
+		seen.put(node, cell);
 
 		for (GrammarArc suc: node.getSuccessors()) {
 			GrammarNode sucNode = suc.getGrammarNode();
@@ -105,12 +112,8 @@ public class GrammarVector implements Iterable<GrammarVector.Cell> {
 	 */
 	public void scoreFrame(Data frame, TiedStateAcousticModel acMod, UnitManager unitMgr) {
 		for (Cell cell: this) {
-			String w = cell.word;
+			String w = cell.name;
 			assert w != null;
-
-			// word boundary hack
-			if (w.startsWith("XZ"))
-				w = w.substring(1+w.indexOf('Y'));
 
 			HMM hmm = acMod.lookupNearestHMM(
 					unitMgr.getUnit(w), HMMPosition.UNDEFINED, false);
