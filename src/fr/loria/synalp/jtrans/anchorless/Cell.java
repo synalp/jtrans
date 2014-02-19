@@ -1,21 +1,23 @@
 package fr.loria.synalp.jtrans.anchorless;
 
+import edu.cmu.sphinx.linguist.acoustic.HMMState;
+
 import java.util.*;
 
 /**
  * A cell in the GrammarVector
  */
-public class Cell<T> {
-	T item = null;
-	Set<Cell<T>> transitions = new HashSet<Cell<T>>();
+public class Cell {
+	HMMState item = null;
+	Set<Cell> transitions = new HashSet<Cell>();
 
 
-	public Cell(T s) {
+	public Cell(HMMState s) {
 		item = s;
 	}
 
 
-	public Cell<T> link(Cell<T> c) {
+	public Cell link(Cell c) {
 		transitions.add(c);
 		return c;
 	}

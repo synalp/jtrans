@@ -19,97 +19,77 @@ import java.util.*;
  */
 public class GrammarVector {
 
-	private List<Cell<HMMState>> stateCells = new ArrayList<Cell<HMMState>>();
+	private List<Cell> stateCells = new ArrayList<Cell>();
 
 
 	/**
 	 * Build up the vector by traversing the grammar graph recursively.
 	 * @param node node of the graph to visit
-	 * @param seen set of visited nodes
+	 * @param seenNodes set of visited nodes
+	 * @return 1st state of the phoneme
 	 */
-	static Cell<String> traversePhoneGraph(
-			GrammarNode node, Map<GrammarNode, Cell<String>> seen)
-	{
-		Cell<String> cell = seen.get(node);
-
-		if (null != cell)
-			return cell;
-
-		if (!node.isEmpty()) {
-			String w = node.getWord().getSpelling();
-			// word boundary hack
-			if (w.startsWith("XZ"))
-				w = w.substring(1+w.indexOf('Y'));
-			cell = new Cell<String>(w);
-
-//			phoneCells.add(cell);
-		} else {
-			cell = new Cell<String>(null);
-		}
-
-		seen.put(node, cell);
-
-		for (GrammarArc arc: node.getSuccessors()) {
-			GrammarNode sucNode = arc.getGrammarNode();
-			Cell<String> sucCell = traversePhoneGraph(sucNode, seen);
-
-			if (!sucNode.isEmpty())
-				cell.transitions.add(sucCell);
-			else
-				cell.transitions.addAll(sucCell.transitions);
-		}
-
-		return cell;
-	}
-
-	/**
-	 * Inserts the emitting states of the phone in the vector,
-	 * recursively inserts the states of the next phone in the vector,
-	 * and links the exiting states with the next phone's first state.
-	 * @param seenPhones set of visited phone cells; maps phone cells to
-	 *                   their first state cell
-	 * @param seenState1s set of visited first states
-	 * @return cell of the first state in the phone
-	 */
-	private Cell<HMMState> traversePhoneHMMGraph(
-			Cell<String> phone,
-			HashMap<Cell<String>, Cell<HMMState>> seenPhones,
-			HashMap<HMMState, Cell<HMMState>> seenState1s,
+	private Cell traversePhoneGraph(
+			GrammarNode node,
+			Map<GrammarNode, Cell> seenNodes,
 			AcousticModel acMod,
 			UnitManager unitMgr)
 	{
-		Cell<HMMState> state1Cell = seenPhones.get(phone);
+		Cell firstStateCell = seenNodes.get(node);
+		if (null != firstStateCell)
+			return firstStateCell;
 
-		if (null != state1Cell)
-			return state1Cell;
+		if (!node.isEmpty()) {
+			String w = node.getWord().getSpelling();
 
-		HMM hmm = acMod.lookupNearestHMM(
-				unitMgr.getUnit(phone.item), HMMPosition.UNDEFINED, false);
+			// word boundary hack
+			if (w.startsWith("XZ"))
+				w = w.substring(1+w.indexOf('Y'));
 
-		state1Cell = traverseHMMStateGraph(hmm.getInitialState(), seenState1s);
+			// find HMM for this phone
+			HMM hmm = acMod.lookupNearestHMM(
+					unitMgr.getUnit(w), HMMPosition.UNDEFINED, false);
 
-		for (Cell<String> sucPhone: phone.transitions) {
-			Cell<HMMState> nextState1Cell = traversePhoneHMMGraph(
-					sucPhone, seenPhones, seenState1s, acMod, unitMgr);
-			recursiveBindExit(state1Cell, nextState1Cell, new HashSet<Cell<HMMState>>());
+			// add phone states
+			firstStateCell = traverseHMMStateGraph(
+					hmm.getInitialState(),
+					new HashMap<HMMState, Cell>());
+		} else {
+			firstStateCell = new Cell(null);
 		}
 
-		return state1Cell;
+		seenNodes.put(node, firstStateCell);
+
+		for (GrammarArc arc: node.getSuccessors()) {
+			GrammarNode sucNode = arc.getGrammarNode();
+			Cell sucCell = traversePhoneGraph(sucNode, seenNodes, acMod, unitMgr);
+
+			// link our exiting states with the first state of each succeeding phone
+			if (!sucNode.isEmpty()) {
+				recursiveBindExit(firstStateCell, sucCell, new HashSet<Cell>());
+			} else {
+				for (Cell t: sucCell.transitions)
+					recursiveBindExit(firstStateCell, t, new HashSet<Cell>());
+			}
+		}
+
+		return firstStateCell;
 	}
+
 
 	/**
 	 * Inserts the emitting states of the HMM in the vector.
+	 * (Usually, this is a mini graph with three nodes)
 	 * @param seen set of visited states
 	 */
-	private Cell<HMMState> traverseHMMStateGraph(
-			HMMState hmmState, Map<HMMState, Cell<HMMState>> seen)
+	private Cell traverseHMMStateGraph(
+			HMMState hmmState, Map<HMMState, Cell> seen)
 	{
-		Cell<HMMState> cell = seen.get(hmmState);
+		Cell cell = seen.get(hmmState);
 
 		if (null != cell)
 			return cell;
 
-		cell = new Cell<HMMState>(hmmState);
+		cell = new Cell(hmmState);
 		if (hmmState.isEmitting())
 			stateCells.add(cell);
 		seen.put(hmmState, cell);
@@ -122,7 +102,7 @@ public class GrammarVector {
 					(sucState.isExitState()? "exit": " -- ") + " " +
 					HMMModels.getLogMath().logToLinear(arc.getLogProbability()));
 
-			Cell<HMMState> sucCell = traverseHMMStateGraph(sucState, seen);
+			Cell sucCell = traverseHMMStateGraph(sucState, seen);
 
 			if (!sucState.isEmitting())
 				cell.transitions.add(sucCell);
@@ -135,18 +115,18 @@ public class GrammarVector {
 	}
 
 
-	private void recursiveBindExit(Cell<HMMState> stateCell, Cell<HMMState> successor,
-								   Set<Cell<HMMState>> seen)
+	private void recursiveBindExit(Cell stateCell, Cell successor,
+								   Set<Cell> seen)
 	{
 		if (seen.contains(stateCell))
 			return;
 		else
 			seen.add(stateCell);
 
-		for (Cell<HMMState> sucState: stateCell.transitions)
+		for (Cell sucState: stateCell.transitions)
 			recursiveBindExit(sucState, successor, seen);
 
-		if (stateCell.item.isExitState())
+		if (null == stateCell.item || stateCell.item.isExitState())
 			stateCell.transitions.add(successor);
 	}
 
@@ -157,10 +137,9 @@ public class GrammarVector {
 	 * @see edu.cmu.sphinx.linguist.language.grammar
 	 */
 	public GrammarVector(GrammarNode node, AcousticModel acMod, UnitManager unitMgr) {
-		traversePhoneHMMGraph(
-				traversePhoneGraph(node, new HashMap<GrammarNode, Cell<String>>()),
-				new HashMap<Cell<String>, Cell<HMMState>>(),
-				new HashMap<HMMState, Cell<HMMState>>(),
+		traversePhoneGraph(
+				node,
+				new HashMap<GrammarNode, Cell>(),
 				acMod,
 				unitMgr);
 	}
@@ -196,7 +175,7 @@ public class GrammarVector {
 	 * Scores a frame according to every state in the vector.
 	 */
 	public void scoreFrame(Data frame, TiedStateAcousticModel acMod, UnitManager unitMgr) {
-		for (Cell<HMMState> cell: stateCells) {
+		for (Cell cell: stateCells) {
 			float score = cell.item.getScore(frame);
 			System.out.println(cell + "\t" + score);
 		}
@@ -236,6 +215,7 @@ public class GrammarVector {
 		}
 
 		System.out.println("done");
+		System.out.println("GRAPH SIZE: " + gv.stateCells.size());
 	}
 
 }
