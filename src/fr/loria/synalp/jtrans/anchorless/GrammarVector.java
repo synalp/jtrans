@@ -23,6 +23,31 @@ public class GrammarVector {
 
 
 	/**
+	 * Counts undiscovered phones in a Sphinx4 grammar by traversing the grammar
+	 * graph recursively. Empty nodes are not accounted for.
+	 * @param node node of the graph to visit
+	 * @param seen discovered nodes (won't be visited again)
+	 */
+	private static int countUnseenPhones(GrammarNode node, Set<GrammarNode> seen) {
+		if (seen.contains(node))
+			return 0;
+		seen.add(node);
+		int count = node.isEmpty()? 0: 1;
+		for (GrammarArc arc: node.getSuccessors())
+			count += countUnseenPhones(arc.getGrammarNode(), seen);
+		return count;
+	}
+
+
+	/**
+	 * Counts phones in a Sphinx4 grammar. Empty nodes are not accounted for.
+	 */
+	public static int countPhones(GrammarNode initialNode) {
+		return countUnseenPhones(initialNode, new HashSet<GrammarNode>());
+	}
+
+
+	/**
 	 * Build up the vector by traversing the grammar graph recursively.
 	 * @param node node of the graph to visit
 	 * @param seenNodes set of visited nodes
@@ -190,6 +215,8 @@ public class GrammarVector {
 
 		final String wavpath = args[0];
 		final String words   = args[1];
+
+		System.out.println("PHONE COUNT: " + countPhones(createGrammarGraph(words)));
 
 		ConfigurationManager cm = new ConfigurationManager("sr.cfg");
 		UnitManager unitmgr = (UnitManager)cm.lookup("unitManager");
