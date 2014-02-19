@@ -16,20 +16,9 @@ import java.util.*;
 /**
  * Sweeping grammar vector for the experimental anchorless algorithm.
  */
-public class GrammarVector implements Iterable<Cell> {
+public class GrammarVector {
 
-	private List<Cell> cells = new ArrayList<Cell>();
-
-
-	@Override
-	public Iterator<Cell> iterator() {
-		return cells.iterator();
-	}
-
-
-	public Cell getRoot() {
-		return cells.get(0);
-	}
+	private List<Cell<HMMState>> stateCells = new ArrayList<Cell<HMMState>>();
 
 
 	/**
@@ -37,8 +26,10 @@ public class GrammarVector implements Iterable<Cell> {
 	 * @param node node of the graph to visit
 	 * @param seen set of visited nodes
 	 */
-	private Cell recursiveTraversal(GrammarNode node, Map<GrammarNode, Cell> seen) {
-		Cell cell = seen.get(node);
+	static Cell<String> traversePhoneGraph(
+			GrammarNode node, Map<GrammarNode, Cell<String>> seen)
+	{
+		Cell<String> cell = seen.get(node);
 
 		if (null != cell)
 			return cell;
@@ -48,18 +39,18 @@ public class GrammarVector implements Iterable<Cell> {
 			// word boundary hack
 			if (w.startsWith("XZ"))
 				w = w.substring(1+w.indexOf('Y'));
-			cell = new Cell(w);
+			cell = new Cell<String>(w);
 
-			cells.add(cell);
+//			phoneCells.add(cell);
 		} else {
-			cell = new Cell(null);
+			cell = new Cell<String>(null);
 		}
 
 		seen.put(node, cell);
 
-		for (GrammarArc suc: node.getSuccessors()) {
-			GrammarNode sucNode = suc.getGrammarNode();
-			Cell sucCell = recursiveTraversal(sucNode, seen);
+		for (GrammarArc arc: node.getSuccessors()) {
+			GrammarNode sucNode = arc.getGrammarNode();
+			Cell<String> sucCell = traversePhoneGraph(sucNode, seen);
 
 			if (!sucNode.isEmpty())
 				cell.transitions.add(sucCell);
@@ -70,14 +61,101 @@ public class GrammarVector implements Iterable<Cell> {
 		return cell;
 	}
 
+	/**
+	 * Inserts the emitting states of the phone in the vector,
+	 * recursively inserts the states of the next phone in the vector,
+	 * and links the exiting states with the next phone's first state.
+	 * @param seenPhones set of visited phone cells; maps phone cells to
+	 *                   their first state cell
+	 * @param seenState1s set of visited first states
+	 * @return cell of the first state in the phone
+	 */
+	private Cell<HMMState> traversePhoneHMMGraph(
+			Cell<String> phone,
+			HashMap<Cell<String>, Cell<HMMState>> seenPhones,
+			HashMap<HMMState, Cell<HMMState>> seenState1s,
+			AcousticModel acMod,
+			UnitManager unitMgr)
+	{
+		Cell<HMMState> state1Cell = seenPhones.get(phone);
+
+		if (null != state1Cell)
+			return state1Cell;
+
+		HMM hmm = acMod.lookupNearestHMM(
+				unitMgr.getUnit(phone.item), HMMPosition.UNDEFINED, false);
+
+		state1Cell = traverseHMMStateGraph(hmm.getInitialState(), seenState1s);
+
+		for (Cell<String> sucPhone: phone.transitions) {
+			Cell<HMMState> nextState1Cell = traversePhoneHMMGraph(
+					sucPhone, seenPhones, seenState1s, acMod, unitMgr);
+			recursiveBindExit(state1Cell, nextState1Cell, new HashSet<Cell<HMMState>>());
+		}
+
+		return state1Cell;
+	}
+
+	/**
+	 * Inserts the emitting states of the HMM in the vector.
+	 * @param seen set of visited states
+	 */
+	private Cell<HMMState> traverseHMMStateGraph(
+			HMMState hmmState, Map<HMMState, Cell<HMMState>> seen)
+	{
+		Cell<HMMState> cell = seen.get(hmmState);
+
+		if (null != cell)
+			return cell;
+
+		cell = new Cell<HMMState>(hmmState);
+		if (hmmState.isEmitting())
+			stateCells.add(cell);
+		seen.put(hmmState, cell);
+
+		for (HMMStateArc arc: hmmState.getSuccessors()) {
+			HMMState sucState = arc.getHMMState();
+			Cell<HMMState> sucCell = traverseHMMStateGraph(sucState, seen);
+
+			if (!sucState.isEmitting())
+				cell.transitions.add(sucCell);
+			else
+				cell.transitions.addAll(sucCell.transitions);
+		}
+
+		assert cell.transitions.size() <= 1;
+		return cell;
+	}
+
+
+	private void recursiveBindExit(Cell<HMMState> stateCell, Cell<HMMState> successor,
+								   Set<Cell<HMMState>> seen)
+	{
+		if (seen.contains(stateCell))
+			return;
+		else
+			seen.add(stateCell);
+
+		for (Cell<HMMState> sucState: stateCell.transitions)
+			recursiveBindExit(sucState, successor, seen);
+
+		if (stateCell.item.isExitState())
+			stateCell.transitions.add(successor);
+	}
+
 
 	/**
 	 * Constructs a grammar vector from an initial grammar node.
 	 * @param node initial node of a Sphinx4 Grammar
 	 * @see edu.cmu.sphinx.linguist.language.grammar
 	 */
-	public GrammarVector(GrammarNode node) {
-		recursiveTraversal(node, new HashMap<GrammarNode, Cell>());
+	public GrammarVector(GrammarNode node, AcousticModel acMod, UnitManager unitMgr) {
+		traversePhoneHMMGraph(
+				traversePhoneGraph(node, new HashMap<GrammarNode, Cell<String>>()),
+				new HashMap<Cell<String>, Cell<HMMState>>(),
+				new HashMap<HMMState, Cell<HMMState>>(),
+				acMod,
+				unitMgr);
 	}
 
 
@@ -100,10 +178,10 @@ public class GrammarVector implements Iterable<Cell> {
 	 * Constructs a grammar vector from a piece of text.
 	 * @param text words separated by spaces
 	 */
-	public GrammarVector(String text)
+	public GrammarVector(String text, AcousticModel acMod, UnitManager unitMgr)
 			throws MalformedURLException, ClassNotFoundException
 	{
-		this(createGrammarGraph(text));
+		this(createGrammarGraph(text), acMod, unitMgr);
 	}
 
 
@@ -111,24 +189,9 @@ public class GrammarVector implements Iterable<Cell> {
 	 * Scores a frame according to every state in the vector.
 	 */
 	public void scoreFrame(Data frame, TiedStateAcousticModel acMod, UnitManager unitMgr) {
-		for (Cell cell: this) {
-			String w = cell.name;
-			assert w != null;
-
-			HMM hmm = acMod.lookupNearestHMM(
-					unitMgr.getUnit(w), HMMPosition.UNDEFINED, false);
-
-			HMMState state = hmm.getInitialState();
-
-			// TODO: score beyond initial state
-			// TODO: fill the vector with (emitting) HMM states
-
-			if (state.isEmitting()) {
-				float score = state.getScore(frame);
-				System.out.println(w + "\t" + score);
-			} else {
-				System.out.println(w + "\t <NON-EMITTING>");
-			}
+		for (Cell<HMMState> cell: stateCells) {
+			float score = cell.item.getScore(frame);
+			//System.out.println(cell + "\t" + score);
 		}
 	}
 
@@ -142,8 +205,6 @@ public class GrammarVector implements Iterable<Cell> {
 		final String wavpath = args[0];
 		final String words   = args[1];
 
-		GrammarVector gv = new GrammarVector(words);
-
 		ConfigurationManager cm = new ConfigurationManager("sr.cfg");
 		UnitManager unitmgr = (UnitManager)cm.lookup("unitManager");
 		assert unitmgr != null;
@@ -156,10 +217,14 @@ public class GrammarVector implements Iterable<Cell> {
 
 		TiedStateAcousticModel acmod = (TiedStateAcousticModel) HMMModels.getAcousticModels();
 
+		GrammarVector gv = new GrammarVector(words, acmod, unitmgr);
+
+		int f = 0;
 		while (!mfcc.noMoreFramesAvailable) {
 			Data data = mfcc.getData();
 			if (data instanceof DataStartSignal || data instanceof DataEndSignal)
 				continue;
+			System.out.println("Scoring Frame: " + (f++));
 			gv.scoreFrame(data, acmod, unitmgr);
 		}
 

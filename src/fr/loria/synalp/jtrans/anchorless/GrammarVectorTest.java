@@ -1,39 +1,43 @@
 package fr.loria.synalp.jtrans.anchorless;
 
+import edu.cmu.sphinx.linguist.language.grammar.GrammarNode;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.HashMap;
+
+
 public class GrammarVectorTest {
-	private GrammarVector gv;
+	private GrammarNode rootNode;
 
 
 	@Before
 	public void setUp() throws Exception {
-		gv = new GrammarVector("ben euh");
+		rootNode = GrammarVector.createGrammarGraph("ben euh");
 	}
 
 
 	@Test
 	public void testGraph() {
-		Cell
-				preSil1	= new Cell("SIL"),
-				preSil2	= new Cell("SIL"),
+		Cell<String>
+				preSil1	= new Cell<String>("SIL"),
+				preSil2	= new Cell<String>("SIL"),
 
-				ben1b	= new Cell("b"),
-				ben1swa	= new Cell("swa"),
-				ben1n	= new Cell("n"),
+				ben1b	= new Cell<String>("b"),
+				ben1swa	= new Cell<String>("swa"),
+				ben1n	= new Cell<String>("n"),
 
-				ben2b	= new Cell("b"),
-				ben2in	= new Cell("in"),
-				ben2n	= new Cell("n"),
+				ben2b	= new Cell<String>("b"),
+				ben2in	= new Cell<String>("in"),
+				ben2n	= new Cell<String>("n"),
 
-				interSil = new Cell("SIL"),
+				interSil = new Cell<String>("SIL"),
 
-				eu		= new Cell("eu"),
+				eu		= new Cell<String>("eu"),
 
-				postSil1 = new Cell("SIL"),
-				postSil2 = new Cell("SIL");
+				postSil1 = new Cell<String>("SIL"),
+				postSil2 = new Cell<String>("SIL");
 
 		preSil1.link(preSil2);
 
@@ -56,12 +60,15 @@ public class GrammarVectorTest {
 
 		//------
 
-		Assert.assertEquals(preSil1, gv.getRoot());
-		Assert.assertFalse(preSil2.equals(gv.getRoot()));
-		Assert.assertFalse(postSil1.equals(gv.getRoot()));
-		Assert.assertFalse(postSil2.equals(gv.getRoot()));
+		Cell<String> rootPhone = GrammarVector.traversePhoneGraph(
+				rootNode, new HashMap<GrammarNode, Cell<String>>());
 
-		ben1swa.name = "SIL";
-		Assert.assertFalse(preSil1.equals(gv.getRoot()));
+		Assert.assertEquals(preSil1, rootPhone);
+		Assert.assertFalse(preSil2.equals(rootPhone));
+		Assert.assertFalse(postSil1.equals(rootPhone));
+		Assert.assertFalse(postSil2.equals(rootPhone));
+
+		ben1swa.item = "SIL";
+		Assert.assertFalse(preSil1.equals(rootPhone));
 	}
 }

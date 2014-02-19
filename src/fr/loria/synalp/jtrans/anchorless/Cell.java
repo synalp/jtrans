@@ -5,35 +5,37 @@ import java.util.*;
 /**
  * A cell in the GrammarVector
  */
-public class Cell {
-	String name = null;
-	Set<Cell> transitions = new HashSet<Cell>();
+public class Cell<T> {
+	T item = null;
+	Set<Cell<T>> transitions = new HashSet<Cell<T>>();
 
 
-	public Cell(String s) {
-		name = s;
+	public Cell(T s) {
+		item = s;
 	}
 
 
-	public Cell link(Cell c) {
+	public Cell<T> link(Cell<T> c) {
 		transitions.add(c);
 		return c;
 	}
 
 
 	public String toString() {
-		return name;
+		return item.toString();
 	}
 
 
 	@Override
 	public boolean equals(Object o) {
-		if (!(o instanceof Cell))
+		if (o == this)
+			return true;
+		else if (!(o instanceof Cell))
 			return false;
 
 		Cell other = (Cell)o;
 
-		if (!name.equals(other.name))
+		if (!item.equals(other.item))
 			return false;
 
 		if (transitions.size() != other.transitions.size())
