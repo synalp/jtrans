@@ -5,6 +5,7 @@ import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
 import edu.cmu.sphinx.linguist.acoustic.*;
 import edu.cmu.sphinx.linguist.acoustic.tiedstate.TiedStateAcousticModel;
 import edu.cmu.sphinx.linguist.language.grammar.*;
+import edu.cmu.sphinx.util.LogMath;
 import edu.cmu.sphinx.util.props.ConfigurationManager;
 import fr.loria.synalp.jtrans.speechreco.s4.*;
 import fr.loria.synalp.jtrans.utils.StdoutProgressDisplay;
@@ -115,6 +116,12 @@ public class GrammarVector {
 
 		for (HMMStateArc arc: hmmState.getSuccessors()) {
 			HMMState sucState = arc.getHMMState();
+
+			System.out.println(cell.item + " --> " + sucState + " " +
+					(sucState.isEmitting() ? "emit": " -- ") + " " +
+					(sucState.isExitState()? "exit": " -- ") + " " +
+					HMMModels.getLogMath().logToLinear(arc.getLogProbability()));
+
 			Cell<HMMState> sucCell = traverseHMMStateGraph(sucState, seen);
 
 			if (!sucState.isEmitting())
@@ -191,7 +198,7 @@ public class GrammarVector {
 	public void scoreFrame(Data frame, TiedStateAcousticModel acMod, UnitManager unitMgr) {
 		for (Cell<HMMState> cell: stateCells) {
 			float score = cell.item.getScore(frame);
-			//System.out.println(cell + "\t" + score);
+			System.out.println(cell + "\t" + score);
 		}
 	}
 
@@ -209,15 +216,15 @@ public class GrammarVector {
 		UnitManager unitmgr = (UnitManager)cm.lookup("unitManager");
 		assert unitmgr != null;
 
+		TiedStateAcousticModel acmod = (TiedStateAcousticModel) HMMModels.getAcousticModels();
+
+		GrammarVector gv = new GrammarVector(words, acmod, unitmgr);
+
 		AudioFileDataSource afds = (AudioFileDataSource)cm.lookup("audioFileDataSource");
 		afds.setAudioFile(new File(wavpath), null);
 
 		S4mfccBuffer mfcc = new S4mfccBuffer();
 		mfcc.setSource(S4ForceAlignBlocViterbi.getFrontEnd(afds));
-
-		TiedStateAcousticModel acmod = (TiedStateAcousticModel) HMMModels.getAcousticModels();
-
-		GrammarVector gv = new GrammarVector(words, acmod, unitmgr);
 
 		int f = 0;
 		while (!mfcc.noMoreFramesAvailable) {

@@ -29,6 +29,7 @@ public abstract class HMMModels {
 	public static String datapath = "ESTER2_Train_373f_a01_s01.f04.lexV02_alg01_ter.cd_2500.params.064g/";
 
 	public static LogMath getLogMath() {
+		// Sphinx's default log base = 1.0001 (cf. LogMath.java)
 		if (logMath==null) logMath = new LogMath(1.0001f,true);
 		return logMath;
 	}
