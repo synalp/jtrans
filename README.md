@@ -66,7 +66,7 @@ This produces a file named `jtrans.jar`. You may then launch JTrans using:
 The binary dependencies are already in the git repository for your convenience,
 but you can retrieve them yourself using Apache Ivy if you want. All
 dependencies **except Sphinx4** can be fetched by Ivy automatically.  For now,
-you will need to keep the `sphinx4-1.0-beta5.jar` file that is provided in the
+you will need to keep the `sphinx4-1.0beta6.jar` file that is provided in the
 git repository, because it is not available on public repositories yet.
 
 To fetch the binary dependencies, run:
