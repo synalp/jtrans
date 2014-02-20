@@ -5,11 +5,12 @@ import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
 import edu.cmu.sphinx.linguist.acoustic.*;
 import edu.cmu.sphinx.linguist.acoustic.tiedstate.TiedStateAcousticModel;
 import edu.cmu.sphinx.linguist.language.grammar.*;
+import edu.cmu.sphinx.util.LogMath;
 import edu.cmu.sphinx.util.props.ConfigurationManager;
 import fr.loria.synalp.jtrans.speechreco.s4.*;
 import fr.loria.synalp.jtrans.utils.StdoutProgressDisplay;
 
-import java.io.File;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.util.*;
 
@@ -253,6 +254,29 @@ public class GrammarVector {
 	}
 
 
+	/**
+	 * Dumps a GraphViz/DOT representation of the vector.
+	 */
+	public void dumpDot(Writer w) throws IOException {
+		LogMath lm = HMMModels.getLogMath();
+
+		w.write("digraph {");
+
+		for (int i = 0; i < states.length; i++) {
+			HMMState s = states[i];
+			w.write(String.format("\nnode%d [ label=\"%s %d\" ]", i,
+					s.getHMM().getBaseUnit().getName(), s.getState()));
+			for (int j = 0; j < ntrans[i]; j++) {
+				w.write(String.format("\nnode%d -> node%d [ label=%f ]",
+						i, succ[i][j], lm.logToLinear(prob[i][j])));
+			}
+		}
+
+		w.write("\n}");
+		w.flush();
+	}
+
+
 	public static void main(String[] args) throws Exception {
 		if (args.length != 2) {
 			System.out.println("USAGE: GrammarVector <SOUNDFILE.WAV> <\"transcription\">");
@@ -289,6 +313,8 @@ public class GrammarVector {
 
 		System.out.println("done");
 		System.out.println("GRAPH SIZE: " + gv.states.length);
+
+		gv.dumpDot(new FileWriter("grammar_vector.dot"));
 	}
 
 }
