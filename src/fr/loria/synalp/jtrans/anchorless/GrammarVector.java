@@ -110,7 +110,6 @@ public class GrammarVector {
 				succ[parentId][ntrans[parentId]++] = stateId - 2;
 				System.out.println(String.format(
 						"traverse: new link: %s>%s", parent, node));
-				// TODO: inter-phone transitions with uniform probabilities
 			}
 		}
 
@@ -129,6 +128,11 @@ public class GrammarVector {
 				index = traversePhoneGraph(
 						sucNode, parent, parentId, index, visited, acMod, unitMgr);
 			}
+
+			// Now that all transitions have been set by the recursive calls,
+			// we can correct the inter-phone transition probabilities
+			if (!node.isEmpty())
+				setUniformInterPhoneTransitionProbabilities(stateId);
 		}
 
 		return index;
@@ -189,6 +193,29 @@ public class GrammarVector {
 				}
 			}
 		}
+	}
+
+
+	/**
+	 * Sets uniform inter-phone probabilities on the last state of an HMM.
+	 * @param stateId ID of the last (3rd) state of an HMM
+	 */
+	private void setUniformInterPhoneTransitionProbabilities(int stateId) {
+		assert stateId % 3 == 2 : "must be a third state";
+
+		if (ntrans[stateId] < 2)
+			return;
+
+		assert prob[stateId][0] != 0f : "loop probability can't be 0";
+		assert prob[stateId][1] == 0f : "non-loop probabilities must be 0";
+
+		LogMath lm = HMMModels.getLogMath();
+		double linearLoopProb = lm.logToLinear(prob[stateId][0]);
+		float p = lm.linearToLog(
+				(1f - linearLoopProb) / (double)(ntrans[stateId] - 1));
+
+		for (int j = 1; j < ntrans[stateId]; j++)
+			prob[stateId][j] = p;
 	}
 
 
