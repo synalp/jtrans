@@ -21,7 +21,7 @@ public class GrammarVector {
 
 	/**
 	 * If this value ever has to exceed 255 (overkill!), be sure to change
-	 * the type of the ntrans array.
+	 * the type of the nTrans array.
 	 */
 	public static final int MAX_TRANSITIONS = 10;
 
@@ -30,13 +30,19 @@ public class GrammarVector {
 	private HMMState[] states;
 
 	/** Number of transitions for each state */
-	private byte[] ntrans;
+	private byte[] nTrans;
 
 	/** Transition matrix: successor IDs */
 	private int[][] succ;
 
 	/** Transition matrix: probabilities */
 	private float[][] prob;
+
+	/** Total number of non-empty phones contained in the grammar. */
+	private final int nPhones;
+
+	/** Total number of HMM states in the grammar. */
+	private final int nStates;
 
 	/**
 	 * Counts undiscovered phones in a Sphinx4 grammar by traversing the grammar
@@ -107,7 +113,7 @@ public class GrammarVector {
 			// same parent, but it can be visited by multiple parents, so we
 			// need to create links for every parent.)
 			if (parentId >= 0) {
-				succ[parentId][ntrans[parentId]++] = stateId - 2;
+				succ[parentId][nTrans[parentId]++] = stateId - 2;
 				System.out.println(String.format(
 						"traverse: new link: %s>%s", parent, node));
 			}
@@ -172,9 +178,9 @@ public class GrammarVector {
 			succ[j][0] = j;
 			if (i < 2) {
 				succ[j][1] = j+1;
-				ntrans[j] = 2;
+				nTrans[j] = 2;
 			} else {
-				ntrans[j] = 1;
+				nTrans[j] = 1;
 			}
 
 			for (HMMStateArc arc: state.getSuccessors()) {
@@ -203,7 +209,7 @@ public class GrammarVector {
 	private void setUniformInterPhoneTransitionProbabilities(int stateId) {
 		assert stateId % 3 == 2 : "must be a third state";
 
-		if (ntrans[stateId] < 2)
+		if (nTrans[stateId] < 2)
 			return;
 
 		assert prob[stateId][0] != 0f : "loop probability can't be 0";
@@ -212,9 +218,9 @@ public class GrammarVector {
 		LogMath lm = HMMModels.getLogMath();
 		double linearLoopProb = lm.logToLinear(prob[stateId][0]);
 		float p = lm.linearToLog(
-				(1f - linearLoopProb) / (double)(ntrans[stateId] - 1));
+				(1f - linearLoopProb) / (double)(nTrans[stateId] - 1));
 
-		for (int j = 1; j < ntrans[stateId]; j++)
+		for (byte j = 1; j < nTrans[stateId]; j++)
 			prob[stateId][j] = p;
 	}
 
@@ -225,13 +231,13 @@ public class GrammarVector {
 	 * @see edu.cmu.sphinx.linguist.language.grammar
 	 */
 	public GrammarVector(GrammarNode node, AcousticModel acMod, UnitManager unitMgr) {
-		final int phoneCount = countPhones(node);
-		final int stateCount = 3 * phoneCount;
+		nPhones = countPhones(node);
+		nStates = 3 * nPhones;
 
-		states = new HMMState[stateCount];
-		ntrans = new byte    [stateCount];
-		succ   = new int     [stateCount][MAX_TRANSITIONS];
-		prob   = new float   [stateCount][MAX_TRANSITIONS];
+		states = new HMMState[nStates];
+		nTrans = new byte    [nStates];
+		succ   = new int     [nStates][MAX_TRANSITIONS];
+		prob   = new float   [nStates][MAX_TRANSITIONS];
 
 		traversePhoneGraph(
 				node,
@@ -289,11 +295,11 @@ public class GrammarVector {
 
 		w.write("digraph {");
 
-		for (int i = 0; i < states.length; i++) {
+		for (int i = 0; i < nStates; i++) {
 			HMMState s = states[i];
 			w.write(String.format("\nnode%d [ label=\"%s %d\" ]", i,
 					s.getHMM().getBaseUnit().getName(), s.getState()));
-			for (int j = 0; j < ntrans[i]; j++) {
+			for (byte j = 0; j < nTrans[i]; j++) {
 				w.write(String.format("\nnode%d -> node%d [ label=%f ]",
 						i, succ[i][j], lm.logToLinear(prob[i][j])));
 			}
@@ -322,10 +328,11 @@ public class GrammarVector {
 		TiedStateAcousticModel acmod = (TiedStateAcousticModel) HMMModels.getAcousticModels();
 
 		GrammarVector gv = new GrammarVector(words, acmod, unitmgr);
+		System.out.println("GRAPH SIZE: " + gv.nStates);
+		gv.dumpDot(new FileWriter("grammar_vector.dot"));
 
 		AudioFileDataSource afds = (AudioFileDataSource)cm.lookup("audioFileDataSource");
 		afds.setAudioFile(new File(wavpath), null);
-
 		S4mfccBuffer mfcc = new S4mfccBuffer();
 		mfcc.setSource(S4ForceAlignBlocViterbi.getFrontEnd(afds));
 
@@ -339,9 +346,6 @@ public class GrammarVector {
 		}
 
 		System.out.println("done");
-		System.out.println("GRAPH SIZE: " + gv.states.length);
-
-		gv.dumpDot(new FileWriter("grammar_vector.dot"));
 	}
 
 }
