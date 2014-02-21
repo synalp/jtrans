@@ -277,17 +277,6 @@ public class GrammarVector {
 
 
 	/**
-	 * Scores a frame according to every state in the vector.
-	 */
-	public void scoreFrame(Data frame, TiedStateAcousticModel acMod, UnitManager unitMgr) {
-		for (HMMState state: states) {
-			float score = state.getScore(frame);
-			System.out.println(state + "\t" + score);
-		}
-	}
-
-
-	/**
 	 * Dumps a GraphViz/DOT representation of the vector.
 	 */
 	public void dumpDot(Writer w) throws IOException {
@@ -307,6 +296,67 @@ public class GrammarVector {
 
 		w.write("\n}");
 		w.flush();
+	}
+
+
+	public void viterbi(S4mfccBuffer mfcc) {
+		float[] pv         = new float[nStates]; // previous vector
+		float[] cv         = new float[nStates]; // current vector
+
+		// Emission probability (frame score)
+		float[] pEmission  = new float[nStates];
+
+		// Probability to reach a state given the previous vector
+		// max(pTransition(parent->s) * pv[s]) for each parent of state 's'
+		float[] pReachMax  = new float[nStates];
+
+		// State that yielded pReachMax for each state
+		// TODO: save at each iteration
+		int  [] bestParent = new int  [nStates];
+
+		//----------------------------------------------------------------------
+
+		// Initialize vector
+		// We only have one initial state (state #0), probability 1
+		// Probabilities are in the log domain
+		Arrays.fill(cv, Float.NEGATIVE_INFINITY);
+		cv[0] = 0;
+
+		for (int f = 0; !mfcc.noMoreFramesAvailable; f++) {
+			Data frame = mfcc.getData();
+			if (frame instanceof DataStartSignal || frame instanceof DataEndSignal)
+				continue;
+
+			// Score frame according to each state in the vector
+			System.out.println("Scoring Frame: " + f);
+			for (int i = 0; i < nStates; i++)
+				pEmission[i] = states[i].getScore(frame);
+
+			// TODO these fills may not be very efficient
+			Arrays.fill(pReachMax, Float.NEGATIVE_INFINITY);
+			Arrays.fill(bestParent, -1);
+
+			for (int parent = 0; parent < nStates; parent++) {
+				// TODO: skip if pv[parent] is negative infinity?
+				for (byte snt = 0; snt < nTrans[parent]; snt++) {
+					int s = succ[parent][snt];
+					float pReach = prob[parent][snt] + pv[parent]; // log domain
+					if (pReach > pReachMax[s]) {
+						pReachMax[s] = pReach;
+						bestParent[s] = parent;
+					}
+				}
+			}
+
+			for (int s = 0; s < nStates; s++) {
+				cv[s] = pEmission[s] + pReachMax[s]; // log domain
+				System.out.println("CV[" + s + "] " + cv[s]);
+			}
+
+			float[] recycled = pv;
+			pv = cv;
+			cv = recycled; // Avoid creating new arrays, recycle old pv as cv
+		}
 	}
 
 
@@ -336,15 +386,8 @@ public class GrammarVector {
 		S4mfccBuffer mfcc = new S4mfccBuffer();
 		mfcc.setSource(S4ForceAlignBlocViterbi.getFrontEnd(afds));
 
-		int f = 0;
-		while (!mfcc.noMoreFramesAvailable) {
-			Data data = mfcc.getData();
-			if (data instanceof DataStartSignal || data instanceof DataEndSignal)
-				continue;
-			System.out.println("Scoring Frame: " + (f++));
-			gv.scoreFrame(data, acmod, unitmgr);
-		}
-
+		System.out.println("Starting Viterbi...");
+		gv.viterbi(mfcc);
 		System.out.println("done");
 	}
 
