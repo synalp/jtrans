@@ -9,6 +9,7 @@ import edu.cmu.sphinx.util.LogMath;
 import edu.cmu.sphinx.util.props.ConfigurationManager;
 import fr.loria.synalp.jtrans.speechreco.s4.*;
 import fr.loria.synalp.jtrans.utils.StdoutProgressDisplay;
+import fr.loria.synalp.jtrans.utils.TimeConverter;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -299,7 +300,10 @@ public class GrammarVector {
 	}
 
 
-	public void viterbi(S4mfccBuffer mfcc) {
+	/**
+	 * @return an array containing the best state for each frame
+	 */
+	public int[] viterbi(S4mfccBuffer mfcc) {
 		float[] pv         = new float[nStates]; // previous vector
 		float[] cv         = new float[nStates]; // current vector
 
@@ -311,8 +315,9 @@ public class GrammarVector {
 		float[] pReachMax  = new float[nStates];
 
 		// State that yielded pReachMax for each state
-		// TODO: save at each iteration
 		int  [] bestParent = new int  [nStates];
+
+		Deque<int[]> backtrack = new ArrayDeque<int[]>();
 
 		//----------------------------------------------------------------------
 
@@ -350,13 +355,46 @@ public class GrammarVector {
 
 			for (int s = 0; s < nStates; s++) {
 				cv[s] = pEmission[s] + pReachMax[s]; // log domain
-				System.out.println("CV[" + s + "] " + cv[s]);
 			}
 
 			float[] recycled = pv;
 			pv = cv;
 			cv = recycled; // Avoid creating new arrays, recycle old pv as cv
+
+			int[] bestParentCopy = new int[nStates];
+			System.arraycopy(bestParent, 0, bestParentCopy, 0, nStates);
+			backtrack.add(bestParentCopy);
 		}
+
+		for (int s = 0; s < nStates; s++) {
+			System.out.println("CV[" + s + "] " + cv[s]);
+		}
+
+		System.out.println("Backtracking...");
+		System.out.println(String.format(
+				"Appx. footprint of backtrack stack: %dKB",
+				backtrack.size() * (8+4+nStates*4) / 1024));
+		System.out.println(Integer.SIZE);
+
+		int pathLead = nStates-1;
+		int[] timeline = new int[backtrack.size()];
+		while (!backtrack.isEmpty()) {
+			pathLead = backtrack.pop()[pathLead];
+			timeline[backtrack.size()] = pathLead;
+		}
+
+		System.out.println("Note: only initial states are shown below");
+		System.out.println("    TIME   STATE#     UNIT");
+		for (int i = 0; i < timeline.length; i++) {
+			if (i == 0 || timeline[i-1]/3 != timeline[i]/3) {
+				System.out.println(String.format("%8.2f %8d %8s",
+						TimeConverter.frame2sec(i),
+						timeline[i],
+						states[timeline[i]].getHMM().getBaseUnit()));
+			}
+		}
+
+		return timeline;
 	}
 
 
