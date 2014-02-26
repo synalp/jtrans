@@ -260,13 +260,12 @@ public class PhoneticForcedGrammar extends JSGFGrammar {
 		}
 	}
 	
-	HashMap<String, String> phmap = null;
-	protected String convertPhone(String ph) {
-		if (phmap==null) {
+	private static HashMap<String, String> phmap = new HashMap<String, String>()
+	{{
 			// TODO: je ne suis pas sur de cette conversion: la verifier !
 			final String[] from = {"xx",  "J", "euf","H","a","an","in","b","d","e","E","eh" ,"eu","f","g","i","j","k","l","m","n","o","O", "oh","on","p","R","s","sil","SIL","swa","t","u","v","y","z","Z", "S", "w"};
 			final String[] to =   {"SIL", "gn","euf","y","a","an","in","b","d","e","eh","eh","eu","f","g","i","j","k","l","m","n","o","oh","oh","on","p","r","s","SIL","SIL","swa","t","u","v","y","z","ge","ch","w"};
-			
+
 //			// on verifie que tous les phones des HMMs sont connus
 //			AcousticModel mods = HMMModels.getAcousticModels();
 //			Iterator<HMM> it = mods.getHMMIterator();
@@ -275,11 +274,13 @@ public class PhoneticForcedGrammar extends JSGFGrammar {
 //				String nom = hmm.getBaseUnit().getName();
 //				assert Arrays.binarySearch(to, nom)<0;
 //			}
-			phmap = new HashMap<String, String>();
+
 			for (int i=0;i<from.length;i++) {
-				phmap.put(from[i], to[i]);
+				put(from[i], to[i]);
 			}
-		}
+	}};
+
+	public static String convertPhone(String ph) {
 		String phh = phmap.get(ph);
 		if (phh==null) {
 			System.out.println("ERROR phonecticgram convertPhones UNKNOWN PHONE "+ph);
