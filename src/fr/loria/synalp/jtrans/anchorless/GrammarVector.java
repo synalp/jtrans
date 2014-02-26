@@ -276,8 +276,6 @@ public class GrammarVector {
 		// add initial mandatory silence
 		parseRule("SIL", tails, acMod, unitMgr);
 
-		// TODO: setUniformInterPhoneTransitionProbabilities
-
 		for (String w: words) {
 			if (firstWord) {
 				firstWord = false;
@@ -299,6 +297,10 @@ public class GrammarVector {
 		parseRule("SIL", tails, acMod, unitMgr);
 
 		assert insertionPoint == nStates;
+		// correct inter-phone transition probabilities
+		for (int i = 2; i < nStates; i += 3) {
+			setUniformInterPhoneTransitionProbabilities(i);
+		}
 	}
 
 
