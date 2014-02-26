@@ -98,7 +98,8 @@ public class GrammarVector {
 			boolean isSymbol = NONPHONE_PATTERN.matcher(token).matches();
 
 			if (!isSymbol) {
-				parentId = insertStateTriplet(token, parentId, acMod, unitMgr);
+				String phone = PhoneticForcedGrammar.convertPhone(token);
+				parentId = insertStateTriplet(phone, parentId, acMod, unitMgr);
 				// TODO: bind!
 			} else {
 				if (token.equals("(")) {
