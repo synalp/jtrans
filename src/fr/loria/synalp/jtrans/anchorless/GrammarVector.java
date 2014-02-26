@@ -403,7 +403,7 @@ public class GrammarVector {
 
 			int[] bestParentCopy = new int[nStates];
 			System.arraycopy(bestParent, 0, bestParentCopy, 0, nStates);
-			backtrack.add(bestParentCopy);
+			backtrack.push(bestParentCopy);
 		}
 
 		for (int s = 0; s < nStates; s++) {
