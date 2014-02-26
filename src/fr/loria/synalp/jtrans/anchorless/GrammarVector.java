@@ -301,6 +301,9 @@ public class GrammarVector {
 		for (int i = 2; i < nStates; i += 3) {
 			setUniformInterPhoneTransitionProbabilities(i);
 		}
+
+		// last state can loop forever
+		prob[nStates-1][0] = 0f; // log domain
 	}
 
 
