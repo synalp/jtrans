@@ -64,7 +64,9 @@ public class GrammarVector {
 	 * Counts phones in a list of words.
 	 */
 	public static int countPhones(List<String> words) {
-		int count = 2; // mandatory initial and final silences
+		// mandatory initial and final silences
+		// plus one optional silence between each word
+		int count = 1 + words.size();
 
 		for (String w: words) {
 			String rule = Grammatiseur.getGrammatiseur().getGrammar(w);
@@ -79,6 +81,7 @@ public class GrammarVector {
 
 	/**
 	 * Parses a grammar rule and adds the corresponding states to the vector.
+	 * The states are bound together as needed, effectively creating a graph.
 	 * @param tokenIter iterator on rule tokens
 	 * @param tails IDs of states that have no outbound transitions yet (they
 	 *              are always the 3rd state in a phone). New states will be
@@ -147,6 +150,24 @@ public class GrammarVector {
 		}
 
 		return null;
+	}
+
+
+	/**
+	 * Convenience method to parse a rule from a string.
+	 * See the main parseRule method for more information.
+	 */
+	private String parseRule(
+			String rule,
+			Set<Integer> tails,
+			AcousticModel acMod,
+			UnitManager unitMgr)
+	{
+		return parseRule(
+				Arrays.asList(trimSplit(rule)).iterator(),
+				tails,
+				acMod,
+				unitMgr);
 	}
 
 
@@ -249,35 +270,33 @@ public class GrammarVector {
 		// Build state graph
 
 		Grammatiseur gram = Grammatiseur.getGrammatiseur();
-
-		List<String> silenceRule = new ArrayList<String>();
-		silenceRule.add("SIL");
-
 		Set<Integer> tails = new HashSet<Integer>();
+		boolean firstWord = true;
 
-		// add initial silence
-		parseRule(silenceRule.iterator(), tails, acMod, unitMgr);
+		// add initial mandatory silence
+		parseRule("SIL", tails, acMod, unitMgr);
 
-		// TODO: inter-phone optional silences
 		// TODO: setUniformInterPhoneTransitionProbabilities
 
 		for (String w: words) {
+			if (firstWord) {
+				firstWord = false;
+			} else {
+				// optional silence between two words
+				parseRule("[ SIL ]", tails, acMod, unitMgr);
+			}
+
 			String rule = gram.getGrammar(w);
 			System.out.println("Rule: " + rule);
 			assert rule != null;
 			assert !rule.isEmpty();
 
-			String token = parseRule(
-					Arrays.asList(trimSplit(rule)).iterator(),
-					tails,
-					acMod,
-					unitMgr);
-
+			String token = parseRule(rule, tails, acMod, unitMgr);
 			assert token == null;
 		}
 
-		// add final silence
-		parseRule(silenceRule.iterator(), tails, acMod, unitMgr);
+		// add final mandatory silence
+		parseRule("SIL", tails, acMod, unitMgr);
 
 		assert insertionPoint == nStates;
 	}
