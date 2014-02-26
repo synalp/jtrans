@@ -361,11 +361,11 @@ public class GrammarVector {
 
 		//----------------------------------------------------------------------
 
-		// Initialize vector
+		// Initialize pv (previous vector)
+		// (the initial contents of cv don't matter -- will be overwritten)
 		// We only have one initial state (state #0), probability 1
-		// Probabilities are in the log domain
-		Arrays.fill(cv, Float.NEGATIVE_INFINITY);
-		cv[0] = 0;
+		Arrays.fill(pv, Float.NEGATIVE_INFINITY);
+		pv[0] = 0; // Probabilities are in the log domain
 
 		for (int f = 0; !mfcc.noMoreFramesAvailable; f++) {
 			Data frame = mfcc.getData();
