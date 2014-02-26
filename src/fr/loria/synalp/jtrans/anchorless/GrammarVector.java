@@ -80,42 +80,69 @@ public class GrammarVector {
 	/**
 	 * Parses a grammar rule and adds the corresponding states to the vector.
 	 * @param tokenIter iterator on rule tokens
-	 * @param parentId ID of the last (third) HMMState of the parent state. Use
-	 *                 a negative number if you do not want to bind the
-	 *                 generated states to any parent state.
+	 * @param tails IDs of states that have no outbound transitions yet (they
+	 *              are always the 3rd state in a phone). New states will be
+	 *              chained to tail states. IMPORTANT: this set is modified by
+	 *              this method! After the method has run, the set contains the
+	 *              new tails in the graph.
 	 * @return token an unknown token that stopped the parsing of the grammar,
 	 * or null if the entire token stream has been parsed successfully
 	 */
 	private String parseRule(
 			Iterator<String> tokenIter,
-			int parentId,
+			Set<Integer> tails,
 			AcousticModel acMod,
 			UnitManager unitMgr)
 	{
 		while (tokenIter.hasNext()) {
 			String token = tokenIter.next();
 
-			boolean isSymbol = NONPHONE_PATTERN.matcher(token).matches();
+			if (!NONPHONE_PATTERN.matcher(token).matches()) {
+				// Compulsory 1-token path
+				// Replace existing tails
 
-			if (!isSymbol) {
 				String phone = PhoneticForcedGrammar.convertPhone(token);
-				parentId = insertStateTriplet(phone, parentId, acMod, unitMgr);
-				// TODO: bind!
-			} else {
-				if (token.equals("(")) {
-					// Multiple choice
-					do {
-						token = parseRule(tokenIter, parentId, acMod, unitMgr);
-					} while (token.equals("|"));
-					assert token.equals(")");
+
+				// Bind tails to the 1st state that is going to be created
+				for (Integer parentId: tails) {
+					succ[parentId][nTrans[parentId]++] = insertionPoint;
 				}
-				else if (token.equals("[")) {
-					token = parseRule(tokenIter, parentId, acMod, unitMgr);
-					assert token.equals("]");
-				}
-				else {
-					return token;
-				}
+
+				// New sole tail is future 3rd state
+				tails.clear();
+				tails.add(insertionPoint + 2);
+
+				// Create the actual states
+				insertStateTriplet(phone, acMod, unitMgr);
+			}
+
+			else if (token.equals("(")) {
+				// Compulsory multiple choice path
+				// Replace existing tails
+
+				Set<Integer> tailsCopy = new HashSet<Integer>(tails);
+				tails.clear();
+
+				do {
+					Set<Integer> newTails = new HashSet<Integer>(tailsCopy);
+					token = parseRule(tokenIter, newTails, acMod, unitMgr);
+					tails.addAll(newTails);
+				} while (token.equals("|"));
+				assert token.equals(")");
+			}
+
+			else if (token.equals("[")) {
+				// Optional path
+				// Append new tails to existing tails
+
+				Set<Integer> subTails = new HashSet<Integer>(tails);
+				token = parseRule(tokenIter, subTails, acMod, unitMgr);
+				tails.addAll(subTails);
+				assert token.equals("]");
+			}
+
+			else {
+				return token;
 			}
 		}
 
@@ -124,16 +151,12 @@ public class GrammarVector {
 
 
 	/**
-	 * Inserts three emitting HMM states corresponding to a phone, and binds the
-	 * first state to a parent state. The last state is left with no other
-	 * successor than itself.
-	 * @param parentId ID of the last (third) HMMState of the parent node. Use a
-	 *                 negative number if you do not want to bind the generated
-	 *                 states to any parent state.
+	 * Inserts three emitting HMM states corresponding to a phone.
+	 * Binds the three states together. The first state has no inbound
+	 * transitions and the third state has no outbound transitions.
 	 */
 	private int insertStateTriplet(
 			String phone,
-			final int parentId,
 			final AcousticModel acMod,
 			final UnitManager unitMgr)
 	{
@@ -177,9 +200,6 @@ public class GrammarVector {
 				}
 			}
 		}
-
-		if (parentId >= 0)
-			succ[parentId][nTrans[parentId]++] = insertionPoint;
 
 		insertionPoint += 3;
 		return insertionPoint - 1;
@@ -233,29 +253,31 @@ public class GrammarVector {
 		List<String> silenceRule = new ArrayList<String>();
 		silenceRule.add("SIL");
 
-		// add initial silence
-		parseRule(silenceRule.iterator(), -1, acMod, unitMgr);
+		Set<Integer> tails = new HashSet<Integer>();
 
-		// TODO: bind phonemes together, incl. initial & final silences
+		// add initial silence
+		parseRule(silenceRule.iterator(), tails, acMod, unitMgr);
+
+		// TODO: inter-phone optional silences
 		// TODO: setUniformInterPhoneTransitionProbabilities
 
 		for (String w: words) {
 			String rule = gram.getGrammar(w);
-
+			System.out.println("Rule: " + rule);
 			assert rule != null;
 			assert !rule.isEmpty();
 
-			String stumble = parseRule(
+			String token = parseRule(
 					Arrays.asList(trimSplit(rule)).iterator(),
-					insertionPoint-1,
+					tails,
 					acMod,
 					unitMgr);
 
-			assert stumble == null;
+			assert token == null;
 		}
 
 		// add final silence
-		parseRule(silenceRule.iterator(), insertionPoint-1, acMod, unitMgr);
+		parseRule(silenceRule.iterator(), tails, acMod, unitMgr);
 
 		assert insertionPoint == nStates;
 	}
