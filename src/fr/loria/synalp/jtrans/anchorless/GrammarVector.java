@@ -340,8 +340,7 @@ public class GrammarVector {
 	 * @return an array containing the best state for each frame
 	 */
 	public int[] viterbi(S4mfccBuffer mfcc) {
-		float[] pv         = new float[nStates]; // previous vector
-		float[] cv         = new float[nStates]; // current vector
+		float[] v          = new float[nStates]; // probability vector
 
 		// Emission probability (frame score)
 		float[] pEmission  = new float[nStates];
@@ -357,11 +356,10 @@ public class GrammarVector {
 
 		//----------------------------------------------------------------------
 
-		// Initialize pv (previous vector)
-		// (the initial contents of cv don't matter -- will be overwritten)
+		// Initialize probability vector
 		// We only have one initial state (state #0), probability 1
-		Arrays.fill(pv, Float.NEGATIVE_INFINITY);
-		pv[0] = 0; // Probabilities are in the log domain
+		Arrays.fill(v, Float.NEGATIVE_INFINITY);
+		v[0] = 0; // Probabilities are in the log domain
 
 		for (int f = 0; !mfcc.noMoreFramesAvailable; f++) {
 			Data frame = mfcc.getData();
@@ -380,7 +378,7 @@ public class GrammarVector {
 			for (int parent = 0; parent < nStates; parent++) {
 				for (byte snt = 0; snt < nTrans[parent]; snt++) {
 					int s = succ[parent][snt];
-					float pReach = prob[parent][snt] + pv[parent]; // log domain
+					float pReach = prob[parent][snt] + v[parent]; // log domain
 					if (pReach > pReachMax[s]) {
 						pReachMax[s] = pReach;
 						bestParent[s] = parent;
@@ -389,12 +387,9 @@ public class GrammarVector {
 			}
 
 			for (int s = 0; s < nStates; s++) {
-				cv[s] = pEmission[s] + pReachMax[s]; // log domain
+				v[s] = pEmission[s] + pReachMax[s]; // log domain
 			}
 
-			float[] recycled = pv;
-			pv = cv;
-			cv = recycled; // Avoid creating new arrays, recycle old pv as cv
 
 			int[] bestParentCopy = new int[nStates];
 			System.arraycopy(bestParent, 0, bestParentCopy, 0, nStates);
@@ -402,7 +397,7 @@ public class GrammarVector {
 		}
 
 		for (int s = 0; s < nStates; s++) {
-			System.out.println("CV[" + s + "] " + cv[s]);
+			System.out.println("V[" + s + "] " + v[s]);
 		}
 
 		System.out.println("Backtracking...");
