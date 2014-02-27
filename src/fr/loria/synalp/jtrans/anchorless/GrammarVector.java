@@ -435,7 +435,9 @@ public class GrammarVector {
 		}
 
 		final String wavpath = args[0];
-		final String words   = args[1];
+
+		final String words = new Scanner(new File(args[1])).useDelimiter("\\Z")
+				.next().replaceAll("[\\n\\r\u001f]", " ");
 
 		ConfigurationManager cm = new ConfigurationManager("sr.cfg");
 		UnitManager unitmgr = (UnitManager)cm.lookup("unitManager");
