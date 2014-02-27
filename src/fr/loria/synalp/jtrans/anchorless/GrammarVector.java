@@ -3,7 +3,6 @@ package fr.loria.synalp.jtrans.anchorless;
 import edu.cmu.sphinx.frontend.*;
 import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
 import edu.cmu.sphinx.linguist.acoustic.*;
-import edu.cmu.sphinx.linguist.acoustic.tiedstate.TiedStateAcousticModel;
 import edu.cmu.sphinx.util.LogMath;
 import edu.cmu.sphinx.util.props.ConfigurationManager;
 import fr.loria.synalp.jtrans.speechreco.grammaire.Grammatiseur;
@@ -25,9 +24,14 @@ public class GrammarVector {
 	 */
 	public static final int MAX_TRANSITIONS = 10;
 
-	/** All HMM states in the grammar.
-	 * TODO: speed up scoring with a set of unique states */
+	/** Pattern for non-phone grammar tokens. */
+	public final static Pattern NONPHONE_PATTERN =
+			Pattern.compile("^[^a-zA-Z]$");
+
+	/** All HMM states in the grammar. */
 	private HMMState[] states;
+	// Note: using a set of unique states barely improves performance since
+	// scores are typically cached (see ScoreCachingSenone.getScore)
 
 	/** Number of transitions for each state */
 	private byte[] nTrans;
@@ -47,9 +51,6 @@ public class GrammarVector {
 	/** Insertion point for new states in the states array. */
 	private int insertionPoint;
 
-	/** Pattern for non-phone grammar tokens. */
-	public final static Pattern NONPHONE_PATTERN =
-			Pattern.compile("^[^a-zA-Z]$");
 
 
 	/**
@@ -237,8 +238,8 @@ public class GrammarVector {
 		if (nTrans[stateId] < 2)
 			return;
 
-		assert prob[stateId][0] != 0f : "loop probability can't be 0";
-		assert prob[stateId][1] == 0f : "non-loop probabilities must be 0";
+		assert prob[stateId][0] != 0f : "loop probability must be initialized";
+		assert prob[stateId][1] == 0f : "non-loop probabilities must be uninitialized";
 
 		LogMath lm = HMMModels.getLogMath();
 		double linearLoopProb = lm.logToLinear(prob[stateId][0]);
@@ -254,10 +255,11 @@ public class GrammarVector {
 	 * Constructs a grammar vector from a list of words.
 	 */
 	public GrammarVector(
-			List<String> words,
+			String text,
 			AcousticModel acMod,
 			UnitManager unitMgr)
 	{
+		List<String> words = Arrays.asList(trimSplit(text));
 		nPhones = countPhones(words);
 		nStates = 3 * nPhones;
 
@@ -304,16 +306,10 @@ public class GrammarVector {
 
 		// last state can loop forever
 		prob[nStates-1][0] = 0f; // log domain
-	}
 
-
-	/**
-	 * Constructs a grammar vector from a piece of text.
-	 * @param text words separated by spaces
-	 */
-	public GrammarVector(String text, AcousticModel acMod, UnitManager unitMgr)
-	{
-		this(Arrays.asList(trimSplit(text)), acMod, unitMgr);
+		assert insertionPoint == nStates : "predicted state count not met";
+		assert nTrans[nStates-1] == 1 : "last state can only have 1 transition";
+		assert succ[nStates-1][0] == nStates - 1 : "last state can only transition to itself";
 	}
 
 
@@ -374,15 +370,14 @@ public class GrammarVector {
 
 			// Score frame according to each state in the vector
 			System.out.println("Scoring Frame: " + f);
-			for (int i = 0; i < nStates; i++)
+			for (int i = 0; i < nStates; i++) {
 				pEmission[i] = states[i].getScore(frame);
+			}
 
-			// TODO these fills may not be very efficient
 			Arrays.fill(pReachMax, Float.NEGATIVE_INFINITY);
 			Arrays.fill(bestParent, -1);
 
 			for (int parent = 0; parent < nStates; parent++) {
-				// TODO: skip if pv[parent] is negative infinity?
 				for (byte snt = 0; snt < nTrans[parent]; snt++) {
 					int s = succ[parent][snt];
 					float pReach = prob[parent][snt] + pv[parent]; // log domain
@@ -414,13 +409,13 @@ public class GrammarVector {
 		System.out.println(String.format(
 				"Appx. footprint of backtrack stack: %dKB",
 				backtrack.size() * (8+4+nStates*4) / 1024));
-		System.out.println(Integer.SIZE);
 
 		int pathLead = nStates-1;
 		int[] timeline = new int[backtrack.size()];
 		while (!backtrack.isEmpty()) {
 			pathLead = backtrack.pop()[pathLead];
 			timeline[backtrack.size()] = pathLead;
+			assert pathLead >= 0;
 		}
 
 		System.out.println("Note: only initial states are shown below");
@@ -451,7 +446,7 @@ public class GrammarVector {
 		UnitManager unitmgr = (UnitManager)cm.lookup("unitManager");
 		assert unitmgr != null;
 
-		TiedStateAcousticModel acmod = (TiedStateAcousticModel) HMMModels.getAcousticModels();
+		AcousticModel acmod = HMMModels.getAcousticModels();
 
 		GrammarVector gv = new GrammarVector(words, acmod, unitmgr);
 		System.out.println("PHONE COUNT: " + gv.nPhones);
