@@ -10,6 +10,7 @@ import fr.loria.synalp.jtrans.speechreco.s4.*;
 import fr.loria.synalp.jtrans.utils.TimeConverter;
 
 import java.io.*;
+import java.text.DecimalFormat;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -339,7 +340,12 @@ public class GrammarVector {
 	/**
 	 * @return an array containing the best state for each frame
 	 */
-	public int[] viterbi(S4mfccBuffer mfcc) {
+	public void viterbi(
+			S4mfccBuffer mfcc,
+			OutputStream swapOS,
+			final int framesPerSwapSegment)
+			throws IOException
+	{
 		float[] v          = new float[nStates]; // probability vector
 
 		// Emission probability (frame score)
@@ -352,7 +358,11 @@ public class GrammarVector {
 		// State that yielded pReachMax for each state
 		int  [] bestParent = new int  [nStates];
 
-		Deque<int[]> backtrack = new ArrayDeque<int[]>();
+		DataOutputStream swapDOS = new DataOutputStream(
+				new BufferedOutputStream(swapOS));
+
+		DecimalFormat largeNumberFormatter = new DecimalFormat("#,###");
+		long written = 0L;
 
 		//----------------------------------------------------------------------
 
@@ -367,7 +377,14 @@ public class GrammarVector {
 				continue;
 
 			// Score frame according to each state in the vector
-			System.out.println("Scoring Frame: " + f);
+			if (f % framesPerSwapSegment == 0) {
+				System.out.println(String.format(
+						"[Frame %d] backtrack footprint: %s",
+						f,
+						largeNumberFormatter.format(written)));
+				swapDOS.flush();
+			}
+
 			for (int i = 0; i < nStates; i++) {
 				pEmission[i] = states[i].getScore(frame);
 			}
@@ -390,20 +407,22 @@ public class GrammarVector {
 				v[s] = pEmission[s] + pReachMax[s]; // log domain
 			}
 
-
-			int[] bestParentCopy = new int[nStates];
-			System.arraycopy(bestParent, 0, bestParentCopy, 0, nStates);
-			backtrack.push(bestParentCopy);
+			for (int i = 0; i < nStates; i++)
+				swapDOS.writeInt(bestParent[i]);
+			written += 4 * nStates;
 		}
 
 		for (int s = 0; s < nStates; s++) {
 			System.out.println("V[" + s + "] " + v[s]);
 		}
 
+		swapDOS.flush();
+		swapDOS.close();
+	}
+
+
+	public int[] backtrack(Deque<int[]> backtrack) {
 		System.out.println("Backtracking...");
-		System.out.println(String.format(
-				"Appx. footprint of backtrack stack: %dKB",
-				backtrack.size() * (8+4+nStates*4) / 1024));
 
 		int pathLead = nStates-1;
 		int[] timeline = new int[backtrack.size()];
@@ -456,7 +475,7 @@ public class GrammarVector {
 		mfcc.setSource(S4ForceAlignBlocViterbi.getFrontEnd(afds));
 
 		System.out.println("Starting Viterbi...");
-		gv.viterbi(mfcc);
+		gv.viterbi(mfcc, new FileOutputStream("backtrack.swp"), 1000);
 		System.out.println("done");
 	}
 
