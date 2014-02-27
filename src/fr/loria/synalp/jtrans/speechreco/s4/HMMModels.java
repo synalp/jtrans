@@ -30,7 +30,7 @@ public abstract class HMMModels {
 
 	public static LogMath getLogMath() {
 		// Sphinx's default log base = 1.0001 (cf. LogMath.java)
-		if (logMath==null) logMath = new LogMath(1.0001f,true);
+		if (logMath==null) logMath = new LogMath(2,true);
 		return logMath;
 	}
 
