@@ -338,9 +338,9 @@ public class GrammarVector {
 
 
 	/**
-	 * @return an array containing the best state for each frame
+	 * @return effective frame count (does not include non-data frames)
 	 */
-	public void viterbi(
+	public int viterbi(
 			S4mfccBuffer mfcc,
 			OutputStream swapOS,
 			final int framesPerSwapSegment)
@@ -371,10 +371,13 @@ public class GrammarVector {
 		Arrays.fill(v, Float.NEGATIVE_INFINITY);
 		v[0] = 0; // Probabilities are in the log domain
 
+		int effectiveFrameCount = 0;
 		for (int f = 0; !mfcc.noMoreFramesAvailable; f++) {
 			Data frame = mfcc.getData();
 			if (frame instanceof DataStartSignal || frame instanceof DataEndSignal)
 				continue;
+
+			effectiveFrameCount++;
 
 			// Score frame according to each state in the vector
 			if (f % framesPerSwapSegment == 0) {
@@ -418,17 +421,20 @@ public class GrammarVector {
 
 		swapDOS.flush();
 		swapDOS.close();
+
+		return effectiveFrameCount;
 	}
 
 
-	public int[] backtrack(Deque<int[]> backtrack) {
+	public int[] backtrack(int nFrames, RandomAccessFile raf) throws IOException {
 		System.out.println("Backtracking...");
 
 		int pathLead = nStates-1;
-		int[] timeline = new int[backtrack.size()];
-		while (!backtrack.isEmpty()) {
-			pathLead = backtrack.pop()[pathLead];
-			timeline[backtrack.size()] = pathLead;
+		int[] timeline = new int[nFrames];
+		for (int f = nFrames-1; f >= 0; f--) {
+			raf.seek(4L * ((long)f * (long)nStates + pathLead));
+			pathLead = raf.readInt();
+			timeline[f] = pathLead;
 			assert pathLead >= 0;
 		}
 
@@ -458,6 +464,8 @@ public class GrammarVector {
 		final String words = new Scanner(new File(args[1])).useDelimiter("\\Z")
 				.next().replaceAll("[\\n\\r\u001f]", " ");
 
+		String swapFile = "backtrack.swp";
+
 		ConfigurationManager cm = new ConfigurationManager("sr.cfg");
 		UnitManager unitmgr = (UnitManager)cm.lookup("unitManager");
 		assert unitmgr != null;
@@ -475,7 +483,10 @@ public class GrammarVector {
 		mfcc.setSource(S4ForceAlignBlocViterbi.getFrontEnd(afds));
 
 		System.out.println("Starting Viterbi...");
-		gv.viterbi(mfcc, new FileOutputStream("backtrack.swp"), 1000);
+
+		int frameCount = gv.viterbi(mfcc, new FileOutputStream(swapFile), 1000);
+		System.out.println("FRAME COUNT: " + frameCount);
+		gv.backtrack(frameCount, new RandomAccessFile(swapFile, "r"));
 		System.out.println("done");
 	}
 
