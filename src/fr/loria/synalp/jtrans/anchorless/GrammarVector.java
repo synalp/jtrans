@@ -5,12 +5,12 @@ import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
 import edu.cmu.sphinx.linguist.acoustic.*;
 import edu.cmu.sphinx.util.LogMath;
 import edu.cmu.sphinx.util.props.ConfigurationManager;
+import fr.loria.synalp.jtrans.facade.Cache;
 import fr.loria.synalp.jtrans.speechreco.grammaire.Grammatiseur;
 import fr.loria.synalp.jtrans.speechreco.s4.*;
 import fr.loria.synalp.jtrans.utils.TimeConverter;
 
 import java.io.*;
-import java.text.DecimalFormat;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -51,7 +51,6 @@ public class GrammarVector {
 
 	/** Insertion point for new states in the states array. */
 	private int insertionPoint;
-
 
 
 	/**
@@ -337,13 +336,9 @@ public class GrammarVector {
 	}
 
 
-	/**
-	 * @return effective frame count (does not include non-data frames)
-	 */
-	public int viterbi(
+	public void viterbi(
 			S4mfccBuffer mfcc,
-			OutputStream swapOS,
-			final int framesPerSwapSegment)
+			SwapDeflater swapWriter)
 			throws IOException
 	{
 		float[] v          = new float[nStates]; // probability vector
@@ -358,12 +353,6 @@ public class GrammarVector {
 		// State that yielded pReachMax for each state
 		int  [] bestParent = new int  [nStates];
 
-		DataOutputStream swapDOS = new DataOutputStream(
-				new BufferedOutputStream(swapOS));
-
-		DecimalFormat largeNumberFormatter = new DecimalFormat("#,###");
-		long written = 0L;
-
 		//----------------------------------------------------------------------
 
 		// Initialize probability vector
@@ -371,23 +360,12 @@ public class GrammarVector {
 		Arrays.fill(v, Float.NEGATIVE_INFINITY);
 		v[0] = 0; // Probabilities are in the log domain
 
-		int effectiveFrameCount = 0;
 		for (int f = 0; !mfcc.noMoreFramesAvailable; f++) {
 			Data frame = mfcc.getData();
 			if (frame instanceof DataStartSignal || frame instanceof DataEndSignal)
 				continue;
 
-			effectiveFrameCount++;
-
 			// Score frame according to each state in the vector
-			if (f % framesPerSwapSegment == 0) {
-				System.out.println(String.format(
-						"[Frame %d] backtrack footprint: %s",
-						f,
-						largeNumberFormatter.format(written)));
-				swapDOS.flush();
-			}
-
 			for (int i = 0; i < nStates; i++) {
 				pEmission[i] = states[i].getScore(frame);
 			}
@@ -410,30 +388,24 @@ public class GrammarVector {
 				v[s] = pEmission[s] + pReachMax[s]; // log domain
 			}
 
-			for (int i = 0; i < nStates; i++)
-				swapDOS.writeInt(bestParent[i]);
-			written += 4 * nStates;
+			swapWriter.write(bestParent);
 		}
 
 		for (int s = 0; s < nStates; s++) {
 			System.out.println("V[" + s + "] " + v[s]);
 		}
 
-		swapDOS.flush();
-		swapDOS.close();
-
-		return effectiveFrameCount;
+		swapWriter.close();
 	}
 
 
-	public int[] backtrack(int nFrames, RandomAccessFile raf) throws IOException {
+	public int[] backtrack(int nFrames, SwapInflater swapReader) throws IOException {
 		System.out.println("Backtracking...");
 
 		int pathLead = nStates-1;
 		int[] timeline = new int[nFrames];
 		for (int f = nFrames-1; f >= 0; f--) {
-			raf.seek(4L * ((long)f * (long)nStates + pathLead));
-			pathLead = raf.readInt();
+			pathLead = swapReader.get(f, pathLead);
 			timeline[f] = pathLead;
 			assert pathLead >= 0;
 		}
@@ -464,8 +436,6 @@ public class GrammarVector {
 		final String words = new Scanner(new File(args[1])).useDelimiter("\\Z")
 				.next().replaceAll("[\\n\\r\u001f]", " ");
 
-		String swapFile = "backtrack.swp";
-
 		ConfigurationManager cm = new ConfigurationManager("sr.cfg");
 		UnitManager unitmgr = (UnitManager)cm.lookup("unitManager");
 		assert unitmgr != null;
@@ -484,9 +454,25 @@ public class GrammarVector {
 
 		System.out.println("Starting Viterbi...");
 
-		int frameCount = gv.viterbi(mfcc, new FileOutputStream(swapFile), 1000);
-		System.out.println("FRAME COUNT: " + frameCount);
-		gv.backtrack(frameCount, new RandomAccessFile(swapFile, "r"));
+		File swapFile = Cache.getCacheFile("backtrack", "swp", words);
+		File indexFile = Cache.getCacheFile("backtrack", "idx", words);
+		swapFile.getParentFile().mkdirs();
+		indexFile.getParentFile().mkdirs();
+
+		boolean quick = false;
+		PageIndex index;
+		if (!quick) {
+			long t0 = System.currentTimeMillis();
+			SwapDeflater swapper = new SwapDeflater(1000, gv.nStates, new FileOutputStream(swapFile));
+			gv.viterbi(mfcc, swapper);
+			System.out.println("VITERBI TOOK " + (System.currentTimeMillis()-t0)/1000L + " SECONDS");
+			index = swapper.getIndex();
+			index.serialize(new FileOutputStream(indexFile));
+		} else {
+			index = PageIndex.deserialize(new FileInputStream(indexFile));
+		}
+		System.out.println("FRAME COUNT: " + index.getFrameCount());
+		gv.backtrack(index.getFrameCount(), new SwapInflater(gv.nStates, swapFile, index));
 		System.out.println("done");
 	}
 
