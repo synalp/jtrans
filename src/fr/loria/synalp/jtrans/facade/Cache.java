@@ -56,7 +56,7 @@ public class Cache {
 	 * @param identifiers hashable objects to be used in generating
 	 *                    the unique hash
 	 */
-	private static File getCacheFile(String cacheGroup,
+	public static File getCacheFile(String cacheGroup,
 									 String extension,
 									 Object... identifiers)
 	{
