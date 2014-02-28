@@ -50,18 +50,20 @@ class SwapDeflater {
 		def.setInput(rawBuf.array(), rawBuf.arrayOffset(),
 				(framesProcessed - framesFlushed) * frameLength);
 		def.finish();
+		assert !def.finished();
 
-		while (!def.needsInput()) {
-			int len = def.deflate(compBuf, 0, compBuf.length, Deflater.FULL_FLUSH);
+		while (!def.finished()) {
+			int len = def.deflate(compBuf);
 			if (len <= 0) {
 				System.out.print("c");
 				continue;
 			}
-			System.out.print(".");
+			System.out.print(def.needsInput()? "!": ".");
 			compressedBytesWritten += len;
 			out.write(compBuf, 0, len);
 		}
 
+		assert def.finished();
 		index.putPage(framesProcessed - framesFlushed, (int) def.getBytesWritten());
 		framesFlushed = framesProcessed;
 
