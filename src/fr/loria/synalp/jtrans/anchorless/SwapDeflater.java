@@ -7,21 +7,17 @@ import java.util.zip.Deflater;
 
 class SwapDeflater {
 
-	// TODO essayer avec un DeflaterOutputStream et des appels à finish()
-
 	private final int frameLength;
 	private final int maxFramesPerPage;
 
 	private OutputStream out;
 	private Deflater def;
 	private PageIndex index;
-	private int framesProcessed;
-	private int framesFlushed;
-	private long compressedBytesWritten;
 
 	private ByteBuffer rawBuf;
-	byte[] compBuf;
-	int[] previousBestParent;
+	private int framesInBuf;
+	private byte[] compBuf;
+	private int[] previousBestParent;
 
 
 	public SwapDeflater(int maxFPP, int nStates, OutputStream out)
@@ -48,29 +44,27 @@ class SwapDeflater {
 
 		def.reset();
 		def.setInput(rawBuf.array(), rawBuf.arrayOffset(),
-				(framesProcessed - framesFlushed) * frameLength);
+				framesInBuf * frameLength);
 		def.finish();
 		assert !def.finished();
 
 		while (!def.finished()) {
 			int len = def.deflate(compBuf);
-			if (len <= 0) {
-				System.out.print("c");
-				continue;
+			if (len > 0) {
+				out.write(compBuf, 0, len);
 			}
-			System.out.print(def.needsInput()? "!": ".");
-			compressedBytesWritten += len;
-			out.write(compBuf, 0, len);
+			System.out.print(len <= 0? "?": def.needsInput()? "!": ".");
 		}
 
 		assert def.finished();
-		index.putPage(framesProcessed - framesFlushed, (int) def.getBytesWritten());
-		framesFlushed = framesProcessed;
+
+		index.putPage(framesInBuf, (int)def.getBytesWritten());
+		framesInBuf = 0;
 
 		System.out.println(String.format(
 				"[Frame %d] backtrack footprint: %s",
-				framesProcessed,
-				compressedBytesWritten));
+				index.getFrameCount(),
+				index.getCompressedBytes()));
 
 		rawBuf.rewind();
 	}
@@ -85,9 +79,9 @@ class SwapDeflater {
 
 		System.arraycopy(n, 0, previousBestParent, 0, previousBestParent.length);
 
-		framesProcessed++;
+		framesInBuf++;
 
-		if ((framesProcessed - framesFlushed) % maxFramesPerPage == 0) {
+		if (framesInBuf % maxFramesPerPage == 0) {
 			fullFlush();
 			Arrays.fill(previousBestParent, 0);
 		}

@@ -67,6 +67,11 @@ public class PageIndex implements Serializable {
 	}
 
 
+	public long getCompressedBytes() {
+		return totalCompressedLength;
+	}
+
+
 	public void serialize(OutputStream out) throws IOException {
 		ObjectOutputStream oos = new ObjectOutputStream(out);
 		oos.writeObject(this);
