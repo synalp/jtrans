@@ -339,7 +339,7 @@ public class GrammarVector {
 	public void viterbi(
 			S4mfccBuffer mfcc,
 			SwapDeflater swapWriter)
-			throws IOException
+			throws IOException, InterruptedException
 	{
 		float[] v          = new float[nStates]; // probability vector
 
