@@ -1,4 +1,4 @@
-package fr.loria.synalp.jtrans.anchorless;
+package fr.loria.synalp.jtrans.viterbi;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -6,7 +6,8 @@ import java.util.Arrays;
 import java.util.zip.Deflater;
 
 /**
- * Multithreaded compressed swap writer
+ * Multithreaded compressed swap writer for Viterbi backtracking
+ * @see StateGraph
  */
 class SwapDeflater {
 

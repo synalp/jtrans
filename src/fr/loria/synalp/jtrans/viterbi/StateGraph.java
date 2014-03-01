@@ -1,4 +1,4 @@
-package fr.loria.synalp.jtrans.anchorless;
+package fr.loria.synalp.jtrans.viterbi;
 
 import edu.cmu.sphinx.frontend.*;
 import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
@@ -15,9 +15,9 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 /**
- * Sweeping grammar vector for the experimental anchorless algorithm.
+ * State graph representing a grammar.
  */
-public class GrammarVector {
+public class StateGraph {
 
 	/**
 	 * Maximum number of transitions (successors) an HMM state may have.
@@ -271,7 +271,7 @@ public class GrammarVector {
 	/**
 	 * Constructs a grammar vector from a list of words.
 	 */
-	public GrammarVector(
+	public StateGraph(
 			String text,
 			AcousticModel acMod,
 			UnitManager unitMgr)
@@ -355,9 +355,32 @@ public class GrammarVector {
 	}
 
 
-	public void viterbi(
-			S4mfccBuffer mfcc,
-			SwapDeflater swapWriter)
+	/**
+	 * Finds the most likely predecessor of each HMM state for each audio frame
+	 * (using the Viterbi algorithm).
+	 *
+	 * Each iteration builds upon the likelihoods found in the previous
+	 * iteration, as well as the score given by every HMM state for each audio
+	 * frame.
+	 *
+	 * After the last iteration, we obtain a full table of the most likely
+	 * predecessors of each state and for each frame. Since there is only one
+	 * possible final state, this table tells us which state most likely
+	 * transitioned to the final state in the second-to-last frame. From there,
+	 * we can find the most likely predecessor of *that* state in the
+	 * third-to-last frame... and so on and so forth until we have traced the
+	 * most likely path back to the initial state.
+	 *
+	 * All this method actually does is computing the likelihoods for each frame
+	 * and storing them in a swap file. The pathfinding process is completed by
+	 * backtrack().
+	 *
+	 * @see StateGraph#backtrack second part of the pathfinding process
+	 * @see SwapInflater
+	 * @param mfcc audio source
+	 * @param swapWriter
+	 */
+	public void viterbi(S4mfccBuffer mfcc, SwapDeflater swapWriter)
 			throws IOException, InterruptedException
 	{
 		float[] v          = new float[nStates]; // probability vector
@@ -418,6 +441,16 @@ public class GrammarVector {
 	}
 
 
+	/**
+	 * Finds the most likely path between the initial and final states using the
+	 * table of most likely predecessors found by viterbi().
+	 *
+	 * @see StateGraph#viterbi first part of the pathfinding process
+	 * @param nFrames
+	 * @param swapReader reader fof the
+	 * @return
+	 * @throws IOException
+	 */
 	public int[] backtrack(int nFrames, SwapInflater swapReader) throws IOException {
 		System.out.println("Backtracking...");
 
@@ -463,7 +496,7 @@ public class GrammarVector {
 
 	public static void main(String[] args) throws Exception {
 		if (args.length != 2) {
-			System.out.println("USAGE: GrammarVector <SOUNDFILE.WAV> <\"transcription\">");
+			System.out.println("USAGE: StateGraph <SOUNDFILE.WAV> <\"transcription\">");
 			System.exit(1);
 		}
 
@@ -478,7 +511,7 @@ public class GrammarVector {
 
 		AcousticModel acmod = HMMModels.getAcousticModels();
 
-		GrammarVector gv = new GrammarVector(words, acmod, unitmgr);
+		StateGraph gv = new StateGraph(words, acmod, unitmgr);
 		System.out.println("PHONE COUNT: " + gv.nPhones);
 		System.out.println("GRAPH SIZE: " + gv.nStates);
 		gv.dumpDot(new FileWriter("grammar_vector.dot"));

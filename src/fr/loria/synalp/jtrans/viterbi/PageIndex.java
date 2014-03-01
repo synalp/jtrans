@@ -1,4 +1,4 @@
-package fr.loria.synalp.jtrans.anchorless;
+package fr.loria.synalp.jtrans.viterbi;
 
 import java.io.*;
 import java.util.ArrayList;

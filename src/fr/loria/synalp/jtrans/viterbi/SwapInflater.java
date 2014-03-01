@@ -1,11 +1,12 @@
-package fr.loria.synalp.jtrans.anchorless;
+package fr.loria.synalp.jtrans.viterbi;
 
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.zip.InflaterInputStream;
 
 /**
- * Compressed swap reader
+ * Compressed swap reader for Viterbi backtracking
+ * @see StateGraph
  */
 public class SwapInflater {
 
