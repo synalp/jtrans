@@ -52,6 +52,16 @@ public class GrammarVector {
 	/** Insertion point for new states in the states array. */
 	private int insertionPoint;
 
+	/** Human-readable words at the basis of this grammar */
+	private final String[] words;
+
+	/**
+	 * Indices of the initial HMM state of each word.
+	 * All potential pronunciations for a given word are inserted contiguously
+	 * in the states array. The order in which the HMM states are inserted
+	 * reflects the order of the words.
+	 */
+	private final int[] wordBoundaries;
 
 	/**
 	 * Trims leading and trailing whitespace then splits around whitespace.
@@ -64,10 +74,10 @@ public class GrammarVector {
 	/**
 	 * Counts phones in a list of words.
 	 */
-	public static int countPhones(List<String> words) {
+	public static int countPhones(String[] words) {
 		// mandatory initial and final silences
 		// plus one optional silence between each word
-		int count = 1 + words.size();
+		int count = 1 + words.length;
 
 		for (String w: words) {
 			String rule = Grammatiseur.getGrammatiseur().getGrammar(w);
@@ -259,7 +269,9 @@ public class GrammarVector {
 			AcousticModel acMod,
 			UnitManager unitMgr)
 	{
-		List<String> words = Arrays.asList(trimSplit(text));
+		words = trimSplit(text);
+		wordBoundaries = new int[words.length];
+
 		nPhones = countPhones(words);
 		nStates = 3 * nPhones;
 
@@ -273,20 +285,20 @@ public class GrammarVector {
 
 		Grammatiseur gram = Grammatiseur.getGrammatiseur();
 		Set<Integer> tails = new HashSet<Integer>();
-		boolean firstWord = true;
 
 		// add initial mandatory silence
 		parseRule("SIL", tails, acMod, unitMgr);
 
-		for (String w: words) {
-			if (firstWord) {
-				firstWord = false;
-			} else {
+		for (int i = 0; i < words.length; i++) {
+			if (i > 0) {
 				// optional silence between two words
 				parseRule("[ SIL ]", tails, acMod, unitMgr);
 			}
 
-			String rule = gram.getGrammar(w);
+			// Word actually starts after optional silence
+			wordBoundaries[i] = insertionPoint;
+
+			String rule = gram.getGrammar(words[i]);
 			System.out.println("Rule: " + rule);
 			assert rule != null;
 			assert !rule.isEmpty();
@@ -412,12 +424,29 @@ public class GrammarVector {
 
 		System.out.println("Note: only initial states are shown below");
 		System.out.println("    TIME   STATE#     UNIT");
-		for (int i = 0; i < timeline.length; i++) {
-			if (i == 0 || timeline[i-1]/3 != timeline[i]/3) {
+		for (int f = 0; f < timeline.length; f++) {
+			if (f == 0 || timeline[f-1]/3 != timeline[f]/3) {
 				System.out.println(String.format("%8.2f %8d %8s",
-						TimeConverter.frame2sec(i),
-						timeline[i],
-						states[timeline[i]].getHMM().getBaseUnit()));
+						TimeConverter.frame2sec(f),
+						timeline[f],
+						states[timeline[f]].getHMM().getBaseUnit()));
+			}
+		}
+
+		System.out.println("\n    TIME         WORD       BOUNDARY");
+		int pw = -1;
+		int w = -1;
+		for (int f = 0; f < timeline.length; f++) {
+			int frameState = timeline[f];
+			while (w+1 < words.length && wordBoundaries[w+1] < frameState) {
+				w++;
+			}
+			if (w != pw) {
+				System.out.println(String.format("%8.2f %16s %8d",
+						TimeConverter.frame2sec(f),
+						words[w],
+						wordBoundaries[w]));
+				pw = w;
 			}
 		}
 
