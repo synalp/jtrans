@@ -93,9 +93,14 @@ public class PageIndex implements Serializable {
 	}
 
 
-	public static PageIndex deserialize(InputStream in) throws IOException, ClassNotFoundException {
+	public static PageIndex deserialize(InputStream in) throws IOException {
 		ObjectInputStream ois = new ObjectInputStream(in);
-		PageIndex pi = (PageIndex)ois.readObject();
+		PageIndex pi;
+		try {
+			pi = (PageIndex)ois.readObject();
+		} catch (ClassNotFoundException ex) {
+			throw new IOException(ex);
+		}
 		ois.close();
 		System.out.println("Deserialized - Page Count = " + pi.getPageCount());
 		return pi;
