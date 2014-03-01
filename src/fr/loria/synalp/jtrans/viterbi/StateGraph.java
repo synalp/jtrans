@@ -446,17 +446,14 @@ public class StateGraph {
 	 * table of most likely predecessors found by viterbi().
 	 *
 	 * @see StateGraph#viterbi first part of the pathfinding process
-	 * @param nFrames
-	 * @param swapReader reader fof the
-	 * @return
-	 * @throws IOException
+	 * @param swapReader reader for the swap file produced by viterbi()
 	 */
-	public int[] backtrack(int nFrames, SwapInflater swapReader) throws IOException {
+	public int[] backtrack(SwapInflater swapReader) throws IOException {
 		System.out.println("Backtracking...");
 
 		int pathLead = nStates-1;
-		int[] timeline = new int[nFrames];
-		for (int f = nFrames-1; f >= 0; f--) {
+		int[] timeline = new int[swapReader.getFrameCount()];
+		for (int f = timeline.length-1; f >= 0; f--) {
 			pathLead = swapReader.get(f, pathLead);
 			timeline[f] = pathLead;
 			assert pathLead >= 0;
@@ -544,7 +541,7 @@ public class StateGraph {
 			index = PageIndex.deserialize(new FileInputStream(indexFile));
 		}
 		System.out.println("FRAME COUNT: " + index.getFrameCount());
-		gv.backtrack(index.getFrameCount(), new SwapInflater(swapFile, index));
+		gv.backtrack(new SwapInflater(swapFile, index));
 		System.out.println("done");
 	}
 

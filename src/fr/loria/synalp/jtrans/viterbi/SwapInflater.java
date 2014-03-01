@@ -10,15 +10,20 @@ import java.util.zip.InflaterInputStream;
  */
 public class SwapInflater {
 
-	final File file;
-	ByteBuffer pageBuf;
-	PageIndex.Entry currentPage;
-	PageIndex index;
+	private final File file;
+	private ByteBuffer pageBuf;
+	private PageIndex.Entry currentPage;
+	private PageIndex index;
 
 
 	public SwapInflater(File file, PageIndex index) {
 		this.file = file;
 		this.index = index;
+	}
+
+
+	public int getFrameCount() {
+		return index.getFrameCount();
 	}
 
 
