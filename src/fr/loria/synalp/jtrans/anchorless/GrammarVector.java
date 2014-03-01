@@ -472,7 +472,7 @@ public class GrammarVector {
 			index = PageIndex.deserialize(new FileInputStream(indexFile));
 		}
 		System.out.println("FRAME COUNT: " + index.getFrameCount());
-		gv.backtrack(index.getFrameCount(), new SwapInflater(gv.nStates, swapFile, index));
+		gv.backtrack(index.getFrameCount(), new SwapInflater(swapFile, index));
 		System.out.println("done");
 	}
 

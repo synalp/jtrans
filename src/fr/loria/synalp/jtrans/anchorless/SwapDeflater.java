@@ -7,7 +7,6 @@ import java.util.zip.Deflater;
 
 class SwapDeflater {
 
-	private final int frameLength;
 	private final int maxFramesPerPage;
 
 	private final OutputStream out;
@@ -62,7 +61,7 @@ class SwapDeflater {
 	public SwapDeflater(int maxFPP, int nStates, OutputStream out)
 			throws IOException
 	{
-		frameLength = 4 * nStates;
+		index = new PageIndex(nStates);
 		maxFramesPerPage = maxFPP;
 
 		this.out = out;
@@ -70,10 +69,8 @@ class SwapDeflater {
 		def = new Deflater(Deflater.BEST_SPEED);
 		def.setStrategy(Deflater.HUFFMAN_ONLY);
 
-		index = new PageIndex();
-
-		frontBuffer = ByteBuffer.allocate(maxFramesPerPage * frameLength);
-		backBuffer  = ByteBuffer.allocate(maxFramesPerPage * frameLength);
+		frontBuffer = ByteBuffer.allocate(maxFramesPerPage * index.bytesPerFrame);
+		backBuffer  = ByteBuffer.allocate(maxFramesPerPage * index.bytesPerFrame);
 
 		compBuffer = new byte[1048576];
 		previousBestParent = new int[nStates];
@@ -93,7 +90,7 @@ class SwapDeflater {
 
 		def.reset();
 		def.setInput(rawBuf.array(), rawBuf.arrayOffset(),
-				framesInBuf * frameLength);
+				framesInBuf * index.bytesPerFrame);
 		def.finish();
 		assert !def.finished();
 
@@ -121,8 +118,14 @@ class SwapDeflater {
 	public void write(int[] n) throws IOException, InterruptedException {
 		assert previousBestParent.length == n.length;
 
-		for (int i = 0; i < previousBestParent.length; i++) {
-			frontBuffer.putInt(n[i] - previousBestParent[i]);
+		if (index.useShorts) {
+			for (int i = 0; i < previousBestParent.length; i++) {
+				frontBuffer.putShort((short) (n[i] - previousBestParent[i]));
+			}
+		} else {
+			for (int i = 0; i < previousBestParent.length; i++) {
+				frontBuffer.putInt(n[i] - previousBestParent[i]);
+			}
 		}
 
 		System.arraycopy(n, 0, previousBestParent, 0, previousBestParent.length);

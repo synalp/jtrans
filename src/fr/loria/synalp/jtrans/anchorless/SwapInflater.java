@@ -6,16 +6,14 @@ import java.util.zip.InflaterInputStream;
 
 public class SwapInflater {
 
-	final int nStates;
 	final File file;
 	ByteBuffer pageBuf;
 	PageIndex.Entry currentPage;
 	PageIndex index;
 
 
-	public SwapInflater(int nStates, File file, PageIndex index) {
+	public SwapInflater(File file, PageIndex index) {
 		this.file = file;
-		this.nStates = nStates;
 		this.index = index;
 	}
 
@@ -24,12 +22,19 @@ public class SwapInflater {
 		if (currentPage == null || !currentPage.within(frame)) {
 			inflatePage(index.getPage(frame));
 		}
-		return pageBuf.getInt(idx(frame, state));
+
+		if (index.useShorts) {
+			int s = pageBuf.getShort(idx(frame, state)) & 0xFFFF;
+			return s == 65535? -1: s;
+		} else {
+			return pageBuf.getInt(idx(frame, state));
+		}
 	}
 
 
 	private int idx(int frame, int state) {
-		return 4 * ((frame-currentPage.frame0)*nStates + state);
+		return index.bytesPerFrame * (frame-currentPage.frame0) +
+				index.bytesPerState * state;
 	}
 
 
@@ -38,7 +43,7 @@ public class SwapInflater {
 		assert page != currentPage;
 		currentPage = page;
 
-		int unpackedPageLength = page.frameCount * nStates * 4;
+		int unpackedPageLength = page.frameCount * index.bytesPerFrame;
 		if (pageBuf == null || pageBuf.capacity() < unpackedPageLength) {
 			System.out.print("Reallocating... ");
 			pageBuf = ByteBuffer.allocate(unpackedPageLength);
@@ -64,14 +69,26 @@ public class SwapInflater {
 		is.close();
 		assert rdtot == unpackedPageLength;
 
-		for (int relF = 1; relF < page.frameCount; relF++) {
-			int absF = relF + page.frame0;
-			for (int s = 0; s < nStates; s++) {
-				int p = pageBuf.getInt(idx(absF - 1, s));
-				int c = pageBuf.getInt(idx(absF, s));
-				pageBuf.putInt(idx(absF, s), p+c);
+		int f = page.frame0+1;
+		final int fn = page.frame0 + page.frameCount;
+		if (index.useShorts) {
+			for (; f < fn; f++) {
+				for (int s = 0; s < index.nStates; s++) {
+					int p = pageBuf.getShort(idx(f-1, s));
+					int c = pageBuf.getShort(idx(f, s));
+					pageBuf.putShort(idx(f, s), (short)(p+c));
+				}
+			}
+		} else {
+			for (; f < fn; f++) {
+				for (int s = 0; s < index.nStates; s++) {
+					int p = pageBuf.getInt(idx(f-1, s));
+					int c = pageBuf.getInt(idx(f, s));
+					pageBuf.putInt(idx(f, s), p+c);
+				}
 			}
 		}
+
 
 		System.out.println("OK");
 	}
