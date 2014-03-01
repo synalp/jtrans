@@ -4,6 +4,9 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.zip.InflaterInputStream;
 
+/**
+ * Compressed swap reader
+ */
 public class SwapInflater {
 
 	final File file;

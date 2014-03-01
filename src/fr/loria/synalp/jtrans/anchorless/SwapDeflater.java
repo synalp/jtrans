@@ -5,6 +5,9 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.zip.Deflater;
 
+/**
+ * Multithreaded compressed swap writer
+ */
 class SwapDeflater {
 
 	private final int maxFramesPerPage;
@@ -58,22 +61,62 @@ class SwapDeflater {
 	}
 
 
-	public SwapDeflater(int maxFPP, int nStates, OutputStream out)
+	/**
+	 * @param approxBytesPerPage Ballpark measurement of the size of a single
+	 * uncompressed page (in bytes). The compression process will need at least
+	 * twice as much bytes in memory. Don't go overboard with this value: past
+	 * a certain size, larger pages yield marginally better compression,
+	 * but they typically adversely affect performance.
+	 * @param deflater Unless you're seriously strapped for disk space, we
+	 * recommend using Deflater.BEST_SPEED with HUFFMAN_ONLY.
+	 * @param nStates number of states in the vector
+	 * @param out swap output stream (can be a file, but can also reside
+	 *            in RAM if you have enough of it)
+	 */
+	public SwapDeflater(
+			int approxBytesPerPage,
+			Deflater deflater,
+			int nStates,
+			OutputStream out)
 			throws IOException
 	{
 		index = new PageIndex(nStates);
-		maxFramesPerPage = maxFPP;
+
+		maxFramesPerPage = approxBytesPerPage / index.bytesPerFrame;
+		assert maxFramesPerPage >= 1;
+		System.out.println("Max Frames Per Page : " + maxFramesPerPage);
 
 		this.out = out;
 
-		def = new Deflater(Deflater.BEST_SPEED);
-		def.setStrategy(Deflater.HUFFMAN_ONLY);
+		def = deflater;
 
 		frontBuffer = ByteBuffer.allocate(maxFramesPerPage * index.bytesPerFrame);
 		backBuffer  = ByteBuffer.allocate(maxFramesPerPage * index.bytesPerFrame);
 
 		compBuffer = new byte[1048576];
 		previousBestParent = new int[nStates];
+	}
+
+
+	/**
+	 * Creates a SwapDeflater with sensible memory and compression settings.
+	 * @param nStates number of states in the vector
+	 * @param out swap output stream (can be a file, but can also reside
+	 *            in RAM if you have enough of it)
+	 * @param compress use compression. Disabling compression dramatically
+	 * speeds up the swapping process, but the trade-off is that swap files
+	 * become enormous when working on long recordings.
+	 */
+	public static SwapDeflater getSensibleSwapDeflater(
+			int nStates,
+			OutputStream out,
+			boolean compress)
+		throws IOException
+	{
+		Deflater deflater = new Deflater(
+				compress? Deflater.BEST_SPEED: Deflater.NO_COMPRESSION);
+		deflater.setStrategy(Deflater.HUFFMAN_ONLY);
+		return new SwapDeflater(1024*1024*16, deflater, nStates, out);
 	}
 
 
@@ -189,6 +232,7 @@ class SwapDeflater {
 		flushThread.join();
 		out.flush();
 		out.close();
+		System.out.println("Swap closed");
 	}
 
 }

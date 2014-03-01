@@ -463,7 +463,10 @@ public class GrammarVector {
 		PageIndex index;
 		if (!quick) {
 			long t0 = System.currentTimeMillis();
-			SwapDeflater swapper = new SwapDeflater(1000, gv.nStates, new FileOutputStream(swapFile));
+			SwapDeflater swapper = SwapDeflater.getSensibleSwapDeflater(
+					gv.nStates,
+					new FileOutputStream(swapFile),
+					true);
 			gv.viterbi(mfcc, swapper);
 			System.out.println("VITERBI TOOK " + (System.currentTimeMillis()-t0)/1000L + " SECONDS");
 			index = swapper.getIndex();
