@@ -14,40 +14,47 @@ class SwapDeflater {
 	private final Deflater def;
 	private final PageIndex index;
 
+	private int[] previousBestParent;
+
 	/** Uncompressed data buffer that the main thread writes into */
 	private ByteBuffer frontBuffer;
 
 	/** Number of frames stored in the front buffer */
 	private int frontBufferFrames;
 
-	/** Thread that compresses data in the background */
-	private Thread flushThread;
-
 	/** Uncompressed data buffer that the flush thread reads from */
 	private ByteBuffer backBuffer;
+
+	/**
+	 * Number of frames stored in the back buffer.
+	 * A value of 0 signifies that the back buffer has been processed by the
+	 * flush thread and the buffers are ready to be swapped.
+	 */
+	private int backBufferFrames;
 
 	/** Compressed data buffer that the flush thread writes into */
 	private byte[] compBuffer;
 
-	private int[] previousBestParent;
+	/** Thread that compresses data in the background */
+	private Thread flushThread;
+
+	/** Tells flushThread to stop consuming pages */
+	private boolean done = false;
 
 
 	private class FlushThread extends Thread {
-		ByteBuffer buffer;
-		int frames;
-
-		public FlushThread(ByteBuffer buf, int fib) {
-			buffer = buf;
-			frames = fib;
-		}
-
 		@Override
 		public void run() {
 			try {
-				fullFlush(buffer, frames);
+				while (!done) {
+					consumePage();
+				}
 			} catch (IOException ex) {
 				throw new Error(ex);
+			} catch (InterruptedException ex) {
+				throw new Error(ex);
 			}
+			System.out.println("Flush thread dead");
 		}
 	}
 
@@ -73,10 +80,15 @@ class SwapDeflater {
 	}
 
 
+	public PageIndex getIndex() {
+		return index;
+	}
+
+
 	// Thread safety: don't access instance variables frontBuffer/backBuffer
-	// nor frontBufferFrames directly in this method, because they may change
+	// nor backBufferFrames directly in this method, because they may change
 	// at any time in the main thread. Use the provided parameters instead.
-	private synchronized void fullFlush(ByteBuffer rawBuf, int framesInBuf) throws IOException {
+	private void fullFlush(ByteBuffer rawBuf, int framesInBuf) throws IOException {
 		assert rawBuf.hasArray();
 
 		def.reset();
@@ -119,32 +131,61 @@ class SwapDeflater {
 
 		if (frontBufferFrames % maxFramesPerPage == 0) {
 			System.out.print("J");
-
-			synchronized (this) {
-				flushThread = new FlushThread(frontBuffer, frontBufferFrames);
-				flushThread.start();
-
-				// swap buffers
-				ByteBuffer tmp = frontBuffer;
-				frontBuffer = backBuffer;
-				backBuffer = tmp;
-				frontBufferFrames = 0;
-
-				Arrays.fill(previousBestParent, 0);
-			}
+			producePage();
+			Arrays.fill(previousBestParent, 0);
 		}
 	}
 
 
-	public void close() throws IOException, InterruptedException {
-		fullFlush(frontBuffer, frontBufferFrames);
-		out.flush();
-		out.close();
+	// Called from main thread
+	private synchronized void producePage() throws InterruptedException {
+		if (flushThread == null) {
+			flushThread = new FlushThread();
+			flushThread.start();
+		}
+
+		// Wait for flushThread to finish working on the back buffer
+		while (backBufferFrames > 0) {
+			wait();
+		}
+
+		// Swap buffers
+		ByteBuffer tmp = frontBuffer;
+		frontBuffer = backBuffer;
+		backBuffer = tmp;
+
+		backBufferFrames = frontBufferFrames;
+		frontBufferFrames = 0;
+
+		// Allow flushThread to use the back buffer
+		notify();
 	}
 
 
-	public PageIndex getIndex() {
-		return index;
+	// Called from flushThread
+	private synchronized void consumePage() throws IOException, InterruptedException {
+		// Wait for the main thread to release the back buffer
+		while (backBufferFrames == 0) {
+			wait();
+		}
+
+		// Do the heavy lifting
+		fullFlush(backBuffer, backBufferFrames);
+
+		// Release back buffer
+		backBufferFrames = 0;
+
+		// Tell main thread we're done with the back buffer
+		notify();
+	}
+
+
+	public void close() throws IOException, InterruptedException {
+		producePage();
+		done = true;
+		flushThread.join();
+		out.flush();
+		out.close();
 	}
 
 }
