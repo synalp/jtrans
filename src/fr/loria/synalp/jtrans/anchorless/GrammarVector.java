@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 public class GrammarVector {
 
 	/**
+	 * Maximum number of transitions (successors) an HMM state may have.
 	 * If this value ever has to exceed 255 (overkill!), be sure to change
 	 * the type of the nTrans array.
 	 */
@@ -34,7 +35,11 @@ public class GrammarVector {
 	// Note: using a set of unique states barely improves performance since
 	// scores are typically cached (see ScoreCachingSenone.getScore)
 
-	/** Number of transitions for each state */
+	/**
+	 * Number of transitions for each HMM state.
+	 * Values in this array should not exceed MAX_TRANSITIONS, otherwise an
+	 * index out of bounds exception will eventually be thrown.
+	 */
 	private byte[] nTrans;
 
 	/** Transition matrix: successor IDs */
@@ -119,6 +124,8 @@ public class GrammarVector {
 
 				// Bind tails to the 1st state that is going to be created
 				for (Integer parentId: tails) {
+					assert nTrans[parentId] < MAX_TRANSITIONS - 1:
+							"too many transitions";
 					succ[parentId][nTrans[parentId]++] = insertionPoint;
 				}
 
