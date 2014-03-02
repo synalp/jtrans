@@ -27,11 +27,28 @@ public class AutoAligner {
 
 
 	/**
-	 * Align words between anchors using linear interpolation (a.k.a.
-	 * "equialign") instead of proper Sphinx alignment (batchAlign).
-	 * Setting this flag to `true` yields very fast albeit inaccurate results.
+	 * Alignment algorithm types.
 	 */
-	private static final boolean USE_LINEAR_ALIGNMENT = false;
+	public static enum Algorithm {
+		/**
+		 * Aligns words between anchors using linear interpolation.
+		 * Very fast, but very inaccurate. For testing only.
+		 */
+		LINEAR_INTERPOLATION,
+
+		/**
+		 * Aligns words between anchors with Sphinx4 and the Viterbi algorithm.
+		 * May fail to align every single word.
+		 * The implementation is old and somewhat messy.
+		 * @see fr.loria.synalp.jtrans.speechreco.s4.S4ForceAlignBlocViterbi
+		 */
+		FORCE_ALIGN_BLOC_VITERBI,
+
+	};
+
+
+	/** The algorithm to use when aligning. */
+	public static Algorithm algorithm = Algorithm.FORCE_ALIGN_BLOC_VITERBI;
 
 
 	/**
@@ -215,11 +232,20 @@ public class AutoAligner {
 
 		if (startWord < word) {
 			// There are unaligned words before `word`; align them.
-			if (USE_LINEAR_ALIGNMENT) {
-				linearAlign(startWord, startFrame, word, endFrame);
-			} else {
-				S4AlignOrder order = partialBatchAlign(startWord, startFrame, word, endFrame);
-				merge(order.alignWords, order.alignPhones, startWord, word);
+			switch (algorithm) {
+				case LINEAR_INTERPOLATION:
+				{
+					linearAlign(startWord, startFrame, word, endFrame);
+					break;
+				}
+
+				case FORCE_ALIGN_BLOC_VITERBI:
+				{
+					S4AlignOrder order = partialBatchAlign(
+							startWord, startFrame, word, endFrame);
+					merge(order.alignWords, order.alignPhones, startWord, word);
+					break;
+				}
 			}
 		} else {
 			// Only one word to align; create a new manual segment.

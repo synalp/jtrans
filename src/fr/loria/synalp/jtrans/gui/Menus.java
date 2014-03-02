@@ -22,6 +22,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import edu.cmu.sphinx.result.Result;
 
 import fr.loria.synalp.jtrans.elements.Anchor;
+import fr.loria.synalp.jtrans.facade.AutoAligner;
 import fr.loria.synalp.jtrans.gui.trackview.MultiTrackTable;
 import fr.loria.synalp.jtrans.speechreco.LiveSpeechReco;
 import fr.loria.synalp.jtrans.markup.*;
@@ -379,12 +380,31 @@ public class Menus {
 		JMenuItem mikerec = new JMenuItem("Record from mic");
 		JMenuItem liveasr = new JMenuItem("Live ASR");
 		JMenuItem initGrammar = new JMenuItem("Initialize grammar...");
+
+		JMenu algoMenu = new JMenu("Alignment algorithm");
+		ButtonGroup algoGroup = new ButtonGroup();
+		for (final AutoAligner.Algorithm algo : AutoAligner.Algorithm.values()) {
+			JRadioButtonMenuItem jmi = new JRadioButtonMenuItem(algo.name());
+			algoGroup.add(jmi);
+			algoMenu.add(jmi);
+			jmi.setSelected(algo == AutoAligner.algorithm);
+
+			jmi.addActionListener(new AbstractAction() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					AutoAligner.algorithm = algo;
+				}
+			});
+		}
+
 		menubar.add(prefs);
 		//		JMenuItem mots = new JMenuItem("forward mots");
 		//		prefs.add(mots);
 		prefs.add(mixers);
 		prefs.add(mikerec);
 		prefs.add(liveasr);
+		prefs.addSeparator();
+		prefs.add(algoMenu);
 		prefs.addSeparator();
 		prefs.add(initGrammar);
 
