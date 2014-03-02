@@ -331,33 +331,13 @@ public class AutoAligner {
 		}
 	}
 
+
 	private void setAlignWord(int startWord, int endWord, float startSecond, float endSecond) {
 		int startFrame = TimeConverter.second2frame(startSecond);
 		int endFrame   = TimeConverter.second2frame(endSecond);
 		setAlignWord(startWord, endWord, startFrame, endFrame);
 	}
 
-	private void setSilenceSegment(int curdebfr, int curendfr, Alignment al) {
-		// detruit tous les segments existants deja a cet endroit
-		ArrayList<Integer> todel = new ArrayList<Integer>();
-		clearAlignFromFrame(curdebfr);
-		for (int i=0;i<al.getNbSegments();i++) {
-			int d=al.getSegmentDebFrame(i);
-			if (d>=curendfr) break;
-			int f=al.getSegmentEndFrame(i);
-			if (f<curdebfr) continue;
-			// il y a intersection
-			if (d>=curdebfr&&f<=curendfr) {
-				// ancient segment inclu dans nouveau
-				todel.add(i);
-			} else {
-				// TODO: faire les autres cas d'intersection
-			}
-		}
-		for (int i=todel.size()-1;i>=0;i--) al.delSegment(todel.get(i));
-		int newseg=al.addRecognizedSegment("SIL", curdebfr, curendfr);
-		al.setSegmentSourceManu(newseg);
-	}
 
 	private int getLastMotPrecAligned(int midx) {
 		for (int i=midx;i>=0;i--) {
@@ -365,18 +345,6 @@ public class AutoAligner {
 		}
 		return -1;
 	}
-
-	public void setSilenceSegment(float secdeb, float secfin) {
-		int curdebfr = TimeConverter.second2frame(secdeb);
-		int curendfr = TimeConverter.second2frame(secfin);
-		setSilenceSegment(curdebfr, curendfr, track.words);
-		setSilenceSegment(curdebfr, curendfr, track.phons);
-	}
-	public void clearAlignFromFrame(int fr) {
-		// TODO
-		throw new Error("clearAlignFromFrame: IMPLEMENT ME!");
-	}
-
 
 
 	/**
