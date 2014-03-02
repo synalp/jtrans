@@ -59,8 +59,10 @@ public class ElementList extends ArrayList<Element> implements Serializable {
 		if (mots.size()==0) return;
 		int l = mots.size()-1;
 		int lastseg=-1;
-		while (l>=0 && lastseg<0) {
-			lastseg = mots.get(l--).posInAlign;
+		while (l>=0) {
+			int s = mots.get(l--).posInAlign;
+			if (s > lastseg)
+				lastseg = s;
 		}
 		seg2mot = new Word[lastseg+1];
 		for (Word m : mots) {
