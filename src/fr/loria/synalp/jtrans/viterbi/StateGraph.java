@@ -333,6 +333,21 @@ public class StateGraph {
 
 
 	/**
+	 * Creates a StateGraph using JTrans's default configuration for Sphinx4.
+	 */
+	public static StateGraph createStandardStateGraph(String words) {
+		ConfigurationManager cm = new ConfigurationManager("sr.cfg");
+
+		UnitManager unitmgr = (UnitManager)cm.lookup("unitManager");
+		assert unitmgr != null;
+
+		AcousticModel acmod = HMMModels.getAcousticModels();
+
+		return new StateGraph(words, acmod, unitmgr);
+	}
+
+
+	/**
 	 * Dumps a GraphViz/DOT representation of the vector.
 	 */
 	public void dumpDot(Writer w) throws IOException {
@@ -513,18 +528,12 @@ public class StateGraph {
 		final String words = new Scanner(new File(args[1])).useDelimiter("\\Z")
 				.next().replaceAll("[\\n\\r\u001f]", " ");
 
-		ConfigurationManager cm = new ConfigurationManager("sr.cfg");
-		UnitManager unitmgr = (UnitManager)cm.lookup("unitManager");
-		assert unitmgr != null;
-
-		AcousticModel acmod = HMMModels.getAcousticModels();
-
-		StateGraph gv = new StateGraph(words, acmod, unitmgr);
+		StateGraph gv = StateGraph.createStandardStateGraph(words);
 		System.out.println("PHONE COUNT: " + gv.nPhones);
 		System.out.println("GRAPH SIZE: " + gv.nStates);
 		gv.dumpDot(new FileWriter("grammar_vector.dot"));
 
-		AudioFileDataSource afds = (AudioFileDataSource)cm.lookup("audioFileDataSource");
+		AudioFileDataSource afds = new AudioFileDataSource(3200, null);
 		afds.setAudioFile(new File(wavpath), null);
 		S4mfccBuffer mfcc = new S4mfccBuffer();
 		mfcc.setSource(S4ForceAlignBlocViterbi.getFrontEnd(afds));
