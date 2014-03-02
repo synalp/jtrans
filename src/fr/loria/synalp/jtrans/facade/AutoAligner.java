@@ -166,7 +166,7 @@ public class AutoAligner {
 
 		for (int i = startWord; i <= endWord; i++) {
 			int newseg = track.words.addRecognizedSegment(
-					mots.get(i).toString(), startFrame, (int)currEndFrame, null, null);
+					mots.get(i).toString(), startFrame, (int)currEndFrame);
 
 			track.words.setSegmentSourceEqui(newseg);
 			mots.get(i).posInAlign = newseg;
@@ -220,7 +220,7 @@ public class AutoAligner {
 		} else {
 			// Only one word to align; create a new manual segment.
 			int newseg = track.words.addRecognizedSegment(
-					track.elts.getMot(word).toString(), startFrame, endFrame, null, null);
+					track.elts.getMot(word).toString(), startFrame, endFrame);
 			track.words.setSegmentSourceManu(newseg);
 			track.elts.getMot(word).posInAlign = newseg;
 		}
@@ -250,7 +250,7 @@ public class AutoAligner {
 			}
 		}
 		for (int i=todel.size()-1;i>=0;i--) al.delSegment(todel.get(i));
-		int newseg=al.addRecognizedSegment("SIL", curdebfr, curendfr, null, null);
+		int newseg=al.addRecognizedSegment("SIL", curdebfr, curendfr);
 		al.setSegmentSourceManu(newseg);
 	}
 

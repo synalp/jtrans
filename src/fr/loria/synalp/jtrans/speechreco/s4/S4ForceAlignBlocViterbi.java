@@ -266,11 +266,11 @@ public class S4ForceAlignBlocViterbi extends Thread {
 			if (phones.get(i).equals("SIL")) {
 				if (isinmot>=0) {
 					// SIL indique la fin d'un mot, car SIL ne peut que separer deux mots
-					alignMots.addRecognizedSegment("XZ"+isinmot, starts.get(firstSegOfWord), ends.get(i-1), null, null);
+					alignMots.addRecognizedSegment("XZ"+isinmot, starts.get(firstSegOfWord), ends.get(i-1));
 					isinmot=-1;
 				}
 				// on ajoute les silences entre les mots
-				alignMots.addRecognizedSegment("SIL", starts.get(i), ends.get(i), null, null);
+				alignMots.addRecognizedSegment("SIL", starts.get(i), ends.get(i));
 				firstSegOfWord=-1;
 			} else if (phones.get(i).startsWith("XZ")) {
 				// indice du mot:
@@ -283,7 +283,7 @@ public class S4ForceAlignBlocViterbi extends Thread {
 					// TODO : ATTENTION ! ceci nous interdit d'avoir 2 fois le meme mot de suite !
 					if (wi!=prevwi) {
 						// on ajoute le mot precedent
-						alignMots.addRecognizedSegment("XZ"+isinmot, starts.get(firstSegOfWord), ends.get(i-1), null, null);
+						alignMots.addRecognizedSegment("XZ"+isinmot, starts.get(firstSegOfWord), ends.get(i-1));
 					}
 				} // sinon, on a surement un SIL devant, et on a donc deja ajoute le mot precedent
 				prevwi=wi;
@@ -292,7 +292,7 @@ public class S4ForceAlignBlocViterbi extends Thread {
 			}
 		}
 		if (isinmot>=0) {
-			alignMots.addRecognizedSegment("XZ"+isinmot, starts.get(firstSegOfWord), ends.get(phones.size()-1), null, null);
+			alignMots.addRecognizedSegment("XZ"+isinmot, starts.get(firstSegOfWord), ends.get(phones.size()-1));
 			return alignMots;
 		} else {
 			// si on n'ajoute aucun vrai mot, alors il faut retourner null, sinon autoaligner bouclera indefiniment

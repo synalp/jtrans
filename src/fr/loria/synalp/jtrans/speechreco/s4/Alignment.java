@@ -189,7 +189,9 @@ public class Alignment implements Serializable {
 			nsegsConservesDuPremier=getNbSegments();
 		}
 		for (int i=0;i<al.getNbSegments();i++) {
-			addRecognizedSegment(al.getSegmentLabel(i), al.getSegmentDebFrame(i) - frameOffset, al.getSegmentEndFrame(i)- frameOffset, null, null);
+			addRecognizedSegment(al.getSegmentLabel(i),
+					al.getSegmentDebFrame(i) - frameOffset,
+					al.getSegmentEndFrame(i) - frameOffset);
 		}
 		setFirstSegmentAltered(nsegsConservesDuPremier);
 
@@ -300,19 +302,21 @@ public class Alignment implements Serializable {
 	/**
 	 * @return new segment ID
 	 */
-	public int addRecognizedSegment(String mot, int framedeb, int frameend, String[] phones, int[] states) {
-		assert framedeb>=0;
-		assert frameend>framedeb;
+	public int addRecognizedSegment(String word, int startFrame, int endFrame) {
+		assert startFrame >=0;
+		assert endFrame > startFrame;
 
 		int i;
 
 		for (i = 0; i < segments.size(); i++) {
-			if (framedeb<segments.get(i).end) {
-				if (frameend<segments.get(i).start) {
+			Segment seg = segments.get(i);
+			if (startFrame < seg.end) {
+				if (endFrame < seg.start) {
 					break;
 				} else {
-					throw new Error("ERREUR ADD SEGMENT "+framedeb+" "+frameend+
-							" prev: "+i+" "+segments.get(i).start+"--"+segments.get(i).end);
+					throw new Error(String.format(
+							"Can't add segment %d-%d (previous: #%d %d-%d)",
+							startFrame, endFrame, i, seg.start, seg.end));
 				}
 			}
 		}
@@ -321,7 +325,7 @@ public class Alignment implements Serializable {
 			firstSegmentModified=i;
 
 		segments.add(i,
-				new Segment(framedeb, frameend, mot, ALIGNMENT_SOURCE_AUTOMATIC));
+				new Segment(startFrame, endFrame, word, ALIGNMENT_SOURCE_AUTOMATIC));
 
 		return segments.size()-1;
 	}
@@ -442,7 +446,7 @@ public class Alignment implements Serializable {
 				int[] sts = new int[labsstates.get(i).size()];
 				assert sts.length==labsfin.get(i)-labsdeb.get(i);
 				for (int j=0;j<sts.length;j++) sts[j]=labsstates.get(i).get(j);
-				alignMots.addRecognizedSegment(labs.get(i), labsdeb.get(i)-fr, labsfin.get(i)-fr, null, null);
+				alignMots.addRecognizedSegment(labs.get(i), labsdeb.get(i)-fr, labsfin.get(i)-fr);
 
 				// complete les aligns en phones et states
 				int phoneTrDeb=labsdeb.get(i)-fr, stateTrDeb=phoneTrDeb;
@@ -453,30 +457,30 @@ public class Alignment implements Serializable {
 						} else if (sts[j]<sts[j-1]) {
 							// nouveau phone, nouvel etat
 							int tr = labsdeb.get(i)-fr+j;
-							alignPhones.addRecognizedSegment(phs[j-1], phoneTrDeb, tr, null,null);
+							alignPhones.addRecognizedSegment(phs[j-1], phoneTrDeb, tr);
 							phoneTrDeb=tr;
-							alignStates.addRecognizedSegment(""+sts[j-1], stateTrDeb, tr, null,null);
+							alignStates.addRecognizedSegment(""+sts[j-1], stateTrDeb, tr);
 							stateTrDeb=tr;
 						} else if (sts[j]>sts[j-1]) {
 							// meme phone, nouvel etat
 							int tr = labsdeb.get(i)-fr+j;
-							alignStates.addRecognizedSegment(""+sts[j-1], stateTrDeb, tr, null,null);
+							alignStates.addRecognizedSegment(""+sts[j-1], stateTrDeb, tr);
 							stateTrDeb=tr;
 						}
 					} else {
 						// nouveau phone, nouvel etat
 						int tr = labsdeb.get(i)-fr+j;
-						alignPhones.addRecognizedSegment(phs[j-1], phoneTrDeb, tr, null,null);
+						alignPhones.addRecognizedSegment(phs[j-1], phoneTrDeb, tr);
 						phoneTrDeb=tr;
-						alignStates.addRecognizedSegment(""+sts[j-1], stateTrDeb, tr, null,null);
+						alignStates.addRecognizedSegment(""+sts[j-1], stateTrDeb, tr);
 						stateTrDeb=tr;
 					}
 				}
 				// reste le dernier
 				if (phs.length>0) {
 					int tr = labsfin.get(i)-fr;
-					alignPhones.addRecognizedSegment(phs[phs.length-1], phoneTrDeb, tr, null,null);
-					alignStates.addRecognizedSegment(""+sts[sts.length-1], stateTrDeb, tr, null,null);
+					alignPhones.addRecognizedSegment(phs[phs.length-1], phoneTrDeb, tr);
+					alignStates.addRecognizedSegment(""+sts[sts.length-1], stateTrDeb, tr);
 				}
 			}
 

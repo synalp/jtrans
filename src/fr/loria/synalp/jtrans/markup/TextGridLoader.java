@@ -232,9 +232,7 @@ class TextGridStateMachine {
 								currentTier.addRecognizedSegment(
 										currentInterval.text,
 										startFrame,
-										endFrame,
-										null,
-										null);
+										endFrame);
 							}
 							currentInterval = new Interval();
 							if (remainingIntervals == 0)
