@@ -24,7 +24,7 @@ public class StateGraph {
 	 * If this value ever has to exceed 255 (overkill!), be sure to change
 	 * the type of the nTrans array.
 	 */
-	public static final int MAX_TRANSITIONS = 10;
+	public static final int MAX_TRANSITIONS = 20;
 
 	/** Pattern for non-phone grammar tokens. */
 	public final static Pattern NONPHONE_PATTERN =
