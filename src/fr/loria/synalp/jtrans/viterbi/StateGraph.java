@@ -473,8 +473,11 @@ public class StateGraph {
 	 *
 	 * @see StateGraph#viterbi first part of the pathfinding process
 	 * @param swapReader reader for the swap file produced by viterbi()
+	 * @return A time line of the most likely state at each frame. Given as an
+	 * array of state IDs, with array indices being frame numbers relative to
+	 * the first frame given to StateGraph#viterbi.
 	 */
-	public int[] backtrack(SwapInflater swapReader) throws IOException {
+	private int[] backtrack(SwapInflater swapReader) throws IOException {
 		System.out.println("Backtracking...");
 
 		int pathLead = nStates-1;
@@ -514,6 +517,60 @@ public class StateGraph {
 		}
 
 		return timeline;
+	}
+
+
+	/**
+	 *
+	 * @param swapReader
+	 * @param startFrame
+	 * @return An array containing two alignments: the first element is the
+	 * word alignment, the second element is the phone alignment.
+	 */
+	public Alignment[] getAlignments(
+			SwapInflater swapReader,
+			int startFrame)
+			throws IOException
+	{
+		Alignment wordAl = new Alignment();
+		Alignment phonAl = new Alignment();
+
+		int[] timeline = backtrack(swapReader);
+
+		int pw = -1;
+		int pwStartFrame = -1;
+		int w = -1;
+		for (int f = 0; f < timeline.length; f++) {
+			int frameState = timeline[f];
+			while (w+1 < words.length && wordBoundaries[w+1] <= frameState) {
+				w++;
+			}
+
+			if (w != pw) {
+				if (pw >= 0)
+					wordAl.addRecognizedSegment(words[pw], pwStartFrame, f-1);
+				pw = w;
+				pwStartFrame = f;
+			}
+		}
+
+		// Add last word
+		if (pw >= 0) {
+			wordAl.addRecognizedSegment(words[pw], pwStartFrame, timeline.length - 1);
+		}
+
+		// TODO phonemes!
+
+		wordAl.adjustOffset(startFrame);
+		phonAl.adjustOffset(startFrame);
+
+		return new Alignment[] { wordAl, phonAl };
+	}
+
+
+	/** Returns the total number of HMM states in the grammar. */
+	public int getStateCount() {
+		return nStates;
 	}
 
 

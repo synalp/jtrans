@@ -9,7 +9,7 @@ import java.util.zip.Deflater;
  * Multithreaded compressed swap writer for Viterbi backtracking
  * @see StateGraph
  */
-class SwapDeflater {
+public class SwapDeflater {
 
 	private final int maxFramesPerPage;
 
@@ -46,6 +46,10 @@ class SwapDeflater {
 
 
 	private class FlushThread extends Thread {
+		private FlushThread() {
+			super("SwapDeflater flusher");
+		}
+
 		@Override
 		public void run() {
 			try {

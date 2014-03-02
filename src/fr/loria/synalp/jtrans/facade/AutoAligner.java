@@ -1,6 +1,6 @@
 package fr.loria.synalp.jtrans.facade;
 
-import java.io.File;
+import java.io.*;
 import java.util.*;
 
 import fr.loria.synalp.jtrans.elements.*;
@@ -10,6 +10,9 @@ import fr.loria.synalp.jtrans.speechreco.s4.S4AlignOrder;
 import fr.loria.synalp.jtrans.speechreco.s4.S4ForceAlignBlocViterbi;
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
 import fr.loria.synalp.jtrans.utils.TimeConverter;
+import fr.loria.synalp.jtrans.viterbi.StateGraph;
+import fr.loria.synalp.jtrans.viterbi.SwapDeflater;
+import fr.loria.synalp.jtrans.viterbi.SwapInflater;
 
 import javax.swing.*;
 
@@ -44,11 +47,19 @@ public class AutoAligner {
 		 */
 		FORCE_ALIGN_BLOC_VITERBI,
 
+		/**
+		 * Aligns words between anchors with Sphinx4, the Viterbi algorithm
+		 * and a full backtrack stack.
+		 * Every word is guaranteed to be aligned, albeit not always precisely.
+		 * May use a lot of memory and/or swap space on disk.
+		 * @see fr.loria.synalp.jtrans.viterbi.StateGraph
+		 */
+		FULL_BACKTRACK_VITERBI,
 	};
 
 
 	/** The algorithm to use when aligning. */
-	public static Algorithm algorithm = Algorithm.FORCE_ALIGN_BLOC_VITERBI;
+	public static Algorithm algorithm = Algorithm.FULL_BACKTRACK_VITERBI;
 
 
 	/**
@@ -135,6 +146,57 @@ public class AutoAligner {
 				startFrame,
 				endFrame);
 	}
+
+
+	/**
+	 * Align words between startWord and endWord using Sphinx and the revised
+	 * Viterbi algorithm. Slow, and disk space hungry, but accurate.
+	 *
+	 * The result is not merged into the main alignment (use merge()).
+	 */
+	private Alignment[] partialBatchAlignNewViterbi(
+			final int startWord,
+			final int startFrame,
+			final int endWord,
+			final int endFrame)
+			throws IOException, InterruptedException
+	{
+		// Only used for the MFCC buffer
+		if (s4blocViterbi == null)
+			s4blocViterbi = getS4aligner(track);
+
+		String words;
+		{
+			StringBuilder phrase = new StringBuilder();
+			String prefix = "";
+			for (int i = startWord; i <= endWord; i++) {
+				phrase.append(prefix).append(mots.get(i));
+				prefix = " ";
+			}
+			words = phrase.toString();
+		}
+
+		StateGraph graph = StateGraph.createStandardStateGraph(words);
+
+		File swapFile = Cache.getCacheFile("backtrack", "swp",
+				project.convertedAudioFile,
+				track.speakerName,
+				words,
+				startFrame,
+				endFrame);
+
+		SwapDeflater swapper = SwapDeflater.getSensibleSwapDeflater(
+				graph.getStateCount(),
+				new FileOutputStream(swapFile),
+				true);
+
+		graph.viterbi(s4blocViterbi.mfccs, swapper, startFrame, endFrame);
+		Alignment[] alignments = graph.getAlignments(
+				new SwapInflater(swapFile, swapper.getIndex()), startFrame);
+
+		return alignments;
+	}
+
 
 	/**
 	 * Merge a partial alignment into the main alignment.
@@ -244,6 +306,19 @@ public class AutoAligner {
 					S4AlignOrder order = partialBatchAlign(
 							startWord, startFrame, word, endFrame);
 					merge(order.alignWords, order.alignPhones, startWord, word);
+					break;
+				}
+
+				case FULL_BACKTRACK_VITERBI:
+				{
+					Alignment[] alignments;
+					try {
+						alignments = partialBatchAlignNewViterbi(
+								startWord, startFrame, word, endFrame);
+					} catch (Exception ex) {
+						throw new Error(ex);
+					}
+					merge(alignments[0], alignments[1], startWord, word);
 					break;
 				}
 			}
