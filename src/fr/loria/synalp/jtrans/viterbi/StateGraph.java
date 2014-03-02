@@ -378,9 +378,17 @@ public class StateGraph {
 	 * @see StateGraph#backtrack second part of the pathfinding process
 	 * @see SwapInflater
 	 * @param mfcc audio source
-	 * @param swapWriter
+	 * @param swapWriter object that commits likelihoods to a swap file
+	 *                   or buffer
+	 * @param startFrame first frame to analyze
+	 * @param endFrame last frame to analyze. Use a negative number to use
+	 *                 all frames in the audio source.
 	 */
-	public void viterbi(S4mfccBuffer mfcc, SwapDeflater swapWriter)
+	public void viterbi(
+			S4mfccBuffer mfcc,
+			SwapDeflater swapWriter,
+			int startFrame,
+			int endFrame)
 			throws IOException, InterruptedException
 	{
 		float[] v          = new float[nStates]; // probability vector
@@ -402,10 +410,13 @@ public class StateGraph {
 		Arrays.fill(v, Float.NEGATIVE_INFINITY);
 		v[0] = 0; // Probabilities are in the log domain
 
-		for (int f = 0; !mfcc.noMoreFramesAvailable; f++) {
+		mfcc.gotoFrame(startFrame);
+		int f = startFrame;
+		while (!mfcc.noMoreFramesAvailable && (endFrame < 0 || f <= endFrame)) {
 			Data frame = mfcc.getData();
 			if (frame instanceof DataStartSignal || frame instanceof DataEndSignal)
 				continue;
+			f++;
 
 			// Score frame according to each state in the vector
 			for (int i = 0; i < nStates; i++) {
@@ -531,7 +542,7 @@ public class StateGraph {
 					gv.nStates,
 					new FileOutputStream(swapFile),
 					true);
-			gv.viterbi(mfcc, swapper);
+			gv.viterbi(mfcc, swapper, 0, -1);
 			System.out.println("VITERBI TOOK " + (System.currentTimeMillis()-t0)/1000L + " SECONDS");
 			index = swapper.getIndex();
 			index.serialize(new FileOutputStream(indexFile));
