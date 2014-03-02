@@ -68,7 +68,10 @@ public class Cache {
 			sb.append(String.format("%08x", hash)).append('.');
 		}
 		sb.append(extension);
-		return new File(new File(CACHE_DIR, cacheGroup), sb.toString());
+		File f = new File(new File(CACHE_DIR, cacheGroup), sb.toString());
+		if (!f.exists())
+			f.getParentFile().mkdirs();
+		return f;
 	}
 
 
@@ -107,7 +110,6 @@ public class Cache {
 
 		// Dump computed object to cache
 		try {
-			cacheFile.getParentFile().mkdirs();
 			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(cacheFile));
 			oos.writeObject(object);
 			oos.flush();
@@ -139,7 +141,6 @@ public class Cache {
 		File cacheFile = getCacheFile(cacheGroup, extension, identifiers);
 
 		if (!READ_FROM_CACHE || !cacheFile.exists()) {
-			cacheFile.getParentFile().mkdirs();
 			try {
 				factory.write(cacheFile);
 			} catch (IOException ex) {

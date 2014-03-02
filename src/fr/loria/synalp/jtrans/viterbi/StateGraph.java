@@ -522,8 +522,6 @@ public class StateGraph {
 
 		File swapFile = Cache.getCacheFile("backtrack", "swp", words);
 		File indexFile = Cache.getCacheFile("backtrack", "idx", words);
-		swapFile.getParentFile().mkdirs();
-		indexFile.getParentFile().mkdirs();
 
 		boolean quick = false;
 		PageIndex index;
