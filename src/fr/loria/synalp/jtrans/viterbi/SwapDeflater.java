@@ -189,6 +189,9 @@ class SwapDeflater {
 		if (flushThread == null) {
 			flushThread = new FlushThread();
 			flushThread.start();
+
+			// Wait for thread to start up
+			wait();
 		}
 
 		// Wait for flushThread to finish working on the back buffer
@@ -211,6 +214,9 @@ class SwapDeflater {
 
 	// Called from flushThread
 	private synchronized void consumePage() throws IOException, InterruptedException {
+		// Tell main thread we're ready to work with the back buffer
+		notify();
+
 		// Wait for the main thread to release the back buffer
 		while (backBufferFrames == 0) {
 			wait();
@@ -221,9 +227,6 @@ class SwapDeflater {
 
 		// Release back buffer
 		backBufferFrames = 0;
-
-		// Tell main thread we're done with the back buffer
-		notify();
 	}
 
 
