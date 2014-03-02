@@ -94,7 +94,7 @@ public class AutoAligner {
 	 *
 	 * The resulting S4AlignOrder objects may be cached to save time.
 	 *
-	 * It is not merged into the main alignment (use mergeOrder() for that).
+	 * It is not merged into the main alignment (use merge()).
 	 */
 	private S4AlignOrder partialBatchAlign(final int startWord, final int startFrame, final int endWord, final int endFrame) {
 		StringBuilder phrase = new StringBuilder();
@@ -120,36 +120,40 @@ public class AutoAligner {
 	}
 
 	/**
-	 * Merge an S4AlignOrder into the main alignment.
+	 * Merge a partial alignment into the main alignment.
 	 */
-	private void mergeOrder(S4AlignOrder order, int startWord, int endWord) {
-		if (order.alignWords != null) {
-			String[] alignedWords = new String[1 + endWord - startWord];
-			for (int i = 0; i < 1+endWord-startWord; i++)
-				alignedWords[i] = mots.get(i + startWord).toString();
-			int[] wordSegments = order.alignWords.matchWithText(alignedWords);
-
-			// Merge word segments into the main word alignment
-			int firstSegment = track.words.merge(order.alignWords);
-
-			// Adjust posInAlign for Word elements
-			for (int i = 0; i < wordSegments.length; i++) {
-				int idx = wordSegments[i];
-
-				// Offset if we have a valid segment index
-				if (idx >= 0)
-					idx += firstSegment;
-
-				mots.get(i + startWord).posInAlign = idx;
-			}
-			track.refreshIndex();
-
-			// Merge phoneme segments into the main phoneme alignment
-			track.phons.merge(order.alignPhones);
-		} else {
-			System.out.println("================================= ALIGN FOUND null");
-			// TODO
+	private void merge(
+			Alignment wordAl,
+			Alignment phonAl,
+			int startWord,
+			int endWord)
+	{
+		if (wordAl == null) {
+			return;
 		}
+
+		String[] alignedWords = new String[1 + endWord - startWord];
+		for (int i = 0; i < 1+endWord-startWord; i++)
+			alignedWords[i] = mots.get(i + startWord).toString();
+		int[] wordSegments = wordAl.matchWithText(alignedWords);
+
+		// Merge word segments into the main word alignment
+		int firstSegment = track.words.merge(wordAl);
+
+		// Adjust posInAlign for Word elements
+		for (int i = 0; i < wordSegments.length; i++) {
+			int idx = wordSegments[i];
+
+			// Offset if we have a valid segment index
+			if (idx >= 0)
+				idx += firstSegment;
+
+			mots.get(i + startWord).posInAlign = idx;
+		}
+		track.refreshIndex();
+
+		// Merge phoneme segments into the main phoneme alignment
+		track.phons.merge(phonAl);
 	}
 
 	/**
@@ -215,7 +219,7 @@ public class AutoAligner {
 				linearAlign(startWord, startFrame, word, endFrame);
 			} else {
 				S4AlignOrder order = partialBatchAlign(startWord, startFrame, word, endFrame);
-				mergeOrder(order, startWord, word);
+				merge(order.alignWords, order.alignPhones, startWord, word);
 			}
 		} else {
 			// Only one word to align; create a new manual segment.
