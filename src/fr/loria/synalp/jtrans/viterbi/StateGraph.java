@@ -36,6 +36,14 @@ public class StateGraph {
 	// scores are typically cached (see ScoreCachingSenone.getScore)
 
 	/**
+	 * Depth of recursion for each state in the graph.
+	 * In other words, states at level 0 are mandatory. States at levels >= 1
+	 * can only be accessed via branching, i.e. when a word has several
+	 * pronunciations or when a phoneme is optional.
+	 */
+	private byte[] depth;
+
+	/**
 	 * Number of transitions for each HMM state.
 	 * Values in this array should not exceed MAX_TRANSITIONS, otherwise an
 	 * index out of bounds exception will eventually be thrown.
@@ -108,6 +116,7 @@ public class StateGraph {
 	 * or null if the entire token stream has been parsed successfully
 	 */
 	private String parseRule(
+			int recursionDepth,
 			Iterator<String> tokenIter,
 			Set<Integer> tails,
 			AcousticModel acMod,
@@ -134,7 +143,7 @@ public class StateGraph {
 				tails.add(insertionPoint + 2);
 
 				// Create the actual states
-				insertStateTriplet(phone, acMod, unitMgr);
+				insertStateTriplet(recursionDepth, phone, acMod, unitMgr);
 			}
 
 			else if (token.equals("(")) {
@@ -146,7 +155,7 @@ public class StateGraph {
 
 				do {
 					Set<Integer> newTails = new HashSet<Integer>(tailsCopy);
-					token = parseRule(tokenIter, newTails, acMod, unitMgr);
+					token = parseRule(recursionDepth+1, tokenIter, newTails, acMod, unitMgr);
 					tails.addAll(newTails);
 				} while (token.equals("|"));
 				assert token.equals(")");
@@ -157,7 +166,7 @@ public class StateGraph {
 				// Append new tails to existing tails
 
 				Set<Integer> subTails = new HashSet<Integer>(tails);
-				token = parseRule(tokenIter, subTails, acMod, unitMgr);
+				token = parseRule(recursionDepth+1, tokenIter, subTails, acMod, unitMgr);
 				tails.addAll(subTails);
 				assert token.equals("]");
 			}
@@ -176,12 +185,14 @@ public class StateGraph {
 	 * See the main parseRule method for more information.
 	 */
 	private String parseRule(
+			int recursionDepth,
 			String rule,
 			Set<Integer> tails,
 			AcousticModel acMod,
 			UnitManager unitMgr)
 	{
 		return parseRule(
+				recursionDepth,
 				Arrays.asList(trimSplit(rule)).iterator(),
 				tails,
 				acMod,
@@ -195,11 +206,13 @@ public class StateGraph {
 	 * transitions and the third state has no outbound transitions.
 	 */
 	private int insertStateTriplet(
+			int recursionDepth,
 			String phone,
 			final AcousticModel acMod,
 			final UnitManager unitMgr)
 	{
 		System.out.println("inserting state triplet for '" + phone + "'");
+		assert recursionDepth >= 0 && recursionDepth <= 255;
 
 		// find HMM for this phone
 		HMM hmm = acMod.lookupNearestHMM(
@@ -215,6 +228,7 @@ public class StateGraph {
 			assert state.getSuccessors().length == 2;
 
 			states[j] = state;
+			depth[j] = (byte)recursionDepth;
 			succ[j][0] = j;
 			if (i < 2) {
 				succ[j][1] = j+1;
@@ -283,6 +297,7 @@ public class StateGraph {
 		nStates = 3 * nPhones;
 
 		states = new HMMState[nStates];
+		depth  = new byte    [nStates];
 		nTrans = new byte    [nStates];
 		succ   = new int     [nStates][MAX_TRANSITIONS];
 		prob   = new float   [nStates][MAX_TRANSITIONS];
@@ -294,12 +309,12 @@ public class StateGraph {
 		Set<Integer> tails = new HashSet<Integer>();
 
 		// add initial mandatory silence
-		parseRule("SIL", tails, acMod, unitMgr);
+		parseRule(0, "SIL", tails, acMod, unitMgr);
 
 		for (int i = 0; i < words.length; i++) {
 			if (i > 0) {
 				// optional silence between two words
-				parseRule("[ SIL ]", tails, acMod, unitMgr);
+				parseRule(0, "[ SIL ]", tails, acMod, unitMgr);
 			}
 
 			// Word actually starts after optional silence
@@ -310,12 +325,12 @@ public class StateGraph {
 			assert rule != null;
 			assert !rule.isEmpty();
 
-			String token = parseRule(rule, tails, acMod, unitMgr);
+			String token = parseRule(0, rule, tails, acMod, unitMgr);
 			assert token == null;
 		}
 
 		// add final mandatory silence
-		parseRule("SIL", tails, acMod, unitMgr);
+		parseRule(0, "SIL", tails, acMod, unitMgr);
 
 		assert insertionPoint == nStates;
 		// correct inter-phone transition probabilities
@@ -357,8 +372,12 @@ public class StateGraph {
 
 		for (int i = 0; i < nStates; i++) {
 			HMMState s = states[i];
-			w.write(String.format("\nnode%d [ label=\"%s %d\" ]", i,
-					s.getHMM().getBaseUnit().getName(), s.getState()));
+			w.write(String.format("\nnode%d [ label=\"'%s' #%d\nS#%d, rd %d\" ]",
+					i,
+					s.getHMM().getBaseUnit(),
+					s.getState(),
+					i,
+					depth[i]));
 			for (byte j = 0; j < nTrans[i]; j++) {
 				w.write(String.format("\nnode%d -> node%d [ label=%f ]",
 						i, succ[i][j], lm.logToLinear(prob[i][j])));
@@ -613,6 +632,48 @@ public class StateGraph {
 	/** Returns the total number of HMM states in the grammar. */
 	public int getStateCount() {
 		return nStates;
+	}
+
+
+	/**
+	 * Finds where to break up a subgraph into two roughly equally lengthy
+	 * parts. The split may only occur between two states at recursion depth
+	 * level 0, i.e. between two states at the "surface."
+	 * @param a index of the first state in the subgraph
+	 * @param b index of the last state in the subgraph
+	 * @return the rightmost state of the left part of the split
+	 */
+	public int surfaceSplit(int a, int b) {
+		assert a <= b;
+
+		// Progressively test away from the center
+		final int center = (a+b) / 2;
+		int left = -1;
+		int right = -1;
+
+		for (int i = center; i >= a && left < 0; i--) {
+			if (depth[i] == 0 && nTrans[i] == 2)
+				left = i;
+		}
+
+		// condition: j < b, NOT j <= b: can't use last state because we DON'T
+		// want to allow transitioning OUT of the subgraph!
+		for (int j = center+1; j < b && right < 0; j++) {
+			if (depth[j] == 0 && nTrans[j] == 2)
+				right = j;
+		}
+
+		int split =
+				left < 0? right:
+				right < 0? left:
+				center-left <= right-center? left: right;
+
+		assert split < 0 ||
+				(succ[split][0] == split &&
+				succ[split][1] == split+1 &&
+				depth[split+1] == 0);
+
+		return split;
 	}
 
 
