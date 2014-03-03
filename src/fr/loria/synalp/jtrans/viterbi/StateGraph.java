@@ -532,39 +532,81 @@ public class StateGraph {
 			int startFrame)
 			throws IOException
 	{
-		Alignment wordAl = new Alignment();
-		Alignment phonAl = new Alignment();
-
 		int[] timeline = backtrack(swapReader);
 
-		int pw = -1;
-		int pwStartFrame = -1;
-		int w = -1;
+		Alignment wordAl = getWordAlignment(timeline);
+		Alignment phoneAl = getPhoneAlignment(timeline);
+
+		wordAl.adjustOffset(startFrame);
+		phoneAl.adjustOffset(startFrame);
+
+		return new Alignment[] { wordAl, phoneAl };
+	}
+
+
+	private Alignment getWordAlignment(int[] timeline) {
+		Alignment al = new Alignment();
+		int prevWord = -1;
+		int prevWordFrame0 = -1;
+		int currWord = -1;
+
 		for (int f = 0; f < timeline.length; f++) {
 			int frameState = timeline[f];
-			while (w+1 < words.length && wordBoundaries[w+1] <= frameState) {
-				w++;
+			while (currWord+1 < words.length &&
+					wordBoundaries[currWord+1] <= frameState)
+			{
+				currWord++;
 			}
 
-			if (w != pw) {
-				if (pw >= 0)
-					wordAl.addRecognizedSegment(words[pw], pwStartFrame, f-1);
-				pw = w;
-				pwStartFrame = f;
+			if (currWord != prevWord) {
+				if (prevWord >= 0) {
+					al.addRecognizedSegment(
+							words[prevWord], prevWordFrame0, f-1);
+				}
+				prevWord = currWord;
+				prevWordFrame0 = f;
 			}
 		}
 
 		// Add last word
-		if (pw >= 0) {
-			wordAl.addRecognizedSegment(words[pw], pwStartFrame, timeline.length - 1);
+		if (prevWord >= 0) {
+			al.addRecognizedSegment(
+					words[prevWord], prevWordFrame0, timeline.length-1);
 		}
 
-		// TODO phonemes!
+		return al;
+	}
 
-		wordAl.adjustOffset(startFrame);
-		phonAl.adjustOffset(startFrame);
 
-		return new Alignment[] { wordAl, phonAl };
+	private Alignment getPhoneAlignment(int[] timeline) {
+		Alignment al = new Alignment();
+		int prevState = -1;
+		int state0Frame0 = -1; // 1st frame of the 1st state of the ongoing phone
+
+		for (int f = 0; f < timeline.length; f++) {
+			int currState = timeline[f];
+
+			if (f == 0 || prevState/3 != currState/3) {
+				if (prevState >= 0) {
+					al.addRecognizedSegment(
+							states[prevState].getHMM().getBaseUnit().getName(),
+							state0Frame0,
+							f-1);
+				}
+				prevState = currState;
+				state0Frame0 = f;
+			}
+		}
+
+		// Add last phone
+		if (prevState >= 0) {
+			al.addRecognizedSegment(
+					states[prevState].getHMM().getBaseUnit().getName(),
+					state0Frame0,
+					timeline.length-1);
+		}
+
+		return al;
 	}
 
 
