@@ -22,7 +22,7 @@ public class StateGraph {
 	/**
 	 * Maximum number of transitions (successors) an HMM state may have.
 	 * If this value ever has to exceed 255 (overkill!), be sure to change
-	 * the type of the nTrans array.
+	 * the type of the inCount/outCount arrays.
 	 */
 	public static final int MAX_TRANSITIONS = 20;
 
@@ -40,13 +40,26 @@ public class StateGraph {
 	 * Values in this array should not exceed MAX_TRANSITIONS, otherwise an
 	 * index out of bounds exception will eventually be thrown.
 	 */
-	private byte[] nTrans;
+	private byte[] outCount;
 
 	/** Transition matrix: successor IDs */
-	private int[][] succ;
+	private int[][] outState;
 
 	/** Transition matrix: probabilities */
-	private float[][] prob;
+	private float[][] outProb;
+
+	/**
+	 * Number of incoming transitions for each HMM state
+	 * Values in this array should not exceed MAX_TRANSITIONS, otherwise an
+	 * index out of bounds exception will eventually be thrown.
+	 */
+	private final byte[] inCount;
+
+	/** HMM State IDs for each incoming transition */
+	private final int[][] inState;
+
+	/** Probability of each incoming transition */
+	private final float[][] inProb;
 
 	/** Total number of non-empty phones contained in the grammar. */
 	private final int nPhones;
@@ -124,9 +137,9 @@ public class StateGraph {
 
 				// Bind tails to the 1st state that is going to be created
 				for (Integer parentId: tails) {
-					assert nTrans[parentId] < MAX_TRANSITIONS - 1:
+					assert outCount[parentId] < MAX_TRANSITIONS - 1:
 							"too many transitions";
-					succ[parentId][nTrans[parentId]++] = insertionPoint;
+					outState[parentId][outCount[parentId]++] = insertionPoint;
 				}
 
 				// New sole tail is future 3rd state
@@ -215,12 +228,12 @@ public class StateGraph {
 			assert state.getSuccessors().length == 2;
 
 			states[j] = state;
-			succ[j][0] = j;
+			outState[j][0] = j;
 			if (i < 2) {
-				succ[j][1] = j+1;
-				nTrans[j] = 2;
+				outState[j][1] = j+1;
+				outCount[j] = 2;
 			} else {
-				nTrans[j] = 1;
+				outCount[j] = 1;
 			}
 
 			for (HMMStateArc arc: state.getSuccessors()) {
@@ -230,12 +243,12 @@ public class StateGraph {
 
 				float p = arc.getLogProbability();
 				if (arcState == state) {
-					prob[j][0] = p;
+					outProb[j][0] = p;
 				} else {
 					assert i != 2;
 					assert !arcState.isExitState();
 					assert arcState == hmm.getState(i+1);
-					prob[j][1] = p;
+					outProb[j][1] = p;
 				}
 			}
 		}
@@ -252,19 +265,19 @@ public class StateGraph {
 	private void setUniformInterPhoneTransitionProbabilities(int stateId) {
 		assert stateId % 3 == 2 : "must be a third state";
 
-		if (nTrans[stateId] < 2)
+		if (outCount[stateId] < 2)
 			return;
 
-		assert prob[stateId][0] != 0f : "loop probability must be initialized";
-		assert prob[stateId][1] == 0f : "non-loop probabilities must be uninitialized";
+		assert outProb[stateId][0] != 0f : "loop probability must be initialized";
+		assert outProb[stateId][1] == 0f : "non-loop probabilities must be uninitialized";
 
 		LogMath lm = HMMModels.getLogMath();
-		double linearLoopProb = lm.logToLinear(prob[stateId][0]);
+		double linearLoopProb = lm.logToLinear(outProb[stateId][0]);
 		float p = lm.linearToLog(
-				(1f - linearLoopProb) / (double)(nTrans[stateId] - 1));
+				(1f - linearLoopProb) / (double)(outCount[stateId] - 1));
 
-		for (byte j = 1; j < nTrans[stateId]; j++)
-			prob[stateId][j] = p;
+		for (byte j = 1; j < outCount[stateId]; j++)
+			outProb[stateId][j] = p;
 	}
 
 
@@ -283,9 +296,14 @@ public class StateGraph {
 		nStates = 3 * nPhones;
 
 		states = new HMMState[nStates];
-		nTrans = new byte    [nStates];
-		succ   = new int     [nStates][MAX_TRANSITIONS];
-		prob   = new float   [nStates][MAX_TRANSITIONS];
+
+		outCount = new byte  [nStates];
+		outState = new int   [nStates][MAX_TRANSITIONS];
+		outProb  = new float [nStates][MAX_TRANSITIONS];
+
+		inCount = new byte   [nStates];
+		inState = new int    [nStates][MAX_TRANSITIONS];
+		inProb  = new float  [nStates][MAX_TRANSITIONS];
 
 		//----------------------------------------------------------------------
 		// Build state graph
@@ -324,11 +342,29 @@ public class StateGraph {
 		}
 
 		// last state can loop forever
-		prob[nStates-1][0] = 0f; // log domain
+		outProb[nStates-1][0] = 0f; // log domain
 
 		assert insertionPoint == nStates : "predicted state count not met";
-		assert nTrans[nStates-1] == 1 : "last state can only have 1 transition";
-		assert succ[nStates-1][0] == nStates - 1 : "last state can only transition to itself";
+		assert outCount[nStates-1] == 1 : "last state can only have 1 transition";
+		assert outState[nStates-1][0] == nStates - 1 : "last state can only transition to itself";
+
+		//----------------------------------------------------------------------
+		// Prepare incoming transitions (predecessors) for each state
+
+		int maxPredec = 0;
+
+		for (int parent = 0; parent < nStates; parent++) {
+			for (byte childTID = 0; childTID < outCount[parent]; childTID++) {
+				int child = outState[parent][childTID];
+				int childPredecID = inCount[child]++;
+				inState[child][childPredecID] = parent;
+				inProb[child][childPredecID] = outProb[parent][childTID];
+				if (inCount[child] > maxPredec)
+					maxPredec = inCount[child];
+			}
+		}
+
+		System.out.println("Max predecessor count: " + maxPredec);
 	}
 
 
@@ -359,9 +395,9 @@ public class StateGraph {
 			HMMState s = states[i];
 			w.write(String.format("\nnode%d [ label=\"%s %d\" ]", i,
 					s.getHMM().getBaseUnit().getName(), s.getState()));
-			for (byte j = 0; j < nTrans[i]; j++) {
+			for (byte j = 0; j < outCount[i]; j++) {
 				w.write(String.format("\nnode%d -> node%d [ label=%f ]",
-						i, succ[i][j], lm.logToLinear(prob[i][j])));
+						i, outState[i][j], lm.logToLinear(outProb[i][j])));
 			}
 		}
 
@@ -406,24 +442,17 @@ public class StateGraph {
 			int endFrame)
 			throws IOException, InterruptedException
 	{
-		float[] v          = new float[nStates]; // probability vector
-
-		// Emission probability (frame score)
-		float[] pEmission  = new float[nStates];
-
-		// Probability to reach a state given the previous vector
-		// max(pTransition(parent->s) * pv[s]) for each parent of state 's'
-		float[] pReachMax  = new float[nStates];
+		// Probability vectors
+		float[] vpf = new float[nStates]; // vector for previous frame (read-only)
+		float[] vcf = new float[nStates]; // vector for current frame (write-only)
 
 		// State that yielded pReachMax for each state
 		int  [] bestParent = new int  [nStates];
 
-		//----------------------------------------------------------------------
-
 		// Initialize probability vector
 		// We only have one initial state (state #0), probability 1
-		Arrays.fill(v, Float.NEGATIVE_INFINITY);
-		v[0] = 0; // Probabilities are in the log domain
+		Arrays.fill(vpf, Float.NEGATIVE_INFINITY);
+		vpf[0] = 0; // Probabilities are in the log domain
 
 		mfcc.gotoFrame(startFrame);
 		int f = startFrame;
@@ -433,34 +462,42 @@ public class StateGraph {
 				continue;
 			f++;
 
-			// Score frame according to each state in the vector
 			for (int i = 0; i < nStates; i++) {
-				pEmission[i] = states[i].getScore(frame);
-			}
+				// Emission probability (frame score)
+				float emission = states[i].getScore(frame);
 
-			Arrays.fill(pReachMax, Float.NEGATIVE_INFINITY);
-			Arrays.fill(bestParent, -1);
+				assert inCount[i] >= 1;
 
-			for (int parent = 0; parent < nStates; parent++) {
-				for (byte snt = 0; snt < nTrans[parent]; snt++) {
-					int s = succ[parent][snt];
-					float pReach = prob[parent][snt] + v[parent]; // log domain
-					if (pReach > pReachMax[s]) {
-						pReachMax[s] = pReach;
-						bestParent[s] = parent;
+				// Probability to reach a state given the previous vector v
+				// i.e. max(P(k -> i) * v[k]) for each predecessor k of state #i
+				float bestReachProb;
+
+				// Initialize with first incoming transition
+				bestReachProb = inProb[i][0] + vpf[inState[i][0]]; // log domain
+				bestParent[i] = inState[i][0];
+
+				// Find best probability among all incoming transitions
+				for (int j = 1; j < inCount[i]; j++) {
+					float p = inProb[i][j] + vpf[inState[i][j]]; // log domain
+					if (p > bestReachProb) {
+						bestReachProb = p;
+						bestParent[i] = inState[i][j];
 					}
 				}
-			}
 
-			for (int s = 0; s < nStates; s++) {
-				v[s] = pEmission[s] + pReachMax[s]; // log domain
+				vcf[i] = emission + bestReachProb; // log domain
 			}
 
 			swapWriter.write(bestParent);
+
+			// swap vectors
+			float[] temp = vcf;
+			vcf = vpf;
+			vpf = temp;
 		}
 
 		for (int s = 0; s < nStates; s++) {
-			System.out.println("V[" + s + "] " + v[s]);
+			System.out.println("V[" + s + "] " + vpf[s]);
 		}
 
 		swapWriter.close();
