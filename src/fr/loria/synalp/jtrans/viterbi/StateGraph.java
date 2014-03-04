@@ -20,11 +20,15 @@ import java.util.regex.Pattern;
 public class StateGraph {
 
 	/**
-	 * Maximum number of transitions (successors) an HMM state may have.
-	 * If this value ever has to exceed 255 (overkill!), be sure to change
-	 * the type of the inCount/outCount arrays.
+	 * Maximum number of transitions an HMM state may have.
 	 */
-	public static final int MAX_TRANSITIONS = 20;
+	/*
+	If this value ever has to exceed 127 (overkill), byte reads (for
+	transitions) will need to be peppered with "& 0xFF" (no unsigned bytes in
+	Java). If it ever has to exceed 255 (way overkill), be sure to change
+	the type of the inCount/outCount arrays.
+	*/
+	public static final int MAX_TRANSITIONS = 32;
 
 	/** Pattern for non-phone grammar tokens. */
 	public final static Pattern NONPHONE_PATTERN =
@@ -446,8 +450,8 @@ public class StateGraph {
 		float[] vpf = new float[nStates]; // vector for previous frame (read-only)
 		float[] vcf = new float[nStates]; // vector for current frame (write-only)
 
-		// State that yielded pReachMax for each state
-		int  [] bestParent = new int  [nStates];
+		// ID of the incoming transition that yielded bestReachProb for each state
+		byte[] bestInTrans = new byte[nStates];
 
 		// Initialize probability vector
 		// We only have one initial state (state #0), probability 1
@@ -474,21 +478,21 @@ public class StateGraph {
 
 				// Initialize with first incoming transition
 				bestReachProb = inProb[i][0] + vpf[inState[i][0]]; // log domain
-				bestParent[i] = inState[i][0];
+				bestInTrans[i] = 0;
 
 				// Find best probability among all incoming transitions
-				for (int j = 1; j < inCount[i]; j++) {
+				for (byte j = 1; j < inCount[i]; j++) {
 					float p = inProb[i][j] + vpf[inState[i][j]]; // log domain
 					if (p > bestReachProb) {
 						bestReachProb = p;
-						bestParent[i] = inState[i][j];
+						bestInTrans[i] = j;
 					}
 				}
 
 				vcf[i] = emission + bestReachProb; // log domain
 			}
 
-			swapWriter.write(bestParent);
+			swapWriter.write(bestInTrans);
 
 			// swap vectors
 			float[] temp = vcf;
@@ -520,7 +524,8 @@ public class StateGraph {
 		int pathLead = nStates-1;
 		int[] timeline = new int[swapReader.getFrameCount()];
 		for (int f = timeline.length-1; f >= 0; f--) {
-			pathLead = swapReader.get(f, pathLead);
+			byte transID = swapReader.getIncomingTransition(f, pathLead);
+			pathLead = inState[pathLead][transID];
 			timeline[f] = pathLead;
 			assert pathLead >= 0;
 		}

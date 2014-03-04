@@ -11,13 +11,14 @@ import java.util.zip.Deflater;
  */
 public class SwapDeflater {
 
+	private final int nStates;
 	private final int maxFramesPerPage;
 
 	private final OutputStream out;
 	private final Deflater def;
 	private final PageIndex index;
 
-	private int[] previousBestParent;
+	private byte[] previousBestInTrans;
 
 	/** Uncompressed data buffer that the main thread writes into */
 	private ByteBuffer frontBuffer;
@@ -87,7 +88,9 @@ public class SwapDeflater {
 	{
 		index = new PageIndex(nStates);
 
-		maxFramesPerPage = approxBytesPerPage / index.bytesPerFrame;
+		this.nStates = nStates;
+
+		maxFramesPerPage = approxBytesPerPage / nStates;
 		assert maxFramesPerPage >= 1;
 		System.out.println("Max Frames Per Page : " + maxFramesPerPage);
 
@@ -95,11 +98,11 @@ public class SwapDeflater {
 
 		def = deflater;
 
-		frontBuffer = ByteBuffer.allocate(maxFramesPerPage * index.bytesPerFrame);
-		backBuffer  = ByteBuffer.allocate(maxFramesPerPage * index.bytesPerFrame);
+		frontBuffer = ByteBuffer.allocate(maxFramesPerPage * nStates);
+		backBuffer  = ByteBuffer.allocate(maxFramesPerPage * nStates);
 
 		compBuffer = new byte[1048576];
-		previousBestParent = new int[nStates];
+		previousBestInTrans = new byte[nStates];
 	}
 
 
@@ -138,7 +141,7 @@ public class SwapDeflater {
 
 		def.reset();
 		def.setInput(rawBuf.array(), rawBuf.arrayOffset(),
-				framesInBuf * index.bytesPerFrame);
+				framesInBuf * nStates);
 		def.finish();
 		assert !def.finished();
 
@@ -163,27 +166,22 @@ public class SwapDeflater {
 	}
 
 
-	public void write(int[] n) throws IOException, InterruptedException {
-		assert previousBestParent.length == n.length;
+	public void write(byte[] n) throws IOException, InterruptedException {
+		assert previousBestInTrans.length == n.length;
 
-		if (index.useShorts) {
-			for (int i = 0; i < previousBestParent.length; i++) {
-				frontBuffer.putShort((short) (n[i] - previousBestParent[i]));
-			}
-		} else {
-			for (int i = 0; i < previousBestParent.length; i++) {
-				frontBuffer.putInt(n[i] - previousBestParent[i]);
-			}
+		for (int i = 0; i < previousBestInTrans.length; i++) {
+			frontBuffer.put((byte)(n[i] - previousBestInTrans[i]));
 		}
 
-		System.arraycopy(n, 0, previousBestParent, 0, previousBestParent.length);
+		System.arraycopy(n, 0, previousBestInTrans, 0, previousBestInTrans.length);
 
 		frontBufferFrames++;
 
 		if (frontBufferFrames % maxFramesPerPage == 0) {
 			System.out.print("J");
 			producePage();
-			Arrays.fill(previousBestParent, 0);
+			// Reset filter
+			Arrays.fill(previousBestInTrans, (byte)0);
 		}
 	}
 

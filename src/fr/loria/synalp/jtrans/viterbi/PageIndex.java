@@ -7,9 +7,6 @@ import java.util.List;
 public class PageIndex implements Serializable {
 
 	public final int nStates;
-	public final boolean useShorts;
-	public final int bytesPerState;
-	public final int bytesPerFrame;
 
 	private List<Entry> index = new ArrayList<Entry>();
 	private int totalFrameCount;
@@ -45,9 +42,6 @@ public class PageIndex implements Serializable {
 
 	public PageIndex(int nStates) {
 		this.nStates = nStates;
-		useShorts = nStates <= 65535;
-		bytesPerState = useShorts? 2: 4;
-		bytesPerFrame = bytesPerState * nStates;
 	}
 
 

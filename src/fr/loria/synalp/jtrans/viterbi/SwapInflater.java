@@ -27,23 +27,17 @@ public class SwapInflater {
 	}
 
 
-	public int get(int frame, int state) throws IOException {
+	public byte getIncomingTransition(int frame, int state) throws IOException {
 		if (currentPage == null || !currentPage.within(frame)) {
 			inflatePage(index.getPage(frame));
 		}
 
-		if (index.useShorts) {
-			int s = pageBuf.getShort(idx(frame, state)) & 0xFFFF;
-			return s == 65535? -1: s;
-		} else {
-			return pageBuf.getInt(idx(frame, state));
-		}
+		return pageBuf.get(idx(frame, state));
 	}
 
 
 	private int idx(int frame, int state) {
-		return index.bytesPerFrame * (frame-currentPage.frame0) +
-				index.bytesPerState * state;
+		return index.nStates * (frame-currentPage.frame0) + state;
 	}
 
 
@@ -52,7 +46,7 @@ public class SwapInflater {
 		assert page != currentPage;
 		currentPage = page;
 
-		int unpackedPageLength = page.frameCount * index.bytesPerFrame;
+		int unpackedPageLength = page.frameCount * index.nStates;
 		if (pageBuf == null || pageBuf.capacity() < unpackedPageLength) {
 			System.out.print("Reallocating... ");
 			pageBuf = ByteBuffer.allocate(unpackedPageLength);
@@ -80,24 +74,13 @@ public class SwapInflater {
 
 		int f = page.frame0+1;
 		final int fn = page.frame0 + page.frameCount;
-		if (index.useShorts) {
-			for (; f < fn; f++) {
-				for (int s = 0; s < index.nStates; s++) {
-					int p = pageBuf.getShort(idx(f-1, s));
-					int c = pageBuf.getShort(idx(f, s));
-					pageBuf.putShort(idx(f, s), (short)(p+c));
-				}
-			}
-		} else {
-			for (; f < fn; f++) {
-				for (int s = 0; s < index.nStates; s++) {
-					int p = pageBuf.getInt(idx(f-1, s));
-					int c = pageBuf.getInt(idx(f, s));
-					pageBuf.putInt(idx(f, s), p+c);
-				}
+		for (; f < fn; f++) {
+			for (int s = 0; s < index.nStates; s++) {
+				byte p = pageBuf.get(idx(f-1, s));
+				byte c = pageBuf.get(idx(f, s));
+				pageBuf.put(idx(f, s), (byte) (p + c));
 			}
 		}
-
 
 		System.out.println("OK");
 	}
