@@ -83,8 +83,8 @@ class TextGridStateMachine {
 	private static final Pattern
 			PAT_SIZE = Pattern.compile("size" + HALFPAT_INT),
 			PAT_ITEM = Pattern.compile("item" + HALFPAT_INDEX),
-			PAT_NAME = Pattern.compile("name" + HALFPAT_STR),
-			PAT_TEXT = Pattern.compile("text" + HALFPAT_STR),
+			PAT_NAME = Pattern.compile("name" + HALFPAT_STR, Pattern.DOTALL),
+			PAT_TEXT = Pattern.compile("text" + HALFPAT_STR, Pattern.DOTALL),
 			PAT_XMIN = Pattern.compile("xmin" + HALFPAT_FLOAT),
 			PAT_XMAX = Pattern.compile("xmax" + HALFPAT_FLOAT),
 			PAT_INTERVAL_COUNT = Pattern.compile("intervals: size" + HALFPAT_INT),
@@ -130,16 +130,37 @@ class TextGridStateMachine {
 			throws IOException, ParsingException
 	{
 		State state = State.FILE_HEADER_1;
-		int lineNumber = 0;
+		int lineNumber = 1;
 		Interval currentInterval = new Interval();
 		Alignment currentTier = null;
 		int remainingIntervals = -1;
 
 		while (state != State.DONE) {
-			lineNumber++;
-			String line = reader.readLine();
-			if (line == null)
+			// Read a 'line' that may span multiple \n's within quotes
+			StringBuilder lineSB = new StringBuilder();
+			boolean inQuotes = false;
+			int c;
+			while (-1 != (c = reader.read())) {
+				if (c == '\n')
+					lineNumber++;
+
+				if (!inQuotes) {
+					if (c == '"')
+						inQuotes = true;
+					else if (c == '\n')
+						break;
+				} else {
+					if (c == '"')
+						inQuotes = false;
+				}
+
+				lineSB.append((char)c);
+			}
+
+			if (c == -1) {
 				break;
+			}
+			String line = lineSB.toString();
 			line = line.trim();
 			String lcline = line.toLowerCase();
 			
