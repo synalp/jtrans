@@ -219,8 +219,6 @@ public class StateGraph {
 			final AcousticModel acMod,
 			final UnitManager unitMgr)
 	{
-		System.out.println("inserting state triplet for '" + phone + "'");
-
 		// find HMM for this phone
 		HMM hmm = acMod.lookupNearestHMM(
 				unitMgr.getUnit(phone), HMMPosition.UNDEFINED, false);
@@ -494,8 +492,6 @@ public class StateGraph {
 	 * the first frame given to StateGraph#viterbi.
 	 */
 	private int[] backtrack(SwapInflater swapReader) throws IOException {
-		System.out.println("Backtracking...");
-
 		int pathLead = nStates-1;
 		int[] timeline = new int[swapReader.getFrameCount()];
 		for (int f = timeline.length-1; f >= 0; f--) {
@@ -505,6 +501,11 @@ public class StateGraph {
 			assert pathLead >= 0;
 		}
 
+		return timeline;
+	}
+
+
+	private void prettyPrintTimeline(int[] timeline) {
 		System.out.println("Note: only initial states are shown below");
 		System.out.println("    TIME   STATE#     UNIT");
 		for (int f = 0; f < timeline.length; f++) {
@@ -532,8 +533,6 @@ public class StateGraph {
 				pw = w;
 			}
 		}
-
-		return timeline;
 	}
 
 
@@ -661,6 +660,7 @@ public class StateGraph {
 
 		boolean quick = false;
 		PageIndex index;
+
 		if (!quick) {
 			long t0 = System.currentTimeMillis();
 			SwapDeflater swapper = SwapDeflater.getSensibleSwapDeflater(
@@ -674,8 +674,13 @@ public class StateGraph {
 		} else {
 			index = PageIndex.deserialize(new FileInputStream(indexFile));
 		}
+
 		System.out.println("FRAME COUNT: " + index.getFrameCount());
-		gv.backtrack(new SwapInflater(index, swapFile));
+
+		System.out.println("Backtracking...");
+		int[] timeline = gv.backtrack(new SwapInflater(index, swapFile));
+		gv.prettyPrintTimeline(timeline);
+
 		System.out.println("done");
 	}
 

@@ -86,9 +86,7 @@ public class Grammatiseur implements Serializable {
 		StringBuilder res = new StringBuilder();
 
 		// d'abord les nombres
-		System.out.println("get grammar of: "+phrase);
 		List<String> phraseSansNombres = parsernb.getRule(phrase);
-		System.out.println("output of nb "+phraseSansNombres);
 		
 		for (int i=0;i<phraseSansNombres.size();i++) {
 			String s = phraseSansNombres.get(i);
