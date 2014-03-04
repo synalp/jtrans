@@ -220,8 +220,13 @@ public class SwapDeflater {
 		notify();
 
 		// Wait for the main thread to release the back buffer
-		while (backBufferFrames == 0) {
+		while (!done && backBufferFrames == 0) {
 			wait();
+		}
+
+		if (done) {
+			assert backBufferFrames == 0;
+			return;
 		}
 
 		// Do the heavy lifting
@@ -232,9 +237,19 @@ public class SwapDeflater {
 	}
 
 
+	// Called from main thread
 	public void close() throws IOException, InterruptedException {
 		producePage();
-		done = true;
+
+		synchronized (this) {
+			// wait for flush thread to consume the rest
+			while (backBufferFrames > 0) {
+				wait();
+			}
+			done = true;
+			notify();
+		}
+
 		flushThread.join();
 		out.flush();
 		out.close();
