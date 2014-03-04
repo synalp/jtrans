@@ -40,29 +40,22 @@ public class StateGraph {
 	// scores are typically cached (see ScoreCachingSenone.getScore)
 
 	/**
-	 * Number of transitions for each HMM state.
-	 * Values in this array should not exceed MAX_TRANSITIONS, otherwise an
-	 * index out of bounds exception will eventually be thrown.
-	 */
-	private byte[] outCount;
-
-	/** Transition matrix: successor IDs */
-	private int[][] outState;
-
-	/** Transition matrix: probabilities */
-	private float[][] outProb;
-
-	/**
-	 * Number of incoming transitions for each HMM state
+	 * Number of incoming transitions for each HMM state.
 	 * Values in this array should not exceed MAX_TRANSITIONS, otherwise an
 	 * index out of bounds exception will eventually be thrown.
 	 */
 	private final byte[] inCount;
 
-	/** HMM State IDs for each incoming transition */
+	/**
+	 * HMM State IDs for each incoming transition.
+	 * The first entry is *always* the same state (loop).
+	 */
 	private final int[][] inState;
 
-	/** Probability of each incoming transition */
+	/**
+	 * Probability of each incoming transition.
+	 * The first entry is *always* the probability of looping on the same state.
+	 */
 	private final float[][] inProb;
 
 	/** Total number of non-empty phones contained in the grammar. */
@@ -138,20 +131,19 @@ public class StateGraph {
 				// Replace existing tails
 
 				String phone = PhoneticForcedGrammar.convertPhone(token);
-
-				// Bind tails to the 1st state that is going to be created
-				for (Integer parentId: tails) {
-					assert outCount[parentId] < MAX_TRANSITIONS - 1:
-							"too many transitions";
-					outState[parentId][outCount[parentId]++] = insertionPoint;
-				}
-
-				// New sole tail is future 3rd state
-				tails.clear();
-				tails.add(insertionPoint + 2);
+				int posNewState0 = insertionPoint;
 
 				// Create the actual states
 				insertStateTriplet(phone, acMod, unitMgr);
+
+				// Bind tails to the 1st state that just got created
+				for (Integer parentId: tails) {
+					addIncomingTransition(posNewState0, parentId);
+				}
+
+				// New sole tail is 3rd state that just got inserted
+				tails.clear();
+				tails.add(posNewState0 + 2);
 			}
 
 			else if (token.equals("(")) {
@@ -207,6 +199,17 @@ public class StateGraph {
 
 
 	/**
+	 * Creates a new incoming transition, but does not set its probability.
+	 * @param dest arrival state
+	 * @param src departure state
+	 */
+	private void addIncomingTransition(int dest, int src) {
+		assert inCount[dest] < MAX_TRANSITIONS - 1: "too many transitions";
+		inState[dest][inCount[dest]++] = src;
+	}
+
+
+	/**
 	 * Inserts three emitting HMM states corresponding to a phone.
 	 * Binds the three states together. The first state has no inbound
 	 * transitions and the third state has no outbound transitions.
@@ -225,34 +228,31 @@ public class StateGraph {
 		// add phone states
 		for (int i = 0; i < 3; i++) {
 			int j = insertionPoint + i;
-			HMMState state = hmm.getState(i);
+			states[j] = hmm.getState(i);
 
-			assert state.isEmitting();
-			assert !state.isExitState();
-			assert state.getSuccessors().length == 2;
+			assert states[j].isEmitting();
+			assert !states[j].isExitState();
+			assert states[j].getSuccessors().length == 2;
 
-			states[j] = state;
-			outState[j][0] = j;
-			if (i < 2) {
-				outState[j][1] = j+1;
-				outCount[j] = 2;
-			} else {
-				outCount[j] = 1;
+			addIncomingTransition(j, j);
+			if (i > 0) {
+				addIncomingTransition(j, j-1);
 			}
 
-			for (HMMStateArc arc: state.getSuccessors()) {
+			assert states[j].getSuccessors().length == 2;
+			for (HMMStateArc arc: states[j].getSuccessors()) {
 				HMMState arcState = arc.getHMMState();
 				if (i == 2 && arcState.isExitState())
 					continue;
 
 				float p = arc.getLogProbability();
-				if (arcState == state) {
-					outProb[j][0] = p;
+				if (arcState == states[j]) {
+					inProb[j][0] = p;
 				} else {
 					assert i != 2;
 					assert !arcState.isExitState();
 					assert arcState == hmm.getState(i+1);
-					outProb[j][1] = p;
+					inProb[j+1][1] = p;
 				}
 			}
 		}
@@ -263,25 +263,23 @@ public class StateGraph {
 
 
 	/**
-	 * Sets uniform inter-phone probabilities on the last state of an HMM.
-	 * @param stateId ID of the last (3rd) state of an HMM
+	 * Sets uniform inter-phone probabilities on the first state of an HMM.
+	 * @param stateId ID of the first state of an HMM
 	 */
 	private void setUniformInterPhoneTransitionProbabilities(int stateId) {
-		assert stateId % 3 == 2 : "must be a third state";
-
-		if (outCount[stateId] < 2)
-			return;
-
-		assert outProb[stateId][0] != 0f : "loop probability must be initialized";
-		assert outProb[stateId][1] == 0f : "non-loop probabilities must be uninitialized";
+		assert stateId % 3 == 0 : "not a first state (i.e. multiple of 3)";
+		assert stateId > 0 : "state #0 doesn't have any incoming transitions";
+		assert inCount[stateId] >= 2 : "not linked to the rest of the graph";
+		assert inProb[stateId][0] != 0f : "loop probability must be initialized";
+		assert inProb[stateId][1] == 0f : "non-loop probabilities must be uninitialized";
 
 		LogMath lm = HMMModels.getLogMath();
-		double linearLoopProb = lm.logToLinear(outProb[stateId][0]);
+		double linearLoopProb = lm.logToLinear(inProb[stateId][0]);
 		float p = lm.linearToLog(
-				(1f - linearLoopProb) / (double)(outCount[stateId] - 1));
+				(1f - linearLoopProb) / (double)(inCount[stateId] - 1));
 
-		for (byte j = 1; j < outCount[stateId]; j++)
-			outProb[stateId][j] = p;
+		for (byte j = 1; j < inCount[stateId]; j++)
+			inProb[stateId][j] = p;
 	}
 
 
@@ -300,10 +298,6 @@ public class StateGraph {
 		nStates = 3 * nPhones;
 
 		states = new HMMState[nStates];
-
-		outCount = new byte  [nStates];
-		outState = new int   [nStates][MAX_TRANSITIONS];
-		outProb  = new float [nStates][MAX_TRANSITIONS];
 
 		inCount = new byte   [nStates];
 		inState = new int    [nStates][MAX_TRANSITIONS];
@@ -341,34 +335,15 @@ public class StateGraph {
 
 		assert insertionPoint == nStates;
 		// correct inter-phone transition probabilities
-		for (int i = 2; i < nStates; i += 3) {
+		for (int i = 3; i < nStates; i += 3) {
 			setUniformInterPhoneTransitionProbabilities(i);
 		}
 
 		// last state can loop forever
-		outProb[nStates-1][0] = 0f; // log domain
+		inProb[nStates-1][0] = 0f; // log domain
 
 		assert insertionPoint == nStates : "predicted state count not met";
-		assert outCount[nStates-1] == 1 : "last state can only have 1 transition";
-		assert outState[nStates-1][0] == nStates - 1 : "last state can only transition to itself";
-
-		//----------------------------------------------------------------------
-		// Prepare incoming transitions (predecessors) for each state
-
-		int maxPredec = 0;
-
-		for (int parent = 0; parent < nStates; parent++) {
-			for (byte childTID = 0; childTID < outCount[parent]; childTID++) {
-				int child = outState[parent][childTID];
-				int childPredecID = inCount[child]++;
-				inState[child][childPredecID] = parent;
-				inProb[child][childPredecID] = outProb[parent][childTID];
-				if (inCount[child] > maxPredec)
-					maxPredec = inCount[child];
-			}
-		}
-
-		System.out.println("Max predecessor count: " + maxPredec);
+		assert inCount[0] == 1 : "first state can only have 1 incoming transition";
 	}
 
 
@@ -399,9 +374,9 @@ public class StateGraph {
 			HMMState s = states[i];
 			w.write(String.format("\nnode%d [ label=\"%s %d\" ]", i,
 					s.getHMM().getBaseUnit().getName(), s.getState()));
-			for (byte j = 0; j < outCount[i]; j++) {
+			for (byte j = 0; j < inCount[i]; j++) {
 				w.write(String.format("\nnode%d -> node%d [ label=%f ]",
-						i, outState[i][j], lm.logToLinear(outProb[i][j])));
+						inState[i][j], i, lm.logToLinear(inProb[i][j])));
 			}
 		}
 
