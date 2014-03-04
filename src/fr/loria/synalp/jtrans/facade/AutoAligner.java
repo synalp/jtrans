@@ -292,42 +292,35 @@ public class AutoAligner {
 		if (startWord > word)
 			return;
 
-		if (startWord < word) {
-			// There are unaligned words before `word`; align them.
-			switch (algorithm) {
-				case LINEAR_INTERPOLATION:
-				{
-					linearAlign(startWord, startFrame, word, endFrame);
-					break;
-				}
+		// There are unaligned words before `word`; align them.
+		switch (algorithm) {
+			case LINEAR_INTERPOLATION:
+				linearAlign(startWord, startFrame, word, endFrame);
+				break;
 
-				case FORCE_ALIGN_BLOC_VITERBI:
-				{
-					S4AlignOrder order = partialBatchAlign(
-							startWord, startFrame, word, endFrame);
-					merge(order.alignWords, order.alignPhones, startWord, word);
-					break;
-				}
-
-				case FULL_BACKTRACK_VITERBI:
-				{
-					Alignment[] alignments;
-					try {
-						alignments = partialBatchAlignNewViterbi(
-								startWord, startFrame, word, endFrame);
-					} catch (Exception ex) {
-						throw new Error(ex);
-					}
-					merge(alignments[0], alignments[1], startWord, word);
-					break;
-				}
+			case FORCE_ALIGN_BLOC_VITERBI:
+			{
+				S4AlignOrder order = partialBatchAlign(
+						startWord, startFrame, word, endFrame);
+				merge(order.alignWords, order.alignPhones, startWord, word);
+				break;
 			}
-		} else {
-			// Only one word to align; create a new manual segment.
-			int newseg = track.words.addRecognizedSegment(
-					track.elts.getMot(word).toString(), startFrame, endFrame);
-			track.words.setSegmentSourceManu(newseg);
-			track.elts.getMot(word).posInAlign = newseg;
+
+			case FULL_BACKTRACK_VITERBI:
+			{
+				Alignment[] alignments;
+				try {
+					alignments = partialBatchAlignNewViterbi(
+							startWord, startFrame, word, endFrame);
+				} catch (Exception ex) {
+					throw new Error(ex);
+				}
+				merge(alignments[0], alignments[1], startWord, word);
+				break;
+			}
+
+			default:
+				throw new Error("Unknown algorithm: " + algorithm);
 		}
 	}
 
