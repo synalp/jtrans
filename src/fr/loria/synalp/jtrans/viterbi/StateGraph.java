@@ -675,7 +675,7 @@ public class StateGraph {
 			index = PageIndex.deserialize(new FileInputStream(indexFile));
 		}
 		System.out.println("FRAME COUNT: " + index.getFrameCount());
-		gv.backtrack(new SwapInflater(swapFile, index));
+		gv.backtrack(new SwapInflater(index, swapFile));
 		System.out.println("done");
 	}
 

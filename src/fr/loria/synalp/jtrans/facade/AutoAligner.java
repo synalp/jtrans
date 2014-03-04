@@ -63,6 +63,14 @@ public class AutoAligner {
 
 
 	/**
+	 * Maximum number of bytes for a Viterbi backtrack stack to reside in
+	 * memory. Above this threshold, the stack will be swapped to disk.
+	 * Only applies to FULL_BACKTRACK_VITERBI.
+	 */
+	public static final int SWAP_THRESHOLD_BYTES = 1024*1024*16;
+
+
+	/**
 	 * @param view UI component to update. May be null for headless mode.
 	 */
 	public AutoAligner(Project project,
@@ -178,21 +186,46 @@ public class AutoAligner {
 
 		StateGraph graph = StateGraph.createStandardStateGraph(words);
 
-		File swapFile = Cache.getCacheFile("backtrack", "swp",
-				project.convertedAudioFile,
-				track.speakerName,
-				words,
-				startFrame,
-				endFrame);
+		boolean inRAM = (endFrame-startFrame+1)*graph.getStateCount()
+				<= SWAP_THRESHOLD_BYTES;
+		final OutputStream out;
+		final SwapInflater.InputStreamFactory inFactory;
+
+		if (inRAM) {
+			System.out.println("Viterbi backpointers: keep in RAM");
+			out = new ByteArrayOutputStream();
+			inFactory = new SwapInflater.InputStreamFactory() {
+				@Override
+				public InputStream make() throws IOException {
+					return new ByteArrayInputStream(
+							((ByteArrayOutputStream)out).toByteArray());
+				}
+			};
+		} else {
+			System.out.println("Viterbi backpointers: swap to disk");
+			final File swapFile = Cache.getCacheFile("backtrack", "swp",
+					project.convertedAudioFile,
+					track.speakerName,
+					words,
+					startFrame,
+					endFrame);
+			out = new FileOutputStream(swapFile);
+			inFactory = new SwapInflater.InputStreamFactory() {
+				@Override
+				public InputStream make() throws IOException {
+					return new FileInputStream(swapFile);
+				}
+			};
+		}
 
 		SwapDeflater swapper = SwapDeflater.getSensibleSwapDeflater(
-				graph.getStateCount(),
-				new FileOutputStream(swapFile),
-				true);
+				graph.getStateCount(), out, true);
 
 		graph.viterbi(s4blocViterbi.mfccs, swapper, startFrame, endFrame);
+
 		Alignment[] alignments = graph.getAlignments(
-				new SwapInflater(swapFile, swapper.getIndex()), startFrame);
+				new SwapInflater(swapper.getIndex(), inFactory),
+				startFrame);
 
 		return alignments;
 	}

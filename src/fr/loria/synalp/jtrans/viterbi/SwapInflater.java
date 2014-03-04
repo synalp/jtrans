@@ -10,15 +10,40 @@ import java.util.zip.InflaterInputStream;
  */
 public class SwapInflater {
 
-	private final File file;
 	private ByteBuffer pageBuf;
 	private PageIndex.Entry currentPage;
 	private PageIndex index;
+	private InputStreamFactory inputStreamFactory;
 
 
-	public SwapInflater(File file, PageIndex index) {
-		this.file = file;
+	public interface InputStreamFactory {
+		public InputStream make() throws IOException;
+	}
+
+
+	public SwapInflater(PageIndex index, InputStreamFactory factory) {
 		this.index = index;
+		this.inputStreamFactory = factory;
+	}
+
+
+	public SwapInflater(PageIndex index, final File file) {
+		this(index, new InputStreamFactory() {
+			@Override
+			public InputStream make() throws IOException {
+				return new FileInputStream(file);
+			}
+		});
+	}
+
+
+	public SwapInflater(PageIndex index, final byte[] buf) {
+		this(index, new InputStreamFactory() {
+			@Override
+			public InputStream make() throws IOException {
+				return new ByteArrayInputStream(buf);
+			}
+		});
 	}
 
 
@@ -56,10 +81,10 @@ public class SwapInflater {
 
 		InputStream is;
 
-		is = new FileInputStream(file);
+		is = inputStreamFactory.make();
 		long skipped = is.skip(page.offset);
 		assert skipped == page.offset;
-		assert page.offset + page.compressedChunkLength <= file.length();
+		assert page.offset + page.compressedChunkLength <= index.getCompressedBytes();
 
 		is = new InflaterInputStream(is);
 
