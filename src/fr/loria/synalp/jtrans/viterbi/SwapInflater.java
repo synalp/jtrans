@@ -1,11 +1,17 @@
 package fr.loria.synalp.jtrans.viterbi;
 
+import fr.loria.synalp.jtrans.utils.BufferUtils;
+
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.zip.InflaterInputStream;
 
 /**
- * Compressed swap reader for Viterbi backtracking
+ * Compressed swap reader for Viterbi backtracking.
+ *
+ * A single instance may be reused for several different graphs to avoid wasting
+ * time re-allocating buffers.
+ *
  * @see StateGraph
  */
 public class SwapInflater {
@@ -21,14 +27,15 @@ public class SwapInflater {
 	}
 
 
-	public SwapInflater(PageIndex index, InputStreamFactory factory) {
+	public void init(PageIndex index, InputStreamFactory factory) {
 		this.index = index;
-		this.inputStreamFactory = factory;
+		inputStreamFactory = factory;
+		currentPage = null;
 	}
 
 
-	public SwapInflater(PageIndex index, final File file) {
-		this(index, new InputStreamFactory() {
+	public void init(PageIndex index, final File file) {
+		init(index, new InputStreamFactory() {
 			@Override
 			public InputStream make() throws IOException {
 				return new FileInputStream(file);
@@ -37,8 +44,8 @@ public class SwapInflater {
 	}
 
 
-	public SwapInflater(PageIndex index, final byte[] buf) {
-		this(index, new InputStreamFactory() {
+	public void init(PageIndex index, final byte[] buf) {
+		init(index, new InputStreamFactory() {
 			@Override
 			public InputStream make() throws IOException {
 				return new ByteArrayInputStream(buf);
@@ -72,10 +79,7 @@ public class SwapInflater {
 		currentPage = page;
 
 		int unpackedPageLength = page.frameCount * index.nStates;
-		if (pageBuf == null || pageBuf.length < unpackedPageLength) {
-			System.out.print("Reallocating... ");
-			pageBuf = new byte[unpackedPageLength];
-		}
+		pageBuf = BufferUtils.grow(pageBuf, unpackedPageLength);
 
 		InputStream is;
 
@@ -98,9 +102,9 @@ public class SwapInflater {
 		final int fn = page.frame0 + page.frameCount;
 		for (; f < fn; f++) {
 			for (int s = 0; s < index.nStates; s++) {
-				byte p = pageBuf[idx(f-1, s)];
-				byte c = pageBuf[idx(f, s)];
-				pageBuf[idx(f, s)] = (byte)(p + c);
+				pageBuf[idx(f, s)] += pageBuf[idx(f-1, s)];
+				assert pageBuf[idx(f, s)] >= 0 &&
+						pageBuf[idx(f, s)] < StateGraph.MAX_TRANSITIONS;
 			}
 		}
 

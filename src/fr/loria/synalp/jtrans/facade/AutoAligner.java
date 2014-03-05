@@ -27,7 +27,8 @@ public class AutoAligner {
 	private List<Word> mots;
 	private MultiTrackTable view;
 	private S4ForceAlignBlocViterbi s4blocViterbi;
-
+	private SwapDeflater swapWriter;
+	private SwapInflater swapReader;
 
 	/**
 	 * Alignment algorithm types.
@@ -55,7 +56,7 @@ public class AutoAligner {
 		 * @see fr.loria.synalp.jtrans.viterbi.StateGraph
 		 */
 		FULL_BACKTRACK_VITERBI,
-	};
+	}
 
 
 	/** The algorithm to use when aligning. */
@@ -124,6 +125,7 @@ public class AutoAligner {
 		return order;
 	}
 
+
 	/**
 	 * Align words between startWord and endWord using Sphinx.
 	 * Slow, but accurate.
@@ -162,10 +164,21 @@ public class AutoAligner {
 			final int endFrame)
 			throws IOException, InterruptedException
 	{
+		//----------------------------------------------------------------------
+		// Initialize heavy objects as needed
+
 		// Only used for the MFCC buffer
 		if (s4blocViterbi == null)
 			s4blocViterbi = getS4aligner(track);
 
+		if (swapWriter == null)
+			swapWriter = SwapDeflater.getSensibleSwapDeflater(true);
+
+		if (swapReader == null)
+			swapReader = new SwapInflater();
+
+		//----------------------------------------------------------------------
+		// Initialize graph and swap streams
 
 		String words = getPhrase(startWord, endWord);
 		StateGraph graph = StateGraph.createStandardStateGraph(words);
@@ -202,16 +215,14 @@ public class AutoAligner {
 			};
 		}
 
-		SwapDeflater swapper = SwapDeflater.getSensibleSwapDeflater(
-				graph.getStateCount(), out, true);
+		//----------------------------------------------------------------------
+		// Run alignment
 
-		graph.viterbi(s4blocViterbi.mfccs, swapper, startFrame, endFrame);
+		swapWriter.init(graph.getStateCount(), out);
+		graph.viterbi(s4blocViterbi.mfccs, swapWriter, startFrame, endFrame);
 
-		Alignment[] alignments = graph.getAlignments(
-				new SwapInflater(swapper.getIndex(), inFactory),
-				startFrame);
-
-		return alignments;
+		swapReader.init(swapWriter.getIndex(), inFactory);
+		return graph.getAlignments(swapReader, startFrame);
 	}
 
 

@@ -705,10 +705,8 @@ public class StateGraph {
 
 		if (!quick) {
 			long t0 = System.currentTimeMillis();
-			SwapDeflater swapper = SwapDeflater.getSensibleSwapDeflater(
-					gv.nStates,
-					new FileOutputStream(swapFile),
-					true);
+			SwapDeflater swapper = SwapDeflater.getSensibleSwapDeflater(true);
+			swapper.init(gv.nStates, new FileOutputStream(swapFile));
 			gv.viterbi(mfcc, swapper, 0, -1);
 			System.out.println("VITERBI TOOK " + (System.currentTimeMillis()-t0)/1000L + " SECONDS");
 			index = swapper.getIndex();
@@ -720,7 +718,9 @@ public class StateGraph {
 		System.out.println("FRAME COUNT: " + index.getFrameCount());
 
 		System.out.println("Backtracking...");
-		int[] timeline = gv.backtrack(new SwapInflater(index, swapFile));
+		SwapInflater swapReader = new SwapInflater();
+		swapReader.init(index, swapFile);
+		int[] timeline = gv.backtrack(swapReader);
 		gv.prettyPrintTimeline(timeline);
 
 		System.out.println("done");
