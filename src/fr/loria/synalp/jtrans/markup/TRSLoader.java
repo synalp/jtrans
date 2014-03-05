@@ -6,16 +6,24 @@ import fr.loria.synalp.jtrans.facade.Project;
 import fr.loria.synalp.jtrans.facade.Track;
 import org.w3c.dom.*;
 import org.w3c.dom.Element;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.*;
 import java.io.*;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Parser for the Transcriber file format.
  */
 public class TRSLoader implements MarkupLoader {
+
+	public static Pattern DTD_PATTERN =
+			Pattern.compile("^.*(trans-[0-9a-z]*\\.dtd)$");
+
 
 	public Project parse(File file)
 			throws ParsingException, IOException
@@ -142,13 +150,32 @@ public class TRSLoader implements MarkupLoader {
 	 */
 	private static DocumentBuilder newXMLDocumentBuilder() throws ParserConfigurationException {
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-		dbf.setValidating(false);
+		dbf.setValidating(true);
 		dbf.setNamespaceAware(true);
-		dbf.setFeature("http://xml.org/sax/features/namespaces", false);
-		dbf.setFeature("http://xml.org/sax/features/validation", false);
-		dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
-		dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-		return dbf.newDocumentBuilder();
+		DocumentBuilder builder = dbf.newDocumentBuilder();
+
+		builder.setEntityResolver(new EntityResolver() {
+			@Override
+			public InputSource resolveEntity(String publicId, String systemId)
+					throws IOException, SAXException
+			{
+				Matcher m = DTD_PATTERN.matcher(systemId);
+				if (!m.matches()) {
+					return null;
+				}
+
+				String dtdName = m.group(1);
+
+				InputStream dtd = TRSLoader.class.getResourceAsStream(dtdName);
+				if (dtd == null) {
+					throw new SAXException("Lacking DTD: " + dtdName);
+				}
+
+				return new InputSource(dtd);
+			}
+		});
+
+		return builder;
 	}
 
 
