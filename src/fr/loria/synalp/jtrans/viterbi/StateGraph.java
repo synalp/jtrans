@@ -34,6 +34,12 @@ public class StateGraph {
 	public final static Pattern NONPHONE_PATTERN =
 			Pattern.compile("^[^a-zA-Z]$");
 
+	// Extra rules used when building the grammar graph
+	private static final String[] EMPTY_RULE = new String[0];
+	private static final String[] SILENCE_RULE = new String[]{"SIL"};
+	private static final String[] OPT_SILENCE_RULE = "[ SIL ]".split(" ");
+
+
 	/** All HMM states in the grammar. */
 	private HMMState[] states;
 	// Note: using a set of unique states barely improves performance since
@@ -87,16 +93,46 @@ public class StateGraph {
 
 
 	/**
-	 * Counts phones in a list of words.
+	 * Creates grammar rules from a list of words.
+	 * @param words array of whitespace-trimmed words
+	 * @return a 2D array of rule tokens (1st dimension corresponds to word
+	 * indices)
 	 */
-	public static int countPhones(String[] words) {
-		// mandatory initial and final silences
-		// plus one optional silence between each word
-		int count = 1 + words.length;
+	public static String[][] getRules(String[] words) {
+		String[][] rules = new String[words.length][];
+		Grammatiseur gram = Grammatiseur.getGrammatiseur();
 
-		for (String w: words) {
-			String rule = Grammatiseur.getGrammatiseur().getGrammar(w);
-			for (String token: trimSplit(rule))
+		for (int i = 0; i < words.length; i++) {
+			String rule = gram.getGrammar(words[i]);
+
+			if (rule == null || rule.isEmpty()) {
+				System.err.println("Couldn't get rule for " + words[i]);
+				rules[i] = EMPTY_RULE;
+			} else {
+				rules[i] = trimSplit(rule);
+			}
+		}
+
+		return rules;
+	}
+
+
+	/**
+	 * Counts phones in a list of rules.
+	 */
+	public static int countPhones(String[][] rules) {
+		// Mandatory final & initial silence
+		int count = 2;
+
+		for (String[] ruleTokens: rules) {
+			if (ruleTokens == EMPTY_RULE)
+				continue;
+
+			// Optional silence between each word
+			if (count > 2)
+				count++;
+
+			for (String token: ruleTokens)
 				if (!NONPHONE_PATTERN.matcher(token).matches())
 					count++;
 		}
@@ -181,17 +217,19 @@ public class StateGraph {
 
 
 	/**
-	 * Convenience method to parse a rule from a string.
+	 * Convenience method to parse a rule from an array of tokens.
 	 * See the main parseRule method for more information.
+	 * @return token an unknown token that stopped the parsing of the grammar,
+	 * or null if the entire token stream has been parsed successfully
 	 */
 	private String parseRule(
-			String rule,
+			String[] ruleTokens,
 			Set<Integer> tails,
 			AcousticModel acMod,
 			UnitManager unitMgr)
 	{
 		return parseRule(
-				Arrays.asList(trimSplit(rule)).iterator(),
+				Arrays.asList(ruleTokens).iterator(),
 				tails,
 				acMod,
 				unitMgr);
@@ -292,7 +330,8 @@ public class StateGraph {
 		words = trimSplit(text);
 		wordBoundaries = new int[words.length];
 
-		nPhones = countPhones(words);
+		String[][] rules = getRules(words);
+		nPhones = countPhones(rules);
 		nStates = 3 * nPhones;
 
 		states = new HMMState[nStates];
@@ -304,34 +343,40 @@ public class StateGraph {
 		//----------------------------------------------------------------------
 		// Build state graph
 
-		Grammatiseur gram = Grammatiseur.getGrammatiseur();
 		Set<Integer> tails = new HashSet<Integer>();
 
 		// add initial mandatory silence
-		parseRule("SIL", tails, acMod, unitMgr);
+		parseRule(SILENCE_RULE, tails, acMod, unitMgr);
 
 		for (int i = 0; i < words.length; i++) {
+			if (rules[i] == EMPTY_RULE) {
+				System.err.println("Skipping word without a rule: " + words[i]);
+				wordBoundaries[i] = -1;
+				continue;
+			}
+
 			if (i > 0) {
 				// optional silence between two words
-				parseRule("[ SIL ]", tails, acMod, unitMgr);
+				parseRule(OPT_SILENCE_RULE, tails, acMod, unitMgr);
 			}
 
 			// Word actually starts after optional silence
 			wordBoundaries[i] = insertionPoint;
 
-			String rule = gram.getGrammar(words[i]);
-			System.out.println("Rule: " + rule);
-			assert rule != null;
-			assert !rule.isEmpty();
-
-			String token = parseRule(rule, tails, acMod, unitMgr);
-			assert token == null;
+			String token = parseRule(rules[i], tails, acMod, unitMgr);
+			assert token == null : "rule couldn't be parsed entirely";
 		}
 
 		// add final mandatory silence
-		parseRule("SIL", tails, acMod, unitMgr);
+		parseRule(SILENCE_RULE, tails, acMod, unitMgr);
 
-		assert insertionPoint == nStates;
+		//----------------------------------------------------------------------
+		// All states have been inserted
+
+		assert insertionPoint == nStates : "predicted state count not met : "
+				+ "actual " + insertionPoint + ", expected " + nStates;
+		assert inCount[0] == 1 : "first state can only have 1 incoming transition";
+
 		// correct inter-phone transition probabilities
 		for (int i = 3; i < nStates; i += 3) {
 			setUniformInterPhoneTransitionProbabilities(i);
@@ -339,9 +384,6 @@ public class StateGraph {
 
 		// last state can loop forever
 		inProb[nStates-1][0] = 0f; // log domain
-
-		assert insertionPoint == nStates : "predicted state count not met";
-		assert inCount[0] == 1 : "first state can only have 1 incoming transition";
 	}
 
 

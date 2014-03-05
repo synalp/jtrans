@@ -245,11 +245,7 @@ class TextGridStateMachine {
 							int startFrame = TimeConverter.second2frame(currentInterval.xmin);
 							int endFrame = TimeConverter.second2frame(currentInterval.xmax);
 							if (!currentInterval.text.isEmpty() &&
-									!currentInterval.text.equals("_") &&
-									!currentInterval.text.equals("#") &&
-									!currentInterval.text.equals("%") &&
-									!currentInterval.text.equals("-") &&
-									startFrame < endFrame) { // skip silences... TODO this isn't very clean
+									startFrame < endFrame) {
 								currentTier.addRecognizedSegment(
 										currentInterval.text,
 										startFrame,
