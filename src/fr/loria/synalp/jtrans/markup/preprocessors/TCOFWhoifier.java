@@ -1,6 +1,9 @@
+package fr.loria.synalp.jtrans.markup.preprocessors;
+
+import fr.loria.synalp.jtrans.facade.Project;
+import fr.loria.synalp.jtrans.markup.ParsingException;
+import fr.loria.synalp.jtrans.markup.TRSLoader;
 import org.w3c.dom.*;
-import org.xml.sax.EntityResolver;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.*;
@@ -10,8 +13,6 @@ import javax.xml.transform.stream.StreamResult;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Adds Who tags to Transcriber files that use the TCOF convention for
@@ -49,9 +50,26 @@ import java.util.regex.Pattern;
  * </Turn>
  * }</pre>
  */
-public class TCOFWhoifier {
+public class TCOFWhoifier extends TRSLoader {
 
-	public static Pattern DTD_PATTERN = Pattern.compile("^.*(trans-[0-9a-z]*\\.dtd)$");
+	@Override
+	public Project parse(File file) throws ParsingException, IOException {
+		try {
+			return parse(whoify(file));
+		} catch (ParserConfigurationException ex) {
+			ex.printStackTrace();
+			throw new ParsingException(ex.toString());
+		} catch (SAXException ex) {
+			ex.printStackTrace();
+			throw new ParsingException(ex.toString());
+		}
+	}
+
+
+	@Override
+	public String getFormat() {
+		return "Transcriber (TCOF conventions)";
+	}
 
 
 	private static List<Node> scrap(Node node) {
@@ -187,31 +205,6 @@ public class TCOFWhoifier {
 	}
 
 
-	/**
-	 * Return a DocumentBuilder suitable to parsing a TRS file.
-	 */
-	private static DocumentBuilder newXMLDocumentBuilder() throws ParserConfigurationException {
-		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-		dbf.setValidating(true);
-		dbf.setNamespaceAware(true);
-		DocumentBuilder builder = dbf.newDocumentBuilder();
-
-		builder.setEntityResolver(new EntityResolver() {
-			@Override
-			public InputSource resolveEntity(String publicId, String systemId) throws IOException {
-				Matcher m = DTD_PATTERN.matcher(systemId);
-				if (m.matches()) {
-					return new InputSource(new FileInputStream(m.group(1)));
-				} else {
-					return null;
-				}
-			}
-		});
-
-		return builder;
-	}
-
-
 	public static void main(String[] args) throws Exception {
 		if (args.length != 2) {
 			System.out.println("USAGE:\n" +
@@ -229,4 +222,5 @@ public class TCOFWhoifier {
 				new DOMSource(doc),
 				new StreamResult(new File(args[1])));
 	}
+
 }

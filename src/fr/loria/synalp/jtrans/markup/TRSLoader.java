@@ -28,20 +28,23 @@ public class TRSLoader implements MarkupLoader {
 	public Project parse(File file)
 			throws ParsingException, IOException
 	{
-		Project project = new Project();
-		Document doc;
-
-		// Map of Transcriber's speaker IDs to JTrans tracks
-		Map<String, Track> trackIDMap = new HashMap<String, Track>();
-
 		try {
-			doc = newXMLDocumentBuilder().parse(file);
+			Document doc = newXMLDocumentBuilder().parse(file);
+			return parse(doc);
 		} catch (ParserConfigurationException ex) {
 			ex.printStackTrace();
 			throw new ParsingException(ex.toString());
 		} catch (SAXException ex) {
 			throw new ParsingException(ex.toString());
 		}
+	}
+
+
+	public Project parse(Document doc) {
+		Project project = new Project();
+
+		// Map of Transcriber's speaker IDs to JTrans tracks
+		Map<String, Track> trackIDMap = new HashMap<String, Track>();
 
 		// end time of last turn
 		float lastEnd = -1f;
@@ -148,7 +151,9 @@ public class TRSLoader implements MarkupLoader {
 	/**
 	 * Return a DocumentBuilder suitable to parsing a TRS file.
 	 */
-	private static DocumentBuilder newXMLDocumentBuilder() throws ParserConfigurationException {
+	protected static DocumentBuilder newXMLDocumentBuilder()
+			throws ParserConfigurationException
+	{
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 		dbf.setValidating(true);
 		dbf.setNamespaceAware(true);
