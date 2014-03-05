@@ -133,13 +133,6 @@ public class AutoAligner {
 	 * It is not merged into the main alignment (use merge()).
 	 */
 	private S4AlignOrder partialBatchAlign(final int startWord, final int startFrame, final int endWord, final int endFrame) {
-		StringBuilder phrase = new StringBuilder();
-		String prefix = "";
-		for (int i = startWord; i <= endWord; i++) {
-			phrase.append(prefix).append(mots.get(i));
-			prefix = " ";
-		}
-
 		return (S4AlignOrder)Cache.cachedObject(
 				"order",
 				"ser",
@@ -150,7 +143,7 @@ public class AutoAligner {
 				},
 				new File(project.wavname), // make it a file to take into account its modification date
 				track.speakerName,
-				phrase.toString(),
+				getPhrase(startWord, endWord),
 				startFrame,
 				endFrame);
 	}
@@ -173,17 +166,8 @@ public class AutoAligner {
 		if (s4blocViterbi == null)
 			s4blocViterbi = getS4aligner(track);
 
-		String words;
-		{
-			StringBuilder phrase = new StringBuilder();
-			String prefix = "";
-			for (int i = startWord; i <= endWord; i++) {
-				phrase.append(prefix).append(mots.get(i));
-				prefix = " ";
-			}
-			words = phrase.toString();
-		}
 
+		String words = getPhrase(startWord, endWord);
 		StateGraph graph = StateGraph.createStandardStateGraph(words);
 
 		boolean inRAM = (endFrame-startFrame+1)*graph.getStateCount()
@@ -370,6 +354,21 @@ public class AutoAligner {
 			if (mots.get(i).posInAlign>=0) return i;
 		}
 		return -1;
+	}
+
+
+	/**
+	 * Returns a string of all words between the given indices (inclusive),
+	 * joined by the space character.
+	 */
+	public String getPhrase(int startWord, int endWord) {
+		StringBuilder phrase = new StringBuilder();
+		String prefix = "";
+		for (int i = startWord; i <= endWord; i++) {
+			phrase.append(prefix).append(mots.get(i));
+			prefix = " ";
+		}
+		return phrase.toString();
 	}
 
 
