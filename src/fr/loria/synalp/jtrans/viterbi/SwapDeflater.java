@@ -1,7 +1,6 @@
 package fr.loria.synalp.jtrans.viterbi;
 
 import java.io.*;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.zip.Deflater;
 
@@ -21,13 +20,13 @@ public class SwapDeflater {
 	private byte[] previousBestInTrans;
 
 	/** Uncompressed data buffer that the main thread writes into */
-	private ByteBuffer frontBuffer;
+	private byte[] frontBuffer;
 
 	/** Number of frames stored in the front buffer */
 	private int frontBufferFrames;
 
 	/** Uncompressed data buffer that the flush thread reads from */
-	private ByteBuffer backBuffer;
+	private byte[] backBuffer;
 
 	/**
 	 * Number of frames stored in the back buffer.
@@ -87,21 +86,18 @@ public class SwapDeflater {
 			throws IOException
 	{
 		index = new PageIndex(nStates);
-
 		this.nStates = nStates;
-
-		maxFramesPerPage = approxBytesPerPage / nStates;
-		assert maxFramesPerPage >= 1;
-		System.out.println("Max Frames Per Page : " + maxFramesPerPage);
-
 		this.out = out;
-
 		def = deflater;
 
-		frontBuffer = ByteBuffer.allocate(maxFramesPerPage * nStates);
-		backBuffer  = ByteBuffer.allocate(maxFramesPerPage * nStates);
+		maxFramesPerPage = Math.max(1, approxBytesPerPage / nStates);
+		int pageLength = maxFramesPerPage * nStates;
+		System.out.println("Page length: " + pageLength + " bytes ("
+				+ maxFramesPerPage + " frames)");
 
-		compBuffer = new byte[1048576];
+		frontBuffer = new byte[pageLength];
+		backBuffer  = new byte[pageLength];
+		compBuffer  = new byte[1048576];
 		previousBestInTrans = new byte[nStates];
 	}
 
@@ -119,7 +115,7 @@ public class SwapDeflater {
 			int nStates,
 			OutputStream out,
 			boolean compress)
-		throws IOException
+			throws IOException
 	{
 		Deflater deflater = new Deflater(
 				compress? Deflater.BEST_SPEED: Deflater.NO_COMPRESSION);
@@ -136,12 +132,9 @@ public class SwapDeflater {
 	// Thread safety: don't access instance variables frontBuffer/backBuffer
 	// nor backBufferFrames directly in this method, because they may change
 	// at any time in the main thread. Use the provided parameters instead.
-	private void fullFlush(ByteBuffer rawBuf, int framesInBuf) throws IOException {
-		assert rawBuf.hasArray();
-
+	private void fullFlush(byte[] rawBuf, int framesInBuf) throws IOException {
 		def.reset();
-		def.setInput(rawBuf.array(), rawBuf.arrayOffset(),
-				framesInBuf * nStates);
+		def.setInput(rawBuf, 0, framesInBuf * nStates);
 		def.finish();
 		assert !def.finished();
 
@@ -155,8 +148,6 @@ public class SwapDeflater {
 
 		assert def.finished();
 
-		rawBuf.rewind();
-
 		index.putPage(framesInBuf, (int)def.getBytesWritten());
 
 		System.out.println(String.format(
@@ -169,8 +160,11 @@ public class SwapDeflater {
 	public void write(byte[] n) throws IOException, InterruptedException {
 		assert previousBestInTrans.length == n.length;
 
+		final int fbOffset = frontBufferFrames*nStates;
+
+		// Filter
 		for (int i = 0; i < previousBestInTrans.length; i++) {
-			frontBuffer.put((byte)(n[i] - previousBestInTrans[i]));
+			frontBuffer[fbOffset+i] = (byte)(n[i] - previousBestInTrans[i]);
 		}
 
 		System.arraycopy(n, 0, previousBestInTrans, 0, previousBestInTrans.length);
@@ -202,7 +196,7 @@ public class SwapDeflater {
 		}
 
 		// Swap buffers
-		ByteBuffer tmp = frontBuffer;
+		byte[] tmp = frontBuffer;
 		frontBuffer = backBuffer;
 		backBuffer = tmp;
 
