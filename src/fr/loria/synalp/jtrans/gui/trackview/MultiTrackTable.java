@@ -42,7 +42,11 @@ public class MultiTrackTable
 	private CellPane textComp;
 
 
-	public MultiTrackTable(Project project, JTransGUI gui) {
+	/**
+	 * @param gui used in UI callbacks. May be null ONLY if interactive is null!
+	 * @param interactive whether to react to mouse events
+	 */
+	public MultiTrackTable(Project project, JTransGUI gui, boolean interactive) {
 		this.project = project;
 		this.gui = gui;
 
@@ -51,15 +55,17 @@ public class MultiTrackTable
 		visibleCount = visibility.length;
 
 		refreshModel();
-		setEnabled(true);
+		setEnabled(interactive);
 		setShowGrid(true);
 		setIntercellSpacing(new Dimension(1, 0));
 		getTableHeader().setReorderingAllowed(false);
 		setPreferredScrollableViewportSize(new Dimension(900, 400));
 		setFillsViewportHeight(true);
 
-		addMouseListener(new MultiTrackTableMouseAdapter());
-		putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
+		if (interactive) {
+			addMouseListener(new MultiTrackTableMouseAdapter());
+			putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
+		}
 
 		setBackground(Color.DARK_GRAY);
 		setGridColor(getBackground());
