@@ -24,8 +24,8 @@ import edu.cmu.sphinx.result.Result;
 import fr.loria.synalp.jtrans.elements.Anchor;
 import fr.loria.synalp.jtrans.facade.AutoAligner;
 import fr.loria.synalp.jtrans.gui.trackview.MultiTrackTable;
+import fr.loria.synalp.jtrans.markup.MarkupLoader;
 import fr.loria.synalp.jtrans.speechreco.LiveSpeechReco;
-import fr.loria.synalp.jtrans.markup.*;
 
 import fr.loria.synalp.jtrans.speechreco.RecoListener;
 import fr.loria.synalp.jtrans.speechreco.BiaisAdapt;
@@ -97,28 +97,19 @@ public class Menus {
 				JFileChooser fc = new NicerFileChooser();
 				fc.setDialogTitle("Open project, markup or text...");
 
-				fc.addChoosableFileFilter(filterJTR);
-				fc.addChoosableFileFilter(filterTRS);
-				fc.addChoosableFileFilter(filterTextGrid);
-				fc.addChoosableFileFilter(filterTXT);
-				fc.setAcceptAllFileFilterUsed(false);
-				fc.setFileFilter(filterJTR);
-
 				int returnVal = fc.showOpenDialog(aligneur.jf);
 				if (returnVal != JFileChooser.APPROVE_OPTION)
 					return;
-				FileFilter ff = fc.getFileFilter();
-				File file = fc.getSelectedFile();
-				MarkupLoader loader = null;
 
-				if (ff == filterJTR)           loader = new JTRLoader();
-				else if (ff == filterTRS)      loader = new TRSLoader();
-				else if (ff == filterTextGrid) loader = new TextGridLoader();
-				else if (ff == filterTXT)      loader = new RawTextLoader();
-				else {
-					JOptionPane.showMessageDialog(aligneur.jf, "Unknown filter " + ff);
+				File file = fc.getSelectedFile();
+
+				LoaderChooser loaderChooser = new LoaderChooser(file);
+				loaderChooser.setLocationRelativeTo(aligneur.jf);
+				loaderChooser.setVisible(true);
+				MarkupLoader loader = loaderChooser.getMarkupLoader();
+
+				if (loader == null)
 					return;
-				}
 
 				aligneur.friendlyLoadMarkup(loader, file, null);
 			}
