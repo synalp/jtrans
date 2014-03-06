@@ -84,14 +84,14 @@ public class AutoAligner {
 		this.progress = progress;
 		this.view = view;
 		track.refreshIndex();
-		mots = track.elts.getMots();
+		mots = track.getWords();
 	}
 
 
 	private S4ForceAlignBlocViterbi getS4aligner(Track track)
 	{
 		// Create an array of word strings
-		List<Word> wordElements = track.elts.getMots();
+		List<Word> wordElements = track.getWords();
 		String[] wordStrings = new String[wordElements.size()];
 		for (int i = 0; i < wordElements.size(); i++)
 			wordStrings[i] = wordElements.get(i).toString();

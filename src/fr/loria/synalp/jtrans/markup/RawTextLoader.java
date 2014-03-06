@@ -47,7 +47,7 @@ public class RawTextLoader implements MarkupLoader {
 	 * Creates elements from a string according to the regular expressions
 	 * defined in commentPatterns.
 	 */
-	public static ElementList parseString(
+	public static List<Element> parseString(
 			String normedText,
 			Map<Comment.Type, String> commentPatterns)
 	{
@@ -68,7 +68,7 @@ public class RawTextLoader implements MarkupLoader {
 			}
 		}
 
-		ElementList listeElts = new ElementList();
+		List<Element> elList = new ArrayList<Element>();
 		ArrayList<NonTextSegment> nonText = new ArrayList<NonTextSegment>();
 
 
@@ -98,12 +98,12 @@ public class RawTextLoader implements MarkupLoader {
 			// Line right before
 			if (start > prevEnd) {
 				String line = normedText.substring(prevEnd, start);
-				parserListeMot(line, prevEnd, listeElts, normedText);
+				parserListeMot(line, prevEnd, elList, normedText);
 			}
 
 			// Create the actual element
 			String sub = normedText.substring(start, end).trim();
-			listeElts.add(new Comment(sub, seg.type));
+			elList.add(new Comment(sub, seg.type));
 
 			prevEnd = end;
 		}
@@ -111,14 +111,14 @@ public class RawTextLoader implements MarkupLoader {
 		// Line after the last element
 		if (normedText.length() > prevEnd) {
 			String line = normedText.substring(prevEnd);
-			parserListeMot(line, prevEnd, listeElts, normedText);
+			parserListeMot(line, prevEnd, elList, normedText);
 		}
 
-		return listeElts;
+		return elList;
 	}
 
 
-	private static void parserListeMot(String ligne, int precfin, ElementList listeElts, String text) {
+	private static void parserListeMot(String ligne, int precfin, List<Element> listeElts, String text) {
 		int index = 0;
 		int debutMot;
 		//on parcourt toute la ligne

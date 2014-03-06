@@ -14,6 +14,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.*;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
@@ -362,6 +363,30 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	}
 
 	public void newplaystarted() {
+
+		final Word[][] segmentToWord = new Word[project.tracks.size()][];
+
+		for (int i = 0; i < project.tracks.size(); i++) {
+			List<Word> wordElts = project.tracks.get(i).getWords();
+
+			if (!wordElts.isEmpty()) {
+				int l = wordElts.size()-1;
+				int lastseg=-1;
+				while (l>=0) {
+					int s = wordElts.get(l--).posInAlign;
+					if (s > lastseg)
+						lastseg = s;
+				}
+
+				segmentToWord[i] = new Word[lastseg+1];
+
+				for (Word w : wordElts) {
+					if (w.posInAlign>=0)
+						segmentToWord[i][w.posInAlign] = w;
+				}
+			}
+		}
+
 		karaokeHighlighter = new Timer(KARAOKE_UPDATE_INTERVAL, new AbstractAction() {
 			Word[] hl = new Word[project.tracks.size()];
 
@@ -376,8 +401,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 				for (int i = 0; i < project.tracks.size(); i++) {
 					Track t = project.tracks.get(i);
 
-					Word newHl = t.elts.getMotAtSegment(
-							t.words.getSegmentAtFrame(curfr));
+					Word newHl = segmentToWord[i][t.words.getSegmentAtFrame(curfr)];
 
 					// Only update UI if the word wasn't already highlighted
 					if (hl[i] != newHl) {

@@ -320,8 +320,8 @@ public class MultiTrackTable
 			addActionListener(new AbstractAction() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					ElementList.Neighborhood<Anchor> ancRange =
-							track.elts.getNeighbors(anchor, Anchor.class);
+					Track.Neighborhood<Anchor> ancRange =
+							track.getNeighbors(anchor, Anchor.class);
 					track.clearAlignmentBetween(anchor, ancRange.next);
 					MultiTrackTable.this.repaint();
 				}
@@ -347,7 +347,7 @@ public class MultiTrackTable
 		float newPos = Float.parseFloat(newPosString);
 
 		if (!sanitizeAnchorPosition(
-				track.elts.getNeighbors(anchor, Anchor.class), newPos))
+				track.getNeighbors(anchor, Anchor.class), newPos))
 		{
 			return;
 		}
@@ -366,8 +366,8 @@ public class MultiTrackTable
 	 *               the element list. If false, it'll be placed after the word.
 	 */
 	private void newAnchorNextToWord(Track track, Word word, boolean before) {
-		ElementList.Neighborhood<Anchor> range =
-				track.elts.getNeighbors(word, Anchor.class);
+		Track.Neighborhood<Anchor> range =
+				track.getNeighbors(word, Anchor.class);
 
 		float initialPos;
 
@@ -410,7 +410,7 @@ public class MultiTrackTable
 	 * @return true if the position is valid
 	 */
 	private boolean sanitizeAnchorPosition(
-			ElementList.Neighborhood<Anchor> range, float newPos)
+			Track.Neighborhood<Anchor> range, float newPos)
 	{
 		if (newPos < 0) {
 			JOptionPane.showMessageDialog(gui.jf,
