@@ -10,6 +10,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 
 public class LoaderChooser extends JDialog {
@@ -37,7 +38,12 @@ public class LoaderChooser extends JDialog {
 			Package pkg)
 	{
 		for (final Class clazz: loaders) {
-			if (clazz.isInterface() || !clazz.getPackage().equals(pkg)) {
+			int mod = clazz.getModifiers();
+
+			if (Modifier.isInterface(mod) ||
+					Modifier.isAbstract(mod) ||
+					!clazz.getPackage().equals(pkg))
+			{
 				continue;
 			}
 
