@@ -280,6 +280,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		});
 		jf.pack();
 		jf.setLocationByPlatform(true);
+		jf.setLocationRelativeTo(null);
 		jf.setVisible(true);
 	}
 
