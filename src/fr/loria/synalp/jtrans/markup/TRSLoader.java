@@ -25,18 +25,25 @@ public class TRSLoader implements MarkupLoader {
 			Pattern.compile("^.*(trans-[0-9a-z]*\\.dtd)$");
 
 
-	public Project parse(File file)
+	public static Document parseXML(File file)
 			throws ParsingException, IOException
 	{
 		try {
-			Document doc = newXMLDocumentBuilder().parse(file);
-			return parse(doc);
+			return newXMLDocumentBuilder().parse(file);
 		} catch (ParserConfigurationException ex) {
 			ex.printStackTrace();
 			throw new ParsingException(ex.toString());
 		} catch (SAXException ex) {
+			ex.printStackTrace();
 			throw new ParsingException(ex.toString());
 		}
+	}
+
+
+	public Project parse(File file)
+			throws ParsingException, IOException
+	{
+		return parse(parseXML(file));
 	}
 
 

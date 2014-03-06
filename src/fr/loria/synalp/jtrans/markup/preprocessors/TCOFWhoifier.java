@@ -1,17 +1,8 @@
 package fr.loria.synalp.jtrans.markup.preprocessors;
 
-import fr.loria.synalp.jtrans.facade.Project;
 import fr.loria.synalp.jtrans.markup.ParsingException;
-import fr.loria.synalp.jtrans.markup.TRSLoader;
 import org.w3c.dom.*;
-import org.xml.sax.SAXException;
 
-import javax.xml.parsers.*;
-import javax.xml.transform.*;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import java.io.*;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -50,19 +41,10 @@ import java.util.List;
  * </Turn>
  * }</pre>
  */
-public class TCOFWhoifier extends TRSLoader {
+public class TCOFWhoifier extends TRSPreprocessor {
 
-	@Override
-	public Project parse(File file) throws ParsingException, IOException {
-		try {
-			return parse(whoify(file));
-		} catch (ParserConfigurationException ex) {
-			ex.printStackTrace();
-			throw new ParsingException(ex.toString());
-		} catch (SAXException ex) {
-			ex.printStackTrace();
-			throw new ParsingException(ex.toString());
-		}
+	public static void main(String[] args) throws Exception {
+		new TCOFWhoifier().transform(args);
 	}
 
 
@@ -72,23 +54,7 @@ public class TCOFWhoifier extends TRSLoader {
 	}
 
 
-	private static List<Node> scrap(Node node) {
-		List<Node> scrapped = new ArrayList<Node>();
-		while (null != node) {
-			scrapped.add(node);
-			Node n = node;
-			node = n.getNextSibling();
-			n.getParentNode().removeChild(n);
-		}
-		return scrapped;
-	}
-
-
-	public static Document whoify(File file)
-			throws IOException, ParserConfigurationException, SAXException
-	{
-		Document doc = newXMLDocumentBuilder().parse(file);
-
+	public void preprocess(Document doc) throws ParsingException {
 		String previousSpeaker = null;
 		Element reportScrapped = null;
 		List<Node> reportOverlap = null;
@@ -106,7 +72,7 @@ public class TCOFWhoifier extends TRSLoader {
 
 			String singleSpeaker = turn.getAttribute("speaker");
 			if (singleSpeaker.isEmpty() || 1 != singleSpeaker.split(" ").length)
-				throw new Error("speaker count != 1. If >0, already whoified");
+				throw new ParsingException("speaker count != 1. If >0, already whoified");
 
 			assert reportOverlap == null || reportScrapped == null;
 
@@ -171,7 +137,7 @@ public class TCOFWhoifier extends TRSLoader {
 
 				else if (name.equals("#text") && text.contains("<")) {
 					if (reportOverlap != null)
-						throw new Error("overlap already ongoing before '" + text + "'");
+						throw new ParsingException("overlap already ongoing before '" + text + "'");
 
 					int chevronPos = text.indexOf('<');
 					String beforeChevron = text.substring(0, chevronPos);
@@ -198,29 +164,8 @@ public class TCOFWhoifier extends TRSLoader {
 			}
 
 			if (hangingOverlap)
-				throw new Error("hanging overlap - missing Sync tag?");
+				throw new ParsingException("hanging overlap - missing Sync tag?");
 		}
-
-		return doc;
-	}
-
-
-	public static void main(String[] args) throws Exception {
-		if (args.length != 2) {
-			System.out.println("USAGE:\n" +
-					"TCOFWhoifier <INPUT.trs> <OUTPUT.trs>");
-			System.exit(1);
-		}
-
-		Document doc = whoify(new File(args[0]));
-
-		Transformer transformer = TransformerFactory.newInstance().newTransformer();
-		transformer.setOutputProperty(OutputKeys.ENCODING, doc.getXmlEncoding());
-		transformer.setOutputProperty(OutputKeys.DOCTYPE_SYSTEM, doc.getDoctype().getSystemId());
-
-		transformer.transform(
-				new DOMSource(doc),
-				new StreamResult(new File(args[1])));
 	}
 
 }
