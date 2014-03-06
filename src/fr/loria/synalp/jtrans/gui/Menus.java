@@ -465,12 +465,6 @@ public class Menus {
 			}
 		});
 
-		regexp.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				new RegExpFrame(aligneur.project);
-			}
-		});
-
 		gototime.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				aligneur.gototime();
