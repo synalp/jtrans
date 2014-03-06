@@ -5,14 +5,23 @@ package fr.loria.synalp.jtrans.elements;
  */
 public class Comment implements Element {
 	private String text;
-	private int type;
+	private Type type;
 
-	public Comment(String text, int type) {
+	public static enum Type {
+		FREEFORM,
+		NOISE,
+		BEEP,
+		PUNCTUATION,
+		OVERLAP_MARK,
+		SPEAKER_MARK,
+	}
+
+	public Comment(String text, Type type) {
 		this.text = text;
 		this.type = type;
 	}
 
-	public int getType() {
+	public Type getType() {
 		return type;
 	}
 

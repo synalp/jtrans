@@ -107,7 +107,9 @@ public class TRSLoader implements MarkupLoader {
 				if (name.equals("#text")) {
 					String text = RawTextLoader.normalizeText(child.getTextContent().trim());
 					if (!text.isEmpty()) {
-						currentTrack.elts.addAll(RawTextLoader.parseString(text, project.types));
+						currentTrack.elts.addAll(RawTextLoader.parseString(
+								text,
+								RawTextLoader.DEFAULT_PATTERNS));
 					}
 				}
 
@@ -126,16 +128,15 @@ public class TRSLoader implements MarkupLoader {
 				}
 
 				else if (name.equals("Comment")) {
-					// TODO: fix hardcoded '0' (generic comment type code)
 					currentTrack.elts.add(new Comment(
-							((Element)child).getAttribute("desc"), 0));
+							((Element)child).getAttribute("desc"),
+							Comment.Type.FREEFORM));
 				}
 
 				else if (name.equals("Event")) {
-					String desc = ((Element)child).getAttribute("desc");
-					String type = ((Element)child).getAttribute("type");
-					currentTrack.elts.add(new Comment(desc,
-							type.equals("noise")? 2: 0)); // TODO: fix hardcoded comment type codes
+					currentTrack.elts.add(new Comment(
+							((Element)child).getAttribute("desc"),
+							Comment.Type.NOISE));
 				}
 
 				// Ignore unknown tag

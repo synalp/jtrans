@@ -1,21 +1,17 @@
 package fr.loria.synalp.jtrans.facade;
 
-import fr.loria.synalp.jtrans.elements.*;
 import fr.loria.synalp.jtrans.markup.JTRLoader;
 import fr.loria.synalp.jtrans.speechreco.s4.Alignment;
 import fr.loria.synalp.jtrans.utils.TimeConverter;
 
 import javax.sound.sampled.*;
-import java.awt.*;
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
- * Used for easy serialization (for now).
- * Eventually this class should become more useful.
- * TODO: centralize project methods here
+ * An audio file and alignment tracks.
+ * This class is mainly useful for easy serialization.
  */
 public class Project {
 
@@ -28,7 +24,6 @@ public class Project {
 
 
 	public List<Track> tracks = new ArrayList<Track>();
-	public List<ElementType> types = new ArrayList<ElementType>(Arrays.asList(DEFAULT_TYPES));
 
 	/** Audio file in a suitable format for processing */
 	public String wavname;
@@ -41,32 +36,6 @@ public class Project {
 			track.clearAlignment();
 		refreshIndex();
 	}
-
-
-	public static final ElementType DEFAULT_TYPES[] = {
-			new ElementType("Generic Comment", Color.YELLOW,
-					"\\{[^\\}]*\\}",
-					"\\[[^\\]]*\\]",
-					"\\+"),
-
-			new ElementType("Speaker", Color.GREEN,
-					"(^|\\n)(\\s)*\\w\\d+\\s"),
-
-			new ElementType("Noise", Color.CYAN,
-					"\\*+"),
-
-			new ElementType("Overlap", Color.PINK,
-					"<",
-					">"),
-
-			new ElementType("Punctuation", Color.ORANGE,
-					"\\?",
-					"\\:",
-					"\\;",
-					"\\,",
-					"\\.",
-					"\\!"),
-	};
 
 
 	public void refreshIndex() {

@@ -2,7 +2,6 @@ package fr.loria.synalp.jtrans.gui.trackview;
 
 import fr.loria.synalp.jtrans.elements.*;
 import fr.loria.synalp.jtrans.elements.Element;
-import fr.loria.synalp.jtrans.facade.Project;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -38,15 +37,33 @@ public class CellPane extends JTextPane {
 			}};
 
 
-	private final Project project;
 	private final Color normalBG;
 	private TextCell cell;
 	private Word highlighted;
-	private Map<ElementType, AttributeSet> styleCache = new HashMap<ElementType, AttributeSet>();
 
 
-	public CellPane(Project project) {
-		this.project = project;
+	private static final Map<Comment.Type, AttributeSet> styleCache =
+			new HashMap<Comment.Type, AttributeSet>()
+	{
+		private void put(Comment.Type type, final Color color) {
+			put(type, new SimpleAttributeSet() {{
+				addAttribute(StyleConstants.Background, color);
+			}});
+		}
+
+
+		{
+			put(Comment.Type.FREEFORM,      Color.YELLOW);
+			put(Comment.Type.NOISE,         Color.CYAN);
+			put(Comment.Type.PUNCTUATION,   Color.ORANGE);
+			put(Comment.Type.BEEP,          Color.RED);
+			put(Comment.Type.OVERLAP_MARK,  Color.PINK);
+			put(Comment.Type.SPEAKER_MARK,  Color.GREEN.brighter());
+		}
+	};
+
+
+	public CellPane() {
 		normalBG = getBackground();
 
 		setEditable(false);
@@ -86,14 +103,10 @@ public class CellPane extends JTextPane {
 					ALIGNED_STYLE : UNALIGNED_STYLE;
 
 		} else if (el instanceof Comment) {
-			final ElementType type = project.types.get(((Comment) el).getType());
-			style = styleCache.get(type);
-
+			style = styleCache.get(((Comment) el).getType());
 			if (style == null) {
-				style = new SimpleAttributeSet() {{
-					addAttribute(StyleConstants.Background, type.getColor());
-				}};
-				styleCache.put(type, style);
+				System.err.println("WARNING: missing style for comment type "
+						+ ((Comment) el).getType());
 			}
 		}
 

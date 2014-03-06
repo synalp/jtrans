@@ -36,8 +36,9 @@ public class TextGridLoader implements MarkupLoader {
 				if (endFrame != startFrame)
 					track.elts.add(new Anchor(TimeConverter.frame2sec(startFrame)));
 
+				String normalized = RawTextLoader.normalizeText(queue.getSegmentLabel(j));
 				track.elts.addAll(RawTextLoader.parseString(
-						RawTextLoader.normalizeText(queue.getSegmentLabel(j)), project.types));
+						normalized, RawTextLoader.DEFAULT_PATTERNS));
 
 				endFrame = queue.getSegmentEndFrame(j);
 				track.elts.add(new Anchor(TimeConverter.frame2sec(endFrame)));

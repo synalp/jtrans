@@ -73,7 +73,7 @@ public class MultiTrackTable
 		//----------------------------------------------------------------------
 		// Cell rendering panes
 
-		textComp = new CellPane(project);
+		textComp = new CellPane();
 
 		silenceComp = new JPanel();
 		silenceComp.setBackground(getBackground());

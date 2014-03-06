@@ -27,15 +27,35 @@ public class RawTextLoader implements MarkupLoader {
 		;
 	}
 
+
+	public static final Map<Comment.Type, String> DEFAULT_PATTERNS =
+			new HashMap<Comment.Type, String>()
+	{{
+		put(Comment.Type.FREEFORM,     "(\\{[^\\}]*\\}|\\[[^\\]]*\\]|\\+)");
+		put(Comment.Type.NOISE,        "\\*+");
+		put(Comment.Type.OVERLAP_MARK, "(<|>)");
+		put(Comment.Type.PUNCTUATION,  "(\\?|\\:|\\;|\\,|\\.|\\!)");
+		put(Comment.Type.BEEP,         "\\*[^\\*\\s]+\\*");
+		put(Comment.Type.SPEAKER_MARK, "(^|\\n)(\\s)*\\w\\d+\\s");
+	}};
+
+
+	private Map<Comment.Type, String> commentPatterns;
+
+
 	/**
 	 * Creates elements from a string according to the regular expressions
-	 * defined in typeList.
+	 * defined in commentPatterns.
 	 */
-	public static ElementList parseString(String normedText, List<ElementType> typeList) {
+	public static ElementList parseString(
+			String normedText,
+			Map<Comment.Type, String> commentPatterns)
+	{
 		class NonTextSegment implements Comparable<NonTextSegment> {
-			public int start, end, type;
+			public int start, end;
+			public Comment.Type type;
 
-			public NonTextSegment(int start, int end, int type) {
+			public NonTextSegment(int start, int end, Comment.Type type) {
 				this.start = start;
 				this.end = end;
 				this.type = type;
@@ -51,12 +71,12 @@ public class RawTextLoader implements MarkupLoader {
 		ElementList listeElts = new ElementList();
 		ArrayList<NonTextSegment> nonText = new ArrayList<NonTextSegment>();
 
-		for (int type = 0; type < typeList.size(); type++) {
-			for (Pattern pat: typeList.get(type).getPatterns()) {
-				Matcher mat = pat.matcher(normedText);
-				while (mat.find())
-					nonText.add(new NonTextSegment(mat.start(), mat.end(), type));
-			}
+
+		for (Map.Entry<Comment.Type, String> entry: commentPatterns.entrySet()) {
+			Pattern pat = Pattern.compile(entry.getValue());
+			Matcher mat = pat.matcher(normedText);
+			while (mat.find())
+				nonText.add(new NonTextSegment(mat.start(), mat.end(), entry.getKey()));
 		}
 		Collections.sort(nonText);
 
@@ -82,7 +102,7 @@ public class RawTextLoader implements MarkupLoader {
 			}
 
 			// Create the actual element
-			String sub = normedText.substring(start, end);
+			String sub = normedText.substring(start, end).trim();
 			listeElts.add(new Comment(sub, seg.type));
 
 			prevEnd = end;
@@ -123,6 +143,17 @@ public class RawTextLoader implements MarkupLoader {
 		}
 	}
 
+
+	public RawTextLoader(Map<Comment.Type, String> commentPatterns) {
+		this.commentPatterns = commentPatterns;
+	}
+
+
+	public RawTextLoader() {
+		this(DEFAULT_PATTERNS);
+	}
+
+
 	@Override
 	public Project parse(File file) throws ParsingException, IOException {
 		Project project = new Project();
@@ -139,13 +170,14 @@ public class RawTextLoader implements MarkupLoader {
 			if (line == null)
 				break;
 			line = normalizeText(line.trim());
-			track.elts.addAll(parseString(line, project.types));
+			track.elts.addAll(parseString(line, commentPatterns));
 		}
 
 		reader.close();
 
 		return project;
 	}
+
 
 	@Override
 	public String getFormat() {
