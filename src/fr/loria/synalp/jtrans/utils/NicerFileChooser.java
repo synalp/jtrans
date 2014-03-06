@@ -3,6 +3,7 @@ package fr.loria.synalp.jtrans.utils;
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
+import java.util.prefs.Preferences;
 
 /**
  * File chooser that lets the user change their mind before overwriting an
@@ -11,19 +12,38 @@ import java.io.File;
  * Also remembers the last chosen location during the program's lifespan.
  */
 public class NicerFileChooser extends JFileChooser {
-	// TODO: make this permanent instead of static
-	private static File lastLocation = null;
+
+	private final String prefKey;
+	private final Preferences prefs;
+
+
+	/**
+	 * @param prefID ID of the file chooser so that each kind of chooser may
+	 *               have its own last location
+	 */
+	public NicerFileChooser(String prefID) {
+		prefKey = "NicerFileChooser last location " + prefID;
+		prefs = Preferences.userRoot().node("fr.loria.synalp.jtrans");
+	}
+
 
 	@Override
 	public int showDialog(Component parent, String approveButtonText) {
-		setCurrentDirectory(lastLocation);
+		String lastLocation = prefs.get(prefKey, null);
+
+		if (lastLocation != null) {
+			setCurrentDirectory(new File(lastLocation));
+		}
+
 		return super.showDialog(parent, approveButtonText);
 	}
+
 
 	@Override
 	public void approveSelection() {
 		File f = getSelectedFile();
-		lastLocation = f.getParentFile();
+		prefs.put(prefKey, f.getParentFile().getAbsolutePath());
+
 		if (SAVE_DIALOG != getDialogType() || !f.exists()) {
 			super.approveSelection();
 			return;

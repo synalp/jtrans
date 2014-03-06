@@ -94,7 +94,7 @@ public class Menus {
 
 		open.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				JFileChooser fc = new NicerFileChooser();
+				JFileChooser fc = new NicerFileChooser("open");
 				fc.setDialogTitle("Open project, markup or text...");
 
 				int returnVal = fc.showOpenDialog(aligneur.jf);
@@ -117,7 +117,7 @@ public class Menus {
 
 		savejtr.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				NicerFileChooser fc = new NicerFileChooser();
+				NicerFileChooser fc = new NicerFileChooser("save");
 
 				fc.setDialogTitle("Export alignment...");
 				fc.addChoosableFileFilter(filterJTR);
@@ -153,7 +153,7 @@ public class Menus {
 						"Exporting to a foreign format",
 						JOptionPane.INFORMATION_MESSAGE);
 
-				NicerFileChooser fc = new NicerFileChooser();
+				NicerFileChooser fc = new NicerFileChooser("export");
 
 				fc.setDialogTitle("Export alignment...");
 				fc.addChoosableFileFilter(filterTextGridWordsOnly);
@@ -549,7 +549,7 @@ public class Menus {
 		});
 		loadwav.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				JFileChooser filechooser = new NicerFileChooser();
+				JFileChooser filechooser = new NicerFileChooser("load WAV");
 				filechooser.setDialogTitle("Load .WAV...");
 				int returnVal = filechooser.showOpenDialog(null);
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
