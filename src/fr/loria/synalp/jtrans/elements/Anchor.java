@@ -59,13 +59,19 @@ public class Anchor
 
 
 	public int compareTo(Anchor a) {
+		if (a == null) {
+			return 1;
+		}
+
 		if (hasTime() && a.hasTime()) {
 			return Float.compare(seconds, a.seconds);
-		} else if (!hasTime() && !a.hasTime()) {
-			return Integer.compare(timelessOrder, a.timelessOrder);
-		} else {
-			return hasTime()? 1: -1;
 		}
+
+		if (!hasTime() && !a.hasTime()) {
+			return Integer.compare(timelessOrder, a.timelessOrder);
+		}
+
+		return hasTime()? 1: -1;
 	}
 
 
