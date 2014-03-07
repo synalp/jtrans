@@ -159,13 +159,14 @@ public class RawTextLoader implements MarkupLoader {
 		Project project = new Project();
 		BufferedReader reader = FileUtils.openFileAutoCharset(file);
 
+		int order = 0;
+
 		// Add default speaker
 		Track currentTrack = new Track("Unknown");
 		project.tracks.add(currentTrack);
-		currentTrack.elts.add(new Anchor(0));
+		currentTrack.elts.add(Anchor.orderedTimelessAnchor(order));
 
 		Map<String, Track> trackMap = new HashMap<String, Track>();
-
 
 		while (true) {
 			String line = reader.readLine();
@@ -174,21 +175,21 @@ public class RawTextLoader implements MarkupLoader {
 			line = normalizeText(line).trim();
 
 			for (Element el: parseString(line, commentPatterns)) {
-				// Add the element regardless of its type (even if it's a
-				// speaker mark -- it acts as an anchor without a sync time)
-				currentTrack.elts.add(el);
-
 				if (el instanceof Comment &&
 						((Comment) el).getType() == Comment.Type.SPEAKER_MARK)
 				{
+					currentTrack.elts.add(Anchor.orderedTimelessAnchor(order));
 					String speaker = el.toString().trim();
 					currentTrack = trackMap.get(speaker);
 					if (currentTrack == null) {
 						currentTrack = new Track(speaker);
 						project.tracks.add(currentTrack);
 						trackMap.put(speaker, currentTrack);
-						currentTrack.elts.add(new Anchor(0));
 					}
+					currentTrack.elts.add(Anchor.orderedTimelessAnchor(order));
+					order++;
+				} else {
+					currentTrack.elts.add(el);
 				}
 			}
 		}

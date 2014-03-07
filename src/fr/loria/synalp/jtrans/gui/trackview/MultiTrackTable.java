@@ -396,7 +396,7 @@ public class MultiTrackTable
 		float newPos = Float.parseFloat(positionString);
 
 		if (sanitizeAnchorPosition(range, newPos)) {
-			Anchor anchor = new Anchor(newPos);
+			Anchor anchor = Anchor.timedAnchor(newPos);
 			track.elts.add(track.elts.indexOf(word) + (before?0:1), anchor);
 			track.clearAlignmentAround(anchor);
 			refreshModel(); //setTextFromElements();
