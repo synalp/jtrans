@@ -196,13 +196,15 @@ public class TRSLoader implements MarkupLoader {
 	 * Adds an anchor to a track only if it hasn't been added to it already.
 	 */
 	private static void addUniqueAnchor(Track t, float seconds) {
+		Anchor anchor = Anchor.timedAnchor(seconds);
+
 		if (!t.elts.isEmpty()) {
 			fr.loria.synalp.jtrans.elements.Element lastEl = t.elts.get(t.elts.size()-1);
-			if (lastEl instanceof Anchor && ((Anchor) lastEl).seconds == seconds)
+			if (anchor.equals(lastEl))
 				return;
 		}
 
-		t.elts.add(new Anchor(seconds));
+		t.elts.add(anchor);
 	}
 
 

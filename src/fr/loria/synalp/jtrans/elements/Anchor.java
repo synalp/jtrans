@@ -2,7 +2,10 @@ package fr.loria.synalp.jtrans.elements;
 
 import fr.loria.synalp.jtrans.utils.TimeConverter;
 
-public class Anchor implements Element {
+public class Anchor
+		implements Element, Comparable<Anchor>
+{
+	
 	public float seconds;
 
 	// TODO this setting should be saved to disk
@@ -28,4 +31,16 @@ public class Anchor implements Element {
 	public int getFrame() {
 		return TimeConverter.second2frame(seconds);
 	}
+
+	
+	public int compareTo(Anchor a) {
+			return Float.compare(seconds, a.seconds);
+	}
+
+
+	public boolean equals(Object a) {
+		return a instanceof Anchor &&
+				compareTo((Anchor)a) == 0;
+	}
+
 }

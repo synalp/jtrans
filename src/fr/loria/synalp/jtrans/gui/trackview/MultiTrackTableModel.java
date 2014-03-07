@@ -199,8 +199,7 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 				if (simultaneous.isEmpty()) {
 					simultaneous.add(m);
 				} else {
-					int cmp = Float.compare(
-							m.anchor.seconds, simultaneous.get(0).anchor.seconds);
+					int cmp = m.anchor.compareTo(simultaneous.get(0).anchor);
 
 					if (cmp < 0) {
 						simultaneous.clear();
