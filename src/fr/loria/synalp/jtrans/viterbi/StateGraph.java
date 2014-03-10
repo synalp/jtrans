@@ -83,6 +83,13 @@ public class StateGraph {
 	 */
 	private final int[] wordBoundaries;
 
+	/** Acoustic model (for HMM state lookup) */
+	private final AcousticModel acMod;
+
+	/** Unit pool (for HMM state lookup) */
+	private final UnitManager unitMgr;
+
+
 	/**
 	 * Trims leading and trailing whitespace then splits around whitespace.
 	 */
@@ -152,12 +159,7 @@ public class StateGraph {
 	 * @return token an unknown token that stopped the parsing of the grammar,
 	 * or null if the entire token stream has been parsed successfully
 	 */
-	private String parseRule(
-			Iterator<String> tokenIter,
-			Set<Integer> tails,
-			AcousticModel acMod,
-			UnitManager unitMgr)
-	{
+	private String parseRule(Iterator<String> tokenIter, Set<Integer> tails) {
 		while (tokenIter.hasNext()) {
 			String token = tokenIter.next();
 
@@ -169,7 +171,7 @@ public class StateGraph {
 				int posNewState0 = insertionPoint;
 
 				// Create the actual states
-				insertStateTriplet(phone, acMod, unitMgr);
+				insertStateTriplet(phone);
 
 				// Bind tails to the 1st state that just got created
 				for (Integer parentId: tails) {
@@ -190,7 +192,7 @@ public class StateGraph {
 
 				do {
 					Set<Integer> newTails = new HashSet<Integer>(tailsCopy);
-					token = parseRule(tokenIter, newTails, acMod, unitMgr);
+					token = parseRule(tokenIter, newTails);
 					tails.addAll(newTails);
 				} while (token.equals("|"));
 				assert token.equals(")");
@@ -201,7 +203,7 @@ public class StateGraph {
 				// Append new tails to existing tails
 
 				Set<Integer> subTails = new HashSet<Integer>(tails);
-				token = parseRule(tokenIter, subTails, acMod, unitMgr);
+				token = parseRule(tokenIter, subTails);
 				tails.addAll(subTails);
 				assert token.equals("]");
 			}
@@ -221,17 +223,8 @@ public class StateGraph {
 	 * @return token an unknown token that stopped the parsing of the grammar,
 	 * or null if the entire token stream has been parsed successfully
 	 */
-	private String parseRule(
-			String[] ruleTokens,
-			Set<Integer> tails,
-			AcousticModel acMod,
-			UnitManager unitMgr)
-	{
-		return parseRule(
-				Arrays.asList(ruleTokens).iterator(),
-				tails,
-				acMod,
-				unitMgr);
+	private String parseRule(String[] ruleTokens, Set<Integer> tails) {
+		return parseRule(Arrays.asList(ruleTokens).iterator(), tails);
 	}
 
 
@@ -251,11 +244,7 @@ public class StateGraph {
 	 * Binds the three states together. The first state has no inbound
 	 * transitions and the third state has no outbound transitions.
 	 */
-	private int insertStateTriplet(
-			String phone,
-			final AcousticModel acMod,
-			final UnitManager unitMgr)
-	{
+	private int insertStateTriplet(String phone) {
 		// find HMM for this phone
 		HMM hmm = acMod.lookupNearestHMM(
 				unitMgr.getUnit(phone), HMMPosition.UNDEFINED, false);
@@ -319,13 +308,12 @@ public class StateGraph {
 
 
 	/**
-	 * Constructs a grammar vector from a list of words.
+	 * Constructs a state graph from whitespace-separated words.
 	 */
-	public StateGraph(
-			String text,
-			AcousticModel acMod,
-			UnitManager unitMgr)
-	{
+	public StateGraph(String text) {
+		acMod = HMMModels.getAcousticModels();
+		unitMgr = new UnitManager();
+
 		words = trimSplit(text);
 		wordBoundaries = new int[words.length];
 
@@ -345,7 +333,7 @@ public class StateGraph {
 		Set<Integer> tails = new HashSet<Integer>();
 
 		// add initial mandatory silence
-		parseRule(SILENCE_RULE, tails, acMod, unitMgr);
+		parseRule(SILENCE_RULE, tails);
 
 		int nonEmptyRules = 0;
 
@@ -358,20 +346,20 @@ public class StateGraph {
 
 			if (nonEmptyRules > 0) {
 				// optional silence between two words
-				parseRule(OPT_SILENCE_RULE, tails, acMod, unitMgr);
+				parseRule(OPT_SILENCE_RULE, tails);
 			}
 
 			// Word actually starts after optional silence
 			wordBoundaries[i] = insertionPoint;
 
-			String token = parseRule(rules[i], tails, acMod, unitMgr);
+			String token = parseRule(rules[i], tails);
 			assert token == null : "rule couldn't be parsed entirely";
 
 			nonEmptyRules++;
 		}
 
 		// add final mandatory silence
-		parseRule(SILENCE_RULE, tails, acMod, unitMgr);
+		parseRule(SILENCE_RULE, tails);
 
 		//----------------------------------------------------------------------
 		// All states have been inserted
@@ -387,18 +375,6 @@ public class StateGraph {
 
 		// last state can loop forever
 		inProb[nStates-1][0] = 0f; // log domain
-	}
-
-
-	/**
-	 * Creates a StateGraph using the default acoustic models and an empty
-	 * unit manager.
-	 */
-	public static StateGraph createStandardStateGraph(String words) {
-		return new StateGraph(
-				words,
-				HMMModels.getAcousticModels(),
-				new UnitManager());
 	}
 
 
@@ -685,7 +661,7 @@ public class StateGraph {
 		final String words = new Scanner(new File(args[1])).useDelimiter("\\Z")
 				.next().replaceAll("[\\n\\r\u001f]", " ");
 
-		StateGraph gv = StateGraph.createStandardStateGraph(words);
+		StateGraph gv = new StateGraph(words);
 		System.out.println("PHONE COUNT: " + gv.nPhones);
 		System.out.println("GRAPH SIZE: " + gv.nStates);
 		gv.dumpDot(new FileWriter("grammar_vector.dot"));

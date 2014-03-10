@@ -181,7 +181,7 @@ public class AutoAligner {
 		// Initialize graph and swap streams
 
 		String words = getPhrase(startWord, endWord);
-		StateGraph graph = StateGraph.createStandardStateGraph(words);
+		StateGraph graph = new StateGraph(words);
 
 		boolean inRAM = (endFrame-startFrame+1)*graph.getStateCount()
 				<= SWAP_THRESHOLD_BYTES;
