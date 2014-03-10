@@ -347,6 +347,8 @@ public class StateGraph {
 		// add initial mandatory silence
 		parseRule(SILENCE_RULE, tails, acMod, unitMgr);
 
+		int nonEmptyRules = 0;
+
 		for (int i = 0; i < words.length; i++) {
 			if (rules[i] == EMPTY_RULE) {
 				System.err.println("Skipping word without a rule: " + words[i]);
@@ -354,7 +356,7 @@ public class StateGraph {
 				continue;
 			}
 
-			if (i > 0) {
+			if (nonEmptyRules > 0) {
 				// optional silence between two words
 				parseRule(OPT_SILENCE_RULE, tails, acMod, unitMgr);
 			}
@@ -364,6 +366,8 @@ public class StateGraph {
 
 			String token = parseRule(rules[i], tails, acMod, unitMgr);
 			assert token == null : "rule couldn't be parsed entirely";
+
+			nonEmptyRules++;
 		}
 
 		// add final mandatory silence
