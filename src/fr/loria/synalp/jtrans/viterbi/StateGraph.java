@@ -4,7 +4,6 @@ import edu.cmu.sphinx.frontend.*;
 import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
 import edu.cmu.sphinx.linguist.acoustic.*;
 import edu.cmu.sphinx.util.LogMath;
-import edu.cmu.sphinx.util.props.ConfigurationManager;
 import fr.loria.synalp.jtrans.facade.Cache;
 import fr.loria.synalp.jtrans.speechreco.grammaire.Grammatiseur;
 import fr.loria.synalp.jtrans.speechreco.s4.*;
@@ -388,17 +387,14 @@ public class StateGraph {
 
 
 	/**
-	 * Creates a StateGraph using JTrans's default configuration for Sphinx4.
+	 * Creates a StateGraph using the default acoustic models and an empty
+	 * unit manager.
 	 */
 	public static StateGraph createStandardStateGraph(String words) {
-		ConfigurationManager cm = new ConfigurationManager("sr.cfg");
-
-		UnitManager unitmgr = (UnitManager)cm.lookup("unitManager");
-		assert unitmgr != null;
-
-		AcousticModel acmod = HMMModels.getAcousticModels();
-
-		return new StateGraph(words, acmod, unitmgr);
+		return new StateGraph(
+				words,
+				HMMModels.getAcousticModels(),
+				new UnitManager());
 	}
 
 
