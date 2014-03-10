@@ -27,7 +27,7 @@ public class StateGraph {
 	Java). If it ever has to exceed 255 (way overkill), be sure to change
 	the type of the inCount/outCount arrays.
 	*/
-	public static final int MAX_TRANSITIONS = 32;
+	public static final int MAX_TRANSITIONS = 64;
 
 	/** Pattern for non-phone grammar tokens. */
 	public final static Pattern NONPHONE_PATTERN =
