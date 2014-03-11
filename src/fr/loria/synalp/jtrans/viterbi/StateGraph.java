@@ -307,16 +307,19 @@ public class StateGraph {
 
 
 	/**
-	 * Constructs a state graph from whitespace-separated words.
+	 * Constructs a state graph from words, and the rules associated with each
+	 * of them.
+	 * @param words an array of words
+	 * @param rules a 2D array of rule tokens. The first dimension maps to the
+	 *              index of the word corresponding to the rule.
 	 */
-	public StateGraph(String text) {
+	public StateGraph(String[] words, String[][] rules) {
 		acMod = HMMModels.getAcousticModels();
 		unitMgr = new UnitManager();
 
-		words = trimSplit(text);
+		this.words = words;
 		wordBoundaries = new int[words.length];
 
-		String[][] rules = getRules(words);
 		nPhones = countPhones(rules);
 		nStates = 3 * nPhones;
 
@@ -374,6 +377,24 @@ public class StateGraph {
 
 		// last state can loop forever
 		inProb[nStates-1][0] = 0f; // log domain
+	}
+
+
+	/**
+	 * Constructs a state graph from an array of words.
+	 * Rules will be looked up in the standard grammar.
+	 */
+	public StateGraph(String[] words) {
+		this(words, getRules(words));
+	}
+
+
+	/**
+	 * Constructs a state graph from whitespace-separated words.
+	 * Rules will be looked up in the standard grammar.
+	 */
+	public StateGraph(String text) {
+		this(trimSplit(text));
 	}
 
 
@@ -656,7 +677,6 @@ public class StateGraph {
 		}
 
 		final String wavpath = args[0];
-
 		final String words = new Scanner(new File(args[1])).useDelimiter("\\Z")
 				.next().replaceAll("[\\n\\r\u001f]", " ");
 
@@ -697,8 +717,6 @@ public class StateGraph {
 		swapReader.init(index, swapFile);
 		int[] timeline = gv.backtrack(swapReader);
 		gv.prettyPrintTimeline(timeline);
-
-		System.out.println("done");
 	}
 
 }
