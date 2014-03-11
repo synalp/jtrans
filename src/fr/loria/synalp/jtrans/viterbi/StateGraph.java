@@ -34,7 +34,6 @@ public class StateGraph {
 			Pattern.compile("^[^a-zA-Z]$");
 
 	// Extra rules used when building the grammar graph
-	private static final String[] EMPTY_RULE = new String[0];
 	private static final String[] SILENCE_RULE = new String[]{"SIL"};
 	private static final String[] OPT_SILENCE_RULE = "[ SIL ]".split(" ");
 
@@ -113,7 +112,7 @@ public class StateGraph {
 
 			if (rule == null || rule.isEmpty()) {
 				System.err.println("Couldn't get rule for " + words[i]);
-				rules[i] = EMPTY_RULE;
+				rules[i] = null;
 			} else {
 				rules[i] = trimSplit(rule);
 			}
@@ -131,7 +130,7 @@ public class StateGraph {
 		int count = 2;
 
 		for (String[] ruleTokens: rules) {
-			if (ruleTokens == EMPTY_RULE)
+			if (null == ruleTokens)
 				continue;
 
 			// Optional silence between each word
@@ -338,7 +337,7 @@ public class StateGraph {
 		int nonEmptyRules = 0;
 
 		for (int i = 0; i < words.length; i++) {
-			if (rules[i] == EMPTY_RULE) {
+			if (null == rules[i]) {
 				System.err.println("Skipping word without a rule: " + words[i]);
 				wordBoundaries[i] = -1;
 				continue;
