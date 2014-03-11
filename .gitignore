@@ -15,6 +15,8 @@ out*.wav
 # build products
 jtrans.jar
 build
+build-test
+test-reports
 
 # non-binary libraries
 lib/*-sources.jar
