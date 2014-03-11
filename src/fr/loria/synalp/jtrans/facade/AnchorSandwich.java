@@ -10,29 +10,54 @@ public class AnchorSandwich
 		extends AbstractList<Element>
 		implements Comparable<AnchorSandwich>
 {
-	private final List<Element> baseList;
+	private final List<Element> elements;
+	private final Anchor initialAnchor;
+	private final Anchor finalAnchor;
 
 	AnchorSandwich(List<Element> baseList) {
-		this.baseList = baseList;
+		final int subListStart, subListEnd;
+
+		Element first = baseList.get(0);
+		if (first instanceof Anchor) {
+			initialAnchor = (Anchor)first;
+			subListStart = 1;
+		} else {
+			initialAnchor = null;
+			subListStart = 0;
+		}
+
+		Element last = baseList.get(baseList.size()-1);
+		if (last instanceof Anchor) {
+			finalAnchor = (Anchor)last;
+			subListEnd = baseList.size()-1;
+		} else {
+			finalAnchor = null;
+			subListEnd = baseList.size();
+		}
+
+		if (first == last && initialAnchor != null) {
+			elements = baseList.subList(0, 0);
+		} else {
+			elements = baseList.subList(subListStart, subListEnd);
+		}
 	}
 
 	public Anchor getInitialAnchor() {
-		if (isEmpty()) {
-			return null;
-		}
+		return initialAnchor;
+	}
 
-		Element first = baseList.get(0);
-		return first instanceof Anchor? (Anchor)first: null;
+	public Anchor getFinalAnchor() {
+		return finalAnchor;
 	}
 
 	@Override
 	public Element get(int index) {
-		return baseList.get(index);
+		return elements.get(index);
 	}
 
 	@Override
 	public int size() {
-		return baseList.size();
+		return elements.size();
 	}
 
 	@Override

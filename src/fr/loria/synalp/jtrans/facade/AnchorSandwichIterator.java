@@ -39,11 +39,11 @@ public class AnchorSandwichIterator implements Iterator<AnchorSandwich> {
 		}
 
 		if (!(e instanceof Anchor)) {
-			newSandwichEl0 = baseList.size();
+			newSandwichEl0 = baseList.size()-1;
 		}
 
 		sandwich = new AnchorSandwich(
-				baseList.subList(currentSandwichEl0, newSandwichEl0));
+				baseList.subList(currentSandwichEl0, newSandwichEl0+1));
 		currentSandwichEl0 = newSandwichEl0;
 
 		if (currentSandwichEl0 == 0 && hasNext()) {
