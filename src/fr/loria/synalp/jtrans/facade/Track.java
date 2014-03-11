@@ -45,6 +45,10 @@ public class Track {
 	}
 
 
+	public AnchorSandwichIterator sandwichIterator() {
+		return new AnchorSandwichIterator(elts);
+	}
+
 
 	/**
 	 * Neighbors of an Element in the element list.
