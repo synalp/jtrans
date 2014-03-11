@@ -5,14 +5,12 @@ It is licensed under the terms of the INRIA Cecill-C licence, as described in:
 http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html
 */
 
-package fr.loria.synalp.jtrans.test.s4;
+package fr.loria.synalp.jtrans.speechreco.s4;
 
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import fr.loria.synalp.jtrans.speechreco.s4.HMMModels;
-import fr.loria.synalp.jtrans.speechreco.s4.PhoneticForcedGrammar;
 import edu.cmu.sphinx.decoder.Decoder;
 import edu.cmu.sphinx.decoder.ResultListener;
 import edu.cmu.sphinx.decoder.pruner.Pruner;

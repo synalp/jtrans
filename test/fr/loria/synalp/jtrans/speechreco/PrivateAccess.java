@@ -1,4 +1,4 @@
-package fr.loria.synalp.jtrans.test;
+package fr.loria.synalp.jtrans.speechreco;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;

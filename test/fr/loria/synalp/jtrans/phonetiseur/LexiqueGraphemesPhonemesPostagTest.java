@@ -1,4 +1,4 @@
-package fr.loria.synalp.jtrans.test.phonetiseur;
+package fr.loria.synalp.jtrans.phonetiseur;
 
 import org.junit.After;
 import org.junit.AfterClass;

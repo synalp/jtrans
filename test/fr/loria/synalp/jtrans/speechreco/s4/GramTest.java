@@ -5,7 +5,7 @@ It is licensed under the terms of the INRIA Cecill-C licence, as described in:
 http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html
 */
 
-package fr.loria.synalp.jtrans.test.s4;
+package fr.loria.synalp.jtrans.speechreco.s4;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -21,8 +21,6 @@ import edu.cmu.sphinx.linguist.language.grammar.GrammarNode;
 import edu.cmu.sphinx.util.props.PropertyException;
 import edu.cmu.sphinx.util.props.PropertySheet;
 
-import fr.loria.synalp.jtrans.speechreco.s4.HMMModels;
-import fr.loria.synalp.jtrans.speechreco.s4.PhoneticForcedGrammar;
 import junit.framework.TestCase;
 import fr.loria.synalp.jtrans.utils.StdoutProgressDisplay;
 

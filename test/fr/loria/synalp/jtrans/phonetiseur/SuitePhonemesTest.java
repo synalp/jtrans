@@ -1,4 +1,4 @@
-package fr.loria.synalp.jtrans.test.phonetiseur;
+package fr.loria.synalp.jtrans.phonetiseur;
 
 import fr.loria.synalp.jtrans.phonetiseur.SuitePhonemes;
 

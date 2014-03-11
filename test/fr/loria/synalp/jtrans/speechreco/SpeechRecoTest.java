@@ -1,4 +1,4 @@
-package fr.loria.synalp.jtrans.test;
+package fr.loria.synalp.jtrans.speechreco;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -7,11 +7,7 @@ import java.util.Set;
 
 import junit.framework.Assert;
 
-import fr.loria.synalp.jtrans.speechreco.SpeechReco;
 import org.junit.Test;
-import fr.loria.synalp.jtrans.speechreco.RecoUtterance;
-import fr.loria.synalp.jtrans.speechreco.RecoUtteranceImmutable;
-import fr.loria.synalp.jtrans.speechreco.RecoWord;
 
 public class SpeechRecoTest {
 

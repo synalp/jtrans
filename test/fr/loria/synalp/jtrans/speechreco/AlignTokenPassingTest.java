@@ -1,10 +1,8 @@
-package fr.loria.synalp.jtrans.test;
+package fr.loria.synalp.jtrans.speechreco;
 
 import junit.framework.Assert;
 
 import org.junit.Test;
-
-import fr.loria.synalp.jtrans.speechreco.AlignTokenPassing;
 
 import edu.cmu.sphinx.result.ConfusionSet;
 import edu.cmu.sphinx.result.Sausage;
