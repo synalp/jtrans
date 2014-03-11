@@ -12,6 +12,14 @@ import java.util.List;
 public class AnchorSandwichIteratorTest {
 
 	@Test
+	public void testEmptyElementList() {
+		AnchorSandwichIterator i = new AnchorSandwichIterator(
+				new ArrayList<Element>());
+		Assert.assertFalse(i.hasNext());
+	}
+
+
+	@Test
 	public void testNoAnchorsAtExtremities() {
 		List<Element> L = new ArrayList<Element>();
 		L.add(new Word("a"));

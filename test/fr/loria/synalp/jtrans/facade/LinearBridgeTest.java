@@ -11,6 +11,26 @@ import java.util.List;
 public class LinearBridgeTest {
 
 	@Test
+	public void testEmptyTrackList() {
+		LinearBridge bridge = new LinearBridge(new ArrayList<Track>());
+		Assert.assertFalse(bridge.hasNext());
+	}
+
+
+	@Test
+	public void testEmptyTracks() {
+		List<Track> trackList = new ArrayList<Track>();
+
+		trackList.add(new Track("A"));
+		trackList.add(new Track("B"));
+		trackList.add(new Track("C"));
+
+		LinearBridge bridge = new LinearBridge(trackList);
+		Assert.assertFalse(bridge.hasNext());
+	}
+
+
+	@Test
 	public void testWellFormed() {
 		List<Track> trackList = new ArrayList<Track>();
 

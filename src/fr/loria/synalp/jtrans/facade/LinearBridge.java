@@ -18,14 +18,21 @@ public class LinearBridge
 		currentSandwiches = new AnchorSandwich[nTracks];
 
 		for (int i = 0; i < nTracks; i++) {
-			sandwichIterators[i] = tracks.get(i).sandwichIterator();
-			currentSandwiches[i] = sandwichIterators[i].next();
+			AnchorSandwichIterator iter = tracks.get(i).sandwichIterator();
+			sandwichIterators[i] = iter;
+			if (iter.hasNext()) {
+				currentSandwiches[i] = iter.next();
+			}
 		}
 	}
 
 
 	@Override
 	public boolean hasNext() {
+		if (nTracks == 0) {
+			return false;
+		}
+
 		for (Iterator i: sandwichIterators) {
 			if (!i.hasNext()) {
 				return false;
