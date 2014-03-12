@@ -105,4 +105,40 @@ public class AnchorSandwichIteratorTest {
 		Assert.assertFalse(iter.hasNext());
 	}
 
+
+	@Test
+	public void testEmptySandwich() {
+		List<Element> L = new ArrayList<Element>();
+
+		L.add(Anchor.timedAnchor(5));
+		L.add(new Word("abc"));
+		L.add(Anchor.timedAnchor(10));
+		L.add(Anchor.timedAnchor(15));
+		L.add(new Word("def"));
+		L.add(Anchor.timedAnchor(20));
+
+		AnchorSandwichIterator iter = new AnchorSandwichIterator(L);
+		AnchorSandwich s;
+
+		Assert.assertTrue(iter.hasNext());
+		s = iter.next();
+		Assert.assertEquals(L.get(0), s.getInitialAnchor());
+		Assert.assertEquals(L.get(2), s.getFinalAnchor());
+		Assert.assertEquals(L.subList(1, 2), s);
+
+		Assert.assertTrue(iter.hasNext());
+		s = iter.next();
+		Assert.assertEquals(L.get(2), s.getInitialAnchor());
+		Assert.assertEquals(L.get(3), s.getFinalAnchor());
+		Assert.assertTrue(s.isEmpty());
+
+		Assert.assertTrue(iter.hasNext());
+		s = iter.next();
+		Assert.assertEquals(L.get(3), s.getInitialAnchor());
+		Assert.assertEquals(L.get(5), s.getFinalAnchor());
+		Assert.assertEquals(L.subList(4, 5), s);
+
+		Assert.assertFalse(iter.hasNext());
+	}
+
 }
