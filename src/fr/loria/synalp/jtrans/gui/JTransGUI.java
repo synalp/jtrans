@@ -96,9 +96,6 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	public MultiTrackTable multitrack;
 	public SpeakerVisibilityControl speakerVisibility;
 
-	public RoundBuffer audiobuf = new RoundBuffer(this, 10000000);
-	public RoundBufferFrontEnd mfccbuf;
-
 	// position lue pour la derniere fois dans le flux audio
 	long currentSample = 0;
 	public Project project = new Project();
@@ -364,7 +361,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	}
 
 	public void newplaystarted() {
-
+/*
 		final Word[][] segmentToWord = new Word[project.tracks.size()][];
 
 		for (int i = 0; i < project.tracks.size(); i++) {
@@ -416,6 +413,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 			}
 		});
 		karaokeHighlighter.start();
+*/
 	}
 
 	public void newplaystopped() {

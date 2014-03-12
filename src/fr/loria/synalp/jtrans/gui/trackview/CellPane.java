@@ -99,7 +99,7 @@ public class CellPane extends JTextPane {
 		AttributeSet style = null;
 
 		if (el instanceof Word) {
-			style = ((Word) el).posInAlign >= 0 ?
+			style = ((Word) el).isAligned() ?
 					ALIGNED_STYLE : UNALIGNED_STYLE;
 
 		} else if (el instanceof Comment) {

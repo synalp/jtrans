@@ -4,6 +4,7 @@ import edu.cmu.sphinx.frontend.*;
 import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
 import edu.cmu.sphinx.linguist.acoustic.*;
 import edu.cmu.sphinx.util.LogMath;
+import fr.loria.synalp.jtrans.elements.Word;
 import fr.loria.synalp.jtrans.facade.Cache;
 import fr.loria.synalp.jtrans.speechreco.grammaire.Grammatiseur;
 import fr.loria.synalp.jtrans.speechreco.s4.*;
@@ -529,7 +530,7 @@ public class StateGraph {
 	 * array of state IDs, with array indices being frame numbers relative to
 	 * the first frame given to StateGraph#viterbi.
 	 */
-	private int[] backtrack(SwapInflater swapReader) throws IOException {
+	public int[] backtrack(SwapInflater swapReader) throws IOException {
 		int pathLead = nStates-1;
 		int[] timeline = new int[swapReader.getFrameCount()];
 		for (int f = timeline.length-1; f >= 0; f--) {
@@ -574,93 +575,65 @@ public class StateGraph {
 	}
 
 
-	/**
-	 *
-	 * @param swapReader
-	 * @param startFrame
-	 * @return An array containing two alignments: the first element is the
-	 * word alignment, the second element is the phone alignment.
-	 */
-	public Alignment[] getAlignments(
-			SwapInflater swapReader,
-			int startFrame)
-			throws IOException
+	public void setWordAlignments(
+			List<Word> alignable,
+			int[] timeline,
+			int offset)
 	{
-		int[] timeline = backtrack(swapReader);
+		assert alignable.size() == wordBoundaries.length;
 
-		Alignment wordAl = getWordAlignment(timeline);
-		Alignment phoneAl = getPhoneAlignment(timeline);
-
-		wordAl.adjustOffset(startFrame);
-		phoneAl.adjustOffset(startFrame);
-
-		return new Alignment[] { wordAl, phoneAl };
-	}
-
-
-	private Alignment getWordAlignment(int[] timeline) {
-		Alignment al = new Alignment();
 		int prevWord = -1;
 		int prevWordFrame0 = -1;
 		int currWord = -1;
 
-		for (int f = 0; f < timeline.length; f++) {
-			int frameState = timeline[f];
-			while (currWord+1 < words.length &&
-					wordBoundaries[currWord+1] <= frameState)
-			{
-				currWord++;
-			}
-
-			if (currWord != prevWord) {
-				if (prevWord >= 0) {
-					al.addRecognizedSegment(
-							words[prevWord], prevWordFrame0, f-1);
-				}
-				prevWord = currWord;
-				prevWordFrame0 = f;
-			}
-		}
-
-		// Add last word
-		if (prevWord >= 0) {
-			al.addRecognizedSegment(
-					words[prevWord], prevWordFrame0, timeline.length-1);
-		}
-
-		return al;
-	}
-
-
-	private Alignment getPhoneAlignment(int[] timeline) {
-		Alignment al = new Alignment();
 		int prevState = -1;
 		int state0Frame0 = -1; // 1st frame of the 1st state of the ongoing phone
 
 		for (int f = 0; f < timeline.length; f++) {
 			int currState = timeline[f];
 
+			while (currWord+1 < words.length &&
+					wordBoundaries[currWord+1] <= currState)
+			{
+				currWord++;
+			}
+
+			if (currWord != prevWord) {
+				if (prevWord >= 0) {
+					alignable.get(prevWord).setSegment(
+							offset + prevWordFrame0,
+							offset + f-1);
+				}
+				prevWord = currWord;
+				prevWordFrame0 = f;
+			}
+
 			if (f == 0 || prevState/3 != currState/3) {
-				if (prevState >= 0) {
-					al.addRecognizedSegment(
+				if (prevWord >= 0 && prevState >= 0) {
+					alignable.get(currWord).addPhone(
 							states[prevState].getHMM().getBaseUnit().getName(),
-							state0Frame0,
-							f-1);
+							offset + state0Frame0,
+							offset + f-1);
 				}
 				prevState = currState;
 				state0Frame0 = f;
 			}
 		}
 
-		// Add last phone
-		if (prevState >= 0) {
-			al.addRecognizedSegment(
-					states[prevState].getHMM().getBaseUnit().getName(),
-					state0Frame0,
-					timeline.length-1);
-		}
+		// Add last word
+		if (prevWord >= 0) {
+			alignable.get(prevWord).setSegment(
+					offset + prevWordFrame0,
+					offset + timeline.length-1);
 
-		return al;
+			// Add last phone
+			if (prevState >= 0) {
+				alignable.get(prevWord).addPhone(
+						states[prevState].getHMM().getBaseUnit().getName(),
+						offset + state0Frame0,
+						offset + timeline.length-1);
+			}
+		}
 	}
 
 

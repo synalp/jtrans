@@ -30,7 +30,6 @@ public class JTRLoader implements MarkupLoader {
 		FileReader r = new FileReader(file);
 		Project project = newGson().fromJson(r, Project.class);
 		r.close();
-		project.refreshIndex();
 		return project;
 	}
 

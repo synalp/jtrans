@@ -2,7 +2,6 @@ package fr.loria.synalp.jtrans.facade;
 
 import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
 import fr.loria.synalp.jtrans.elements.Word;
-import fr.loria.synalp.jtrans.speechreco.s4.Alignment;
 import fr.loria.synalp.jtrans.speechreco.s4.S4ForceAlignBlocViterbi;
 import fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer;
 import fr.loria.synalp.jtrans.viterbi.StateGraph;
@@ -50,13 +49,18 @@ public class AutoAligner {
 	 * @param endFrame last frame to analyze. Use a negative number to use all
 	 *                 frames in the audio source
 	 */
-	public Alignment[] align(String words, int startFrame, int endFrame)
+	public void align(List<Word> words, int startFrame, int endFrame)
 			throws IOException, InterruptedException
 	{
 		//----------------------------------------------------------------------
 		// Initialize graph and swap streams
 
-		StateGraph graph = new StateGraph(words);
+		String[] wordStrings = new String[words.size()];
+		for (int i = 0; i < words.size(); i++) {
+			wordStrings[i] = words.get(i).toString();
+		}
+
+		StateGraph graph = new StateGraph(wordStrings);
 
 		boolean inRAM = (endFrame-startFrame+1)*graph.getStateCount()
 				<= SWAP_THRESHOLD_BYTES;
@@ -93,37 +97,9 @@ public class AutoAligner {
 		graph.viterbi(mfcc, swapWriter, startFrame, endFrame);
 
 		swapReader.init(swapWriter.getIndex(), inFactory);
-		return graph.getAlignments(swapReader, startFrame);
-	}
+		int[] timeline = graph.backtrack(swapReader);
 
-
-	public static void mergeWordAlignment(
-			Alignment wordAl,
-			List<Word> words,
-			int firstSegment)
-	{
-		if (wordAl == null) {
-			return;
-		}
-
-		String[] alignedWords = new String[words.size()];
-		for (int i = 0; i < words.size(); i++) {
-			alignedWords[i] = words.get(i).toString();
-		}
-
-		int[] wordSegments = wordAl.matchWithText(alignedWords);
-		assert wordSegments.length == words.size();
-
-		// Adjust posInAlign for Word elements
-		for (int i = 0; i < wordSegments.length; i++) {
-			int idx = wordSegments[i];
-
-			// Offset if we have a valid segment index
-			if (idx >= 0)
-				idx += firstSegment;
-
-			words.get(i).posInAlign = idx;
-		}
+		graph.setWordAlignments(words, timeline, startFrame);
 	}
 
 }

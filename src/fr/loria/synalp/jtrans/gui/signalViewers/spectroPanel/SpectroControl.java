@@ -50,8 +50,9 @@ public class SpectroControl extends JPanel {
 	}
 
 	public void refreshWords() {
-		Alignment align = aligneur.showPhones?
-				currentTrack.phons: currentTrack.words;
+//		Alignment align = aligneur.showPhones?
+//				currentTrack.phons: currentTrack.words;
+		Alignment align = null;
 		words.setAlign(align);
 		int frame = TimeConverter.second2frame(startSeconds);
 		words.setFirstSeg(align.getSegmentAtFrame(frame));

@@ -1,7 +1,6 @@
 package fr.loria.synalp.jtrans.facade;
 
 import fr.loria.synalp.jtrans.elements.*;
-import fr.loria.synalp.jtrans.speechreco.s4.Alignment;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,8 +9,6 @@ public class Track {
 
 	public String speakerName;
 	public List<Element> elts = new ArrayList<Element>();
-	public Alignment words = new Alignment();
-	public Alignment phons = new Alignment();
 
 
 	public Track(String speakerName) {
@@ -20,17 +17,9 @@ public class Track {
 
 
 	public void clearAlignment() {
-		words = new Alignment();
-		phons = new Alignment();
-		for (Word word: getWords())
-			word.posInAlign = -1;
-		refreshIndex();
-	}
-
-
-	public void refreshIndex() {
-		words.buildIndex();
-		phons.buildIndex();
+		for (Word word: getWords()) {
+			word.clearAlignment();
+		}
 	}
 
 
@@ -123,27 +112,10 @@ public class Track {
 		// Unalign the affected words
 		for (int i = from; i <= to; i++) {
 			Element el = elts.get(i);
-			if (el instanceof Word)
-				((Word) el).posInAlign = -1;
+			if (el instanceof Word) {
+				((Word) el).clearAlignment();
+			}
 		}
-
-		// Remove segments
-		int beforeRemoval = words.getNbSegments();
-		words.clearInterval(
-				a!=null? a.getFrame(): 0,
-				b!=null? b.getFrame(): Integer.MAX_VALUE);
-		int removed = beforeRemoval - words.getNbSegments();
-
-		// Adjust elements following the removal
-		for (int i = to+1; i < elts.size(); i++) {
-			Element el = elts.get(i);
-			if (!(el instanceof Word))
-				continue;
-			((Word) el).posInAlign -= removed;
-		}
-
-		// TODO: unalign phonemes, clear affected overlaps...
-		refreshIndex();
 	}
 
 

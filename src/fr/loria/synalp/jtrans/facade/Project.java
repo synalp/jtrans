@@ -1,8 +1,7 @@
 package fr.loria.synalp.jtrans.facade;
 
-import fr.loria.synalp.jtrans.elements.Word;
+import fr.loria.synalp.jtrans.gui.JTransGUI;
 import fr.loria.synalp.jtrans.markup.JTRLoader;
-import fr.loria.synalp.jtrans.speechreco.s4.Alignment;
 import fr.loria.synalp.jtrans.utils.TimeConverter;
 
 import javax.sound.sampled.*;
@@ -35,13 +34,6 @@ public class Project {
 	public void clearAlignment() {
 		for (Track track : tracks)
 			track.clearAlignment();
-		refreshIndex();
-	}
-
-
-	public void refreshIndex() {
-		for (Track track : tracks)
-			track.refreshIndex();
 	}
 
 
@@ -61,22 +53,11 @@ public class Project {
 					continue;
 				}
 
-				Alignment[] alignments = aligner.align(
-						sandwich.getSpaceSeparatedWords(),
+				aligner.align(
+						sandwich.getWords(),
 						sandwich.getInitialAnchor().getFrame(),
 						sandwich.getFinalAnchor().getFrame());
-
-				Alignment wordAl = alignments[0];
-				Alignment phonAl = alignments[1];
-
-				int firstSegment = track.words.merge(wordAl);
-				track.phons.merge(phonAl);
-
-				List<Word> words = sandwich.getWords();
-				AutoAligner.mergeWordAlignment(wordAl, words, firstSegment);
 			}
-
-			track.refreshIndex();
 		}
 	}
 
@@ -223,23 +204,61 @@ public class Project {
 
 		int id = 1;
 		for (Track t: tracks) {
-			if (withWords)
-				praatTier(w, id++, t.speakerName + " words", t.words);
-			if (withPhons)
-				praatTier(w, id++, t.speakerName + " phons", t.phons);
+			StringBuilder wordSB = new StringBuilder();
+			StringBuilder phoneSB = new StringBuilder();
+
+			List<Word> words = t.getWords();
+
+			int wordCount = 0;
+			int phoneCount = 0;
+
+			for (Word word: words) {
+				if (!word.isAligned()) {
+					continue;
+				}
+
+				praatInterval(
+						wordSB,
+						wordCount+1,
+						word.getSegment().getStartFrame(),
+						word.getSegment().getEndFrame(),
+						word.toString());
+				wordCount++;
+
+				for (Word.Phone phone: word.getPhones()) {
+					praatInterval(
+							phoneSB,
+							phoneCount+1,
+							phone.getSegment().getStartFrame(),
+							phone.getSegment().getEndFrame(),
+							phone.toString());
+					phoneCount++;
+				}
+			}
+
+			if (withWords) {
+				praatTierHeader(w, id++, t.speakerName + " words", wordCount);
+				w.write(wordSB.toString());
+			}
+
+			if (withPhons) {
+				praatTierHeader(w, id++, t.speakerName + " phons", phoneCount);
+				w.write(phoneSB.toString());
+			}
 		}
 
 		w.close();
 	}
 
-
 	/**
-	 * Generates a Praat tier for an alignment.
+	 * Appends a Praat tier header.
 	 * @param w Append text to this writer
 	 * @param id Tier ID (Praat tier numbering starts at 1 and is contiguous!)
 	 * @param name Tier name
+	 * @param intervalCount Number of intervals in the tier
 	 */
-	private void praatTier(Writer w, int id, String name, Alignment al)
+	private void praatTierHeader(
+			Appendable w, int id, String name, int intervalCount)
 			throws IOException
 	{
 		assert id > 0;
@@ -250,15 +269,26 @@ public class Project {
 				.append("\n\t\txmax = ")
 				.append(Float.toString(TimeConverter.frame2sec((int)audioSourceTotalFrames)))
 				.append("\n\t\tintervals: size = ")
-				.append(Integer.toString(al.getNbSegments()));
-		for (int j = 0; j < al.getNbSegments(); j++) {
-			w.append("\n\t\tintervals [").append(Integer.toString(j+1)).append("]:")
-					.append("\n\t\t\txmin = ")
-					.append(Float.toString(TimeConverter.frame2sec(al.getSegmentDebFrame(j))))
-					.append("\n\t\t\txmax = ")
-					.append(Float.toString(TimeConverter.frame2sec(al.getSegmentEndFrame(j))))
-					.append("\n\t\t\ttext = \"")
-					.append(al.getSegmentLabel(j)).append('"'); // TODO escape strings
-		}
+				.append(Integer.toString(intervalCount));
 	}
+
+
+	/**
+	 * Appends a Praat interval.
+	 * @param w Append text to this writer
+	 * @param id Interval ID (Interval numbering starts at 1 and is contiguous!)
+	 */
+	private static void praatInterval(
+			Appendable w, int id, int xminFrame, int xmaxFrame, String content)
+			throws IOException
+	{
+		w.append("\n\t\tintervals [").append(Integer.toString(id)).append("]:")
+				.append("\n\t\t\txmin = ")
+				.append(Float.toString(TimeConverter.frame2sec(xminFrame)))
+				.append("\n\t\t\txmax = ")
+				.append(Float.toString(TimeConverter.frame2sec(xmaxFrame)))
+				.append("\n\t\t\ttext = \"")
+				.append(content).append('"'); // TODO escape strings
+	}
+
 }

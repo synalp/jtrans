@@ -371,17 +371,15 @@ public class MultiTrackTable
 
 		float initialPos;
 
-		if (word.posInAlign < 0) {
+		if (!word.isAligned()) {
 			float endOfAudio = TimeConverter.frame2sec((int) project.audioSourceTotalFrames);
 			initialPos = before?
 					(range.prev!=null? range.prev.seconds: 0) :
 					(range.next!=null? range.next.seconds: endOfAudio);
 		} else if (before) {
-			initialPos = TimeConverter.frame2sec(
-					track.words.getSegmentDebFrame(word.posInAlign));
+			initialPos = word.getSegment().getStartSecond();
 		} else {
-			initialPos = TimeConverter.frame2sec(
-					track.words.getSegmentEndFrame(word.posInAlign));
+			initialPos = word.getSegment().getEndSecond();
 		}
 
 		String positionString = JOptionPane.showInputDialog(gui.jf,
@@ -449,10 +447,9 @@ public class MultiTrackTable
 		player.stopPlaying();
 		Track track = project.tracks.get(trackIdx);
 
-		if (word.posInAlign >= 0) {
+		if (word.isAligned()) {
 			model.highlightWord(trackIdx, word);
-			gui.setCurPosInSec(TimeConverter.frame2sec(
-					track.words.getSegmentDebFrame(word.posInAlign)));
+			gui.setCurPosInSec(word.getSegment().getStartSecond());
 			gui.sigpan.setTrack(track);
 		} else {
 			replay = false;
