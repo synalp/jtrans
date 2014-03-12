@@ -33,13 +33,13 @@ public class LinearBridge
 			return false;
 		}
 
-		for (Iterator i: sandwichIterators) {
-			if (!i.hasNext()) {
-				return false;
+		for (AnchorSandwich s: currentSandwiches) {
+			if (s != null) {
+				return true;
 			}
 		}
 
-		return true;
+		return false;
 	}
 
 

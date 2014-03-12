@@ -49,6 +49,7 @@ public class LinearBridgeTest {
 		LinearBridge bridge = new LinearBridge(trackList);
 		AnchorSandwich[] sl;
 
+		Assert.assertTrue(bridge.hasNext());
 		sl = bridge.next();
 		Assert.assertEquals(2, sl.length);
 		Assert.assertEquals(trackA.elts.get(0), sl[0].getInitialAnchor());
@@ -56,6 +57,7 @@ public class LinearBridgeTest {
 		Assert.assertEquals(trackA.elts.subList(1, 2), sl[0]);
 		Assert.assertNull(sl[1]);
 
+		Assert.assertTrue(bridge.hasNext());
 		sl = bridge.next();
 		Assert.assertEquals(2, sl.length);
 		Assert.assertNull(sl[0]);
@@ -86,6 +88,7 @@ public class LinearBridgeTest {
 		LinearBridge bridge = new LinearBridge(trackList);
 		AnchorSandwich[] sl;
 
+		Assert.assertTrue(bridge.hasNext());
 		sl = bridge.next();
 		Assert.assertEquals(2, sl.length);
 		Assert.assertEquals(trackA.elts.get(0), sl[0].getInitialAnchor());
@@ -96,6 +99,38 @@ public class LinearBridgeTest {
 		Assert.assertEquals(trackB.elts.subList(1, 2), sl[1]);
 
 		Assert.assertFalse(bridge.hasNext());
+	}
+
+
+	@Test
+	public void testHasNext() {
+		Track trackA = new Track("A");
+		trackA.elts.add(Anchor.timedAnchor(5));
+		trackA.elts.add(new Word("abc"));
+		trackA.elts.add(Anchor.timedAnchor(10));
+
+		Track trackB = new Track("B");
+
+		{
+			List<Track> trackList1 = new ArrayList<Track>();
+			trackList1.add(trackA);
+			trackList1.add(trackB);
+			Assert.assertTrue(new LinearBridge(trackList1).hasNext());
+		}
+
+		{
+			List<Track> trackList2 = new ArrayList<Track>();
+			trackList2.add(trackB);
+			trackList2.add(trackA);
+			Assert.assertTrue(new LinearBridge(trackList2).hasNext());
+		}
+
+		{
+			List<Track> trackList3 = new ArrayList<Track>();
+			trackList3.add(trackB);
+			trackList3.add(trackB);
+			Assert.assertFalse(new LinearBridge(trackList3).hasNext());
+		}
 	}
 
 }
