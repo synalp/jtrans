@@ -185,4 +185,40 @@ public class LinearBridgeTest {
 		Assert.assertFalse(bridge.hasNext());
 	}
 
+
+	@Test
+	public void testInterleavedWordSequence() {
+		List<Track> trackList = new ArrayList<Track>();
+		Track trackA = new Track("A");
+		Track trackB = new Track("B");
+		trackList.add(trackA);
+		trackList.add(trackB);
+
+		trackA.elts.add(Anchor.orderedTimelessAnchor(0));
+		trackA.elts.add(new Word("abc"));
+		trackA.elts.add(Anchor.orderedTimelessAnchor(1));
+
+		trackB.elts.add(Anchor.orderedTimelessAnchor(1));
+		trackB.elts.add(new Word("def"));
+		trackB.elts.add(Anchor.orderedTimelessAnchor(2));
+
+		trackA.elts.add(Anchor.orderedTimelessAnchor(2));
+		trackA.elts.add(new Word("ghi"));
+		trackA.elts.add(Anchor.orderedTimelessAnchor(3));
+
+		trackB.elts.add(Anchor.orderedTimelessAnchor(4));
+		trackB.elts.add(new Word("jkl"));
+
+		LinearBridge lb = new LinearBridge(trackList);
+		AnchorSandwich wordSeq = lb.nextInterleavedElementSequence();
+		Assert.assertEquals(4, wordSeq.size());
+		Assert.assertEquals("abc", wordSeq.get(0).toString());
+		Assert.assertEquals("def", wordSeq.get(1).toString());
+		Assert.assertEquals("ghi", wordSeq.get(2).toString());
+		Assert.assertEquals("jkl", wordSeq.get(3).toString());
+		Assert.assertEquals(Anchor.orderedTimelessAnchor(0),
+				wordSeq.getInitialAnchor());
+		Assert.assertNull(wordSeq.getFinalAnchor());
+	}
+
 }

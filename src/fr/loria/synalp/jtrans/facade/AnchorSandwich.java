@@ -42,6 +42,12 @@ public class AnchorSandwich
 		}
 	}
 
+	AnchorSandwich(List<Element> elements, Anchor initialAnchor, Anchor finalAnchor) {
+		this.elements = elements;
+		this.initialAnchor = initialAnchor;
+		this.finalAnchor = finalAnchor;
+	}
+
 	public Anchor getInitialAnchor() {
 		return initialAnchor;
 	}
