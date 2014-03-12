@@ -3,6 +3,8 @@ package fr.loria.synalp.jtrans.gui.trackview;
 import fr.loria.synalp.jtrans.elements.Anchor;
 import fr.loria.synalp.jtrans.elements.Element;
 import fr.loria.synalp.jtrans.elements.Word;
+import fr.loria.synalp.jtrans.facade.AnchorSandwich;
+import fr.loria.synalp.jtrans.facade.LinearBridge;
 import fr.loria.synalp.jtrans.facade.Project;
 import fr.loria.synalp.jtrans.facade.Track;
 import fr.loria.synalp.jtrans.utils.spantable.DefaultSpanModel;
@@ -18,19 +20,80 @@ import java.util.*;
  * Non-editable model.
  */
 class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel {
+
 	private Project project;
 	private SpanModel spanModel = new DefaultSpanModel();
-	private String[] columnNames;
-	private Object[][] cells;
-	private int[] highlightedRows;
-	private Word[] highlightedWords;
 	private int[] trackToColumn;
-	private int[] columnToTrack;
-	private int visibleColumns;
 	private int nonEmptyRowCount;
+	private List<Column> columns;
 
 	/** Used to highlight words */
 	Map<Word, int[]> wordMap = new HashMap<Word, int[]>();
+
+
+	private class Column {
+		final int columnNo;
+		final Track track;
+		final int trackNo;
+		Object[] cells;
+
+		// Highlight variables
+		Word highlightedWord;
+		int highlightedRow = -1;
+
+		// Variables used when building table data
+		int lastRow = 0;
+		boolean lastCellWasText = false;
+
+		private Column(int columnNo, int trackNo) {
+			this.columnNo = columnNo;
+			this.trackNo = trackNo;
+			this.track = project.tracks.get(trackNo);
+		}
+
+		void highlightWord(Word word) {
+			int oldHLRow = highlightedRow;
+			int[] tc = wordMap.get(word);
+			int newHLRow = tc==null? -1: tc[0];
+
+			// if newHLRow>=0: don't un-highlight cell if null word
+			if (oldHLRow != newHLRow && newHLRow >= 0) {
+				if (oldHLRow >= 0)
+					fireTableCellUpdated(oldHLRow, columnNo);
+				highlightedRow = newHLRow;
+			}
+
+			highlightedWord = word;
+			if (newHLRow >= 0)
+				fireTableCellUpdated(newHLRow, columns.indexOf(this));
+		}
+
+		void addRowSpan(int currentRow) {
+			int rowSpan = currentRow - lastRow;
+			if (rowSpan > 1 && lastCellWasText)
+				spanModel.addSpan(new Span(lastRow, columnNo, rowSpan, 1));
+		}
+
+		int ontoNextCell(int currentRow, AnchorSandwich sandwich) {
+			if (cells == null)
+				return 0;
+
+			cells[currentRow] = sandwich.getInitialAnchor();
+
+			if (!sandwich.isEmpty()) {
+				cells[currentRow+1] = new TextCell(trackNo,
+						sandwich.getInitialAnchor(), sandwich);
+				lastCellWasText = true;
+				lastRow = currentRow + 1;
+				return 2;
+			} else {
+				lastCellWasText = false;
+				lastRow = currentRow;
+				return 1;
+			}
+		}
+	}
+
 
 
 	@Override
@@ -38,20 +101,24 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 		return nonEmptyRowCount;
 	}
 
+
 	@Override
 	public int getColumnCount() {
-		return visibleColumns;
+		return columns.size();
 	}
+
 
 	@Override
 	public Object getValueAt(int rowIndex, int columnIndex) {
-		return cells[rowIndex][columnIndex];
+		return columns.get(columnIndex).cells[rowIndex];
 	}
+
 
 	@Override
 	public String getColumnName(int column) {
-		return columnNames[column];
+		return columns.get(column).track.speakerName;
 	}
+
 
 	public MultiTrackTableModel(Project p, boolean[] visibility) {
 		super();
@@ -59,165 +126,72 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 		refresh(visibility);
 	}
 
+
 	@Override
 	public SpanModel getSpanModel() {
 		return spanModel;
 	}
 
 
-	/**
-	 * Keeps track of various variables when building table data for a Track.
-	 */
-	private class MetaTrack {
-		final Track track;
-		final int trackNo;
-		final int column;
-		final ListIterator<Element> iter;
-		Anchor anchor;
-		int lastRow = 0;
-		boolean lastCellWasText = false;
-
-		MetaTrack(int trackNo, int colNo) {
-			this.trackNo = trackNo;
-			column = colNo;
-			track = project.tracks.get(trackNo);
-			iter = track.elts.listIterator();
-
-			// Skip past first anchor and add initial row span if needed
-			ontoNextCell(0);
-		}
-
-		/**
-		 * Adds the current row span to the spanModel if needed.
-		 * Only TextCells may span multiple rows.
-		 */
-		void addRowSpan(int currentRow) {
-			int rowSpan = currentRow - lastRow;
-			if (rowSpan > 1 && lastCellWasText)
-				spanModel.addSpan(new Span(lastRow, column, rowSpan, 1));
-		}
-
-		/**
-		 * Adjusts lastRow and anchor, updates wordMap.
-		 */
-		int ontoNextCell(int currentRow) {
-			Anchor cellStartAnchor = anchor;
-
-			if (!iter.hasNext())
-				anchor = null;
-
-			List<Element> elts = new ArrayList<Element>();
-			while (iter.hasNext()) {
-				Element next = iter.next();
-				if (next instanceof Anchor) {
-					anchor = (Anchor)next;
-					break;
-				} else {
-					elts.add(next);
-					if (next instanceof Word)
-						wordMap.put((Word)next, new int[]{currentRow+1, column});
-				}
-			}
-
-			if (cells != null) {
-				cells[currentRow][column] = cellStartAnchor;
-
-				if (!elts.isEmpty()) {
-					cells[currentRow+1][column] = new TextCell(
-							trackNo, cellStartAnchor, elts);
-					lastCellWasText = true;
-					lastRow = currentRow + 1;
-					return 2;
-				} else {
-					lastCellWasText = false;
-					lastRow = currentRow;
-					return 1;
-				}
-			}
-			return 0;
-		}
-	}
-
-
 	public void refresh(boolean[] visibility) {
-		spanModel.clear();
+		assert visibility.length == project.tracks.size();
 
-		visibleColumns = 0;
+		spanModel.clear();
+		columns = new ArrayList<Column>();
 		trackToColumn = new int[project.tracks.size()];
-		List<MetaTrack> metaTracks = new ArrayList<MetaTrack>();
 
 		// Count visible tracks and initialize track metadata
 		for (int i = 0; i < visibility.length; i++) {
 			if (visibility[i]) {
-				trackToColumn[i] = visibleColumns;
-				metaTracks.add(new MetaTrack(i, visibleColumns));
-				visibleColumns++;
+				int newColID = columns.size();
+				columns.add(new Column(newColID, i));
+				trackToColumn[i] = newColID;
 			} else {
 				trackToColumn[i] = -1;
 			}
 		}
 
-		columnNames = new String[visibleColumns];
-		columnToTrack = new int[visibleColumns];
-		for (int i = 0; i < visibleColumns; i++) {
-			columnNames[i] = metaTracks.get(i).track.speakerName;
-			columnToTrack[i] = metaTracks.get(i).column;
-		}
-
-		highlightedRows = new int[visibleColumns];
-		Arrays.fill(highlightedRows, -1);
-		highlightedWords = new Word[visibleColumns];
-
 		// Count rows
 		int rows = 0;
-		for (MetaTrack mt: metaTracks)
-			for (Element el: mt.track.elts)
-				if (el instanceof Anchor)
+		for (Column c: columns) {
+			for (Element el: c.track.elts) {
+				if (el instanceof Anchor) {
 					rows += 2;
+				}
+			}
+		}
 
-		cells = new Object[rows][visibleColumns];
+		for (Column c: columns)
+			c.cells = new Object[rows];
 
-		nonEmptyRowCount = populateRows(metaTracks);
+		nonEmptyRowCount = populateRows();
 	}
 
 
-	private int populateRows(List<MetaTrack> metaTracks) {
+	private int populateRows() {
 		int row = 0;
 
-		// For tracks with simultaneous anchors,
-		// cells will be inserted at the same row
-		List<MetaTrack> simultaneous = new ArrayList<MetaTrack>();
+		LinearBridge lb = new LinearBridge(project.tracks);
 
-		while (row < cells.length) {
-			simultaneous.clear();
+		while (lb.hasNext()) {
+			int maxDelta = 0;
+			AnchorSandwich[] sandwiches = lb.next();
+			assert sandwiches.length == project.tracks.size();
 
-			// Find track containing the earliest upcoming anchor
-			for (MetaTrack m: metaTracks) {
-				if (m.anchor == null)
+			for (int i = 0; i < project.tracks.size(); i++) {
+				int c = trackToColumn[i];
+				if (c < 0 || sandwiches[i] == null)
 					continue;
 
-				if (simultaneous.isEmpty()) {
-					simultaneous.add(m);
-				} else {
-					int cmp = m.anchor.compareTo(simultaneous.get(0).anchor);
-
-					if (cmp < 0) {
-						simultaneous.clear();
-						simultaneous.add(m);
-					} else if (cmp == 0) {
-						simultaneous.add(m);
+				for (Element el: sandwiches[i]) {
+					if (el instanceof Word) {
+						// row+1 because a row must be left for the anchor
+						wordMap.put((Word)el, new int[]{row+1, c});
 					}
 				}
-			}
 
-			// No more anchors in all tracks
-			if (simultaneous.isEmpty())
-				break;
-
-			int maxDelta = 0;
-			for (MetaTrack m: simultaneous) {
-				m.addRowSpan(row);
-				int d = m.ontoNextCell(row);
+				columns.get(c).addRowSpan(row);
+				int d = columns.get(c).ontoNextCell(row, sandwiches[i]);
 				maxDelta = Math.max(d, maxDelta);
 			}
 			row += maxDelta;
@@ -231,33 +205,22 @@ class MultiTrackTableModel extends AbstractTableModel implements SpanTableModel 
 		int col = trackToColumn[trackIdx];
 		if (col < 0) // hidden column
 			return;
-
-		int oldHLRow = highlightedRows[col];
-		int[] tc = wordMap.get(word);
-		int newHLRow = tc==null? -1: tc[0];
-
-		// if newHLRow>=0: don't un-highlight cell if null word
-		if (oldHLRow != newHLRow && newHLRow >= 0) {
-			if (oldHLRow >= 0)
-				fireTableCellUpdated(oldHLRow, col);
-			highlightedRows[col] = newHLRow;
-		}
-
-		highlightedWords[col] = word;
-		if (newHLRow >= 0)
-			fireTableCellUpdated(newHLRow, col);
-
+		columns.get(col).highlightWord(word);
 	}
+
 
 	public int getHighlightedRow(int col) {
-		return highlightedRows[col];
+		return columns.get(col).highlightedRow;
 	}
+
 
 	public Word getHighlightedWord(int col) {
-		return highlightedWords[col];
+		return columns.get(col).highlightedWord;
 	}
 
+
 	public int getTrackForColumn(int col) {
-		return columnToTrack[col];
+		return columns.get(col).trackNo;
 	}
+
 }
