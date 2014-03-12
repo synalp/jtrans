@@ -64,14 +64,7 @@ public class Batch {
 			try {
 				Project project = loader.parse(f);
 				project.setAudio(audio);
-
-				for (int i = 0; i < project.tracks.size(); i++) {
-					AutoAligner aa = new AutoAligner(project,
-							project.tracks.get(i),
-							new StdoutProgressDisplay(),
-							null);
-					aa.alignBetweenAnchors();
-				}
+				project.align();
 
 				System.out.println("Alignment done!");
 

@@ -1,5 +1,6 @@
 package fr.loria.synalp.jtrans.facade;
 
+import fr.loria.synalp.jtrans.elements.Word;
 import fr.loria.synalp.jtrans.markup.JTRLoader;
 import fr.loria.synalp.jtrans.speechreco.s4.Alignment;
 import fr.loria.synalp.jtrans.utils.TimeConverter;
@@ -41,6 +42,42 @@ public class Project {
 	public void refreshIndex() {
 		for (Track track : tracks)
 			track.refreshIndex();
+	}
+
+
+	public void align() throws IOException, InterruptedException {
+		for (Track track: tracks) {
+			// TODO - I don't think the MFCC buffer provides random access,
+			// that's why I'm recreating a new aligner at every iteration
+			AutoAligner aligner = new AutoAligner(convertedAudioFile);
+
+			track.clearAlignment();
+
+			AnchorSandwichIterator iter = track.sandwichIterator();
+			while (iter.hasNext()) {
+				AnchorSandwich sandwich = iter.next();
+
+				if (sandwich.isEmpty()) {
+					continue;
+				}
+
+				Alignment[] alignments = aligner.align(
+						sandwich.getSpaceSeparatedWords(),
+						sandwich.getInitialAnchor().getFrame(),
+						sandwich.getFinalAnchor().getFrame());
+
+				Alignment wordAl = alignments[0];
+				Alignment phonAl = alignments[1];
+
+				int firstSegment = track.words.merge(wordAl);
+				track.phons.merge(phonAl);
+
+				List<Word> words = sandwich.getWords();
+				AutoAligner.mergeWordAlignment(wordAl, words, firstSegment);
+			}
+
+			track.refreshIndex();
+		}
 	}
 
 

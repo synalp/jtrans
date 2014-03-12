@@ -2,8 +2,10 @@ package fr.loria.synalp.jtrans.facade;
 
 import fr.loria.synalp.jtrans.elements.Anchor;
 import fr.loria.synalp.jtrans.elements.Element;
+import fr.loria.synalp.jtrans.elements.Word;
 
 import java.util.AbstractList;
+import java.util.ArrayList;
 import java.util.List;
 
 public class AnchorSandwich
@@ -54,6 +56,32 @@ public class AnchorSandwich
 
 	public Anchor getFinalAnchor() {
 		return finalAnchor;
+	}
+
+	public List<Word> getWords() {
+		List<Word> words = new ArrayList<Word>();
+
+		for (Element el: elements) {
+			if (el instanceof Word) {
+				words.add((Word)el);
+			}
+		}
+
+		return words;
+	}
+
+	public String getSpaceSeparatedWords() {
+		StringBuilder sb = new StringBuilder();
+		String prefix = "";
+
+		for (Element el: elements) {
+			if (el instanceof Word) {
+				sb.append(prefix).append(el.toString());
+				prefix = " ";
+			}
+		}
+
+		return sb.toString();
 	}
 
 	@Override

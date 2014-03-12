@@ -270,11 +270,9 @@ public class Menus {
 		// //////////////////////////////////////////////////////////////
 		JMenu alignMenu = new JMenu("Align");
 		JMenuItem autoAnchors = new JMenuItem("Auto-align between anchors...");
-		JMenuItem autoAll = new JMenuItem("Auto-align all (no anchors)...");
 		JMenuItem clearAll = new JMenuItem("Clear entire alignment");
 		menubar.add(alignMenu);
 		alignMenu.add(autoAnchors);
-		alignMenu.add(autoAll);
 		alignMenu.addSeparator();
 		alignMenu.add(clearAll);
 
@@ -283,14 +281,7 @@ public class Menus {
 		autoAnchors.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				aligneur.alignAllWithProgress(true);
-			}
-		});
-
-		autoAll.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				aligneur.alignAllWithProgress(false);
+				aligneur.alignAll();
 			}
 		});
 
@@ -372,22 +363,6 @@ public class Menus {
 		JMenuItem liveasr = new JMenuItem("Live ASR");
 		JMenuItem initGrammar = new JMenuItem("Initialize grammar...");
 
-		JMenu algoMenu = new JMenu("Alignment algorithm");
-		ButtonGroup algoGroup = new ButtonGroup();
-		for (final AutoAligner.Algorithm algo : AutoAligner.Algorithm.values()) {
-			JRadioButtonMenuItem jmi = new JRadioButtonMenuItem(algo.name());
-			algoGroup.add(jmi);
-			algoMenu.add(jmi);
-			jmi.setSelected(algo == AutoAligner.algorithm);
-
-			jmi.addActionListener(new AbstractAction() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					AutoAligner.algorithm = algo;
-				}
-			});
-		}
-
 		menubar.add(prefs);
 		//		JMenuItem mots = new JMenuItem("forward mots");
 		//		prefs.add(mots);
@@ -395,7 +370,6 @@ public class Menus {
 		prefs.add(mikerec);
 		prefs.add(liveasr);
 		prefs.addSeparator();
-		prefs.add(algoMenu);
 		prefs.addSeparator();
 		prefs.add(initGrammar);
 

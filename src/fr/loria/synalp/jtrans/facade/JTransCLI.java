@@ -10,7 +10,6 @@ public class JTransCLI {
 	public String markupFileName;
 	public String audioFileName;
 	public String outputFileName;
-	public boolean useAnchors = true;
 
 
 	public JTransCLI(String[] args) {
@@ -46,10 +45,6 @@ public class JTransCLI {
 				outputFileName = args[++i];
 			}
 
-			else if (lcarg.equals("-noanchors")) {
-				useAnchors = false;
-			}
-
 			else {
 				System.err.println("args error: dont know what to do with " + arg);
 				return;
@@ -68,17 +63,7 @@ public class JTransCLI {
 
 		Project project = cli.loader.parse(new File(cli.markupFileName));
 		project.setAudio(cli.audioFileName);
-
-		for (int i = 0; i < project.tracks.size(); i++) {
-			AutoAligner aa = new AutoAligner(project,
-					project.tracks.get(i),
-					new StdoutProgressDisplay(),
-					null);
-			if (cli.useAnchors)
-				aa.alignBetweenAnchors();
-			else
-				aa.alignRaw();
-		}
+		project.align();
 
 		System.out.println("Done!");
 
