@@ -723,12 +723,16 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		return true;
 	}
 
-	public void alignAll() {
+	public void alignAll(final boolean interleaved) {
 		new Thread() {
 			@Override
 			public void run() {
 				try {
-					project.align();
+					if (interleaved) {
+						project.alignInterleaved();
+					} else {
+						project.align();
+					}
 				} catch (final Exception ex) {
 					ex.printStackTrace();
 					SwingUtilities.invokeLater(new Runnable() {

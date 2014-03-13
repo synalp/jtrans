@@ -260,9 +260,11 @@ public class Menus {
 		// //////////////////////////////////////////////////////////////
 		JMenu alignMenu = new JMenu("Align");
 		JMenuItem autoAnchors = new JMenuItem("Auto-align between anchors...");
+		JMenuItem autoInterleaved = new JMenuItem("Auto-align as interleaved word sequence...");
 		JMenuItem clearAll = new JMenuItem("Clear entire alignment");
 		menubar.add(alignMenu);
 		alignMenu.add(autoAnchors);
+		alignMenu.add(autoInterleaved);
 		alignMenu.addSeparator();
 		alignMenu.add(clearAll);
 
@@ -271,7 +273,16 @@ public class Menus {
 		autoAnchors.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				aligneur.alignAll();
+				aligneur.alignAll(false);
+			}
+		});
+
+		autoInterleaved.setAccelerator(KeyStroke.getKeyStroke('I', modifier | InputEvent.SHIFT_MASK));
+
+		autoInterleaved.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				aligneur.alignAll(true);
 			}
 		});
 

@@ -1,5 +1,8 @@
 package fr.loria.synalp.jtrans.facade;
 
+import fr.loria.synalp.jtrans.elements.Anchor;
+import fr.loria.synalp.jtrans.elements.Element;
+import fr.loria.synalp.jtrans.elements.Word;
 import fr.loria.synalp.jtrans.gui.JTransGUI;
 import fr.loria.synalp.jtrans.markup.JTRLoader;
 import fr.loria.synalp.jtrans.utils.TimeConverter;
@@ -58,6 +61,34 @@ public class Project {
 						sandwich.getInitialAnchor().getFrame(),
 						sandwich.getFinalAnchor().getFrame());
 			}
+		}
+	}
+
+
+	public void alignInterleaved() throws IOException, InterruptedException {
+		LinearBridge lb = new LinearBridge(tracks);
+
+		for (Track track: tracks) {
+			track.clearAlignment();
+		}
+
+		while (lb.hasNext()) {
+			AutoAligner aligner = new AutoAligner(convertedAudioFile);
+			AnchorSandwich interleaved = lb.nextInterleavedElementSequence();
+			Anchor ia = interleaved.getInitialAnchor();
+			Anchor fa = interleaved.getFinalAnchor();
+			List<Word> seq = new ArrayList<Word>();
+
+			for (Element el: interleaved) {
+				if (el instanceof Word) {
+					seq.add((Word)el);
+				}
+			}
+
+			aligner.align(
+					seq,
+					ia == null || !ia.hasTime()? 0: ia.getFrame(),
+					fa == null || !fa.hasTime()? -1: fa.getFrame());
 		}
 	}
 
