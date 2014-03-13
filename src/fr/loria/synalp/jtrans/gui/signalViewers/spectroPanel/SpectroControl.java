@@ -13,7 +13,6 @@ import javax.swing.event.ChangeListener;
 
 import fr.loria.synalp.jtrans.facade.Track;
 import fr.loria.synalp.jtrans.gui.JTransGUI;
-import fr.loria.synalp.jtrans.speechreco.s4.Alignment;
 import fr.loria.synalp.jtrans.utils.TimeConverter;
 
 /**
@@ -50,12 +49,8 @@ public class SpectroControl extends JPanel {
 	}
 
 	public void refreshWords() {
-//		Alignment align = aligneur.showPhones?
-//				currentTrack.phons: currentTrack.words;
-		Alignment align = null;
-		words.setAlign(align);
-		int frame = TimeConverter.second2frame(startSeconds);
-		words.setFirstSeg(align.getSegmentAtFrame(frame));
+		words.setTrack(currentTrack);
+		words.setFirstFrame(TimeConverter.second2frame(startSeconds));
 		words.repaint();
 	}
 

@@ -200,27 +200,17 @@ public class Menus {
 
 		// //////////////////////////////////////////////////////////////
 		JMenu viewMenu = new JMenu("View");
-		JCheckBoxMenuItem phonemesInSpectro = new JCheckBoxMenuItem("Show phonemes in spectro");
 		JCheckBoxMenuItem minutesInAnchors = new JCheckBoxMenuItem("Show minutes in anchor timestamps");
 		JMenu fontSize = new JMenu("Font size");
 		JMenu fontFamily = new JMenu("Font family");
 		menubar.add(viewMenu);
 
-		viewMenu.add(phonemesInSpectro);
 		viewMenu.add(minutesInAnchors);
 		viewMenu.addSeparator();
 		viewMenu.add(fontSize);
 		viewMenu.add(fontFamily);
 
-		phonemesInSpectro.setSelected(aligneur.showPhones);
 		minutesInAnchors.setSelected(Anchor.showMinutes);
-
-		phonemesInSpectro.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				aligneur.showPhones = ((AbstractButton)e.getSource()).isSelected();
-				aligneur.sigpan.refreshWords();
-			}
-		});
 
 		minutesInAnchors.addActionListener(new AbstractAction() {
 			@Override

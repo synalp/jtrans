@@ -76,7 +76,6 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	private float cursec = 0;
 	public ControlBox ctrlbox;
 	public SpectroControl sigpan;
-	public boolean showPhones=false;
 
 	/* IMPORTANT: the karaoke highlighter *has* to be a Swing timer, not a
 	java.util.Timer. This is to ensure that the callback is called from

@@ -1,71 +1,84 @@
 package fr.loria.synalp.jtrans.gui.signalViewers.spectroPanel;
 
-import java.awt.FontMetrics;
-import java.awt.Graphics;
+import fr.loria.synalp.jtrans.elements.Element;
+import fr.loria.synalp.jtrans.elements.Word;
+import fr.loria.synalp.jtrans.facade.Track;
+
+import java.awt.*;
 
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
-import fr.loria.synalp.jtrans.speechreco.s4.Alignment;
-
 public class TimelineWords extends JPanel {
-	private Alignment align;
-	// on peut indiquer soit une trame de debut, soit directement un segment a afficher
+	private Track track;
 	private int firstFrame;
-	private int firstSeg=-1;
 	private float zoom=1f;
+	private FontMetrics metrics;
 
-//    public Dimension getPreferredSize() {
-//    	final Dimension dim = new Dimension(-1, 40);
-//    	return dim;
-//    }
-    
-	public void setAlign(Alignment al) {align=al;}
-	public void setFirstSeg(int seg) {
-		firstSeg=seg;
-		repaint();
+	public TimelineWords() {
+		setFont(new Font(Font.DIALOG, Font.PLAIN, 10));
+		metrics = getFontMetrics(getFont());
 	}
+
+	public void setTrack(Track t) {
+		track = t;
+	}
+
 	public void setFirstFrame(int fr) {
 		firstFrame=fr;
 		repaint();
 	}
+
 	public void setZoom(float z) {
 		zoom=z;
 		repaint();
 	}
-	
-	public void paintComponent(Graphics g) {
+
+	private int transformX(int frame) {
+		return (int)((float)(frame-firstFrame) * zoom);
+	}
+
+	private void drawSegment(Graphics g, String str, Word.Segment seg, int y, int tickHeight) {
+		int x1 = transformX(seg.getStartFrame());
+		int x2 = transformX(seg.getEndFrame());
+		int segW = SwingUtilities.computeStringWidth(metrics, str);
+
+		g.setColor(Color.GRAY);
+		g.drawLine(x1, 0, x1, tickHeight);
+
+		g.setColor(getForeground());
+		g.drawString(str, (x1 + x2 - segW) / 2, y);
+	}
+
+	public void paintComponent(Graphics g0) {
+		Graphics2D g = (Graphics2D)g0;
+
+		g.setRenderingHint(
+				RenderingHints.KEY_TEXT_ANTIALIASING,
+				RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
 		super.paintComponent(g);
+
+		if (track == null) {
+			return;
+		}
+
 		int w = getWidth();
 		int h = getHeight();
-		g.drawLine(0, 4, w, 4);
-		int seg;
-		if (firstSeg<0) {
-			int fr = firstFrame;
-			if (align==null) return;
-			seg = align.getSegmentAtFrame(fr);
-			if (seg<0) return;
-		} else {
-			seg=firstSeg;
-			firstFrame=align.getSegmentDebFrame(seg);
-		}
-		int lastx=0;
-		FontMetrics fontMetric = getFontMetrics(getFont());
-		for (;seg<align.getNbSegments();seg++) {
-			int frlimit = align.getSegmentEndFrame(seg);
-			if (frlimit<0) return;
-			frlimit-=firstFrame;
-			// 1 fr = 
-			int xlimit = (int)((float)frlimit*zoom);
-			if (xlimit>w) return;
-			g.drawLine(xlimit, 4, xlimit, h-30);
-			String word = align.getSegmentLabel(seg);
-			if (!word.equals("SIL")) {
-				int motWidth = SwingUtilities.computeStringWidth(fontMetric, word);
-				int motx = (lastx+xlimit-motWidth)/2;
-				g.drawString(word, motx, h-10);
+
+		final int lastFrame = firstFrame + (int)(w/zoom);
+
+		for (Word word: track.getWords()) {
+			if (word.getSegment().getEndFrame() < firstFrame) {
+				continue;
+			} else if (word.getSegment().getStartFrame() > lastFrame) {
+				return;
 			}
-			lastx=xlimit;
+
+			drawSegment(g, word.toString(), word.getSegment(), h-5, h);
+			for (Word.Phone p: word.getPhones()) {
+				drawSegment(g, p.toString(), p.getSegment(), h/2-5, 3);
+			}
 		}
 	}
 }
