@@ -29,8 +29,6 @@ import fr.loria.synalp.jtrans.gui.trackview.SpeakerVisibilityControl;
 import fr.loria.synalp.jtrans.speechreco.SpeechReco;
 import fr.loria.synalp.jtrans.markup.*;
 
-import fr.loria.synalp.jtrans.buffer.RoundBuffer;
-import fr.loria.synalp.jtrans.buffer.RoundBufferFrontEnd;
 import fr.loria.synalp.jtrans.gui.signalViewers.spectroPanel.SpectroControl;
 import fr.loria.synalp.jtrans.speechreco.BiaisAdapt;
 import fr.loria.synalp.jtrans.utils.*;
@@ -360,32 +358,13 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	}
 
 	public void newplaystarted() {
-/*
-		final Word[][] segmentToWord = new Word[project.tracks.size()][];
-
-		for (int i = 0; i < project.tracks.size(); i++) {
-			List<Word> wordElts = project.tracks.get(i).getWords();
-
-			if (!wordElts.isEmpty()) {
-				int l = wordElts.size()-1;
-				int lastseg=-1;
-				while (l>=0) {
-					int s = wordElts.get(l--).posInAlign;
-					if (s > lastseg)
-						lastseg = s;
-				}
-
-				segmentToWord[i] = new Word[lastseg+1];
-
-				for (Word w : wordElts) {
-					if (w.posInAlign>=0)
-						segmentToWord[i][w.posInAlign] = w;
-				}
-			}
+		final List<List<Word>> words = new ArrayList<List<Word>>();
+		for (Track t: project.tracks) {
+			words.add(t.getWords());
 		}
 
 		karaokeHighlighter = new Timer(KARAOKE_UPDATE_INTERVAL, new AbstractAction() {
-			Word[] hl = new Word[project.tracks.size()];
+			int[] hl = new int[project.tracks.size()];
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -396,15 +375,27 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 				curfr += playergui.getRelativeStartingSec()*100;
 
 				for (int i = 0; i < project.tracks.size(); i++) {
-					Track t = project.tracks.get(i);
+					List<Word> wordList = words.get(i);
+					if (wordList.isEmpty()) {
+						continue;
+					}
 
-					Word newHl = segmentToWord[i][t.words.getSegmentAtFrame(curfr)];
+					int newHl = hl[i];
+
+					while (newHl < wordList.size() &&
+							wordList.get(newHl).getSegment().getEndFrame() < curfr) {
+						newHl++;
+					}
+
+					if (newHl >= wordList.size()) {
+						continue;
+					}
 
 					// Only update UI if the word wasn't already highlighted
+					Word w = wordList.get(newHl);
 					if (hl[i] != newHl) {
-						multitrack.highlightWord(i, newHl);
-						if (newHl != null)
-							speakerVisibility.pulse(i);
+						multitrack.highlightWord(i, w);
+						speakerVisibility.pulse(i);
 					}
 
 					hl[i] = newHl;
@@ -412,7 +403,6 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 			}
 		});
 		karaokeHighlighter.start();
-*/
 	}
 
 	public void newplaystopped() {
