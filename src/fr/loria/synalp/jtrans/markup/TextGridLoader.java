@@ -3,9 +3,7 @@ package fr.loria.synalp.jtrans.markup;
 import fr.loria.synalp.jtrans.elements.*;
 import fr.loria.synalp.jtrans.facade.Project;
 import fr.loria.synalp.jtrans.facade.Track;
-import fr.loria.synalp.jtrans.speechreco.s4.Alignment;
 import fr.loria.synalp.jtrans.utils.FileUtils;
-import fr.loria.synalp.jtrans.utils.TimeConverter;
 
 import java.io.*;
 import java.util.*;
@@ -26,22 +24,23 @@ public class TextGridLoader implements MarkupLoader {
 
 		for (int i = 0; i < machine.tiers.size(); i++) {
 			Track track = new Track(machine.tierNames.get(i));
-			Alignment queue = machine.tiers.get(i);
-			int endFrame = -1;
+			float prevXmax = -1;
 
-			for (int j = 0; j < queue.getNbSegments(); j++) {
+			for (TextGridStateMachine.Interval interval: machine.tiers.get(i)) {
 				// Avoid redundant anchors - only create start anchor if
 				// different from previous anchor
-				int startFrame = queue.getSegmentDebFrame(j);
-				if (endFrame != startFrame)
-					track.elts.add(Anchor.timedAnchor(TimeConverter.frame2sec(startFrame)));
 
-				String normalized = RawTextLoader.normalizeText(queue.getSegmentLabel(j));
+				if (prevXmax != interval.xmin) {
+					track.elts.add(Anchor.timedAnchor(interval.xmin));
+				}
+
+				String normalized = RawTextLoader.normalizeText(interval.text);
 				track.elts.addAll(RawTextLoader.parseString(
 						normalized, RawTextLoader.DEFAULT_PATTERNS));
 
-				endFrame = queue.getSegmentEndFrame(j);
-				track.elts.add(Anchor.timedAnchor(TimeConverter.frame2sec(endFrame)));
+				track.elts.add(Anchor.timedAnchor(interval.xmax));
+
+				prevXmax = interval.xmax;
 			}
 
 			project.tracks.add(track);
@@ -57,9 +56,8 @@ public class TextGridLoader implements MarkupLoader {
 
 
 class TextGridStateMachine {
-	List<Alignment> tiers = new ArrayList<Alignment>();
+	List<List<Interval>> tiers = new ArrayList<List<Interval>>();
 	List<String> tierNames = new ArrayList<String>();
-
 
 
 	private static enum State {
@@ -133,7 +131,7 @@ class TextGridStateMachine {
 		State state = State.FILE_HEADER_1;
 		int lineNumber = 1;
 		Interval currentInterval = new Interval();
-		Alignment currentTier = null;
+		List<Interval> currentTier = null;
 		int remainingIntervals = -1;
 
 		while (state != State.DONE) {
@@ -195,7 +193,7 @@ class TextGridStateMachine {
 				
 				case TIER_HEADER:
 					if (PAT_ITEM.matcher(lcline).matches()) {
-						currentTier = new Alignment();
+						currentTier = new ArrayList<Interval>();
 						tiers.add(currentTier);
 						state = State.TIER_DESCRIPTION;
 					} else {
@@ -243,14 +241,9 @@ class TextGridStateMachine {
 				case INTERVAL_DESCRIPTION:
 					if (currentInterval.findMatch(line)) {
 						if (currentInterval.isComplete()) {
-							int startFrame = TimeConverter.second2frame(currentInterval.xmin);
-							int endFrame = TimeConverter.second2frame(currentInterval.xmax);
 							if (!currentInterval.text.isEmpty() &&
-									startFrame < endFrame) {
-								currentTier.addRecognizedSegment(
-										currentInterval.text,
-										startFrame,
-										endFrame);
+									currentInterval.xmin < currentInterval.xmax) {
+								currentTier.add(currentInterval);
 							}
 							currentInterval = new Interval();
 							if (remainingIntervals == 0)
