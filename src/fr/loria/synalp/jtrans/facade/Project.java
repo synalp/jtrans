@@ -3,7 +3,6 @@ package fr.loria.synalp.jtrans.facade;
 import fr.loria.synalp.jtrans.elements.Anchor;
 import fr.loria.synalp.jtrans.elements.Element;
 import fr.loria.synalp.jtrans.elements.Word;
-import fr.loria.synalp.jtrans.gui.JTransGUI;
 import fr.loria.synalp.jtrans.markup.JTRLoader;
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
 import fr.loria.synalp.jtrans.utils.TimeConverter;
@@ -41,7 +40,13 @@ public class Project {
 	}
 
 
-	public void align(ProgressDisplay progress)
+	/**
+	 * Aligns all words in all tracks of this project with timed anchors.
+	 * @param clear If true, clear any previously existing alignment information
+	 *              to start a new alignment from scratch. If false, don't touch
+	 *              aligned words; only attempt to align unaligned words.
+	 */
+	public void align(boolean clear, ProgressDisplay progress)
 			throws IOException, InterruptedException
 	{
 		for (Track track: tracks) {
@@ -50,13 +55,18 @@ public class Project {
 			AutoAligner aligner = new AutoAligner(
 					convertedAudioFile, (int)audioSourceTotalFrames, progress);
 
-			track.clearAlignment();
+			if (clear) {
+				track.clearAlignment();
+			}
 
 			AnchorSandwichIterator iter = track.sandwichIterator();
+
 			while (iter.hasNext()) {
 				AnchorSandwich sandwich = iter.next();
 
-				if (sandwich.isEmpty()) {
+				if (sandwich.isEmpty() ||
+						(!clear && sandwich.isFullyAligned()))
+				{
 					continue;
 				}
 
@@ -69,14 +79,21 @@ public class Project {
 	}
 
 
+	/**
+	 * Aligns all words in all tracks of this project with timeless anchors.
+	 */
 	public void alignInterleaved(ProgressDisplay progress)
 			throws IOException, InterruptedException
 	{
-		LinearBridge lb = new LinearBridge(tracks);
 
 		for (Track track: tracks) {
 			track.clearAlignment();
 		}
+
+		//----------------------------------------------------------------------
+		// Align big interleaved sequences
+
+		LinearBridge lb = new LinearBridge(tracks);
 
 		while (lb.hasNext()) {
 			AutoAligner aligner = new AutoAligner(
@@ -97,6 +114,73 @@ public class Project {
 					ia == null || !ia.hasTime()? 0: ia.getFrame(),
 					fa == null || !fa.hasTime()? -1: fa.getFrame());
 		}
+
+		//----------------------------------------------------------------------
+		// Deduce times on timeless anchors
+
+		progress.setIndeterminateProgress("Setting anchor times...");
+
+		for (Track track: tracks) {
+			AnchorSandwichIterator iter = track.sandwichIterator();
+
+			while (iter.hasNext()) {
+				AnchorSandwich sandwich = iter.next();
+				List<Word> words = sandwich.getWords();
+
+				if (words.isEmpty()) {
+					continue;
+				}
+
+				{
+					Word iw = words.get(0);
+					Anchor ia = sandwich.getInitialAnchor();
+					if (null != ia && !ia.hasTime() && iw.isAligned()) {
+						setTimeOnTimelessAnchors(ia,
+								iw.getSegment().getStartSecond());
+					}
+				}
+
+				{
+					Word fw = words.get(words.size()-1);
+					Anchor fa = sandwich.getFinalAnchor();
+					if (null != fa && !fa.hasTime() && fw.isAligned()) {
+						setTimeOnTimelessAnchors(fa,
+								fw.getSegment().getEndSecond());
+					}
+				}
+			}
+		}
+
+		//----------------------------------------------------------------------
+		// Align yet-unaligned overlaps
+
+		progress.setIndeterminateProgress("Aligning overlaps...");
+		align(true, null);
+	}
+
+
+	/**
+	 * Sets time for all timeless anchors equal to the reference anchor.
+	 * @param reference reference timeless anchor. MUST be timeless for
+	 *                  Anchor.equals() to work.
+	 * @param seconds time to set
+	 */
+	void setTimeOnTimelessAnchors(Anchor reference, float seconds) {
+		assert !reference.hasTime();
+
+		for (Track track: tracks) {
+			for (Element el: track.elts) {
+				if (el instanceof Anchor) {
+					Anchor a = (Anchor)el;
+					if (a != reference && a.equals(reference)) {
+						assert !a.hasTime();
+						a.setSeconds(seconds);
+					}
+				}
+			}
+		}
+
+		reference.setSeconds(seconds);
 	}
 
 

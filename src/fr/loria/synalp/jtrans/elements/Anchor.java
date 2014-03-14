@@ -58,6 +58,11 @@ public class Anchor
 	}
 
 
+	public void setSeconds(float seconds) {
+		this.seconds = seconds;
+	}
+
+
 	public int compareTo(Anchor a) {
 		if (a == null) {
 			return 1;

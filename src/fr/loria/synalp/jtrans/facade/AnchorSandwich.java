@@ -84,6 +84,18 @@ public class AnchorSandwich
 		return sb.toString();
 	}
 
+
+	public boolean isFullyAligned() {
+		for (Element el: elements) {
+			if (el instanceof Word && !((Word) el).isAligned()) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+
 	@Override
 	public Element get(int index) {
 		return elements.get(index);
