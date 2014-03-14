@@ -33,7 +33,8 @@ public class RawTextLoader implements MarkupLoader {
 	{{
 		put(Comment.Type.FREEFORM,     "(\\{[^\\}]*\\}|\\[[^\\]]*\\]|\\+)");
 		put(Comment.Type.NOISE,        "\\*+");
-		put(Comment.Type.OVERLAP_MARK, "(<|>)");
+		put(Comment.Type.OVERLAP_START_MARK, "<");
+		put(Comment.Type.OVERLAP_END_MARK,   ">");
 		put(Comment.Type.PUNCTUATION,  "(\\?|\\:|\\;|\\,|\\.|\\!)");
 		put(Comment.Type.BEEP,         "\\*[^\\*\\s]+\\*");
 		put(Comment.Type.SPEAKER_MARK, "(^|\\n)(\\s)*\\w\\d+\\s");
@@ -160,6 +161,7 @@ public class RawTextLoader implements MarkupLoader {
 		BufferedReader reader = FileUtils.openFileAutoCharset(file);
 
 		int order = 0;
+		boolean ongoingOverlap = false;
 
 		// Add default speaker
 		Track currentTrack = new Track("Unknown");
@@ -168,17 +170,25 @@ public class RawTextLoader implements MarkupLoader {
 
 		Map<String, Track> trackMap = new HashMap<String, Track>();
 
-		while (true) {
+		for (int lineNo = 1; true; lineNo++) {
 			String line = reader.readLine();
 			if (line == null)
 				break;
 			line = normalizeText(line).trim();
 
 			for (Element el: parseString(line, commentPatterns)) {
-				if (el instanceof Comment &&
-						((Comment) el).getType() == Comment.Type.SPEAKER_MARK)
-				{
-					currentTrack.elts.add(Anchor.orderedTimelessAnchor(order));
+				Comment.Type ctype = el instanceof Comment?
+						((Comment) el).getType(): null;
+
+				if (ctype == Comment.Type.SPEAKER_MARK) {
+					/*
+					Cordon off current speaker's speech by adding an ordered
+					anchor in the current track. Warning: If an overlap is
+					ongoing, `order` is the order ID that *starts* the overlap.
+					*/
+					currentTrack.elts.add(Anchor.orderedTimelessAnchor(
+							ongoingOverlap? order+1: order));
+
 					String speaker = el.toString().trim();
 					currentTrack = trackMap.get(speaker);
 					if (currentTrack == null) {
@@ -188,7 +198,33 @@ public class RawTextLoader implements MarkupLoader {
 					}
 					currentTrack.elts.add(Anchor.orderedTimelessAnchor(order));
 					order++;
-				} else {
+				}
+
+				else if (ctype == Comment.Type.OVERLAP_START_MARK) {
+					if (ongoingOverlap) {
+						throw new ParsingException(lineNo, line,
+								"An overlap is already ongoing");
+					}
+
+					currentTrack.elts.add(Anchor.orderedTimelessAnchor(order));
+					currentTrack.elts.add(el);
+					ongoingOverlap = true;
+					// Don't increment order; next SPEAKER_MARK will use the
+					// current order and appear simultaneously
+				}
+
+				else if (ctype == Comment.Type.OVERLAP_END_MARK) {
+					if (!ongoingOverlap) {
+						throw new ParsingException(lineNo, line,
+								"Trying to end non-existant overlap");
+					}
+					currentTrack.elts.add(el);
+					currentTrack.elts.add(Anchor.orderedTimelessAnchor(order));
+					order++;
+					ongoingOverlap = false;
+				}
+
+				else {
 					currentTrack.elts.add(el);
 				}
 			}

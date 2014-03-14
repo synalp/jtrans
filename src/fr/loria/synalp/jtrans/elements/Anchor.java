@@ -31,7 +31,7 @@ public class Anchor
 
 	public String toString() {
 		if (!hasTime()) {
-			return "???";
+			return "TL#" + timelessOrder;
 		} else if (showMinutes) {
 			return String.format("%d'%02d\"%03d",
 					(int)(seconds/60f),

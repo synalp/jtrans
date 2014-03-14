@@ -12,7 +12,8 @@ public class Comment implements Element {
 		NOISE,
 		BEEP,
 		PUNCTUATION,
-		OVERLAP_MARK,
+		OVERLAP_START_MARK,
+		OVERLAP_END_MARK,
 		SPEAKER_MARK,
 	}
 

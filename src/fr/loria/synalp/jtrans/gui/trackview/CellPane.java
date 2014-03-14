@@ -57,7 +57,8 @@ public class CellPane extends JTextPane {
 			put(Comment.Type.NOISE,         Color.CYAN);
 			put(Comment.Type.PUNCTUATION,   Color.ORANGE);
 			put(Comment.Type.BEEP,          Color.RED);
-			put(Comment.Type.OVERLAP_MARK,  Color.PINK);
+			put(Comment.Type.OVERLAP_START_MARK, Color.PINK);
+			put(Comment.Type.OVERLAP_END_MARK,   Color.PINK);
 			put(Comment.Type.SPEAKER_MARK,  Color.GREEN.brighter());
 		}
 	};
