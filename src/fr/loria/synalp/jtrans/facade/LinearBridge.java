@@ -2,7 +2,6 @@ package fr.loria.synalp.jtrans.facade;
 
 import fr.loria.synalp.jtrans.elements.Anchor;
 import fr.loria.synalp.jtrans.elements.Element;
-import fr.loria.synalp.jtrans.elements.Word;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -94,7 +93,15 @@ public class LinearBridge
 	/**
 	 * Returns a linear sequence of elements in chronological order,
 	 * from all tracks (hence "interleaved").
-	 * TODO: extend AnchorSandwich to specify track-switching points?
+	 *
+	 * In the case of simultaneous anchors in several tracks, the anchor
+	 * sandwich containing the most words is kept in the linear sequence; all
+	 * other simultaneous sandwiches are ignored.
+	 *
+	 * TODO: overlapping non-simultaneous sandwiches (e.g. OFROM)
+	 *
+	 * @return a sequence of elements contained in an AnchorSandwich whose
+	 * initial and final anchors delimit the sequence
 	 */
 	public AnchorSandwich nextInterleavedElementSequence() {
 		List<Element> seq = new ArrayList<Element>();
@@ -103,28 +110,39 @@ public class LinearBridge
 		Anchor finalAnchor = null;
 
 		while (hasNext()) {
-			boolean foundSandwichInIteration = false;
+			AnchorSandwich longest = null;
+			int longestLength = 0;
 
+			// find longest simultaneous sandwich
 			for (AnchorSandwich sandwich: next()) {
-				if (sandwich == null || sandwich.isEmpty())
+				if (sandwich == null || sandwich.isEmpty()) {
 					continue;
-
-				assert !foundSandwichInIteration;
-				foundSandwichInIteration = true;
-
-				Anchor ia = sandwich.getInitialAnchor();
-				Anchor fa = sandwich.getFinalAnchor();
-
-				if (initialAnchor == null) {
-					initialAnchor = ia;
 				}
 
-				seq.addAll(sandwich);
-
-				if (fa != null && fa.hasTime()) {
-					finalAnchor = sandwich.getFinalAnchor();
-					break;
+				int length = sandwich.getWords().size();
+				if (length > longestLength) {
+					longest = sandwich;
+					longestLength = length;
 				}
+			}
+
+			if (longest == null) {
+				continue;
+			}
+
+			// build sequence sandwich
+
+			seq.addAll(longest);
+
+			if (initialAnchor == null) {
+				initialAnchor = longest.getInitialAnchor();
+			}
+
+			// Finish this sequence if we have a timed anchor
+			Anchor fa = longest.getFinalAnchor();
+			if (fa != null && fa.hasTime()) {
+				finalAnchor = fa;
+				break;
 			}
 		}
 
