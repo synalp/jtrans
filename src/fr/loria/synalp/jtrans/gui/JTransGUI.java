@@ -360,7 +360,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	public void newplaystarted() {
 		final List<List<Word>> words = new ArrayList<List<Word>>();
 		for (Track t: project.tracks) {
-			words.add(t.getWords());
+			words.add(t.getAlignedWords());
 		}
 
 		karaokeHighlighter = new Timer(KARAOKE_UPDATE_INTERVAL, new AbstractAction() {

@@ -34,6 +34,17 @@ public class Track {
 	}
 
 
+	public List<Word> getAlignedWords() {
+		ArrayList<Word> res = new ArrayList<Word>();
+		for (Element element: elts) {
+			if (element instanceof Word && ((Word) element).isAligned()) {
+				res.add((Word)element);
+			}
+		}
+		return res;
+	}
+
+
 	public AnchorSandwichIterator sandwichIterator() {
 		return new AnchorSandwichIterator(elts);
 	}
