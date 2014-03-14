@@ -64,7 +64,7 @@ public class Batch {
 			try {
 				Project project = loader.parse(f);
 				project.setAudio(audio);
-				project.align();
+				project.align(new StdoutProgressDisplay());
 
 				System.out.println("Alignment done!");
 

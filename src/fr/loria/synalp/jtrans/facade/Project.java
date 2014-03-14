@@ -5,6 +5,7 @@ import fr.loria.synalp.jtrans.elements.Element;
 import fr.loria.synalp.jtrans.elements.Word;
 import fr.loria.synalp.jtrans.gui.JTransGUI;
 import fr.loria.synalp.jtrans.markup.JTRLoader;
+import fr.loria.synalp.jtrans.utils.ProgressDisplay;
 import fr.loria.synalp.jtrans.utils.TimeConverter;
 
 import javax.sound.sampled.*;
@@ -40,11 +41,14 @@ public class Project {
 	}
 
 
-	public void align() throws IOException, InterruptedException {
+	public void align(ProgressDisplay progress)
+			throws IOException, InterruptedException
+	{
 		for (Track track: tracks) {
 			// TODO - I don't think the MFCC buffer provides random access,
 			// that's why I'm recreating a new aligner at every iteration
-			AutoAligner aligner = new AutoAligner(convertedAudioFile);
+			AutoAligner aligner = new AutoAligner(
+					convertedAudioFile, (int)audioSourceTotalFrames, progress);
 
 			track.clearAlignment();
 
@@ -65,7 +69,9 @@ public class Project {
 	}
 
 
-	public void alignInterleaved() throws IOException, InterruptedException {
+	public void alignInterleaved(ProgressDisplay progress)
+			throws IOException, InterruptedException
+	{
 		LinearBridge lb = new LinearBridge(tracks);
 
 		for (Track track: tracks) {
@@ -73,7 +79,8 @@ public class Project {
 		}
 
 		while (lb.hasNext()) {
-			AutoAligner aligner = new AutoAligner(convertedAudioFile);
+			AutoAligner aligner = new AutoAligner(
+					convertedAudioFile, (int)audioSourceTotalFrames, progress);
 			AnchorSandwich interleaved = lb.nextInterleavedElementSequence();
 			Anchor ia = interleaved.getInitialAnchor();
 			Anchor fa = interleaved.getFinalAnchor();

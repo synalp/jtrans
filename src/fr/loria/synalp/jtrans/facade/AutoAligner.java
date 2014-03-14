@@ -4,6 +4,7 @@ import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
 import fr.loria.synalp.jtrans.elements.Word;
 import fr.loria.synalp.jtrans.speechreco.s4.S4ForceAlignBlocViterbi;
 import fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer;
+import fr.loria.synalp.jtrans.utils.ProgressDisplay;
 import fr.loria.synalp.jtrans.viterbi.StateGraph;
 import fr.loria.synalp.jtrans.viterbi.SwapDeflater;
 import fr.loria.synalp.jtrans.viterbi.SwapInflater;
@@ -14,7 +15,9 @@ import java.util.List;
 public class AutoAligner {
 
 	private final File audio;
+	private final int appxTotalFrames;
 	private final S4mfccBuffer mfcc;
+	private final ProgressDisplay progress;
 	private final SwapDeflater swapWriter;
 	private final SwapInflater swapReader;
 
@@ -27,8 +30,10 @@ public class AutoAligner {
 	public static final int SWAP_THRESHOLD_BYTES = 1024*1024*16;
 
 
-	public AutoAligner(File audio) throws IOException {
+	public AutoAligner(File audio, int appxTotalFrames, ProgressDisplay progress) throws IOException {
 		this.audio = audio;
+		this.appxTotalFrames = appxTotalFrames;
+		this.progress = progress;
 
 		mfcc = new S4mfccBuffer();
 		AudioFileDataSource afds = new AudioFileDataSource(3200, null);
@@ -55,19 +60,31 @@ public class AutoAligner {
 		//----------------------------------------------------------------------
 		// Initialize graph and swap streams
 
+		if (progress != null) {
+			progress.setIndeterminateProgress("Setting up state graph...");
+		}
+
 		String[] wordStrings = new String[words.size()];
 		for (int i = 0; i < words.size(); i++) {
 			wordStrings[i] = words.get(i).toString();
 		}
 
 		StateGraph graph = new StateGraph(wordStrings);
+		graph.setProgressDisplay(progress, appxTotalFrames);
 
-		boolean inRAM = (endFrame-startFrame+1)*graph.getStateCount()
-				<= SWAP_THRESHOLD_BYTES;
 		final OutputStream out;
 		final SwapInflater.InputStreamFactory inFactory;
 
-		if (inRAM) {
+		// Get a ballpark measurement of the final size of the uncompressed
+		// backpointer table to determine if we're going to swap to disk or
+		// keep it all in RAM
+
+		int appxEndFrame = endFrame < 0? appxTotalFrames: endFrame;
+		int projectedSize = (appxEndFrame-startFrame+1) * graph.getStateCount();
+		System.out.println("Viterbi backpointer projected size " +
+				"(without compression): " + projectedSize);
+
+		if (projectedSize <= SWAP_THRESHOLD_BYTES) {
 			System.out.println("Viterbi backpointers: keep in RAM");
 			out = new ByteArrayOutputStream();
 			inFactory = new SwapInflater.InputStreamFactory() {

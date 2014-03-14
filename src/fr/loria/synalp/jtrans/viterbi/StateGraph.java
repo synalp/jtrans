@@ -8,6 +8,7 @@ import fr.loria.synalp.jtrans.elements.Word;
 import fr.loria.synalp.jtrans.facade.Cache;
 import fr.loria.synalp.jtrans.speechreco.grammaire.Grammatiseur;
 import fr.loria.synalp.jtrans.speechreco.s4.*;
+import fr.loria.synalp.jtrans.utils.ProgressDisplay;
 import fr.loria.synalp.jtrans.utils.TimeConverter;
 
 import java.io.*;
@@ -89,12 +90,33 @@ public class StateGraph {
 	/** Unit pool (for HMM state lookup) */
 	private final UnitManager unitMgr;
 
+	/** Used to report progress in viterbi() and backtrack() (may be null) */
+	private ProgressDisplay progress = null;
+
+	/**
+	 * Approximate total number of frames in the audio file.
+	 * Used to report progress as a percentage.
+ 	 */
+	private int progressTotalFrames = -1;
+
 
 	/**
 	 * Trims leading and trailing whitespace then splits around whitespace.
 	 */
 	public static String[] trimSplit(String text) {
 		return text.trim().split("\\s+");
+	}
+
+
+	/**
+	 * Sets progress reporting parameters. If you don't care about progress
+	 * reporting, you don't have to use this method.
+	 * @param progress progress display
+	 * @param totalFrames approximate total number of frames in the audio file
+	 */
+	public void setProgressDisplay(ProgressDisplay progress, int totalFrames) {
+		this.progress = progress;
+		this.progressTotalFrames = totalFrames;
 	}
 
 
@@ -478,6 +500,17 @@ public class StateGraph {
 				continue;
 			f++;
 
+			if (progress != null) {
+				int frameCount = (endFrame<0 ? progressTotalFrames: endFrame)
+						- startFrame;
+				progress.setProgress(String.format(
+						"Viterbi forward pass: frame %d of %d (deflated swap: %d MB)",
+						f,
+						startFrame+frameCount,
+						swapWriter.getIndex().getCompressedBytes() / 1024 / 1024),
+						(float) (f-startFrame) / (float) frameCount);
+			}
+
 			for (int i = 0; i < nStates; i++) {
 				// Emission probability (frame score)
 				float emission = states[i].getScore(frame);
@@ -538,6 +571,11 @@ public class StateGraph {
 			pathLead = inState[pathLead][transID];
 			timeline[f] = pathLead;
 			assert pathLead >= 0;
+
+			if (progress != null) {
+				progress.setProgress("Viterbi backward pass: frame " + f,
+						((float)f/(float)(timeline.length-1)));
+			}
 		}
 
 		return timeline;
