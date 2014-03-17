@@ -171,11 +171,10 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	/**
 	 * Sets the sound source file and converts it to a suitable format for
 	 * JTrans if needed.
-	 * @param path path to the sound file
 	 */
-	public void setAudioSource(String path) {
-		setIndeterminateProgress("Loading audio from " + path + "...");
-		project.setAudio(path);
+	public void setAudioSource(File soundFile) {
+		setIndeterminateProgress("Loading audio from " + soundFile + "...");
+		project.setAudio(soundFile);
 		updateViewers();
 		setProgressDone();
 	}
@@ -258,6 +257,16 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	public JTransGUI() {
 		initPanel();
 		createJFrame();
+	}
+
+	public JTransGUI(JTransCLI cli) {
+		this();
+
+		if (cli.loader != null) {
+			friendlyLoadMarkup(cli.loader, cli.inputFile, cli.audioFile);
+		} else {
+			setAudioSource(cli.audioFile);
+		}
 	}
 
 	private void createJFrame() {
@@ -549,22 +558,6 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		BiaisAdapt b=new BiaisAdapt(this);
 		b.calculateBiais();
 	}
-	
-	public static void main(String args[]) {
-		CrossPlatformFixes.setNativeLookAndFeel();
-		checkResources();
-
-		JTransCLI cli = new JTransCLI(args);
-		JTransGUI m = new JTransGUI();
-
-		if (cli.loader != null) {
-			m.friendlyLoadMarkup(cli.loader,
-					new File(cli.markupFileName),
-					cli.audioFileName==null? null: new File(cli.audioFileName));
-		} else {
-			m.setAudioSource(cli.audioFileName);
-		}
-	}
 
 
 	/**
@@ -572,7 +565,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	 * and installing the resources automatically. If the user declines, the
 	 * program is aborted.
 	 */
-	private static void checkResources() {
+	public static void installResources() {
 		if (new File("res").exists())
 			return;
 
@@ -667,8 +660,8 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		jf.setTitle(markupFile.getName());
 
 		if (forcedAudioFile != null) {
-			setAudioSource(forcedAudioFile.getAbsolutePath());
-		} else if (project.wavname == null) {
+			setAudioSource(forcedAudioFile);
+		} else if (project.audioFile == null) {
 			// Try to detect audio file from the project's file name
 			String pfn = markupFile.getName();
 			File possibleAudio = null;
@@ -692,13 +685,13 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 						JOptionPane.YES_NO_OPTION,
 						JOptionPane.QUESTION_MESSAGE);
 				if (rc == JOptionPane.YES_OPTION)
-					setAudioSource(possibleAudio.getAbsolutePath());
+					setAudioSource(possibleAudio);
 			}
 
 			// Try to recycle the previous project's audio file
-			if (project.wavname == null &&
+			if (project.audioFile == null &&
 					previousProject != null &&
-					previousProject.wavname != null)
+					previousProject.audioFile != null)
 			{
 				String[] choices =
 						"Keep this audio source;Use empty audio source".split(";");
@@ -706,7 +699,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 				int rc = JOptionPane.showOptionDialog(jf,
 						"The project you have just loaded has no audio file attached to it.\n\n" +
 						"However, this audio file was loaded up until now:\n" +
-						previousProject.wavname + "\n\n" +
+						previousProject.audioFile.getName() + "\n\n" +
 						"Would you like to keep it as the new project's audio source?",
 						"No audio source",
 						JOptionPane.YES_NO_OPTION,
@@ -716,7 +709,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 						choices[0]);
 
 				if (rc == 0)
-					setAudioSource(previousProject.wavname);
+					setAudioSource(previousProject.audioFile);
 			}
 		}
 
@@ -761,16 +754,9 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 
 	public void setProject(Project project) {
 		this.project = project;
-		setAudioSource(project.wavname);
+		setAudioSource(project.audioFile);
 		initPanel();
 		jf.setContentPane(this);
 	}
 
-	/**
-	 * Forces refreshing the project view.
-	 */
-	public void refresh() {
-		// TODO - just a tad overkill?
-		setProject(project);
-	}
 }

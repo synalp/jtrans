@@ -341,7 +341,21 @@ either be aligned (shown in blue) or unaligned (shown in red).</p>
 </div>
 
 
-<h2>Opening files in the GUI from the command line</h2>
+<h2>Command line use</h2>
+
+<p>JTrans provides a command line interface for launching the graphical
+interface and for aligning transcriptions without the GUI.</p>
+
+<p>Please run <code>java -jar jtrans.jar -h</code> for more information about
+the CLI switches.</p>
+
+
+<h3>Launching the graphical interface from the command line</h3>
+
+<p>Running the JAR file without any arguments, or without specifying an output
+format, will automatically open the graphical user interface.</p>
+
+<p>Sample use:</p>
 
 <pre>java -jar jtrans.jar [MARKUP] [AUDIO]</pre>
 <ul>
@@ -357,6 +371,29 @@ detect an audio file with a similar name.</p>
 textgrid).</p>
 
 
+<h3>Aligning a transcription from the command line</h3>
+
+<p>Sample use:</p>
+
+<pre>java -jar jtrans.jar blah.trs blah.wav \
+    --infmt=TCOFWhoifier --outdir=aligned \
+    --outfmt=jtr --outfmt=praatw</pre>
+
+<p>This will align transcript <code>blah.trs</code> with audio file
+    <code>blah.wav</code>, using the <code>TCOFWhoifier</code> preprocessor.
+    The result will be output in both <code>jtr</code> (JTrans) and
+    <code>praatw</code> (Praat TextGrid, Words only) formats. Output files will be
+    placed in the <code>aligned</code> directory.</p>
+
+<h3>Available output formats (<code>outfmt</code>)</h3>
+<ul>
+    <li>jtr: JTrans's custom JSON format (moving target!)</li>
+    <li>praatw: Praat TextGrid, words only</li>
+    <li>praatp: Praat TextGrid, phones only</li>
+    <li>praatwp: Praat TextGrid, words+phones</li>
+</ul>
+
+
 <h2>Clearing the cache</h2>
 
 <p>JTrans caches partial alignments and converted audio files on disk. This
@@ -368,6 +405,14 @@ save disk space.</p>
 
 <p>To do that, simply delete the contents of the <tt>cache</tt> directory next
 to the <tt>jtrans.jar</tt> file.</p>
+
+
+
+<h2>Align corpora from the command line</h2>
+
+<p>JTrans provides a command line interface to align transcriptions without the
+graphical interface.</p>
+
 
 
 </article>

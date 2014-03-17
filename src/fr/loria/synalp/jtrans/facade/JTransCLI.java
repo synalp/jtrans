@@ -1,83 +1,196 @@
 package fr.loria.synalp.jtrans.facade;
 
+import fr.loria.synalp.jtrans.gui.JTransGUI;
 import fr.loria.synalp.jtrans.markup.*;
-import fr.loria.synalp.jtrans.utils.StdoutProgressDisplay;
+import fr.loria.synalp.jtrans.utils.CrossPlatformFixes;
+import fr.loria.synalp.jtrans.utils.FileUtils;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 public class JTransCLI {
+
 	public MarkupLoader loader;
-	public String markupFileName;
-	public String audioFileName;
-	public String outputFileName;
+	public File inputFile;
+	public File audioFile;
+	public File outputDir;
+	public List<String> outputFormats;
+	public boolean clearTimes = false;
 
 
-	public JTransCLI(String[] args) {
-		for (int i = 0; i < args.length; i++) {
-			String arg = args[i];
-			String lcarg = arg.toLowerCase();
+	public final static String[] AUDIO_EXTENSIONS = "wav,ogg,mp3".split(",");
+	public final static String[] MARKUP_EXTENSIONS = "jtr,trs,txt,textgrid".split(",");
 
-			if (lcarg.endsWith(".wav")) {
-				audioFileName = arg;
+
+	private static void printHelp(OptionParser parser) {
+		try {
+			parser.printHelpOn(System.out);
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
+	}
+
+
+	private static void listMarkupLoaders() {
+		Set<String> names = MarkupLoaderPool.getLoaderNames();
+
+		System.out.println("Vanilla markup loaders:");
+		for (String name: names) {
+			if (MarkupLoaderPool.isVanillaLoader(name)) {
+				System.out.println("    " + name);
 			}
+		}
 
-			else if (lcarg.endsWith(".jtr")) {
-				loader = new JTRLoader();
-				markupFileName = arg;
+		System.out.println("Preprocessors:");
+		for (String name: names) {
+			if (!MarkupLoaderPool.isVanillaLoader(name)) {
+				System.out.println("    " + name);
 			}
+		}
+	}
 
-			else if (lcarg.endsWith(".trs")) {
-				loader = new TRSLoader();
-				markupFileName = arg;
+	public JTransCLI(String[] args) throws ReflectiveOperationException {
+		OptionParser parser = new OptionParser() {
+			{
+				accepts("h", "help screen").forHelp();
+
+				accepts("f", "markup file (jtr, trs, txt, textgrid)")
+						.withRequiredArg().ofType(File.class);
+
+				accepts("a", "audio file (wav, ogg, mp3)")
+						.withRequiredArg().ofType(File.class);
+
+				accepts("outdir", "output directory")
+						.withRequiredArg().ofType(File.class)
+						.defaultsTo(new File("."));
+
+				accepts("outfmt", "output format (you may use this argument " +
+						"several times to output to several different formats)")
+						.withRequiredArg()
+						.describedAs("jtr, praatw, praatp, praatwp");
+
+				acceptsAll(
+						Arrays.asList("infmt", "input-format"),
+						"input format (if omitted, guess from filename extension)")
+						.withRequiredArg().describedAs("markup loader class");
+
+				accepts("list-infmt",
+						"Displays a list of markup loaders to use with --infmt")
+						.forHelp();
 			}
+		};
 
-			else if (lcarg.endsWith(".textgrid")) {
-				loader = new TextGridLoader();
-				markupFileName = arg;
-			}
 
-			else if (lcarg.endsWith(".txt")) {
-				loader = new RawTextLoader();
-				markupFileName = arg;
-			}
+		OptionSet optset = parser.parse(args);
 
-			else if (lcarg.equals("-o")) {
-				outputFileName = args[++i];
+		//----------------------------------------------------------------------
+
+		if (optset.has("h")) {
+			printHelp(parser);
+			System.exit(0);
+		}
+
+		if (optset.has("list-infmt")) {
+			listMarkupLoaders();
+			System.exit(0);
+		}
+
+		//----------------------------------------------------------------------
+
+		inputFile = (File)optset.valueOf("f");
+		audioFile = (File)optset.valueOf("a");
+		outputDir = (File)optset.valueOf("outdir");
+
+		if (optset.has("infmt")) {
+			String className = (String)optset.valueOf("infmt");
+			loader = MarkupLoaderPool.newLoader(className);
+		}
+
+		outputFormats = (List<String>)optset.valuesOf("outfmt");
+
+		//----------------------------------------------------------------------
+
+		for (Object o: optset.nonOptionArguments()) {
+			String arg = (String)o;
+			int dotIdx = arg.lastIndexOf('.');
+			String ext = dotIdx >= 0? arg.substring(dotIdx+1): null;
+
+			if (Arrays.asList(AUDIO_EXTENSIONS).contains(ext)) {
+				if (audioFile != null) {
+					throw new IllegalArgumentException("audio file already set");
+				}
+				audioFile = new File(arg);
 			}
 
 			else {
-				System.err.println("args error: dont know what to do with " + arg);
-				return;
+				if (inputFile != null) {
+					throw new IllegalArgumentException("markup file already set");
+				}
+				inputFile = new File(arg);
+			}
+		}
+
+		if (loader == null && inputFile != null) {
+			String fn = inputFile.getName().toLowerCase();
+			if (fn.endsWith(".jtr")) {
+				loader = new JTRLoader();
+			} else if (fn.endsWith(".trs")) {
+				loader = new TRSLoader();
+			} else if (fn.endsWith(".textgrid")) {
+				loader = new TextGridLoader();
+			} else if (fn.endsWith(".txt")) {
+				loader = new RawTextLoader();
 			}
 		}
 	}
 
-	public static void main(String args[]) throws Exception {
-		if (!new File("res").exists()) {
-			System.err.println("Resources missing. Please launch GUI to install" +
-					" them, and then you can use the CLI.");
-			System.exit(1);
-		}
 
+	public static void main(String args[]) throws Exception {
 		JTransCLI cli = new JTransCLI(args);
 
-		Project project = cli.loader.parse(new File(cli.markupFileName));
-		project.setAudio(cli.audioFileName);
-		project.align(true, new StdoutProgressDisplay());
-
-		System.out.println("Done!");
-
-		System.out.println("Writing to " + cli.outputFileName);
-		String lcout = cli.outputFileName.toLowerCase();
-		if (lcout.endsWith(".jtr")) {
-			project.saveJson(new File(cli.outputFileName));
-		} else if (lcout.endsWith(".textgrid")) {
-			project.savePraat(new File(cli.outputFileName), true, false);
-		} else {
-			System.err.println("Unknown output format");
-			System.exit(1);
+		if (!new File("res").exists()) {
+			JTransGUI.installResources();
 		}
 
-		System.exit(0);
+		if (cli.outputFormats == null || cli.outputFormats.isEmpty()) {
+			CrossPlatformFixes.setNativeLookAndFeel();
+			new JTransGUI(cli);
+			return;
+		}
+
+		Project project = cli.loader.parse(cli.inputFile);
+		project.setAudio(cli.audioFile);
+		project.align(true, null);
+
+		System.out.println("Alignment done.");
+
+		cli.outputDir.mkdirs();
+
+		for (String fmt: cli.outputFormats) {
+			System.out.println("Output: format '" + fmt + "' to directory "
+					+ cli.outputDir);
+
+			fmt = fmt.toLowerCase();
+			String base = FileUtils.noExt(new File(cli.outputDir,
+					cli.inputFile.getName()).getAbsolutePath());
+
+			if (fmt.equals("jtr")) {
+				project.saveJson(new File(base + ".jtr"));
+			} else if (fmt.equals("praatw")) {
+				project.savePraat(new File(base + ".w.textgrid"), true, false);
+			} else if (fmt.equals("praatp")) {
+				project.savePraat(new File(base + ".p.textgrid"), false, true);
+			} else if (fmt.equals("praatwp") || fmt.equals("praatpw")) {
+				project.savePraat(new File(base + ".w+p.textgrid"), true, true);
+			} else {
+				throw new IllegalArgumentException("Unknown output format " + fmt);
+			}
+		}
 	}
+
 }

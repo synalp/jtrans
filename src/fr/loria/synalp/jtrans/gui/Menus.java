@@ -441,7 +441,7 @@ public class Menus {
 					public void actionPerformed(ActionEvent e) {
 						String wavnom = e.getActionCommand().split(" ")[1];
 						System.out.println("wavsource for mike : "+wavnom);
-						aligneur.setAudioSource(wavnom);
+						aligneur.setAudioSource(new File(wavnom));
 						aligneur.setCurPosInSec(0);
 						aligneur.repaint();
 					}
@@ -539,7 +539,7 @@ public class Menus {
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					File file = filechooser.getSelectedFile();
 					if (file.exists()) {
-						aligneur.setAudioSource(file.getAbsolutePath());
+						aligneur.setAudioSource(file);
 						aligneur.setCurPosInSec(0);
 						return;
 					}

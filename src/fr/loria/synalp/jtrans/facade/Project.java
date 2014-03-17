@@ -28,8 +28,8 @@ public class Project {
 
 	public List<Track> tracks = new ArrayList<Track>();
 
+	public File audioFile;
 	/** Audio file in a suitable format for processing */
-	public String wavname;
 	public transient File convertedAudioFile = null;
 	public transient long audioSourceTotalFrames = -1;
 
@@ -228,11 +228,11 @@ public class Project {
 	 * Sets the audio file for this project, and converts it to a suitable
 	 * format if needed.
 	 */
-	public void setAudio(String path) {
-		wavname = path;
+	public void setAudio(File audioFile) {
+		this.audioFile = audioFile;
 
-		if (path != null) {
-			convertedAudioFile = suitableAudioFile(new File(wavname));
+		if (audioFile != null) {
+			convertedAudioFile = suitableAudioFile(audioFile);
 
 			try {
 				AudioInputStream audioInputStream =
