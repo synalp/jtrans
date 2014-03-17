@@ -1,6 +1,5 @@
 package fr.loria.synalp.jtrans.gui.signalViewers.spectroPanel;
 
-import fr.loria.synalp.jtrans.elements.Element;
 import fr.loria.synalp.jtrans.elements.Word;
 import fr.loria.synalp.jtrans.facade.Track;
 
@@ -69,7 +68,9 @@ public class TimelineWords extends JPanel {
 		final int lastFrame = firstFrame + (int)(w/zoom);
 
 		for (Word word: track.getWords()) {
-			if (word.getSegment().getEndFrame() < firstFrame) {
+			if (!word.isAligned() ||
+					word.getSegment().getEndFrame() < firstFrame)
+			{
 				continue;
 			} else if (word.getSegment().getStartFrame() > lastFrame) {
 				return;
