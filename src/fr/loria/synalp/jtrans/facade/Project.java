@@ -66,12 +66,10 @@ public class Project {
 	public void align(boolean clear, ProgressDisplay progress)
 			throws IOException, InterruptedException
 	{
-		for (Track track: tracks) {
-			// TODO - I don't think the MFCC buffer provides random access,
-			// that's why I'm recreating a new aligner at every iteration
-			AutoAligner aligner = new AutoAligner(
-					convertedAudioFile, (int)audioSourceTotalFrames, progress);
+		AutoAligner aligner = new AutoAligner(
+				convertedAudioFile, (int)audioSourceTotalFrames, progress);
 
+		for (Track track: tracks) {
 			if (clear) {
 				track.clearAlignment();
 			}
@@ -110,14 +108,15 @@ public class Project {
 			track.clearAlignment();
 		}
 
+		AutoAligner aligner = new AutoAligner(
+				convertedAudioFile, (int)audioSourceTotalFrames, progress);
+
 		//----------------------------------------------------------------------
 		// Align big interleaved sequences
 
 		LinearBridge lb = new LinearBridge(tracks);
 
 		while (lb.hasNext()) {
-			AutoAligner aligner = new AutoAligner(
-					convertedAudioFile, (int)audioSourceTotalFrames, progress);
 			AnchorSandwich interleaved = lb.nextInterleavedElementSequence();
 			Anchor ia = interleaved.getInitialAnchor();
 			Anchor fa = interleaved.getFinalAnchor();
