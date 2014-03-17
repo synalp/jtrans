@@ -63,7 +63,7 @@ public class JTransCLI {
 
 		Project project = cli.loader.parse(new File(cli.markupFileName));
 		project.setAudio(cli.audioFileName);
-		project.align(new StdoutProgressDisplay());
+		project.align(true, new StdoutProgressDisplay());
 
 		System.out.println("Done!");
 

@@ -731,7 +731,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 					if (interleaved) {
 						project.alignInterleaved(JTransGUI.this);
 					} else {
-						project.align(JTransGUI.this);
+						project.align(true, JTransGUI.this);
 					}
 				} catch (final Exception ex) {
 					ex.printStackTrace();
