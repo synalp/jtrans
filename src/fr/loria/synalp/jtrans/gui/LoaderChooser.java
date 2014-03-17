@@ -2,16 +2,13 @@ package fr.loria.synalp.jtrans.gui;
 
 import fr.loria.synalp.jtrans.facade.Project;
 import fr.loria.synalp.jtrans.gui.trackview.MultiTrackTable;
+import fr.loria.synalp.jtrans.markup.MarkupLoaderPool;
 import fr.loria.synalp.jtrans.markup.MarkupLoader;
-import fr.loria.synalp.jtrans.markup.preprocessors.TCOFWhoifier;
-import pro.ddopson.ClassEnumerator;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
 
 public class LoaderChooser extends JDialog {
 
@@ -31,63 +28,25 @@ public class LoaderChooser extends JDialog {
 			"Exception: %s\n(full stack trace on stderr)";
 
 
-	private void populateLoaderButtons(
-			ArrayList<Class<?>> loaders,
-			ButtonGroup buttonGroup,
-			JComponent addTo,
-			Package pkg)
-	{
-		for (final Class clazz: loaders) {
-			int mod = clazz.getModifiers();
-
-			if (Modifier.isInterface(mod) ||
-					Modifier.isAbstract(mod) ||
-					!clazz.getPackage().equals(pkg))
-			{
-				continue;
-			}
-
-			final Class<? extends MarkupLoader> mlClass;
-
-			try {
-				mlClass = clazz.asSubclass(MarkupLoader.class);
-			} catch (ClassCastException ex) {
-				continue;
-			}
-
-			JRadioButton jrb = new JRadioButton(clazz.getSimpleName());
-			buttonGroup.add(jrb);
-			addTo.add(jrb);
-
-			jrb.addActionListener(new AbstractAction() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					tryLoader(mlClass);
-				}
-			});
-		}
-	}
-
-
-	private void failureScreen(Class clazz, Exception ex) {
-		messageArea.setText(String.format(FAILURE_MESSAGE, clazz, ex.toString()));
+	private void failureScreen(String loaderName, Exception ex) {
+		messageArea.setText(String.format(FAILURE_MESSAGE, loaderName, ex.toString()));
 		previewPane.setViewportView(messageArea);
 	}
 
 
-	private void tryLoader(Class<? extends MarkupLoader> clazz) {
+	private void tryLoader(String loaderName) {
 		Project project;
 
 		loadButton.setEnabled(false);
-		loadButton.setText("Load with " + clazz.getSimpleName());
+		loadButton.setText("Load with " + loaderName);
 
 		try {
-			markupLoader = clazz.getConstructor().newInstance();
+			markupLoader = MarkupLoaderPool.newLoader(loaderName);
 			project = markupLoader.parse(file);
 		} catch (Exception ex) {
 			markupLoader = null;
 			ex.printStackTrace();
-			failureScreen(clazz, ex);
+			failureScreen(loaderName, ex);
 			return;
 		}
 
@@ -104,22 +63,31 @@ public class LoaderChooser extends JDialog {
 		//----------------------------------------------------------------------
 		// Loader buttons
 
-		ArrayList<Class<?>> loaders = ClassEnumerator.getClassesForPackage(
-				MarkupLoader.class.getPackage());
-
 		ButtonGroup loaderBG = new ButtonGroup();
 
 		Box vanillaBox = new Box(BoxLayout.Y_AXIS);
 		vanillaBox.setBorder(BorderFactory.createTitledBorder(
 				"Vanilla parsers"));
-		populateLoaderButtons(loaders, loaderBG, vanillaBox,
-				MarkupLoader.class.getPackage());
 
 		Box preprocessorBox = new Box(BoxLayout.Y_AXIS);
 		preprocessorBox.setBorder(BorderFactory.createTitledBorder(
 				"Preprocessors"));
-		populateLoaderButtons(loaders, loaderBG, preprocessorBox,
-				TCOFWhoifier.class.getPackage());
+
+		for (final String loaderName: MarkupLoaderPool.getLoaderNames()) {
+			JRadioButton jrb = new JRadioButton(loaderName);
+			loaderBG.add(jrb);
+
+			Box addTo = MarkupLoaderPool.isVanillaLoader(loaderName)?
+					vanillaBox: preprocessorBox;
+			addTo.add(jrb);
+
+			jrb.addActionListener(new AbstractAction() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					tryLoader(loaderName);
+				}
+			});
+		}
 
 		JPanel chooserPane = new JPanel(new GridLayout(2, 1));
 		chooserPane.add(vanillaBox);
