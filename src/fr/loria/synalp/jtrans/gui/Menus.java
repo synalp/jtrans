@@ -22,7 +22,6 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import edu.cmu.sphinx.result.Result;
 
 import fr.loria.synalp.jtrans.elements.Anchor;
-import fr.loria.synalp.jtrans.facade.AutoAligner;
 import fr.loria.synalp.jtrans.gui.trackview.MultiTrackTable;
 import fr.loria.synalp.jtrans.markup.MarkupLoader;
 import fr.loria.synalp.jtrans.speechreco.LiveSpeechReco;
@@ -262,11 +261,13 @@ public class Menus {
 		JMenuItem autoAnchors = new JMenuItem("Auto-align between anchors...");
 		JMenuItem autoInterleaved = new JMenuItem("Auto-align as interleaved word sequence...");
 		JMenuItem clearAll = new JMenuItem("Clear entire alignment");
+		JMenuItem clearAnchorTimes = new JMenuItem("Clear all anchor times");
 		menubar.add(alignMenu);
 		alignMenu.add(autoAnchors);
 		alignMenu.add(autoInterleaved);
 		alignMenu.addSeparator();
 		alignMenu.add(clearAll);
+		alignMenu.add(clearAnchorTimes);
 
 		autoAnchors.setAccelerator(KeyStroke.getKeyStroke('A', modifier | InputEvent.SHIFT_MASK));
 
@@ -289,6 +290,14 @@ public class Menus {
 		clearAll.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				aligneur.clearAlign();
+			}
+		});
+
+		clearAnchorTimes.addActionListener(new AbstractAction() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				aligneur.project.clearAllAnchorTimes();
+				aligneur.multitrack.refreshModel();
 			}
 		});
 

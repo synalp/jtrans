@@ -7,7 +7,7 @@ public class Anchor
 {
 
 	public float seconds;
-	private final int timelessOrder;
+	private int timelessOrder;
 
 	// TODO this setting should be saved to disk
 	public static boolean showMinutes = true;
@@ -32,16 +32,26 @@ public class Anchor
 	public String toString() {
 		if (!hasTime()) {
 			return "TL#" + timelessOrder;
-		} else if (showMinutes) {
-			return String.format("%d'%02d\"%03d",
+		}
+
+		String s;
+
+		if (showMinutes) {
+			s = String.format("%d'%02d\"%03d",
 					(int)(seconds/60f),
 					(int)(seconds%60f),
 					Math.round(seconds%1f * 1000f));
 		} else {
-			return String.format("%d.%03d",
+			s = String.format("%d.%03d",
 					(int)seconds,
 					Math.round(seconds%1f * 1000f));
 		}
+
+		if (hasOrder()) {
+			s += " [TL#" + timelessOrder + "]";
+		}
+
+		return s;
 	}
 
 
@@ -58,8 +68,19 @@ public class Anchor
 	}
 
 
+	public boolean hasOrder() {
+		return timelessOrder >= 0;
+	}
+
+
 	public void setSeconds(float seconds) {
 		this.seconds = seconds;
+	}
+
+
+	public void setOrder(int order) {
+		timelessOrder = order;
+		seconds = -1f;
 	}
 
 

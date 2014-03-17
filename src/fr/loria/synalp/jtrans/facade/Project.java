@@ -40,6 +40,23 @@ public class Project {
 	}
 
 
+	public void clearAllAnchorTimes() {
+		LinearBridge lb = new LinearBridge(tracks);
+		int order = 0;
+
+		while (lb.hasNext()) {
+			AnchorSandwich[] simultaneousSandwiches = lb.next();
+
+			for (AnchorSandwich sandwich: simultaneousSandwiches) {
+				if (sandwich != null && sandwich.getInitialAnchor() != null) {
+					setOrderOnTimedAnchors(sandwich.getInitialAnchor(), order++);
+					break;
+				}
+			}
+		}
+	}
+
+
 	/**
 	 * Aligns all words in all tracks of this project with timed anchors.
 	 * @param clear If true, clear any previously existing alignment information
@@ -70,10 +87,13 @@ public class Project {
 					continue;
 				}
 
+				Anchor ia = sandwich.getInitialAnchor();
+				Anchor fa = sandwich.getFinalAnchor();
+
 				aligner.align(
 						sandwich.getWords(),
-						sandwich.getInitialAnchor().getFrame(),
-						sandwich.getFinalAnchor().getFrame());
+						ia == null || !ia.hasTime()? 0: ia.getFrame(),
+						fa == null || !fa.hasTime()? -1: fa.getFrame());
 			}
 		}
 	}
@@ -181,6 +201,22 @@ public class Project {
 		}
 
 		reference.setSeconds(seconds);
+	}
+
+
+	void setOrderOnTimedAnchors(Anchor reference, int order) {
+		for (Track track: tracks) {
+			for (Element el: track.elts) {
+				if (el instanceof Anchor) {
+					Anchor a = (Anchor)el;
+					if (a != reference && a.equals(reference)) {
+						a.setOrder(order);
+					}
+				}
+			}
+		}
+
+		reference.setOrder(order);
 	}
 
 
