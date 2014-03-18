@@ -4,6 +4,8 @@ import fr.loria.synalp.jtrans.gui.JTransGUI;
 import fr.loria.synalp.jtrans.markup.*;
 import fr.loria.synalp.jtrans.utils.CrossPlatformFixes;
 import fr.loria.synalp.jtrans.utils.FileUtils;
+import fr.loria.synalp.jtrans.utils.PrintStreamProgressDisplay;
+import fr.loria.synalp.jtrans.utils.ProgressDisplay;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 
@@ -83,6 +85,10 @@ public class JTransCLI {
 				accepts("list-infmt",
 						"Displays a list of markup loaders to use with --infmt")
 						.forHelp();
+
+				acceptsAll(
+						Arrays.asList("C", "clear-times"),
+						"Clear manual anchor times before aligning");
 			}
 		};
 
@@ -106,6 +112,7 @@ public class JTransCLI {
 		inputFile = (File)optset.valueOf("f");
 		audioFile = (File)optset.valueOf("a");
 		outputDir = (File)optset.valueOf("outdir");
+		clearTimes = optset.has("C");
 
 		if (optset.has("infmt")) {
 			String className = (String)optset.valueOf("infmt");
@@ -172,9 +179,26 @@ public class JTransCLI {
 			return;
 		}
 
+		ProgressDisplay progress =
+				new PrintStreamProgressDisplay(2500, System.out);
+
 		Project project = cli.loader.parse(cli.inputFile);
-		project.setAudio(cli.audioFile);
-		project.align(true, null);
+		System.out.println("Project loaded.");
+
+		if (null != cli.audioFile) {
+			project.setAudio(cli.audioFile);
+			System.out.println("Audio loaded.");
+		}
+
+		if (cli.clearTimes) {
+			project.clearAllAnchorTimes();
+			System.out.println("Anchor times cleared.");
+			System.out.println("Aligning...");
+			project.alignInterleaved(progress);
+		} else {
+			System.out.println("Aligning...");
+			project.align(true, progress);
+		}
 
 		System.out.println("Alignment done.");
 
