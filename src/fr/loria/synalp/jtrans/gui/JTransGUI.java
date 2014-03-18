@@ -325,27 +325,6 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		}}, BorderLayout.PAGE_END);
 	}
 
-	void goHome() {
-		REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
-		//		if (player.isPlaying()) return;
-		currentSample=0;
-		if (sigPanel!=null) {
-			sigPanel.setProgressBar(0);
-		}
-		Word firstmot = project.elts.getMot(0);
-		edit.highlightWord(firstmot);
-*/
-	}
-
-	/**
-	 * sorte de "reinit" pour rendre la main au user
-	 */
-	void stopAll() {
-		stopPlaying();
-//		stopAlign();
-		// attention ! ne pas modifier usersShouldConfirm !!
-	}
-
 	/**
 	 * cette fonction est toujours appel�e lorsque l'audio a fini de jouer, soit
 	 * parce qu'on a appuye sur ESC, soit parce qu'on est arriv� � la fin
