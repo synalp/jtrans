@@ -1,6 +1,6 @@
 package fr.loria.synalp.jtrans.markup;
 
-import pro.ddopson.ClassEnumerator;
+import fr.loria.synalp.jtrans.utils.ClassEnumerator;
 
 import java.lang.reflect.Modifier;
 import java.util.*;

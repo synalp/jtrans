@@ -66,10 +66,7 @@ This produces a file named `jtrans.jar`. You may then launch JTrans using:
 The binary dependencies are already in the git repository for your convenience,
 but you can retrieve them yourself using Apache Ivy if you want.
 
-All dependencies, **except
-[Sphinx4](http://cmusphinx.sf.net)
-and
-[ClassEnumerator](https://github.com/ddopson/java-class-enumerator)**,
+All dependencies, **except [Sphinx4](http://cmusphinx.sf.net)**,
 can be fetched by Ivy automatically.  For these two libraries, you will need to
 keep the binary jars that are provided in the git repository, because they are
 not available on public repositories yet.
