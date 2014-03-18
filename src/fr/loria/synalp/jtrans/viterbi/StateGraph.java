@@ -492,7 +492,11 @@ public class StateGraph {
 		vpf[0] = 0; // Probabilities are in the log domain
 
 		mfcc.gotoFrame(startFrame);
+
+		// Progress variables
 		int f = startFrame;
+		int frameCount = 1 + (endFrame<0 ? progressTotalFrames: endFrame) - startFrame;
+
 		while (!mfcc.noMoreFramesAvailable && (endFrame < 0 || f <= endFrame)) {
 			Data frame = mfcc.getData();
 			if (frame instanceof DataStartSignal || frame instanceof DataEndSignal)
@@ -500,12 +504,10 @@ public class StateGraph {
 			f++;
 
 			if (progress != null) {
-				int frameCount = (endFrame<0 ? progressTotalFrames: endFrame)
-						- startFrame;
 				progress.setProgress(String.format(
 						"Viterbi forward pass: frame %d of %d (deflated swap: %d MB)",
-						f,
-						startFrame+frameCount,
+						f-startFrame,
+						frameCount,
 						swapWriter.getIndex().getCompressedBytes() / 1024 / 1024),
 						(float) (f-startFrame) / (float) frameCount);
 			}
