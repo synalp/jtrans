@@ -1,4 +1,4 @@
-package fr.loria.synalp.jtrans.markup;
+package fr.loria.synalp.jtrans.markup.in;
 
 import fr.loria.synalp.jtrans.elements.*;
 import fr.loria.synalp.jtrans.facade.Project;
@@ -240,4 +240,11 @@ public class RawTextLoader implements MarkupLoader {
 	public String getFormat() {
 		return "Raw Text";
 	}
+
+
+	@Override
+	public String getExt() {
+		return ".txt";
+	}
+
 }

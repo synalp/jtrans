@@ -17,13 +17,15 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Mixer;
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
-import javax.swing.filechooser.FileNameExtensionFilter;
 
 import edu.cmu.sphinx.result.Result;
 
 import fr.loria.synalp.jtrans.elements.Anchor;
 import fr.loria.synalp.jtrans.gui.trackview.MultiTrackTable;
-import fr.loria.synalp.jtrans.markup.MarkupLoader;
+import fr.loria.synalp.jtrans.markup.in.MarkupLoader;
+import fr.loria.synalp.jtrans.markup.out.JTRSaver;
+import fr.loria.synalp.jtrans.markup.out.MarkupSaver;
+import fr.loria.synalp.jtrans.markup.out.MarkupSaverPool;
 import fr.loria.synalp.jtrans.speechreco.LiveSpeechReco;
 
 import fr.loria.synalp.jtrans.speechreco.RecoListener;
@@ -40,14 +42,6 @@ public class Menus {
 	LiveSpeechReco gram;
 	private Font currentFont = MultiTrackTable.DEFAULT_FONT;
 
-	private static final FileFilter
-			filterJTR = new FileNameExtensionFilter("JTrans Project (*.jtr, *.json)", "jtr", "json"),
-			filterTRS = new FileNameExtensionFilter("Transcriber (*.trs)", "trs"),
-			filterTextGrid = new FileNameExtensionFilter("Praat TextGrid (*.textgrid)", "textgrid"),
-			filterTextGridWordsOnly = new FileNameExtensionFilter("Praat TextGrid (*.textgrid) - Words only", "textgrid"),
-			filterTextGridWordsAndPhons = new FileNameExtensionFilter("Praat TextGrid (*.textgrid) - Words + Phonemes", "textgrid"),
-			filterTXT = new FileNameExtensionFilter("Raw Text (*.txt)", "txt");
-
 	private static final int[] FONT_SIZES = {
 			10, 11, 12, 13, 14, 16, 18, 20, 24, 28, 36
 	};
@@ -57,6 +51,26 @@ public class Menus {
 			Font.SERIF,
 			Font.MONOSPACED
 	};
+
+
+	private class SaverFF extends FileFilter {
+		final String formatName;
+		private String description;
+
+		SaverFF(String formatName) {
+			this.formatName = formatName;
+			description = MarkupSaverPool.getInstance().getDescription(formatName);
+		}
+
+		public boolean accept(File f) {
+			return true;
+		}
+
+		public String getDescription() {
+			return description;
+		}
+	}
+
 
 	public Menus(JTransGUI main) {
 		aligneur=main;
@@ -119,20 +133,15 @@ public class Menus {
 				NicerFileChooser fc = new NicerFileChooser("save");
 
 				fc.setDialogTitle("Export alignment...");
-				fc.addChoosableFileFilter(filterJTR);
-				fc.setAcceptAllFileFilterUsed(false);
-				fc.setFileFilter(filterJTR);
 
 				int rc = fc.showSaveDialog(aligneur.jf);
-
 				if (rc != JFileChooser.APPROVE_OPTION)
 					return;
 
-				FileFilter ff = fc.getFileFilter();
 				File file = fc.getSelectedFile();
 
 				try {
-					aligneur.project.saveJson(file);
+					new JTRSaver().save(aligneur.project, file);
 				} catch (IOException ex) {
 					JOptionPane.showMessageDialog(aligneur.jf,
 							"Couldn't save. An I/O error occured.\n\n" + ex,
@@ -144,6 +153,8 @@ public class Menus {
 
 		export.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				MarkupSaverPool pool = MarkupSaverPool.getInstance();
+
 				JOptionPane.showMessageDialog(aligneur.jf,
 						"By exporting the alignment to a foreign format,\n" +
 						"some JTrans-specific information may be lost.\n\n" +
@@ -155,34 +166,25 @@ public class Menus {
 				NicerFileChooser fc = new NicerFileChooser("export");
 
 				fc.setDialogTitle("Export alignment...");
-				fc.addChoosableFileFilter(filterTextGridWordsOnly);
-				fc.addChoosableFileFilter(filterTextGridWordsAndPhons);
-				fc.addChoosableFileFilter(filterTXT);
+				for (String str: pool.getNames()) {
+					fc.addChoosableFileFilter(new SaverFF(str));
+				}
 				fc.setAcceptAllFileFilterUsed(false);
-				fc.setFileFilter(filterTextGridWordsOnly);
+				//fc.setFileFilter(filterTextGridWordsOnly);
 
 				int rc = fc.showSaveDialog(aligneur.jf);
 
 				if (rc != JFileChooser.APPROVE_OPTION)
 					return;
 
-				FileFilter ff = fc.getFileFilter();
+				SaverFF ff = (SaverFF)fc.getFileFilter();
 				File file = fc.getSelectedFile();
 				try {
-					if (ff == filterTXT) {
-						JTransGUI.REIMPLEMENT_DEC2013(); /* TODO PARALLEL TRACKS
-						aligneur.project.saveRawText(file);
-						*/
-					} else if (ff == filterTextGridWordsOnly) {
-						aligneur.project.savePraat(file, true, false);
-					} else if (ff == filterTextGridWordsAndPhons) {
-						aligneur.project.savePraat(file, true, true);
-					} else {
-						JOptionPane.showMessageDialog(aligneur.jf, "Unknown filter " + ff);
-					}
-				} catch (IOException ex) {
+					MarkupSaver saver = pool.make(ff.formatName);
+					saver.save(aligneur.project, file);
+				} catch (Exception ex) {
 					JOptionPane.showMessageDialog(aligneur.jf,
-							"Couldn't export. An I/O error occured.\n\n" + ex,
+							"Couldn't export. An error occured.\n\n" + ex,
 							"IOException",
 							JOptionPane.ERROR_MESSAGE);
 				}

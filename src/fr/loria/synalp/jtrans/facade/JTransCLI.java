@@ -1,19 +1,19 @@
 package fr.loria.synalp.jtrans.facade;
 
 import fr.loria.synalp.jtrans.gui.JTransGUI;
-import fr.loria.synalp.jtrans.markup.*;
+import fr.loria.synalp.jtrans.markup.in.*;
+import fr.loria.synalp.jtrans.markup.out.MarkupSaver;
+import fr.loria.synalp.jtrans.markup.out.MarkupSaverPool;
 import fr.loria.synalp.jtrans.utils.CrossPlatformFixes;
 import fr.loria.synalp.jtrans.utils.FileUtils;
 import fr.loria.synalp.jtrans.utils.PrintStreamProgressDisplay;
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
+import joptsimple.*;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 import java.util.logging.LogManager;
 
 public class JTransCLI {
@@ -40,22 +40,31 @@ public class JTransCLI {
 
 
 	private static void listMarkupLoaders() {
-		Set<String> names = MarkupLoaderPool.getLoaderNames();
+		MarkupLoaderPool pool = MarkupLoaderPool.getInstance();
 
-		System.out.println("Vanilla markup loaders:");
-		for (String name: names) {
-			if (MarkupLoaderPool.isVanillaLoader(name)) {
-				System.out.println("    " + name);
-			}
+		StringBuilder vanilla = new StringBuilder("Vanilla markup loaders:");
+		StringBuilder preproc = new StringBuilder("Preprocessors:");
+
+		for (String name: pool.getNames()) {
+			StringBuilder appendTo =
+					pool.isVanillaLoader(name)? vanilla: preproc;
+			appendTo.append("\n    ").append(name).append(" (")
+					.append(pool.getDescription(name)).append(")");
 		}
 
-		System.out.println("Preprocessors:");
-		for (String name: names) {
-			if (!MarkupLoaderPool.isVanillaLoader(name)) {
-				System.out.println("    " + name);
-			}
+		System.out.println(vanilla);
+		System.out.println(preproc);
+	}
+
+
+	private static void listMarkupSavers() {
+		MarkupSaverPool pool = MarkupSaverPool.getInstance();
+		System.out.println("Markup savers:");
+		for (String name: pool.getNames()) {
+			System.out.println(name + " (" + pool.getDescription(name) + ")");
 		}
 	}
+
 
 	public JTransCLI(String[] args) throws ReflectiveOperationException {
 		OptionParser parser = new OptionParser() {
@@ -72,18 +81,22 @@ public class JTransCLI {
 						.withRequiredArg().ofType(File.class)
 						.defaultsTo(new File("."));
 
-				accepts("outfmt", "output format (you may use this argument " +
-						"several times to output to several different formats)")
-						.withRequiredArg()
-						.describedAs("jtr, praatw, praatp, praatwp");
+				accepts("outfmt", "Output format. Use this argument several " +
+						"times to output to several different formats.")
+						.withRequiredArg();
 
 				acceptsAll(
-						Arrays.asList("infmt", "input-format"),
-						"input format (if omitted, guess from filename extension)")
-						.withRequiredArg().describedAs("markup loader class");
+						Arrays.asList("i", "infmt"),
+						"Input markup loader. If omitted, guess vanilla " +
+						"format from filename extension.")
+						.withRequiredArg().describedAs("loader");
 
 				accepts("list-infmt",
 						"Displays a list of markup loaders to use with --infmt")
+						.forHelp();
+
+				accepts("list-outfmt",
+						"Displays a list of markup savers to use with --outfmt")
 						.forHelp();
 
 				acceptsAll(
@@ -107,6 +120,11 @@ public class JTransCLI {
 			System.exit(0);
 		}
 
+		if (optset.has("list-outfmt")) {
+			listMarkupSavers();
+			System.exit(0);
+		}
+
 		//----------------------------------------------------------------------
 
 		inputFile = (File)optset.valueOf("f");
@@ -116,7 +134,7 @@ public class JTransCLI {
 
 		if (optset.has("infmt")) {
 			String className = (String)optset.valueOf("infmt");
-			loader = MarkupLoaderPool.newLoader(className);
+			loader = MarkupLoaderPool.getInstance().make(className);
 		}
 
 		outputFormats = (List<String>)optset.valuesOf("outfmt");
@@ -212,17 +230,8 @@ public class JTransCLI {
 			String base = FileUtils.noExt(new File(cli.outputDir,
 					cli.inputFile.getName()).getAbsolutePath());
 
-			if (fmt.equals("jtr")) {
-				project.saveJson(new File(base + ".jtr"));
-			} else if (fmt.equals("praatw")) {
-				project.savePraat(new File(base + ".w.textgrid"), true, false);
-			} else if (fmt.equals("praatp")) {
-				project.savePraat(new File(base + ".p.textgrid"), false, true);
-			} else if (fmt.equals("praatwp") || fmt.equals("praatpw")) {
-				project.savePraat(new File(base + ".w+p.textgrid"), true, true);
-			} else {
-				throw new IllegalArgumentException("Unknown output format " + fmt);
-			}
+			MarkupSaver saver = MarkupSaverPool.getInstance().make(fmt);
+			saver.save(project, new File(base + saver.getExt()));
 		}
 	}
 

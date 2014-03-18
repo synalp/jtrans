@@ -1,4 +1,4 @@
-package fr.loria.synalp.jtrans.markup;
+package fr.loria.synalp.jtrans.markup.in;
 
 import fr.loria.synalp.jtrans.elements.*;
 import fr.loria.synalp.jtrans.elements.Comment;
@@ -211,4 +211,10 @@ public class TRSLoader implements MarkupLoader {
 	public String getFormat() {
 		return "Transcriber (.TRS)";
 	}
+
+
+	public String getExt() {
+		return ".trs";
+	}
+
 }

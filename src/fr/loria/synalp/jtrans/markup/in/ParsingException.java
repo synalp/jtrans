@@ -1,4 +1,4 @@
-package fr.loria.synalp.jtrans.markup;
+package fr.loria.synalp.jtrans.markup.in;
 
 public class ParsingException extends Exception {
 	public ParsingException(String message) {

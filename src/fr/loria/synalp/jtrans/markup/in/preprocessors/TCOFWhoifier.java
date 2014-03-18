@@ -1,6 +1,6 @@
-package fr.loria.synalp.jtrans.markup.preprocessors;
+package fr.loria.synalp.jtrans.markup.in.preprocessors;
 
-import fr.loria.synalp.jtrans.markup.ParsingException;
+import fr.loria.synalp.jtrans.markup.in.ParsingException;
 import org.w3c.dom.*;
 
 import java.util.List;

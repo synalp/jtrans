@@ -1,4 +1,4 @@
-package fr.loria.synalp.jtrans.markup;
+package fr.loria.synalp.jtrans.markup.in;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -36,5 +36,10 @@ public class JTRLoader implements MarkupLoader {
 	@Override
 	public String getFormat() {
 		return "JTrans/JSON (\"JTR\")";
+	}
+
+	@Override
+	public String getExt() {
+		return ".jtr";
 	}
 }

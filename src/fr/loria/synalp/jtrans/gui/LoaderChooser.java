@@ -2,8 +2,8 @@ package fr.loria.synalp.jtrans.gui;
 
 import fr.loria.synalp.jtrans.facade.Project;
 import fr.loria.synalp.jtrans.gui.trackview.MultiTrackTable;
-import fr.loria.synalp.jtrans.markup.MarkupLoaderPool;
-import fr.loria.synalp.jtrans.markup.MarkupLoader;
+import fr.loria.synalp.jtrans.markup.in.MarkupLoader;
+import fr.loria.synalp.jtrans.markup.in.MarkupLoaderPool;
 
 import javax.swing.*;
 import java.awt.*;
@@ -19,7 +19,8 @@ public class LoaderChooser extends JDialog {
 	private JButton loadButton;
 
 	private static final String WELCOME_MESSAGE =
-			"Please select the adequate markup loader on the left.";
+			"Please select the adequate markup loader on the left.\n\n" +
+			"Hover over a button to get information about a loader.";
 
 	private static final String FAILURE_MESSAGE =
 			"Couldn't parse file with markup loader '%s'.\n\n" +
@@ -41,7 +42,7 @@ public class LoaderChooser extends JDialog {
 		loadButton.setText("Load with " + loaderName);
 
 		try {
-			markupLoader = MarkupLoaderPool.newLoader(loaderName);
+			markupLoader = MarkupLoaderPool.getInstance().make(loaderName);
 			project = markupLoader.parse(file);
 		} catch (Exception ex) {
 			markupLoader = null;
@@ -60,6 +61,8 @@ public class LoaderChooser extends JDialog {
 
 		this.file = file;
 
+		MarkupLoaderPool pool = MarkupLoaderPool.getInstance();
+
 		//----------------------------------------------------------------------
 		// Loader buttons
 
@@ -73,18 +76,18 @@ public class LoaderChooser extends JDialog {
 		preprocessorBox.setBorder(BorderFactory.createTitledBorder(
 				"Preprocessors"));
 
-		for (final String loaderName: MarkupLoaderPool.getLoaderNames()) {
-			JRadioButton jrb = new JRadioButton(loaderName);
+		for (final String name: pool.getNames()) {
+			JRadioButton jrb = new JRadioButton(name);
+			jrb.setToolTipText(pool.getDescription(name));
 			loaderBG.add(jrb);
 
-			Box addTo = MarkupLoaderPool.isVanillaLoader(loaderName)?
-					vanillaBox: preprocessorBox;
+			Box addTo = pool.isVanillaLoader(name)? vanillaBox: preprocessorBox;
 			addTo.add(jrb);
 
 			jrb.addActionListener(new AbstractAction() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					tryLoader(loaderName);
+					tryLoader(name);
 				}
 			});
 		}

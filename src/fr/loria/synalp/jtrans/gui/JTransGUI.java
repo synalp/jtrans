@@ -26,8 +26,9 @@ import fr.loria.synalp.jtrans.elements.Word;
 import fr.loria.synalp.jtrans.facade.*;
 import fr.loria.synalp.jtrans.gui.trackview.MultiTrackTable;
 import fr.loria.synalp.jtrans.gui.trackview.SpeakerVisibilityControl;
+import fr.loria.synalp.jtrans.markup.in.MarkupLoader;
+import fr.loria.synalp.jtrans.markup.in.ParsingException;
 import fr.loria.synalp.jtrans.speechreco.SpeechReco;
-import fr.loria.synalp.jtrans.markup.*;
 
 import fr.loria.synalp.jtrans.gui.signalViewers.spectroPanel.SpectroControl;
 import fr.loria.synalp.jtrans.speechreco.BiaisAdapt;

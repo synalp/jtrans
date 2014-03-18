@@ -1,4 +1,4 @@
-package fr.loria.synalp.jtrans.markup;
+package fr.loria.synalp.jtrans.markup.in;
 
 import fr.loria.synalp.jtrans.elements.*;
 import fr.loria.synalp.jtrans.facade.Project;
@@ -49,9 +49,16 @@ public class TextGridLoader implements MarkupLoader {
 		return project;
 	}
 
+
 	public String getFormat() {
 		return "Praat TextGrid";
 	}
+
+
+	public String getExt() {
+		return ".textgrid";
+	}
+
 }
 
 
