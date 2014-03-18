@@ -24,6 +24,7 @@ public class JTransCLI {
 	public File outputDir;
 	public List<String> outputFormats;
 	public boolean clearTimes = false;
+	public boolean align = true;
 
 
 	public final static String[] AUDIO_EXTENSIONS = "wav,ogg,mp3".split(",");
@@ -102,6 +103,11 @@ public class JTransCLI {
 				acceptsAll(
 						Arrays.asList("C", "clear-times"),
 						"Clear manual anchor times before aligning");
+
+				acceptsAll(
+						Arrays.asList("N", "no-align"),
+						"Don't align after loading the project. Useful to " +
+								"convert between formats.");
 			}
 		};
 
@@ -131,6 +137,7 @@ public class JTransCLI {
 		audioFile = (File)optset.valueOf("a");
 		outputDir = (File)optset.valueOf("outdir");
 		clearTimes = optset.has("C");
+		align = !optset.has("N");
 
 		if (optset.has("infmt")) {
 			String className = (String)optset.valueOf("infmt");
@@ -211,14 +218,17 @@ public class JTransCLI {
 		if (cli.clearTimes) {
 			project.clearAllAnchorTimes();
 			System.out.println("Anchor times cleared.");
-			System.out.println("Aligning...");
-			project.alignInterleaved(progress);
-		} else {
-			System.out.println("Aligning...");
-			project.align(true, progress);
 		}
 
-		System.out.println("Alignment done.");
+		if (cli.align) {
+			System.out.println("Aligning...");
+			if (cli.clearTimes) {
+				project.alignInterleaved(progress);
+			} else {
+				project.align(true, progress);
+			}
+			System.out.println("Alignment done.");
+		}
 
 		cli.outputDir.mkdirs();
 
