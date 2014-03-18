@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.LogManager;
 
 public class JTransCLI {
 
@@ -150,7 +151,15 @@ public class JTransCLI {
 	}
 
 
+	public static void loadLoggingProperties() throws IOException {
+		LogManager.getLogManager().readConfiguration(
+				JTransCLI.class.getResourceAsStream("/logging.properties"));
+	}
+
+
 	public static void main(String args[]) throws Exception {
+		loadLoggingProperties();
+
 		JTransCLI cli = new JTransCLI(args);
 
 		if (!new File("res").exists()) {

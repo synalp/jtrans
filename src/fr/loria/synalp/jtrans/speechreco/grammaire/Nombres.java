@@ -38,7 +38,6 @@ public class Nombres implements Serializable {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		System.out.println("nombres rules loaded "+chars2rule.size());
 	}
 	
 	/**

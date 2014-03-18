@@ -10,8 +10,6 @@ package fr.loria.synalp.jtrans.phonetiseur;
 import java.io.*;
 import java.util.ArrayList;
 
-import fr.loria.synalp.jtrans.utils.FileUtils;
-
 import weka.classifiers.Classifier;
 import weka.classifiers.trees.J48;
 import weka.core.*;
@@ -290,8 +288,6 @@ public class Classifieurs {
     public void chargerClassifieurs(String repertoireSource) throws Exception {
         ObjectInputStream oos;
 
-        System.out.println("charger J48 "+lexique.getNbGraphemes());
-        
         tClassifieurSimplePhoneme = new J48[lexique.getNbGraphemes()];
         
         {
@@ -387,22 +383,13 @@ public class Classifieurs {
     }
 
     private void setval(Instance ii, int i, String s) {
-//    	System.out.println("setval "+i+" "+s);
     	try  {
         	ii.setValue(i, s);
-    	} catch (Exception e) {
-    		e.printStackTrace();
-    		try {
-				PrintWriter f=FileUtils.writeFileUTF("erreurenc.txt");
-				f.println("erreur enc "+i+" "+s);
-				f.println(ii);
-				f.close();
-			} catch (UnsupportedEncodingException e1) {
-				e1.printStackTrace();
-			} catch (FileNotFoundException e1) {
-				e1.printStackTrace();
-			}
-    	}
+		} catch (IllegalArgumentException e) {
+			System.err.println(String.format(
+					"setval failed (ii: %s, i: %d, s: %s), %s",
+					ii, i, s, e));
+		}
     }
     
     /**
@@ -416,11 +403,6 @@ public class Classifieurs {
         Instance instance;
         int indiceGraphemeCourant;
 
-/*
-        for (int i = 0; i < tGraphemes.length; i++) {
-        	System.out.println("checkgraphes "+i+" "+tGraphemes[i]);
-        }
-*/
         for (int i = 0; i < tGraphemes.length; i++) {
             // Est-ce-que le grapheme i est un simple ou double phoneme ?
             instance = new Instance(11);
@@ -443,6 +425,10 @@ public class Classifieurs {
                 // Cas d'un simple phoneme
                 graphemeCourant = tGraphemes[i];
                 indiceGraphemeCourant = lexique.getIndiceFromGrapheme(graphemeCourant);
+				if (indiceGraphemeCourant < 0) {
+					System.err.println("unknown grapheme " + graphemeCourant);
+					continue;
+				}
                 instance = new Instance(11);
                 instance.setDataset(tInstancesSimplePhoneme[indiceGraphemeCourant]);
                 setval(instance,0, tGraphemes[i]);

@@ -34,6 +34,7 @@
 		<mkdir dir="${test.reports}"/>
 		<copy todir="${build}">
 			<fileset dir="src" includes="**/*.dtd" />
+			<fileset dir="src" includes="**/*.properties" />
 		</copy>
 	</target>
 

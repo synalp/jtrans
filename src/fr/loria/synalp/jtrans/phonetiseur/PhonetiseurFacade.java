@@ -67,6 +67,7 @@ public class PhonetiseurFacade {
      * @param mot le mot a phonetiser
      * @param posTag le posTag (il est possible de passer null a ce parametre si on ne souhaite pas le specifier)
      * @return le mot phonetise (les phonemes sont separes par des espaces)
+	 * or an empty string if phonetization failed
      * @throws java.lang.Exception
      */
     public String phonetiser(String mot, String posTag) throws Exception {
@@ -77,6 +78,9 @@ public class PhonetiseurFacade {
             String[] t;
             StringBuffer s = new StringBuffer();
             t = phonetiseur.phonetiser(Utils.stringToArrayString(mot.replace('\'', Configuration.CHAR_DE_REMPLACEMENT_APPOSTROPHE)), posTag);
+			if (0 == t.length) {
+				return "";
+			}
             for (int i = 0; i < t.length - 1; i++) {
                 s.append(t[i] + " ");
             }

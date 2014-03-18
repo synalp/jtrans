@@ -124,7 +124,7 @@ public class StateGraph {
 	 * Creates grammar rules from a list of words.
 	 * @param words array of whitespace-trimmed words
 	 * @return a 2D array of rule tokens (1st dimension corresponds to word
-	 * indices)
+	 * indices). If a word can't be processed, its rule is set to null.
 	 */
 	public static String[][] getRules(String[] words) {
 		String[][] rules = new String[words.length][];
@@ -134,7 +134,6 @@ public class StateGraph {
 			String rule = gram.getGrammar(words[i]);
 
 			if (rule == null || rule.isEmpty()) {
-				System.err.println("Couldn't get rule for " + words[i]);
 				rules[i] = null;
 			} else {
 				rules[i] = trimSplit(rule);
@@ -543,10 +542,6 @@ public class StateGraph {
 			float[] temp = vcf;
 			vcf = vpf;
 			vpf = temp;
-		}
-
-		for (int s = 0; s < nStates; s++) {
-			System.out.println("V[" + s + "] " + vpf[s]);
 		}
 
 		swapWriter.close();

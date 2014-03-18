@@ -53,15 +53,12 @@ public class Morphalou extends PronunciationsLexicon {
 	void loadCorpus() {
 		dico = new HashMap<String,Entree>();
 		Enumeration<String> f = getEntries(corpdir, false);
-		System.err.println("loading main corpus...");
 		loadFile(f);
-		System.err.println("main corpus loaded !");
 	}
 	void loadCorpus2() {
 		Enumeration<String> f = getEntries(dicoperso, false);
 		if (f==null) System.err.println("WARNING: morphalou dico perso not found !");
 		else loadFileBDLEX(f, false);
-		System.err.println("all corpus loaded !");
 	}
 	
 	String addLiaison(String pron, String phone) {
@@ -164,7 +161,6 @@ public class Morphalou extends PronunciationsLexicon {
 			}
 			dico.put(nom,e);
 		}
-		System.err.println("dernier nom lu "+nom);
 	}
 
 	public static void main(String args[]) {

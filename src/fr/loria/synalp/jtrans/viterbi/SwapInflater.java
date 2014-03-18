@@ -74,7 +74,11 @@ public class SwapInflater {
 
 
 	private void inflatePage(PageIndex.Entry page) throws IOException {
-		System.out.print("Inflating page " + page.number + " @ offset " + page.offset + "... ");
+		/*
+		System.out.println("Inflating page " + page.number + " @ offset "
+				+ page.offset + "... ");
+		*/
+
 		assert page != currentPage;
 		currentPage = page;
 
@@ -107,8 +111,6 @@ public class SwapInflater {
 						pageBuf[idx(f, s)] < StateGraph.MAX_TRANSITIONS;
 			}
 		}
-
-		System.out.println("OK");
 	}
 
 }

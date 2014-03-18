@@ -423,7 +423,6 @@ public class Phonetiseur {
     public void chargerMatriceProbaEtLexique(String fichierMatrices) throws IOException {
     	fichierMatrices = "res/"+fichierMatrices;
         BufferedReader f;
-        System.out.println("looking for resource "+fichierMatrices);
 //        String fpath = FileUtils.getRessource("plugins.phonetiseur.Phonetiseur", fichierMatrices);
         f = FileUtils.openFileUTF(fichierMatrices);
         String[] t;
@@ -806,16 +805,12 @@ public class Phonetiseur {
             // S'il manque un separateur a la fin du chemin passe en parametre : on le rajoute
 //            chemineRepertoireARFF += System.getProperty("file.separator");
         }
-    	System.out.println("CALL1 "+chemineRepertoireARFF);
         if (cheminRepertoireModel.charAt(cheminRepertoireModel.length() - 1) != System.getProperty("file.separator").charAt(0)) {
             // S'il manque un separateur a la fin du chemin passe en parametre : on le rajoute
 //            cheminRepertoireModel += System.getProperty("file.separator");
         }
-    	System.out.println("CALL2 "+cheminRepertoireModel);
-        System.out.print("Classifieurs (chargement)...");
         classifieurs = new Classifieurs(lexique, chemineRepertoireARFF);
         classifieurs.chargerClassifieurs(cheminRepertoireModel);
-        System.out.println(" Ok");
     }
 
     /**

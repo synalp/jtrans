@@ -87,7 +87,6 @@ public class SwapDeflater {
 			} catch (InterruptedException ex) {
 				throw new Error(ex);
 			}
-			System.out.println("Flush thread dead");
 		}
 	}
 
@@ -127,8 +126,8 @@ public class SwapDeflater {
 
 		maxFramesPerPage = Math.max(1, approxBytesPerPage / nStates);
 		int pageLength = maxFramesPerPage * nStates;
-		System.out.println("Page length: " + pageLength + " bytes ("
-				+ maxFramesPerPage + " frames)");
+		//System.out.println("Page length: " + pageLength + " bytes ("
+		//		+ maxFramesPerPage + " frames)");
 
 		frontBuffer = BufferUtils.grow(frontBuffer, pageLength);
 		backBuffer = BufferUtils.grow(backBuffer, pageLength);
@@ -187,17 +186,19 @@ public class SwapDeflater {
 			if (len > 0) {
 				out.write(compBuffer, 0, len);
 			}
-			System.out.print(len <= 0? "?": def.needsInput()? "!": ".");
+			//System.out.print(len <= 0? "?": def.needsInput()? "!": ".");
 		}
 
 		assert def.finished();
 
 		index.putPage(framesInBuf, (int)def.getBytesWritten());
 
+		/*
 		System.out.println(String.format(
 				"[Frame %d] backtrack footprint: %s",
 				index.getFrameCount(),
 				index.getCompressedBytes()));
+		*/
 	}
 
 
@@ -216,7 +217,7 @@ public class SwapDeflater {
 		frontBufferFrames++;
 
 		if (frontBufferFrames % maxFramesPerPage == 0) {
-			System.out.print("J");
+			//System.out.print("J");
 			producePage();
 			resetFilter();
 		}
@@ -291,7 +292,6 @@ public class SwapDeflater {
 		flushThread = null;
 		out.flush();
 		out.close();
-		System.out.println("Swap closed");
 	}
 
 }

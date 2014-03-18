@@ -81,11 +81,9 @@ public class AutoAligner {
 
 		int appxEndFrame = endFrame < 0? appxTotalFrames: endFrame;
 		int projectedSize = (appxEndFrame-startFrame+1) * graph.getStateCount();
-		System.out.println("Viterbi backpointer projected size " +
-				"(without compression): " + projectedSize);
+		boolean keepInRAM = projectedSize <= SWAP_THRESHOLD_BYTES;
 
-		if (projectedSize <= SWAP_THRESHOLD_BYTES) {
-			System.out.println("Viterbi backpointers: keep in RAM");
+		if (keepInRAM) {
 			out = new ByteArrayOutputStream();
 			inFactory = new SwapInflater.InputStreamFactory() {
 				@Override
@@ -95,7 +93,6 @@ public class AutoAligner {
 				}
 			};
 		} else {
-			System.out.println("Viterbi backpointers: swap to disk");
 			final File swapFile = Cache.getCacheFile("backtrack", "swp",
 					audio, words, startFrame, endFrame);
 			out = new FileOutputStream(swapFile);
