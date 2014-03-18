@@ -21,8 +21,8 @@ import edu.cmu.sphinx.linguist.language.grammar.GrammarNode;
 import edu.cmu.sphinx.util.props.PropertyException;
 import edu.cmu.sphinx.util.props.PropertySheet;
 
+import fr.loria.synalp.jtrans.utils.PrintStreamProgressDisplay;
 import junit.framework.TestCase;
-import fr.loria.synalp.jtrans.utils.StdoutProgressDisplay;
 
 public class GramTest extends TestCase {
 	public void test() {
@@ -94,7 +94,7 @@ public class GramTest extends TestCase {
 		try {
 			gram = new PhoneticForcedGrammar();
 			String[] words = {"bonjour","il"};
-			gram.setWords(Arrays.asList(words), new StdoutProgressDisplay());
+			gram.setWords(Arrays.asList(words), new PrintStreamProgressDisplay());
 			GrammarNode g = gram.getGram();
 			g.dump();
 		} catch (MalformedURLException e) {

@@ -54,8 +54,8 @@ import edu.cmu.sphinx.util.props.PropertySheet;
 
 import fr.loria.synalp.jtrans.speechreco.grammaire.Grammatiseur;
 import fr.loria.synalp.jtrans.speechreco.s4.*;
+import fr.loria.synalp.jtrans.utils.PrintStreamProgressDisplay;
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
-import fr.loria.synalp.jtrans.utils.StdoutProgressDisplay;
 
 public class LiveSpeechReco extends PhoneticForcedGrammar {
 	public static LiveSpeechReco gram=null;
@@ -631,7 +631,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		vocfile=new File("voc.txt");
 		try {
 			gram = new LiveSpeechReco();
-			gram.initGrammar(new StdoutProgressDisplay());
+			gram.initGrammar(new PrintStreamProgressDisplay());
 			System.out.println("********* MIKE GRAMMAR DEFINED");
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
@@ -655,7 +655,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 
 	// test: fait la reco 2 fois
 	public static void testRecoNoGUI() {
-		ProgressDisplay progress = new StdoutProgressDisplay();
+		ProgressDisplay progress = new PrintStreamProgressDisplay();
 
 		LiveSpeechReco r = doReco(progress);
 		r.addResultListener(new RecoListener() {

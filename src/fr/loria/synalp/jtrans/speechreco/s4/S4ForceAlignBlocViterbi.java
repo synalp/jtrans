@@ -84,8 +84,8 @@ import edu.cmu.sphinx.linguist.SearchStateArc;
 import edu.cmu.sphinx.linguist.acoustic.AcousticModel;
 import edu.cmu.sphinx.linguist.flat.FlatLinguist;
 import edu.cmu.sphinx.util.LogMath;
+import fr.loria.synalp.jtrans.utils.PrintStreamProgressDisplay;
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
-import fr.loria.synalp.jtrans.utils.StdoutProgressDisplay;
 
 /**
  * utiliser Sphinx4 pour aligner et pour n'avoir qu'un seul ensemble de HMMs
@@ -549,7 +549,7 @@ public class S4ForceAlignBlocViterbi extends Thread {
 			f.close();
 			String[] ms = new String[mots.size()];
 			mots.toArray(ms);
-			aligner = S4ForceAlignBlocViterbi.getS4Aligner(wavfile, new StdoutProgressDisplay());
+			aligner = S4ForceAlignBlocViterbi.getS4Aligner(wavfile, new PrintStreamProgressDisplay());
 			aligner.setMots(ms);
 
 			S4AlignOrder order = new S4AlignOrder(0, 0, mots.size()-1, -1);
