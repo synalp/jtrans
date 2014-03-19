@@ -218,6 +218,71 @@ public class Project {
 	}
 
 
+	/**
+	 * Returns differences in anchor times from one project to another
+	 * using this project as a reference. Both projects must be otherwise
+	 * identical.
+	 * @param p project identical to this, except for its anchor times
+	 * @return list of integer frame deltas
+	 * @throws IllegalArgumentException if the projects are not identical or
+	 * an anchor in this project has no time
+	 */
+	public List<Integer> anchorFrameDiffs(Project p)
+			throws IllegalArgumentException
+	{
+		List<Integer> diffs = new ArrayList<Integer>();
+		if (tracks.size() != p.tracks.size()) {
+			throw new IllegalArgumentException(
+					"projects have different track counts");
+		}
+
+		for (int i = 0; i < tracks.size(); i++) {
+			Track t1 = tracks.get(i);
+			Track t2 = p.tracks.get(i);
+
+			if (t1.elts.size() != t2.elts.size()) {
+				throw new IllegalArgumentException(
+						"projects have different lengths for track #" + i);
+			}
+
+			for (int j = 0; j < t1.elts.size(); j++) {
+				Element e1 = t1.elts.get(j);
+				Element e2 = t2.elts.get(j);
+
+				if (e1 instanceof Anchor) {
+					if (!(e2 instanceof Anchor)) {
+						throw new IllegalArgumentException(
+								"counterpart element #" + j + " not an anchor");
+					}
+
+					Anchor a1 = (Anchor)e1;
+					Anchor a2 = (Anchor)e2;
+
+					if (!a1.hasTime()) {
+						throw new IllegalArgumentException("anchor " + a1 +
+								"(reference project) has no time");
+					}
+
+					if (!a2.hasTime()) {
+						System.err.println("Warning: " + a2 +
+								" (counterpart) has no time; skipping...");
+						continue;
+					}
+
+					diffs.add(a2.getFrame() - a1.getFrame());
+				}
+
+				else if (!e1.getClass().equals(e2.getClass())) {
+					throw new IllegalArgumentException("counterpart element #"
+							+ j + " instance of different class");
+				}
+			}
+		}
+
+		return diffs;
+	}
+
+
 	//==========================================================================
 	// LOAD/SAVE/EXPORT
 	//==========================================================================

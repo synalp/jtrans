@@ -25,6 +25,7 @@ public class JTransCLI {
 	public List<String> outputFormats;
 	public boolean clearTimes = false;
 	public boolean align = true;
+	public boolean runAnchorDiffTest = false;
 
 
 	public final static String[] AUDIO_EXTENSIONS = "wav,ogg,mp3".split(",");
@@ -108,6 +109,11 @@ public class JTransCLI {
 						Arrays.asList("N", "no-align"),
 						"Don't align after loading the project. Useful to " +
 								"convert between formats.");
+
+				accepts(
+						"anchor-diff-test",
+						"Regenerate anchor times and gauge deviation wrt. " +
+								"reference times.");
 			}
 		};
 
@@ -138,6 +144,14 @@ public class JTransCLI {
 		outputDir = (File)optset.valueOf("outdir");
 		clearTimes = optset.has("C");
 		align = !optset.has("N");
+		runAnchorDiffTest = optset.has("anchor-diff-test");
+
+		clearTimes |= runAnchorDiffTest;
+
+		if (!align && runAnchorDiffTest) {
+			System.err.println("Can't run the anchor diff test without aligning!");
+			System.exit(1);
+		}
 
 		if (optset.has("infmt")) {
 			String className = (String)optset.valueOf("infmt");
@@ -189,6 +203,29 @@ public class JTransCLI {
 	}
 
 
+	public static void printAnchorDiffStats(List<Integer> diffs) {
+		System.out.println("===== ANCHOR DIFF TEST =====");
+
+		int absDiffSum = 0;
+		int absDiffMax = 0;
+		float sumOfSquares = 0;
+
+		for (Integer d: diffs) {
+			int abs = Math.abs(d);
+			absDiffSum += abs;
+			sumOfSquares += d * d;
+			absDiffMax = Math.max(absDiffMax, abs);
+		}
+		float avg = (float)absDiffSum / diffs.size();
+		float variance = sumOfSquares / diffs.size() - avg;
+		float stdDev = (float)Math.sqrt(variance);
+
+		System.out.println("Abs diff avg.....: " + avg + " frames");
+		System.out.println("Std dev..........: " + stdDev + " frames");
+		System.out.println("Worst abs diff...: " + absDiffMax + " frames");
+	}
+
+
 	public static void main(String args[]) throws Exception {
 		loadLoggingProperties();
 
@@ -198,7 +235,9 @@ public class JTransCLI {
 			JTransGUI.installResources();
 		}
 
-		if (cli.outputFormats == null || cli.outputFormats.isEmpty()) {
+		if (!cli.runAnchorDiffTest &&
+				(cli.outputFormats == null || cli.outputFormats.isEmpty()))
+		{
 			CrossPlatformFixes.setNativeLookAndFeel();
 			new JTransGUI(cli);
 			return;
@@ -228,6 +267,13 @@ public class JTransCLI {
 				project.align(true, progress);
 			}
 			System.out.println("Alignment done.");
+		}
+
+		if (cli.runAnchorDiffTest) {
+			Project reference = cli.loader.parse(cli.inputFile);
+			List<Integer> diffs = reference.anchorFrameDiffs(project);
+			printAnchorDiffStats(diffs);
+			System.exit(0);
 		}
 
 		cli.outputDir.mkdirs();
