@@ -3,7 +3,6 @@ package fr.loria.synalp.jtrans.viterbi;
 import fr.loria.synalp.jtrans.utils.BufferUtils;
 
 import java.io.*;
-import java.nio.ByteBuffer;
 import java.util.zip.InflaterInputStream;
 
 /**

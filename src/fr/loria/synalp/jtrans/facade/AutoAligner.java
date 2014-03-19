@@ -30,6 +30,12 @@ public class AutoAligner {
 	public static final int SWAP_THRESHOLD_BYTES = 1024*1024*16;
 
 
+	/**
+	 * Delete Viterbi backpointer swap files when the JVM terminates.
+	 */
+	public static boolean DELETE_BACKTRACK_SWAP_FILES = true;
+
+
 	public AutoAligner(File audio, int appxTotalFrames, ProgressDisplay progress) throws IOException {
 		this.audio = audio;
 		this.appxTotalFrames = appxTotalFrames;
@@ -54,24 +60,68 @@ public class AutoAligner {
 	 * @param endFrame last frame to analyze. Use a negative number to use all
 	 *                 frames in the audio source
 	 */
-	public void align(List<Word> words, int startFrame, int endFrame)
+	public void align(
+			final List<Word> words,
+			final int startFrame,
+			final int endFrame)
 			throws IOException, InterruptedException
 	{
-		//----------------------------------------------------------------------
-		// Initialize graph and swap streams
-
 		if (progress != null) {
 			progress.setIndeterminateProgress("Setting up state graph...");
 		}
 
-		String[] wordStrings = new String[words.size()];
-		for (int i = 0; i < words.size(); i++) {
-			wordStrings[i] = words.get(i).toString();
-		}
+		// String representations of each word (used to build StateGraph)
+		final String[] wordStrings = new String[words.size()];
 
-		StateGraph graph = new StateGraph(wordStrings);
+		// Space-separated string of words (used as identifier for cache files)
+		final String text;
+
+		// build wordStrings and text
+		StringBuilder textBuilder = new StringBuilder();
+		for (int i = 0; i < words.size(); i++) {
+			Word w = words.get(i);
+			wordStrings[i] = w.toString();
+			textBuilder.append(w.toString()).append(" ");
+		}
+		text = textBuilder.toString();
+
+		final StateGraph graph = new StateGraph(wordStrings);
 		graph.setProgressDisplay(progress, appxTotalFrames);
 
+		// Cache wrapper class for getTimeline()
+		class TimelineFactory implements Cache.ObjectFactory {
+			public int[] make() {
+				try {
+					return getTimeline(graph, text, startFrame, endFrame);
+				} catch (IOException ex) {
+					ex.printStackTrace();
+					return null;
+				} catch (InterruptedException ex) {
+					ex.printStackTrace();
+					return null;
+				}
+			}
+		}
+
+		int[] timeline = (int[])Cache.cachedObject("hmmtimeline", "timeline",
+				new TimelineFactory(),
+				audio, text, startFrame, endFrame);
+
+		graph.setWordAlignments(words, timeline, startFrame);
+	}
+
+
+	/**
+	 * Sets up I/O streams, aligns a StateGraph and returns an HMM state
+	 * timeline.
+	 */
+	private int[] getTimeline(
+			StateGraph graph,
+			String text,
+			int startFrame,
+			int endFrame)
+			throws IOException, InterruptedException
+	{
 		final OutputStream out;
 		final SwapInflater.InputStreamFactory inFactory;
 
@@ -94,7 +144,12 @@ public class AutoAligner {
 			};
 		} else {
 			final File swapFile = Cache.getCacheFile("backtrack", "swp",
-					audio, words, startFrame, endFrame);
+					audio, text, startFrame, endFrame);
+			System.out.println("Swap file: " + swapFile);
+			if (DELETE_BACKTRACK_SWAP_FILES) {
+				swapFile.deleteOnExit();
+			}
+
 			out = new FileOutputStream(swapFile);
 			inFactory = new SwapInflater.InputStreamFactory() {
 				@Override
@@ -111,9 +166,7 @@ public class AutoAligner {
 		graph.viterbi(mfcc, swapWriter, startFrame, endFrame);
 
 		swapReader.init(swapWriter.getIndex(), inFactory);
-		int[] timeline = graph.backtrack(swapReader);
-
-		graph.setWordAlignments(words, timeline, startFrame);
+		return graph.backtrack(swapReader);
 	}
 
 }
