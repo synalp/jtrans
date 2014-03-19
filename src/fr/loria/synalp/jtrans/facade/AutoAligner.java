@@ -130,10 +130,11 @@ public class AutoAligner {
 		// keep it all in RAM
 
 		int appxEndFrame = endFrame < 0? appxTotalFrames: endFrame;
-		int projectedSize = (appxEndFrame-startFrame+1) * graph.getStateCount();
-		boolean keepInRAM = projectedSize <= SWAP_THRESHOLD_BYTES;
+		long projectedSize =
+				(long)(appxEndFrame-startFrame+1) * graph.getStateCount();
+		assert projectedSize >= 0: "integer overflow";
 
-		if (keepInRAM) {
+		if (projectedSize <= SWAP_THRESHOLD_BYTES) {
 			out = new ByteArrayOutputStream();
 			inFactory = new SwapInflater.InputStreamFactory() {
 				@Override
@@ -145,10 +146,14 @@ public class AutoAligner {
 		} else {
 			final File swapFile = Cache.getCacheFile("backtrack", "swp",
 					audio, text, startFrame, endFrame);
-			System.out.println("Swap file: " + swapFile);
+
 			if (DELETE_BACKTRACK_SWAP_FILES) {
 				swapFile.deleteOnExit();
 			}
+
+			System.out.println("Swap file: " + swapFile);
+			System.out.println("Projected backpointer size (uncompressed): "
+					+ projectedSize/1024/1024 + " MB");
 
 			out = new FileOutputStream(swapFile);
 			inFactory = new SwapInflater.InputStreamFactory() {
