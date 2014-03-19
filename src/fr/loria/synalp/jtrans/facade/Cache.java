@@ -37,7 +37,7 @@ public class Cache {
 	 * Flag indicating whether to try to read objects from the cache.
 	 * If false, objects are recreated everytime they are requested.
 	 */
-	public static final boolean READ_FROM_CACHE = true;
+	public static boolean READ_FROM_CACHE = true;
 
 
 	/** Cache files are stored there. */

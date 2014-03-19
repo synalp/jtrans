@@ -114,6 +114,10 @@ public class JTransCLI {
 						"anchor-diff-test",
 						"Regenerate anchor times and gauge deviation wrt. " +
 								"reference times.");
+
+				acceptsAll(
+						Arrays.asList("B", "bypass-cache"),
+						"Don't read objects from cache.");
 			}
 		};
 
@@ -138,6 +142,11 @@ public class JTransCLI {
 		}
 
 		//----------------------------------------------------------------------
+
+		if (optset.has("bypass-cache")) {
+			Cache.READ_FROM_CACHE = false;
+			System.out.println("Won't read objects from cache.");
+		}
 
 		inputFile = (File)optset.valueOf("f");
 		audioFile = (File)optset.valueOf("a");
