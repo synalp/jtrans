@@ -225,13 +225,15 @@ public class JTransCLI {
 			sumOfSquares += d * d;
 			absDiffMax = Math.max(absDiffMax, abs);
 		}
+
 		float avg = (float)absDiffSum / diffs.size();
-		float variance = sumOfSquares / diffs.size() - avg;
+		float variance = sumOfSquares / diffs.size() - avg * avg;
 		float stdDev = (float)Math.sqrt(variance);
 
 		System.out.println("Abs diff avg.....: " + avg + " frames");
-		System.out.println("Std dev..........: " + stdDev + " frames");
-		System.out.println("Worst abs diff...: " + absDiffMax + " frames");
+		System.out.println("Variance.........: " + variance);
+		System.out.println("Std dev..........: " + stdDev);
+		System.out.println("Worst abs diff...: " + absDiffMax);
 	}
 
 
