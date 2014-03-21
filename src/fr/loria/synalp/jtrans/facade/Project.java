@@ -68,6 +68,8 @@ public class Project {
 		AutoAligner aligner = new AutoAligner(
 				convertedAudioFile, (int)audioSourceTotalFrames, progress);
 
+		int overlapCount = 0;
+
 		for (Track track: tracks) {
 			if (clear) {
 				track.clearAlignment();
@@ -86,6 +88,12 @@ public class Project {
 
 				Anchor ia = sandwich.getInitialAnchor();
 				Anchor fa = sandwich.getFinalAnchor();
+
+				overlapCount++;
+				if (progress != null) {
+					progress.setIndeterminateProgress("Aligning overlap #"
+							+ overlapCount + "...");
+				}
 
 				aligner.align(
 						sandwich.getWords(),
@@ -173,7 +181,7 @@ public class Project {
 		// Align yet-unaligned overlaps
 
 		progress.setIndeterminateProgress("Aligning overlaps...");
-		align(true, null);
+		align(false, null);
 	}
 
 
