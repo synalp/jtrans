@@ -37,7 +37,7 @@ public class RawTextLoader implements MarkupLoader {
 		put(Comment.Type.OVERLAP_END_MARK,   ">");
 		put(Comment.Type.PUNCTUATION,  "(\\?|\\:|\\;|\\,|\\.|\\!)");
 		put(Comment.Type.BEEP,         "\\*[^\\*\\s]+\\*");
-		put(Comment.Type.SPEAKER_MARK, "(^|\\n)(\\s)*\\w\\d+\\s");
+		put(Comment.Type.SPEAKER_MARK, "(^|\\n)(\\s)*L\\d+\\s");
 	}};
 
 
