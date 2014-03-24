@@ -12,11 +12,14 @@ import java.util.*;
 public class MarkupPluginPool<HandlerType extends MarkupPlugin> {
 
 	// Maps lowercase class names to classes
-	protected Map<String, Class> map;
+	protected Map<String, Class<HandlerType>> map;
 
 
-	protected MarkupPluginPool(Class mother, String optSuffix) {
-		map = new HashMap<String, Class>();
+	protected MarkupPluginPool(
+			Class<HandlerType> mother,
+			String optSuffix)
+	{
+		map = new HashMap<String, Class<HandlerType>>();
 
 		ArrayList<Class<?>> loaders = ClassEnumerator.getClassesForPackage(
 				mother.getPackage());
@@ -27,9 +30,7 @@ public class MarkupPluginPool<HandlerType extends MarkupPlugin> {
 				continue;
 			}
 
-			try {
-				clazz.asSubclass(mother);
-			} catch (ClassCastException ex) {
+			if (!mother.isAssignableFrom(clazz)) {
 				continue;
 			}
 
@@ -39,7 +40,10 @@ public class MarkupPluginPool<HandlerType extends MarkupPlugin> {
 			}
 			key = key.toLowerCase();
 
-			map.put(key, clazz);
+			@SuppressWarnings("unchecked")
+			Class<HandlerType> htClazz = (Class<HandlerType>)clazz;
+
+			map.put(key, htClazz);
 		}
 
 	}
@@ -73,11 +77,11 @@ public class MarkupPluginPool<HandlerType extends MarkupPlugin> {
 	public HandlerType make(String name)
 			throws IllegalArgumentException, ReflectiveOperationException
 	{
-		Class clazz = map.get(name.toLowerCase());
+		Class<HandlerType> clazz = map.get(name.toLowerCase());
 		if (null == clazz) {
 			throw new IllegalArgumentException("No such plugin: " + name);
 		} else {
-			return (HandlerType)clazz.getConstructor().newInstance();
+			return clazz.getConstructor().newInstance();
 		}
 	}
 
