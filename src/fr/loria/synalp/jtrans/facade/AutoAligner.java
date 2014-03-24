@@ -36,6 +36,13 @@ public class AutoAligner {
 	public static boolean DELETE_BACKTRACK_SWAP_FILES = true;
 
 
+	/**
+	 * Refine the baseline alignment with Metropolis-Hastings after completing
+	 * Viterbi.
+	 */
+	public static boolean METROPOLIS_HASTINGS_POST_PROCESSING = false;
+
+
 	public AutoAligner(File audio, int appxTotalFrames, ProgressDisplay progress) throws IOException {
 		this.audio = audio;
 		this.appxTotalFrames = appxTotalFrames;
@@ -106,6 +113,14 @@ public class AutoAligner {
 		int[] timeline = (int[])Cache.cachedObject("hmmtimeline", "timeline",
 				new TimelineFactory(),
 				audio, text, startFrame, endFrame);
+
+		if (METROPOLIS_HASTINGS_POST_PROCESSING) {
+			if (progress != null) {
+				progress.setIndeterminateProgress("Metropolis-Hastings...");
+			}
+
+			graph.metropolisHastingsRefinement(timeline, mfcc, startFrame);
+		}
 
 		graph.setWordAlignments(words, timeline, startFrame);
 	}

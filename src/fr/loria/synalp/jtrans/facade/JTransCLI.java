@@ -118,6 +118,10 @@ public class JTransCLI {
 				acceptsAll(
 						Arrays.asList("B", "bypass-cache"),
 						"Don't read objects from cache.");
+
+				acceptsAll(
+						Arrays.asList("M", "metropolis-hastings"),
+						"Metropolis-Hastings post processing");
 			}
 		};
 
@@ -146,6 +150,10 @@ public class JTransCLI {
 		if (optset.has("bypass-cache")) {
 			Cache.READ_FROM_CACHE = false;
 			System.out.println("Won't read objects from cache.");
+		}
+
+		if (optset.has("metropolis-hastings")) {
+			AutoAligner.METROPOLIS_HASTINGS_POST_PROCESSING = true;
 		}
 
 		inputFile = (File)optset.valueOf("f");
