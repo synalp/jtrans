@@ -345,8 +345,6 @@ public class JTransCLI {
 
 			aligner.setRefinementIterationHook(
 					new AnchorDiffRIH(project, reference));
-
-			project.align(aligner, true);
 		}
 
 		if (cli.align) {
