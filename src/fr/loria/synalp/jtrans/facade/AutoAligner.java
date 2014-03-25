@@ -5,6 +5,7 @@ import fr.loria.synalp.jtrans.elements.Word;
 import fr.loria.synalp.jtrans.speechreco.s4.S4ForceAlignBlocViterbi;
 import fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer;
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
+import fr.loria.synalp.jtrans.viterbi.TransitionRefinery;
 import fr.loria.synalp.jtrans.viterbi.StateGraph;
 import fr.loria.synalp.jtrans.viterbi.SwapDeflater;
 import fr.loria.synalp.jtrans.viterbi.SwapInflater;
@@ -119,7 +120,10 @@ public class AutoAligner {
 				progress.setIndeterminateProgress("Metropolis-Hastings...");
 			}
 
-			graph.metropolisHastingsRefinement(timeline, mfcc, startFrame);
+			TransitionRefinery mh = new TransitionRefinery(
+					timeline, graph, mfcc, startFrame);
+
+			timeline = mh.refine();
 		}
 
 		graph.setWordAlignments(words, timeline, startFrame);

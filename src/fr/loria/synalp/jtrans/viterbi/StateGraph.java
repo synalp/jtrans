@@ -34,12 +34,6 @@ public class StateGraph {
 	/** Number of values in FloatData. */
 	public static final int FRAME_DATA_LENGTH = 39;
 
-	/**
-	 * Maximum number of rejected steps in a row before aborting the
-	 * Metropolis-Hastings refinement.
-	 */
-	public static final int METROPOLIS_REJECTION_STREAK_CAP = 500;
-
 	/** Pattern for non-phone grammar tokens. */
 	public final static Pattern NONPHONE_PATTERN =
 			Pattern.compile("^[^a-zA-Z]$");
@@ -592,18 +586,14 @@ public class StateGraph {
 	 * Computes the likelihood of an alignment.
 	 * @param timeline alignment, maps frames to states (a base alignment may be
 	 *                 obtained with viterbi() + backtrack())
-	 * @param mfcc audio data
-	 * @param frameOffset jump to this frame before reading audio data
+	 * @return likelihoods per frame
 	 */
-	public double alignmentLikelihood(
-			int[] timeline,
-			S4mfccBuffer mfcc,
-			int frameOffset)
-	{
+	public double[] alignmentLikelihood(int[] timeline, float[][] data) {
+		assert data.length == timeline.length;
+
 		final int nFrames = timeline.length;
 		final LogMath lm = HMMModels.getLogMath();
 
-		float  data[][]      = new float[nFrames][];
 		int    nMatchF[]     = new int[nStates];
 		double sum[][]       = new double[nStates][FRAME_DATA_LENGTH];
 		double sumSq[][]     = new double[nStates][FRAME_DATA_LENGTH];
@@ -611,21 +601,6 @@ public class StateGraph {
 		double var[][]       = new double[nStates][FRAME_DATA_LENGTH];
 		double detVar[]      = new double[nStates];
 		double likelihood[]  = new double[nFrames];
-		double cumulativeLikelihood = 0;
-
-		mfcc.gotoFrame(frameOffset);
-
-		// Get data
-		for (int f = 0; f < nFrames;) {
-			try {
-				data[f] = FloatData.toFloatData(mfcc.getData()).getValues();
-				assert data[f].length == FRAME_DATA_LENGTH;
-			} catch (IllegalArgumentException ex) {
-				// not a FloatData/DoubleData
-				continue;
-			}
-			f++; // successful
-		}
 
 		// sum, sumSq, nMatchF
 		for (int f = 0; f < nFrames; f++) {
@@ -640,9 +615,6 @@ public class StateGraph {
 
 		// avg, var, detVar
 		for (int s = 0; s < nStates; s++) {
-			/*
-			System.out.print(states[s].getHMM().getBaseUnit().getName() + "\t");
-			*/
 			detVar[s] = 1;
 			for (int d = 0; d < FRAME_DATA_LENGTH; d++) {
 				avg[s][d] = sum[s][d] / nMatchF[s];
@@ -650,14 +622,7 @@ public class StateGraph {
 				detVar[s] *= var[s][d];
 
 				// TODO var=min(var,10^-3) - avoids tiny values
-
-				/*
-				System.out.print(String.format("%+2.5f ", var[s][d]));
-				*/
 			}
-			/*
-			System.out.println();
-			*/
 		}
 
 		// likelihood for each frame
@@ -675,13 +640,12 @@ public class StateGraph {
 			}
 
 			likelihood[f] += K - .5 * dot;
-			cumulativeLikelihood += likelihood[f];
 
 			/*
 			System.out.println("Frame " + f +
 					": State #" + s + ":" + states[s].getHMM().getBaseUnit().getName() +
-					",\tDot = " + dot +
 					",\tK = " + K +
+					",\tDot = " + dot +
 					",\tL = " + likelihood[f]);
 			*/
 		}
@@ -699,152 +663,38 @@ public class StateGraph {
 				}
 			}
 		}
-
-		System.out.println("Cumulative likelihood: " + cumulativeLikelihood);
 		*/
-
-		return cumulativeLikelihood;
-	}
-
-
-	public static int getCascadeLength(int[] timeline, int offset) {
-		int t = offset;
-		while (t < timeline.length-1 && timeline[t] != timeline[t+1]) {
-			t++;
-		}
-		return t-offset;
-	}
-
-
-	/**
-	 * Refines a random transition in the timeline.
-	 * @param timeline Baseline alignment (as found e.g. with viterbi()).
-	 *                 Will be modified!
-	 * @param frameOffset Frame offset for the MFCC buffer *only*. *Not*
-	 *                    applicable to timeline!
-	 * @return updated global likelihood
-	 */
-	private double metropolisHastings(
-			int[] timeline,
-			Random random,
-			S4mfccBuffer mfcc,
-			int frameOffset)
-	{
-		int trans = -1;
-		while (trans < 0) {
-			// don't use last value (can't transition beyond last value)
-			trans = nextTransition(random.nextInt(timeline.length-1), timeline);
-		}
-
-		assert trans < timeline.length - 1;
-
-		int[] backup = new int[timeline.length];
-		System.arraycopy(timeline, 0, backup, 0, timeline.length);
-		double oldLhd = alignmentLikelihood(timeline, mfcc, frameOffset);
-
-		// move transition (or block of 1-frame transitions) forward
-		int blockLength = getCascadeLength(timeline, trans);
-		int destPos = trans + 1;
-		if (destPos + blockLength > timeline.length) {
-			blockLength--;
-		}
-		System.arraycopy(timeline, trans, timeline, trans+1, blockLength);
-
-		double newLhd = alignmentLikelihood(timeline, mfcc, frameOffset);
-
-		// debug
-		if (blockLength > 1) {
-			if (newLhd >= oldLhd) {
-				System.out.print(blockLength);
-			}
-		}
-
-		if (newLhd < oldLhd) {
-			
-			System.arraycopy(backup, 0, timeline, 0, backup.length);
-			return oldLhd;
-		} else {
-			return newLhd;
-		}
-	}
-
-
-	/**
-	 * Refines an HMM state timeline with the Metropolis-Hastings algorithm.
-	 * @param timeline Baseline alignment (as found e.g. with viterbi()).
-	 *                 Will be modified!
-	 * @param frameOffset Frame offset for the MFCC buffer *only*. *Not*
-	 *                    applicable to timeline!
-	 * @return updated global likelihood
-	 */
-	public double metropolisHastingsRefinement(
-			int[] timeline,
-			S4mfccBuffer mfcc,
-			int frameOffset)
-			throws IOException
-	{
-		final String plotName = "likelihood_" + System.currentTimeMillis()
-				+ ".txt";
-
-		System.out.println("Plot: " + plotName);
-
-		Random random = new Random();
-		PrintWriter plot = new PrintWriter(plotName);
-
-		double likelihood = 0;
-		int rejectionStreak = 0;
-		int rejections = 0;
-		int acceptances = 0;
-
-		for (int step = 0; ; step++) {
-			double newLhd = metropolisHastings(
-					timeline, random, mfcc, frameOffset);
-
-			if (step > 0 && newLhd == likelihood) {
-				rejections++;
-				rejectionStreak++;
-				if (rejectionStreak == METROPOLIS_REJECTION_STREAK_CAP) {
-					System.out.println(METROPOLIS_REJECTION_STREAK_CAP +
-							" rejections in a row, stopping");
-					break;
-				}
-			} else {
-				System.out.print(".");
-				acceptances++;
-				rejectionStreak = 0;
-				likelihood = newLhd;
-			}
-
-			// plot
-			plot.println(likelihood);
-			if (step % 100 == 0) {
-				plot.flush();
-			}
-		}
-
-		plot.close();
-
-		System.out.println(String.format(
-				"Rejections: %d, Acceptances: %d (%f%%)",
-				rejections, acceptances,
-				(float)acceptances / (rejections+acceptances)));
 
 		return likelihood;
 	}
 
 
 	/**
-	 * Finds the next transition between two states.
-	 * @param offset start searching at this frame
-	 * @param timeline HMM state timeline
-	 * @return the number of the frame preceding the transition
+	 * @param mfcc audio data
+	 * @param frameOffset jump to this frame before reading audio data
 	 */
-	public static int nextTransition(int offset, int[] timeline) {
-		final int upper = timeline.length - 1;
-		while (offset < upper && timeline[offset+1] == timeline[offset]) {
-			offset++;
+	public static float[][] getData(
+			int nFrames,
+			S4mfccBuffer mfcc,
+			int frameOffset)
+	{
+		float data[][] = new float[nFrames][];
+
+		mfcc.gotoFrame(frameOffset);
+
+		// Get data
+		for (int f = 0; f < nFrames;) {
+			try {
+				data[f] = FloatData.toFloatData(mfcc.getData()).getValues();
+				assert data[f].length == FRAME_DATA_LENGTH;
+			} catch (IllegalArgumentException ex) {
+				// not a FloatData/DoubleData
+				continue;
+			}
+			f++; // successful
 		}
-		return offset >= upper? -1: offset;
+
+		return data;
 	}
 
 
@@ -995,8 +845,8 @@ public class StateGraph {
 		int[] timeline = gv.backtrack(swapReader);
 		gv.prettyPrintTimeline(timeline);
 
-		System.out.println("Computing alignment likelihood...");
-		gv.alignmentLikelihood(timeline, mfcc, 0);
+//		System.out.println("Computing alignment likelihood...");
+//		gv.alignmentLikelihood(timeline, mfcc, 0);
 	}
 
 }
