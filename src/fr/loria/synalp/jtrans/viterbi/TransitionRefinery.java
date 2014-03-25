@@ -4,6 +4,8 @@ import edu.cmu.sphinx.util.LogMath;
 import fr.loria.synalp.jtrans.speechreco.s4.HMMModels;
 import fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Random;
@@ -23,6 +25,13 @@ public class TransitionRefinery {
 	private Random random;
 	private StateGraph graph;
 	private LogMath log = HMMModels.getLogMath();
+
+	int rejectionStreak = 0;
+	int rejections = 0;
+	int acceptances = 0;
+	int luckyAcceptances = 0;
+	int iterations;
+	private PrintWriter plot;
 
 
 	/**
@@ -93,46 +102,45 @@ public class TransitionRefinery {
 	/**
 	 * Refines an HMM state timeline with the Metropolis-Hastings algorithm.
 	 */
-	public int[] refine() throws IOException {
-		final String plotName = "likelihood_" + System.currentTimeMillis() + ".txt";
-		System.out.println("Plot: " + plotName);
-		PrintWriter plot = new PrintWriter(plotName);
+	public int[] step() throws IOException {
+		iterations++;
 
-		int rejectionStreak = 0;
-		int rejections = 0;
-		int acceptances = 0;
-		int luckyAcceptances = 0;
-		boolean stop = false;
-
-		for (int step = 0; !stop; step++) {
-			Accept status = metropolisHastings();
-
-			if (status == Accept.REJECTED) {
-				rejections++;
-				rejectionStreak++;
-				stop = rejectionStreak == METROPOLIS_REJECTION_STREAK_CAP;
-			} else {
-				acceptances++;
-				if (status == Accept.LUCK) {
-					luckyAcceptances++;
-				}
-				rejectionStreak = 0;
-			}
-
-			plot.println(cLhd);
-
-			if (stop || step % 100 == 0) {
-				plot.flush();
-				System.err.println(String.format(
-						"Rejections: %d, Acceptances: %d (of which %d lucky) (%f%%)",
-						rejections, acceptances, luckyAcceptances,
-						100f * acceptances / (rejections+acceptances)));
-			}
+		if (plot == null) {
+			final String plotName = "likelihood_" + System.currentTimeMillis() + ".txt";
+			plot = new PrintWriter(new BufferedWriter(new FileWriter(plotName)));
+			System.err.println("Plot: " + plotName);
 		}
 
-		System.out.println("REJECTION CAP REACHED");
-		plot.close();
+		Accept status = metropolisHastings();
+
+		if (status == Accept.REJECTED) {
+			rejections++;
+			rejectionStreak++;
+		} else {
+			acceptances++;
+			if (status == Accept.LUCK) {
+				luckyAcceptances++;
+			}
+			rejectionStreak = 0;
+		}
+
+
+		plot.println(cLhd);
+
+		if (hasPlateaued() || iterations % 100 == 0) {
+			plot.flush();
+			System.err.println(String.format(
+					"Rejections: %d, Acceptances: %d (of which %d lucky) (%f%%)",
+					rejections, acceptances, luckyAcceptances,
+					100f * acceptances / (rejections+acceptances)));
+		}
+
 		return timeline;
+	}
+
+
+	public boolean hasPlateaued() {
+		return rejectionStreak >= METROPOLIS_REJECTION_STREAK_CAP;
 	}
 
 

@@ -10,8 +10,7 @@ import fr.loria.synalp.jtrans.utils.PrintStreamProgressDisplay;
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
 import joptsimple.*;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.LogManager;
@@ -245,10 +244,52 @@ public class JTransCLI {
 	}
 
 
+	/**
+	 * Metropolis-Hastings Refinement Iteration Hook for accounting anchor differences
+	 */
+	private static class AnchorDiffRIH implements Runnable {
+		Project project;
+		Project reference;
+		PrintWriter pw = null;
+
+		public AnchorDiffRIH(Project p, Project r) {
+			this.project = p;
+			this.reference = r;
+		}
+
+		public void run() {
+			if (null == pw) {
+				String name = "anchordiff_" + System.currentTimeMillis() + ".txt";
+				try {
+					pw = new PrintWriter(new BufferedWriter(new FileWriter(name)));
+				} catch (IOException ex) {
+					throw new Error(ex);
+				}
+				System.err.println("anchordiff: " + name);
+			}
+
+			project.clearAllAnchorTimes();
+			project.deduceTimes();
+			List<Integer> diffs = reference.anchorFrameDiffs(project);
+
+			int absDiffSum = 0;
+			for (Integer d: diffs) {
+				absDiffSum += Math.abs(d);
+			}
+			pw.println(absDiffSum / (float) diffs.size());
+		}
+	}
+
+
 	public static void main(String args[]) throws Exception {
+		final ProgressDisplay progress;
+		final Project project;
+		final Project reference;
+		final JTransCLI cli;
+
 		loadLoggingProperties();
 
-		JTransCLI cli = new JTransCLI(args);
+		cli = new JTransCLI(args);
 
 		if (!new File("res").exists()) {
 			JTransGUI.installResources();
@@ -262,10 +303,9 @@ public class JTransCLI {
 			return;
 		}
 
-		ProgressDisplay progress =
-				new PrintStreamProgressDisplay(2500, System.out);
+		progress = new PrintStreamProgressDisplay(2500, System.out);
 
-		Project project = cli.loader.parse(cli.inputFile);
+		project = cli.loader.parse(cli.inputFile);
 		System.out.println("Project loaded.");
 
 		if (null != cli.audioFile) {
@@ -278,21 +318,45 @@ public class JTransCLI {
 			System.out.println("Anchor times cleared.");
 		}
 
+		if (cli.runAnchorDiffTest) {
+			reference = cli.loader.parse(cli.inputFile);
+		} else {
+			reference = null;
+		}
+
+		AutoAligner aligner = null;
 		if (cli.align) {
+			aligner = project.getStandardAligner(progress);
+		}
+
+		if (cli.runAnchorDiffTest) {
+			assert aligner != null;
+			assert reference != null;
+
+			aligner.setRefinementIterationHook(
+					new AnchorDiffRIH(project, reference));
+
+			project.align(aligner, true);
+		}
+
+		if (cli.align) {
+			assert aligner != null;
+
 			System.out.println("Aligning...");
 			if (cli.clearTimes) {
-				project.alignInterleaved(progress);
+				project.alignInterleaved(aligner);
 			} else {
-				project.align(true, progress);
+				project.align(aligner, true);
 			}
 			System.out.println("Alignment done.");
 		}
 
 		if (cli.runAnchorDiffTest) {
-			Project reference = cli.loader.parse(cli.inputFile);
+			assert reference != null;
+
 			List<Integer> diffs = reference.anchorFrameDiffs(project);
 			printAnchorDiffStats(diffs);
-			System.exit(0);
+//			System.exit(0);
 		}
 
 		cli.outputDir.mkdirs();

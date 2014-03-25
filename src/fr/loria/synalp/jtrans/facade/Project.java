@@ -56,20 +56,23 @@ public class Project {
 	}
 
 
+	public AutoAligner getStandardAligner(ProgressDisplay progress)
+			throws IOException
+	{
+		return new AutoAligner(
+				convertedAudioFile, (int)audioSourceTotalFrames, progress);
+	}
+
+
 	/**
 	 * Aligns all words in all tracks of this project with timed anchors.
 	 * @param clear If true, clear any previously existing alignment information
 	 *              to start a new alignment from scratch. If false, don't touch
 	 *              aligned words; only attempt to align unaligned words.
 	 */
-	public void align(boolean clear, ProgressDisplay progress)
+	public void align(AutoAligner aligner, boolean clear)
 			throws IOException, InterruptedException
 	{
-		AutoAligner aligner = new AutoAligner(
-				convertedAudioFile, (int)audioSourceTotalFrames, progress);
-
-		int overlapCount = 0;
-
 		for (Track track: tracks) {
 			if (clear) {
 				track.clearAlignment();
@@ -89,12 +92,6 @@ public class Project {
 				Anchor ia = sandwich.getInitialAnchor();
 				Anchor fa = sandwich.getFinalAnchor();
 
-				overlapCount++;
-				if (progress != null) {
-					progress.setIndeterminateProgress("Aligning overlap #"
-							+ overlapCount + "...");
-				}
-
 				aligner.align(
 						sandwich.getWords(),
 						ia == null || !ia.hasTime()? 0: ia.getFrame(),
@@ -107,16 +104,12 @@ public class Project {
 	/**
 	 * Aligns all words in all tracks of this project with timeless anchors.
 	 */
-	public void alignInterleaved(ProgressDisplay progress)
+	public void alignInterleaved(AutoAligner aligner)
 			throws IOException, InterruptedException
 	{
-
 		for (Track track: tracks) {
 			track.clearAlignment();
 		}
-
-		AutoAligner aligner = new AutoAligner(
-				convertedAudioFile, (int)audioSourceTotalFrames, progress);
 
 		//----------------------------------------------------------------------
 		// Align big interleaved sequences
@@ -144,8 +137,21 @@ public class Project {
 		//----------------------------------------------------------------------
 		// Deduce times on timeless anchors
 
-		progress.setIndeterminateProgress("Setting anchor times...");
+//		progress.setIndeterminateProgress("Setting anchor times...");
+		deduceTimes();
 
+		//----------------------------------------------------------------------
+		// Align yet-unaligned overlaps
+
+//		progress.setIndeterminateProgress("Aligning overlaps...");
+		align(aligner, false);
+	}
+
+
+	/**
+	 * Deduce times on timeless anchors
+	 */
+	public void deduceTimes() {
 		for (Track track: tracks) {
 			AnchorSandwichIterator iter = track.sandwichIterator();
 
@@ -176,12 +182,6 @@ public class Project {
 				}
 			}
 		}
-
-		//----------------------------------------------------------------------
-		// Align yet-unaligned overlaps
-
-		progress.setIndeterminateProgress("Aligning overlaps...");
-		align(false, null);
 	}
 
 

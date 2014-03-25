@@ -697,14 +697,26 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	}
 
 	public void alignAll(final boolean interleaved) {
+		final AutoAligner aligner;
+
+		try {
+			aligner = project.getStandardAligner(this);
+		} catch (IOException ex) {
+			ex.printStackTrace();
+			JOptionPane.showMessageDialog(jf, "Couldn't create aligner!\n\n"+ex,
+					"Error",
+					JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+
 		new Thread() {
 			@Override
 			public void run() {
 				try {
 					if (interleaved) {
-						project.alignInterleaved(JTransGUI.this);
+						project.alignInterleaved(aligner);
 					} else {
-						project.align(true, JTransGUI.this);
+						project.align(aligner, true);
 					}
 				} catch (final Exception ex) {
 					ex.printStackTrace();

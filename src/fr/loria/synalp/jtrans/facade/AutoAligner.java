@@ -21,6 +21,7 @@ public class AutoAligner {
 	private final ProgressDisplay progress;
 	private final SwapDeflater swapWriter;
 	private final SwapInflater swapReader;
+	private Runnable refinementIterationHook;
 
 
 	/**
@@ -56,6 +57,11 @@ public class AutoAligner {
 
 		swapWriter = SwapDeflater.getSensibleSwapDeflater(true);
 		swapReader = new SwapInflater();
+	}
+
+
+	public void setRefinementIterationHook(Runnable r) {
+		refinementIterationHook = r;
 	}
 
 
@@ -120,10 +126,17 @@ public class AutoAligner {
 				progress.setIndeterminateProgress("Metropolis-Hastings...");
 			}
 
-			TransitionRefinery mh = new TransitionRefinery(
+			final TransitionRefinery refinery = new TransitionRefinery(
 					timeline, graph, mfcc, startFrame);
 
-			timeline = mh.refine();
+			while (!refinery.hasPlateaued()) {
+				timeline = refinery.step();
+
+				if (refinementIterationHook != null) {
+					graph.setWordAlignments(words, timeline, startFrame);
+					refinementIterationHook.run();
+				}
+			}
 		}
 
 		graph.setWordAlignments(words, timeline, startFrame);
