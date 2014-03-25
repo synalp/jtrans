@@ -36,6 +36,12 @@ public class AutoAligner {
 	public static boolean DELETE_BACKTRACK_SWAP_FILES = true;
 
 
+	/**
+	 * Compute alignment likelihood in each call to align().
+	 */
+	public static boolean COMPUTE_LIKELIHOODS = false;
+
+
 	public AutoAligner(File audio, int appxTotalFrames, ProgressDisplay progress) throws IOException {
 		this.audio = audio;
 		this.appxTotalFrames = appxTotalFrames;
@@ -59,8 +65,11 @@ public class AutoAligner {
 	 *
 	 * @param endFrame last frame to analyze. Use a negative number to use all
 	 *                 frames in the audio source
+	 *
+	 * @return likelihood of the alignment (or Double.NEGATIVE_INFINITY if
+	 * COMPUTE_LIKELIHOODS is false)
 	 */
-	public void align(
+	public double align(
 			final List<Word> words,
 			final int startFrame,
 			final int endFrame)
@@ -108,6 +117,15 @@ public class AutoAligner {
 				audio, text, startFrame, endFrame);
 
 		graph.setWordAlignments(words, timeline, startFrame);
+
+		if (COMPUTE_LIKELIHOODS) {
+			if (progress != null) {
+				progress.setIndeterminateProgress("Computing likelihood...");
+			}
+			return graph.alignmentLikelihood(timeline, mfcc, startFrame);
+		} else {
+			return Double.NEGATIVE_INFINITY;
+		}
 	}
 
 
