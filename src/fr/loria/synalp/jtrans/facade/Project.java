@@ -69,10 +69,14 @@ public class Project {
 	 * @param clear If true, clear any previously existing alignment information
 	 *              to start a new alignment from scratch. If false, don't touch
 	 *              aligned words; only attempt to align unaligned words.
+	 * @return overall cumulative likelihood (value meaningful only if
+	 * AutoAligner.COMPUTE_LIKELIHOODS is true)
 	 */
-	public void align(AutoAligner aligner, boolean clear)
+	public double align(AutoAligner aligner, boolean clear)
 			throws IOException, InterruptedException
 	{
+		double overallLikelihood = 0;
+
 		for (Track track: tracks) {
 			if (clear) {
 				track.clearAlignment();
@@ -92,21 +96,27 @@ public class Project {
 				Anchor ia = sandwich.getInitialAnchor();
 				Anchor fa = sandwich.getFinalAnchor();
 
-				aligner.align(
+				overallLikelihood += aligner.align(
 						sandwich.getWords(),
 						ia == null || !ia.hasTime()? 0: ia.getFrame(),
 						fa == null || !fa.hasTime()? -1: fa.getFrame());
 			}
 		}
+
+		return overallLikelihood;
 	}
 
 
 	/**
 	 * Aligns all words in all tracks of this project with timeless anchors.
+	 * @return overall cumulative likelihood (value meaningful only if
+	 * AutoAligner.COMPUTE_LIKELIHOODS is true)
 	 */
-	public void alignInterleaved(AutoAligner aligner)
+	public double alignInterleaved(AutoAligner aligner)
 			throws IOException, InterruptedException
 	{
+		double overallLikelihood = 0;
+
 		for (Track track: tracks) {
 			track.clearAlignment();
 		}
@@ -128,7 +138,7 @@ public class Project {
 				}
 			}
 
-			aligner.align(
+			overallLikelihood += aligner.align(
 					seq,
 					ia == null || !ia.hasTime()? 0: ia.getFrame(),
 					fa == null || !fa.hasTime()? -1: fa.getFrame());
@@ -144,7 +154,9 @@ public class Project {
 		// Align yet-unaligned overlaps
 
 //		progress.setIndeterminateProgress("Aligning overlaps...");
-		align(aligner, false);
+		overallLikelihood += align(aligner, false);
+
+		return overallLikelihood;
 	}
 
 

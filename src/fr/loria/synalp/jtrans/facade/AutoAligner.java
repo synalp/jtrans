@@ -39,6 +39,12 @@ public class AutoAligner {
 
 
 	/**
+	 * Compute alignment likelihood in each call to align().
+	 */
+	public static boolean COMPUTE_LIKELIHOODS = false;
+
+
+	/**
 	 * Refine the baseline alignment with Metropolis-Hastings after completing
 	 * Viterbi.
 	 */
@@ -73,8 +79,11 @@ public class AutoAligner {
 	 *
 	 * @param endFrame last frame to analyze. Use a negative number to use all
 	 *                 frames in the audio source
+	 *
+	 * @return likelihood of the alignment (or Double.NEGATIVE_INFINITY if
+	 * COMPUTE_LIKELIHOODS is false)
 	 */
-	public void align(
+	public double align(
 			final List<Word> words,
 			final int startFrame,
 			final int endFrame)
@@ -140,6 +149,21 @@ public class AutoAligner {
 		}
 
 		graph.setWordAlignments(words, timeline, startFrame);
+
+		if (COMPUTE_LIKELIHOODS) {
+			if (progress != null) {
+				progress.setIndeterminateProgress("Computing likelihood...");
+			}
+			double[] lhd = graph.alignmentLikelihood(timeline,
+					StateGraph.getData(timeline.length, mfcc, startFrame));
+			double sum = 0;
+			for (Double d: lhd) {
+				sum += d;
+			}
+			return sum;
+		} else {
+			return Double.NEGATIVE_INFINITY;
+		}
 	}
 
 

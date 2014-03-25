@@ -119,6 +119,10 @@ public class JTransCLI {
 						"Don't read objects from cache.");
 
 				acceptsAll(
+						Arrays.asList("L", "likelihood"),
+						"Compute alignment likelihood");
+
+				acceptsAll(
 						Arrays.asList("M", "metropolis-hastings"),
 						"Metropolis-Hastings post processing");
 			}
@@ -149,6 +153,11 @@ public class JTransCLI {
 		if (optset.has("bypass-cache")) {
 			Cache.READ_FROM_CACHE = false;
 			System.out.println("Won't read objects from cache.");
+		}
+
+		if (optset.has("L")) {
+			AutoAligner.COMPUTE_LIKELIHOODS = true;
+			System.out.println("Will compute alignment likelihood.");
 		}
 
 		if (optset.has("metropolis-hastings")) {
@@ -295,7 +304,8 @@ public class JTransCLI {
 			JTransGUI.installResources();
 		}
 
-		if (!cli.runAnchorDiffTest &&
+		if (!AutoAligner.COMPUTE_LIKELIHOODS &&
+				!cli.runAnchorDiffTest &&
 				(cli.outputFormats == null || cli.outputFormats.isEmpty()))
 		{
 			CrossPlatformFixes.setNativeLookAndFeel();
@@ -343,12 +353,16 @@ public class JTransCLI {
 			assert aligner != null;
 
 			System.out.println("Aligning...");
+			double lhd;
 			if (cli.clearTimes) {
-				project.alignInterleaved(aligner);
+				lhd = project.alignInterleaved(aligner);
 			} else {
-				project.align(aligner, true);
+				lhd = project.align(aligner, true);
 			}
 			System.out.println("Alignment done.");
+			if (AutoAligner.COMPUTE_LIKELIHOODS) {
+				System.out.println("Overall likelihood: " + lhd);
+			}
 		}
 
 		if (cli.runAnchorDiffTest) {
