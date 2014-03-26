@@ -2,7 +2,6 @@ package fr.loria.synalp.jtrans.viterbi;
 
 import edu.cmu.sphinx.util.LogMath;
 import fr.loria.synalp.jtrans.speechreco.s4.HMMModels;
-import fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -16,14 +15,11 @@ import java.util.Random;
  */
 public class TransitionRefinery {
 
-	private final float[][] data;
-
 	private int[] timeline;
-	private double[] lhd;
 	private double cLhd;
 
 	private Random random;
-	private StateGraph graph;
+	private AlignmentScorer scorer;
 	private LogMath log = HMMModels.getLogMath();
 
 	int rejectionStreak = 0;
@@ -57,27 +53,20 @@ public class TransitionRefinery {
 
 	/**
 	 * @param baseline Baseline alignment (as found e.g. with viterbi()).
-	 *                 Will be modified!
-	 * @param frameOffset Frame offset for the MFCC buffer *only*. *Not*
-	 *                    applicable to timeline!
 	 */
-	public TransitionRefinery(
-			int[] baseline,
-			StateGraph graph,
-			S4mfccBuffer mfcc,
-			int frameOffset)
-	{
+	public TransitionRefinery(int[] baseline, AlignmentScorer scorer) {
 		timeline = new int[baseline.length];
 		System.arraycopy(baseline, 0, timeline, 0, timeline.length);
-		this.graph = graph;
 
-		data = StateGraph.getData(baseline.length, mfcc, frameOffset);
 		random = new Random();
 
-		lhd = graph.alignmentLikelihood(baseline, data);
-		for (int i = 0; i < baseline.length; i++) {
-			cLhd += lhd[i];
-		}
+		this.scorer = scorer;
+
+		/*
+		lhd = scorer.alignmentLikelihood(baseline);
+		cLhd = Scorer.sum(lhd);
+		*/
+		cLhd = scorer.cumulativeAlignmentLikelihood(baseline);
 	}
 
 
@@ -140,7 +129,8 @@ public class TransitionRefinery {
 
 
 	public boolean hasPlateaued() {
-		return rejectionStreak >= METROPOLIS_REJECTION_STREAK_CAP;
+		//return rejectionStreak >= METROPOLIS_REJECTION_STREAK_CAP;
+		return false;
 	}
 
 
@@ -159,13 +149,13 @@ public class TransitionRefinery {
 		int backup = timeline[trans+1];
 		timeline[trans+1] = timeline[trans];
 
-		double[] newLhd = graph.alignmentLikelihood(timeline, data);
+		/*
+		double[] newLhd = scorer.alignmentLikelihood(timeline);
+		double newCLhd = Scorer.getSum(newLhd);
+		*/
+		double newCLhd = scorer.cumulativeAlignmentLikelihood(timeline);
 
-		double newCLhd = 0;
-		for (int i = 0; i < timeline.length; i++) {
-			newCLhd += newLhd[i];
-		}
-
+		/*
 		System.out.println("============= TRANSITION CHANGED AT FRAME " + trans + "=============");
 		System.out.println("=====CUMULATIVE: old: " + cLhd + " new: " + newCLhd);
 		for (int i = 0; i < timeline.length; i++) {
@@ -179,6 +169,7 @@ public class TransitionRefinery {
 				);
 			}
 		}
+		*/
 
 		boolean accept = newCLhd > cLhd;
 		final Accept status;
@@ -200,7 +191,7 @@ public class TransitionRefinery {
 		if (!accept) {
 			timeline[trans+1] = backup;
 		} else {
-			lhd = newLhd;
+			//lhd = newLhd;
 			cLhd = newCLhd;
 		}
 

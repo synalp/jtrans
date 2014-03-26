@@ -5,10 +5,7 @@ import fr.loria.synalp.jtrans.elements.Word;
 import fr.loria.synalp.jtrans.speechreco.s4.S4ForceAlignBlocViterbi;
 import fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer;
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
-import fr.loria.synalp.jtrans.viterbi.TransitionRefinery;
-import fr.loria.synalp.jtrans.viterbi.StateGraph;
-import fr.loria.synalp.jtrans.viterbi.SwapDeflater;
-import fr.loria.synalp.jtrans.viterbi.SwapInflater;
+import fr.loria.synalp.jtrans.viterbi.*;
 
 import java.io.*;
 import java.util.List;
@@ -130,13 +127,21 @@ public class AutoAligner {
 				new TimelineFactory(),
 				audio, text, startFrame, endFrame);
 
+		AlignmentScorer scorer = null;
+		if (METROPOLIS_HASTINGS_POST_PROCESSING || COMPUTE_LIKELIHOODS) {
+			scorer = new AlignmentScorer(graph.getStateCount(),
+					timeline.length,
+					AlignmentScorer.getData(timeline.length, mfcc, startFrame));
+		}
+
 		if (METROPOLIS_HASTINGS_POST_PROCESSING) {
 			if (progress != null) {
 				progress.setIndeterminateProgress("Metropolis-Hastings...");
 			}
 
+			assert scorer != null;
 			final TransitionRefinery refinery = new TransitionRefinery(
-					timeline, graph, mfcc, startFrame);
+					timeline, scorer);
 
 			while (!refinery.hasPlateaued()) {
 				timeline = refinery.step();
@@ -151,16 +156,11 @@ public class AutoAligner {
 		graph.setWordAlignments(words, timeline, startFrame);
 
 		if (COMPUTE_LIKELIHOODS) {
+			assert scorer != null;
 			if (progress != null) {
 				progress.setIndeterminateProgress("Computing likelihood...");
 			}
-			double[] lhd = graph.alignmentLikelihood(timeline,
-					StateGraph.getData(timeline.length, mfcc, startFrame));
-			double sum = 0;
-			for (Double d: lhd) {
-				sum += d;
-			}
-			return sum;
+			return scorer.cumulativeAlignmentLikelihood(timeline);
 		} else {
 			return Double.NEGATIVE_INFINITY;
 		}

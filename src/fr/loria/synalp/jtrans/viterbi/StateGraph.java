@@ -31,9 +31,6 @@ public class StateGraph {
 	*/
 	public static final int MAX_TRANSITIONS = 64;
 
-	/** Number of values in FloatData. */
-	public static final int FRAME_DATA_LENGTH = 39;
-
 	/** Pattern for non-phone grammar tokens. */
 	public final static Pattern NONPHONE_PATTERN =
 			Pattern.compile("^[^a-zA-Z]$");
@@ -582,122 +579,6 @@ public class StateGraph {
 	}
 
 
-	/**
-	 * Computes the likelihood of an alignment.
-	 * @param timeline alignment, maps frames to states (a base alignment may be
-	 *                 obtained with viterbi() + backtrack())
-	 * @return likelihoods per frame
-	 */
-	public double[] alignmentLikelihood(int[] timeline, float[][] data) {
-		assert data.length == timeline.length;
-
-		final int nFrames = timeline.length;
-		final LogMath lm = HMMModels.getLogMath();
-
-		int    nMatchF[]     = new int[nStates];
-		double sum[][]       = new double[nStates][FRAME_DATA_LENGTH];
-		double sumSq[][]     = new double[nStates][FRAME_DATA_LENGTH];
-		double avg[][]       = new double[nStates][FRAME_DATA_LENGTH];
-		double var[][]       = new double[nStates][FRAME_DATA_LENGTH];
-		double detVar[]      = new double[nStates];
-		double likelihood[]  = new double[nFrames];
-
-		// sum, sumSq, nMatchF
-		for (int f = 0; f < nFrames; f++) {
-			for (int d = 0; d < FRAME_DATA_LENGTH; d++) {
-				float x = data[f][d];
-				int s = timeline[f];
-				sum[s][d] += x;
-				sumSq[s][d] += x * x;
-				nMatchF[s]++;
-			}
-		}
-
-		// avg, var, detVar
-		for (int s = 0; s < nStates; s++) {
-			detVar[s] = 1;
-			for (int d = 0; d < FRAME_DATA_LENGTH; d++) {
-				avg[s][d] = sum[s][d] / nMatchF[s];
-				var[s][d] = sumSq[s][d] / nMatchF[s] - avg[s][d] * avg[s][d];
-				detVar[s] *= var[s][d];
-
-				// TODO var=min(var,10^-3) - avoids tiny values
-			}
-		}
-
-		// likelihood for each frame
-		for (int f = 0; f < nFrames; f++) {
-			final int s = timeline[f];
-
-			double K = -lm.linearToLog(Math.sqrt(
-					2*Math.PI * Math.abs(detVar[s])));
-
-			double dot = 0;
-
-			for (int d = 0; d < FRAME_DATA_LENGTH; d++) {
-				double numer = data[f][d] - avg[s][d];
-				dot += numer * numer / var[s][d];
-			}
-
-			likelihood[f] += K - .5 * dot;
-
-			/*
-			System.out.println("Frame " + f +
-					": State #" + s + ":" + states[s].getHMM().getBaseUnit().getName() +
-					",\tK = " + K +
-					",\tDot = " + dot +
-					",\tL = " + likelihood[f]);
-			*/
-		}
-
-		// debug
-		/*
-		for (int s = 0; s < nStates; s++) {
-			System.out.println("STATE #" + s + ":"
-					+ states[s].getHMM().getBaseUnit().getName());
-
-			for (int f = 0; f < nFrames; f++) {
-				if (s == timeline[f]) {
-					System.out.println(String.format(
-							"\tF = %4d\tL = %f ", f, likelihood[f]));
-				}
-			}
-		}
-		*/
-
-		return likelihood;
-	}
-
-
-	/**
-	 * @param mfcc audio data
-	 * @param frameOffset jump to this frame before reading audio data
-	 */
-	public static float[][] getData(
-			int nFrames,
-			S4mfccBuffer mfcc,
-			int frameOffset)
-	{
-		float data[][] = new float[nFrames][];
-
-		mfcc.gotoFrame(frameOffset);
-
-		// Get data
-		for (int f = 0; f < nFrames;) {
-			try {
-				data[f] = FloatData.toFloatData(mfcc.getData()).getValues();
-				assert data[f].length == FRAME_DATA_LENGTH;
-			} catch (IllegalArgumentException ex) {
-				// not a FloatData/DoubleData
-				continue;
-			}
-			f++; // successful
-		}
-
-		return data;
-	}
-
-
 	private void prettyPrintTimeline(int[] timeline) {
 		System.out.println("Note: only initial states are shown below");
 		System.out.println("    TIME   STATE#     UNIT");
@@ -844,9 +725,6 @@ public class StateGraph {
 		swapReader.init(index, swapFile);
 		int[] timeline = gv.backtrack(swapReader);
 		gv.prettyPrintTimeline(timeline);
-
-//		System.out.println("Computing alignment likelihood...");
-//		gv.alignmentLikelihood(timeline, mfcc, 0);
 	}
 
 }
