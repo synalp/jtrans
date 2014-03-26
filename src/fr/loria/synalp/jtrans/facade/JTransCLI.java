@@ -260,6 +260,7 @@ public class JTransCLI {
 		Project project;
 		Project reference;
 		PrintWriter pw = null;
+		int iterations = 0;
 
 		public AnchorDiffRIH(Project p, Project r) {
 			this.project = p;
@@ -267,6 +268,8 @@ public class JTransCLI {
 		}
 
 		public void run() {
+			iterations++;
+
 			if (null == pw) {
 				String name = "anchordiff_" + System.currentTimeMillis() + ".txt";
 				try {
@@ -286,6 +289,10 @@ public class JTransCLI {
 				absDiffSum += Math.abs(d);
 			}
 			pw.println(absDiffSum / (float) diffs.size());
+
+			if (iterations % 100 == 0) {
+				pw.flush();
+			}
 		}
 	}
 
