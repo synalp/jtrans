@@ -617,6 +617,10 @@ public class StateGraph {
 	{
 		assert alignable.size() == wordBoundaries.length;
 
+		for (Word w: alignable) {
+			w.clearAlignment();
+		}
+
 		int prevWord = -1;
 		int prevWordFrame0 = -1;
 		int currWord = -1;
