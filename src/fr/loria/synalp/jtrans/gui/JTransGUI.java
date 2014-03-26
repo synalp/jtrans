@@ -697,6 +697,16 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	}
 
 	public void alignAll(final boolean interleaved) {
+		if (project.audioFile == null) {
+			JOptionPane.showMessageDialog(
+					jf,
+					"Can't align because no audio file is attached to this project.\n" +
+					"Please set an audio file (File -> Load audio).",
+					"No audio file",
+					JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+
 		new Thread() {
 			@Override
 			public void run() {
