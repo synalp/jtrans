@@ -1,6 +1,7 @@
 package fr.loria.synalp.jtrans.viterbi;
 
 import edu.cmu.sphinx.util.LogMath;
+import fr.loria.synalp.jtrans.facade.JTransCLI;
 import fr.loria.synalp.jtrans.speechreco.s4.HMMModels;
 
 import java.io.BufferedWriter;
@@ -95,7 +96,7 @@ public class TransitionRefinery {
 		iterations++;
 
 		if (plot == null) {
-			final String plotName = "likelihood_" + System.currentTimeMillis() + ".txt";
+			final String plotName = JTransCLI.logID + "_likelihood.txt";
 			plot = new PrintWriter(new BufferedWriter(new FileWriter(plotName)));
 			System.err.println("Plot: " + plotName);
 		}

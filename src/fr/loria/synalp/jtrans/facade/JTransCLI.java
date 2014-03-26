@@ -17,6 +17,7 @@ import java.util.logging.LogManager;
 
 public class JTransCLI {
 
+	public static String logID = "JTrans_" + System.currentTimeMillis();
 	public MarkupLoader loader;
 	public File inputFile;
 	public File audioFile;
@@ -271,7 +272,7 @@ public class JTransCLI {
 			iterations++;
 
 			if (null == pw) {
-				String name = "anchordiff_" + System.currentTimeMillis() + ".txt";
+				String name = logID + "_anchordiff.txt";
 				try {
 					pw = new PrintWriter(new BufferedWriter(new FileWriter(name)));
 				} catch (IOException ex) {
@@ -321,6 +322,8 @@ public class JTransCLI {
 		}
 
 		progress = new PrintStreamProgressDisplay(2500, System.out);
+
+		logID += "_" + cli.inputFile.getName();
 
 		project = cli.loader.parse(cli.inputFile);
 		System.out.println("Project loaded.");
