@@ -22,12 +22,12 @@ public class Utils {
      * @return un tableau de String.
      */
     public static String[] stringToArrayString(String string) {
-        String[] temp = string.split("");
-        String[] str = new String[temp.length - 1];
-        for (int i = 1; i < temp.length; i++) {
-            str[i - 1] = temp[i];
-        }
-        return str;
+		// Don't use split("")! Its behavior changed in Java 8!
+		String[] str = new String[string.length()];
+		for (int i = 0; i < string.length(); i++) {
+			str[i] = String.valueOf(string.charAt(i));
+		}
+		return str;
     }
 
     /**
