@@ -108,7 +108,8 @@ public class JTransCLI {
 
 				acceptsAll(
 						Arrays.asList("C", "clear-times"),
-						"Clear manual anchor times before aligning");
+						"Clear manual anchor times before aligning. " +
+						"Will align with linear bridge.");
 
 				acceptsAll(
 						Arrays.asList("N", "no-align"),
@@ -127,6 +128,12 @@ public class JTransCLI {
 				acceptsAll(
 						Arrays.asList("L", "likelihood"),
 						"Compute alignment likelihood");
+
+				accepts(
+						"ignore-overlaps",
+						"(Experimental) Force linear bridge when aligning " +
+						"and ignore overlaps. Don't use unless you know what " +
+						"you are doing!");
 			}
 		};
 
@@ -160,6 +167,11 @@ public class JTransCLI {
 		if (optset.has("L")) {
 			AutoAligner.COMPUTE_LIKELIHOODS = true;
 			System.out.println("Will compute alignment likelihood.");
+		}
+
+		if (optset.has("ignore-overlaps")) {
+			Project.ALIGN_OVERLAPS = false;
+			System.out.println("Will ignore overlaps.");
 		}
 
 		inputFile = (File)optset.valueOf("f");
@@ -294,7 +306,7 @@ public class JTransCLI {
 		if (cli.align) {
 			System.out.println("Aligning...");
 			double lhd;
-			if (cli.clearTimes) {
+			if (cli.clearTimes || !Project.ALIGN_OVERLAPS) {
 				lhd = project.alignInterleaved(progress);
 			} else {
 				lhd = project.align(true, progress);

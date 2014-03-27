@@ -25,6 +25,9 @@ public class Project {
 			new AudioFormat(16000, 16, 1, true, false);
 
 
+	public static boolean ALIGN_OVERLAPS = true;
+
+
 	public List<Track> tracks = new ArrayList<Track>();
 
 	public File audioFile;
@@ -189,8 +192,10 @@ public class Project {
 		//----------------------------------------------------------------------
 		// Align yet-unaligned overlaps
 
-		progress.setIndeterminateProgress("Aligning overlaps...");
-		overallLikelihood += align(false, null);
+		if (ALIGN_OVERLAPS) {
+			progress.setIndeterminateProgress("Aligning overlaps...");
+			overallLikelihood += align(false, null);
+		}
 
 		return overallLikelihood;
 	}
