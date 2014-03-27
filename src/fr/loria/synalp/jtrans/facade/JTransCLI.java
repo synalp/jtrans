@@ -79,6 +79,11 @@ public class JTransCLI {
 				accepts("a", "audio file (wav, ogg, mp3)")
 						.withRequiredArg().ofType(File.class);
 
+				acceptsAll(
+						Arrays.asList("A", "detect-audio"),
+						"Automatically detect audio file in the same " +
+						"directory as the markup file.");
+
 				accepts("outdir", "output directory")
 						.withRequiredArg().ofType(File.class)
 						.defaultsTo(new File("."));
@@ -211,6 +216,12 @@ public class JTransCLI {
 			} else if (fn.endsWith(".txt")) {
 				loader = new RawTextLoader();
 			}
+		}
+
+		if (optset.has("detect-audio") && audioFile == null && inputFile != null) {
+			audioFile = FileUtils.detectHomonymousFile(
+					inputFile, AUDIO_EXTENSIONS);
+			System.out.println("Audio file detected: " + audioFile);
 		}
 	}
 

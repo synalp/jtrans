@@ -643,16 +643,8 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 			setAudioSource(forcedAudioFile);
 		} else if (project.audioFile == null) {
 			// Try to detect audio file from the project's file name
-			String pfn = markupFile.getName();
-			File possibleAudio = null;
-			for (String ext: "wav,ogg,mp3".split(",")) {
-				File f = new File(markupFile.getParentFile(),
-						pfn.substring(0, pfn.lastIndexOf('.')) + "." + ext);
-				if (f.exists()) {
-					possibleAudio = f;
-					break;
-				}
-			}
+			File possibleAudio = FileUtils.detectHomonymousFile(
+					markupFile, JTransCLI.AUDIO_EXTENSIONS);
 
 			if (possibleAudio != null) {
 				int rc = JOptionPane.showConfirmDialog(jf,

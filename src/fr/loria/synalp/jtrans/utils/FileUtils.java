@@ -183,4 +183,28 @@ public class FileUtils {
 			}
 		}
 	}
+
+
+	/**
+	 * Detects a file in the same directory as a reference file, bearing the
+	 * same name except for the extension.
+	 * @param file reference file
+	 * @param extensions allowed extensions, without the initial period, sorted
+	 *                   by priority (highest priority first)
+	 * @return a file, or null if no homonymous file was found
+	 */
+	public static File detectHomonymousFile(File file, String... extensions) {
+		// Try to detect audio file from the project's file name
+		String pfn = file.getName();
+		for (String ext: extensions) {
+			File f = new File(file.getParentFile(),
+					pfn.substring(0, pfn.lastIndexOf('.')) + "." + ext);
+			if (f.exists()) {
+				return f;
+			}
+		}
+		return null;
+	}
+
+
 }
