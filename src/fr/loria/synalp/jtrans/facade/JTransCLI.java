@@ -138,6 +138,11 @@ public class JTransCLI {
 						"(Experimental) Force linear bridge when aligning " +
 						"and ignore overlaps. Don't use unless you know what " +
 						"you are doing!");
+
+				accepts(
+						"equi",
+						"Use dumb linear alignment instead of Viterbi." +
+						"Don't use unless you know what you are doing!");
 			}
 		};
 
@@ -180,6 +185,11 @@ public class JTransCLI {
 		if (optset.has("ignore-overlaps")) {
 			Project.ALIGN_OVERLAPS = false;
 			System.out.println("Will ignore overlaps.");
+		}
+
+		if (optset.has("equi")) {
+			Project.USE_LINEAR_ALIGNMENT = true;
+			System.out.println("Will use linear alignment. WARNING: the alignment will suck!");
 		}
 
 		inputFile = (File)optset.valueOf("f");

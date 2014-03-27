@@ -28,6 +28,9 @@ public class Project {
 	public static boolean ALIGN_OVERLAPS = true;
 
 
+	public static boolean USE_LINEAR_ALIGNMENT = false;
+
+
 	public List<Track> tracks = new ArrayList<Track>();
 
 	public File audioFile;
@@ -62,8 +65,13 @@ public class Project {
 	public AutoAligner getStandardAligner(ProgressDisplay progress)
 			throws IOException
 	{
-		return new AutoAligner(
-				convertedAudioFile, (int)audioSourceTotalFrames, progress);
+		if (!USE_LINEAR_ALIGNMENT) {
+			return new ViterbiAligner(
+					convertedAudioFile, (int) audioSourceTotalFrames, progress);
+		} else {
+			return new LinearAligner(
+					convertedAudioFile, (int) audioSourceTotalFrames, progress);
+		}
 	}
 
 
