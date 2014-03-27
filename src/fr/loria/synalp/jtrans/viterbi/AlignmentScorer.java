@@ -1,5 +1,7 @@
 package fr.loria.synalp.jtrans.viterbi;
 
+import edu.cmu.sphinx.frontend.Data;
+import edu.cmu.sphinx.frontend.DataEndSignal;
 import edu.cmu.sphinx.frontend.FloatData;
 import edu.cmu.sphinx.util.LogMath;
 import fr.loria.synalp.jtrans.speechreco.s4.HMMModels;
@@ -60,9 +62,15 @@ public class AlignmentScorer {
 
 		// Get data
 		for (int f = 0; f < nFrames;) {
+			Data d = mfcc.getData();
+			if (d instanceof DataEndSignal) {
+				throw new Error("Out of data!!! "
+						+ (nFrames - f) + " frames missing!");
+			}
+
 			float[] values;
 			try {
-				values = FloatData.toFloatData(mfcc.getData()).getValues();
+				values = FloatData.toFloatData(d).getValues();
 			} catch (IllegalArgumentException ex) {
 				// not a FloatData/DoubleData
 				continue;
