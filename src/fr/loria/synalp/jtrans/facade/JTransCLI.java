@@ -10,14 +10,14 @@ import fr.loria.synalp.jtrans.utils.PrintStreamProgressDisplay;
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
 import joptsimple.*;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.LogManager;
 
 public class JTransCLI {
 
+	public static String logID = "JTrans_" + System.currentTimeMillis();
 	public MarkupLoader loader;
 	public File inputFile;
 	public File audioFile;
@@ -129,6 +129,10 @@ public class JTransCLI {
 						Arrays.asList("L", "likelihood"),
 						"Compute alignment likelihood");
 
+				acceptsAll(
+						Arrays.asList("M", "metropolis-hastings"),
+						"Metropolis-Hastings post processing");
+
 				accepts(
 						"ignore-overlaps",
 						"(Experimental) Force linear bridge when aligning " +
@@ -167,6 +171,10 @@ public class JTransCLI {
 		if (optset.has("L")) {
 			AutoAligner.COMPUTE_LIKELIHOODS = true;
 			System.out.println("Will compute alignment likelihood.");
+		}
+
+		if (optset.has("metropolis-hastings")) {
+			AutoAligner.METROPOLIS_HASTINGS_POST_PROCESSING = true;
 		}
 
 		if (optset.has("ignore-overlaps")) {
@@ -269,10 +277,59 @@ public class JTransCLI {
 	}
 
 
+	/**
+	 * Metropolis-Hastings Refinement Iteration Hook for accounting anchor differences
+	 */
+	private static class AnchorDiffRIH implements Runnable {
+		Project project;
+		Project reference;
+		PrintWriter pw = null;
+		int iterations = 0;
+
+		public AnchorDiffRIH(Project p, Project r) {
+			this.project = p;
+			this.reference = r;
+		}
+
+		public void run() {
+			iterations++;
+
+			if (null == pw) {
+				String name = logID + "_anchordiff.txt";
+				try {
+					pw = new PrintWriter(new BufferedWriter(new FileWriter(name)));
+				} catch (IOException ex) {
+					throw new Error(ex);
+				}
+				System.err.println("anchordiff: " + name);
+			}
+
+			project.clearAllAnchorTimes();
+			project.deduceTimes();
+			List<Integer> diffs = reference.anchorFrameDiffs(project);
+
+			int absDiffSum = 0;
+			for (Integer d: diffs) {
+				absDiffSum += Math.abs(d);
+			}
+			pw.println(absDiffSum / (float) diffs.size());
+
+			if (iterations % 100 == 0) {
+				pw.flush();
+			}
+		}
+	}
+
+
 	public static void main(String args[]) throws Exception {
+		final ProgressDisplay progress;
+		final Project project;
+		final Project reference;
+		final JTransCLI cli;
+
 		loadLoggingProperties();
 
-		JTransCLI cli = new JTransCLI(args);
+		cli = new JTransCLI(args);
 
 		if (!new File("res").exists()) {
 			JTransGUI.installResources();
@@ -287,10 +344,11 @@ public class JTransCLI {
 			return;
 		}
 
-		ProgressDisplay progress =
-				new PrintStreamProgressDisplay(2500, System.out);
+		progress = new PrintStreamProgressDisplay(2500, System.out);
 
-		Project project = cli.loader.parse(cli.inputFile);
+		logID += "_" + cli.inputFile.getName();
+
+		project = cli.loader.parse(cli.inputFile);
 		System.out.println("Project loaded.");
 
 		if (null != cli.audioFile) {
@@ -303,13 +361,34 @@ public class JTransCLI {
 			System.out.println("Anchor times cleared.");
 		}
 
+		if (cli.runAnchorDiffTest) {
+			reference = cli.loader.parse(cli.inputFile);
+		} else {
+			reference = null;
+		}
+
+		AutoAligner aligner = null;
 		if (cli.align) {
+			aligner = project.getStandardAligner(progress);
+		}
+
+		if (cli.runAnchorDiffTest) {
+			assert aligner != null;
+			assert reference != null;
+
+			aligner.setRefinementIterationHook(
+					new AnchorDiffRIH(project, reference));
+		}
+
+		if (cli.align) {
+			assert aligner != null;
+
 			System.out.println("Aligning...");
 			double lhd;
 			if (cli.clearTimes || !Project.ALIGN_OVERLAPS) {
-				lhd = project.alignInterleaved(progress);
+				lhd = project.alignInterleaved(aligner);
 			} else {
-				lhd = project.align(true, progress);
+				lhd = project.align(aligner, true);
 			}
 			System.out.println("Alignment done.");
 			if (AutoAligner.COMPUTE_LIKELIHOODS) {
@@ -318,10 +397,11 @@ public class JTransCLI {
 		}
 
 		if (cli.runAnchorDiffTest) {
-			Project reference = cli.loader.parse(cli.inputFile);
+			assert reference != null;
+
 			List<Integer> diffs = reference.anchorFrameDiffs(project);
 			printAnchorDiffStats(diffs);
-			System.exit(0);
+//			System.exit(0);
 		}
 
 		cli.outputDir.mkdirs();

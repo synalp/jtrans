@@ -59,6 +59,14 @@ public class Project {
 	}
 
 
+	public AutoAligner getStandardAligner(ProgressDisplay progress)
+			throws IOException
+	{
+		return new AutoAligner(
+				convertedAudioFile, (int)audioSourceTotalFrames, progress);
+	}
+
+
 	/**
 	 * Aligns all words in all tracks of this project with timed anchors.
 	 * @param clear If true, clear any previously existing alignment information
@@ -67,15 +75,10 @@ public class Project {
 	 * @return overall cumulative likelihood (value meaningful only if
 	 * AutoAligner.COMPUTE_LIKELIHOODS is true)
 	 */
-	public double align(boolean clear, ProgressDisplay progress)
+	public double align(AutoAligner aligner, boolean clear)
 			throws IOException, InterruptedException
 	{
 		double overallLikelihood = 0;
-
-		AutoAligner aligner = new AutoAligner(
-				convertedAudioFile, (int)audioSourceTotalFrames, progress);
-
-		int overlapCount = 0;
 
 		for (Track track: tracks) {
 			if (clear) {
@@ -96,12 +99,6 @@ public class Project {
 				Anchor ia = sandwich.getInitialAnchor();
 				Anchor fa = sandwich.getFinalAnchor();
 
-				overlapCount++;
-				if (progress != null) {
-					progress.setIndeterminateProgress("Aligning overlap #"
-							+ overlapCount + "...");
-				}
-
 				overallLikelihood += aligner.align(
 						sandwich.getWords(),
 						ia == null || !ia.hasTime()? 0: ia.getFrame(),
@@ -118,7 +115,7 @@ public class Project {
 	 * @return overall cumulative likelihood (value meaningful only if
 	 * AutoAligner.COMPUTE_LIKELIHOODS is true)
 	 */
-	public double alignInterleaved(ProgressDisplay progress)
+	public double alignInterleaved(AutoAligner aligner)
 			throws IOException, InterruptedException
 	{
 		double overallLikelihood = 0;
@@ -126,9 +123,6 @@ public class Project {
 		for (Track track: tracks) {
 			track.clearAlignment();
 		}
-
-		AutoAligner aligner = new AutoAligner(
-				convertedAudioFile, (int)audioSourceTotalFrames, progress);
 
 		//----------------------------------------------------------------------
 		// Align big interleaved sequences
@@ -156,8 +150,25 @@ public class Project {
 		//----------------------------------------------------------------------
 		// Deduce times on timeless anchors
 
-		progress.setIndeterminateProgress("Setting anchor times...");
+//		progress.setIndeterminateProgress("Setting anchor times...");
+		deduceTimes();
 
+		//----------------------------------------------------------------------
+		// Align yet-unaligned overlaps
+
+		if (ALIGN_OVERLAPS) {
+//			progress.setIndeterminateProgress("Aligning overlaps...");
+			overallLikelihood += align(aligner, false);
+		}
+
+		return overallLikelihood;
+	}
+
+
+	/**
+	 * Deduce times on timeless anchors
+	 */
+	public void deduceTimes() {
 		for (Track track: tracks) {
 			AnchorSandwichIterator iter = track.sandwichIterator();
 
@@ -188,16 +199,6 @@ public class Project {
 				}
 			}
 		}
-
-		//----------------------------------------------------------------------
-		// Align yet-unaligned overlaps
-
-		if (ALIGN_OVERLAPS) {
-			progress.setIndeterminateProgress("Aligning overlaps...");
-			overallLikelihood += align(false, null);
-		}
-
-		return overallLikelihood;
 	}
 
 

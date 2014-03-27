@@ -110,21 +110,7 @@ public class LinearBridge
 		Anchor finalAnchor = null;
 
 		while (hasNext()) {
-			AnchorSandwich longest = null;
-			int longestLength = 0;
-
-			// find longest simultaneous sandwich
-			for (AnchorSandwich sandwich: next()) {
-				if (sandwich == null || sandwich.isEmpty()) {
-					continue;
-				}
-
-				int length = sandwich.getWords().size();
-				if (length > longestLength) {
-					longest = sandwich;
-					longestLength = length;
-				}
-			}
+			AnchorSandwich longest = nextSingle();
 
 			if (longest == null) {
 				continue;
@@ -147,6 +133,33 @@ public class LinearBridge
 		}
 
 		return new AnchorSandwich(seq, initialAnchor, finalAnchor);
+	}
+
+
+	/**
+	 * Returns a single upcoming sandwich. In the case of simultaneous
+	 * sandwiches, returns the longest one (in terms of word count).
+	 *
+	 * TODO: overlapping non-simultaneous sandwiches (e.g. OFROM)
+	 */
+	public AnchorSandwich nextSingle() {
+		AnchorSandwich longest = null;
+		int longestLength = 0;
+
+		// find longest simultaneous sandwich
+		for (AnchorSandwich sandwich: next()) {
+			if (sandwich == null || sandwich.isEmpty()) {
+				continue;
+			}
+
+			int length = sandwich.getWords().size();
+			if (length > longestLength) {
+				longest = sandwich;
+				longestLength = length;
+			}
+		}
+
+		return longest;
 	}
 
 

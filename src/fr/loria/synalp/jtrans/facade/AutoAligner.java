@@ -5,9 +5,7 @@ import fr.loria.synalp.jtrans.elements.Word;
 import fr.loria.synalp.jtrans.speechreco.s4.S4ForceAlignBlocViterbi;
 import fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer;
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
-import fr.loria.synalp.jtrans.viterbi.StateGraph;
-import fr.loria.synalp.jtrans.viterbi.SwapDeflater;
-import fr.loria.synalp.jtrans.viterbi.SwapInflater;
+import fr.loria.synalp.jtrans.viterbi.*;
 
 import java.io.*;
 import java.util.List;
@@ -20,6 +18,7 @@ public class AutoAligner {
 	private final ProgressDisplay progress;
 	private final SwapDeflater swapWriter;
 	private final SwapInflater swapReader;
+	private Runnable refinementIterationHook;
 
 
 	/**
@@ -42,6 +41,13 @@ public class AutoAligner {
 	public static boolean COMPUTE_LIKELIHOODS = false;
 
 
+	/**
+	 * Refine the baseline alignment with Metropolis-Hastings after completing
+	 * Viterbi.
+	 */
+	public static boolean METROPOLIS_HASTINGS_POST_PROCESSING = false;
+
+
 	public AutoAligner(File audio, int appxTotalFrames, ProgressDisplay progress) throws IOException {
 		this.audio = audio;
 		this.appxTotalFrames = appxTotalFrames;
@@ -54,6 +60,11 @@ public class AutoAligner {
 
 		swapWriter = SwapDeflater.getSensibleSwapDeflater(true);
 		swapReader = new SwapInflater();
+	}
+
+
+	public void setRefinementIterationHook(Runnable r) {
+		refinementIterationHook = r;
 	}
 
 
@@ -116,13 +127,40 @@ public class AutoAligner {
 				new TimelineFactory(),
 				audio, text, startFrame, endFrame);
 
+		AlignmentScorer scorer = null;
+		if (METROPOLIS_HASTINGS_POST_PROCESSING || COMPUTE_LIKELIHOODS) {
+			scorer = new AlignmentScorer(graph.getStateCount(),
+					timeline.length,
+					AlignmentScorer.getData(timeline.length, mfcc, startFrame));
+		}
+
+		if (METROPOLIS_HASTINGS_POST_PROCESSING) {
+			if (progress != null) {
+				progress.setIndeterminateProgress("Metropolis-Hastings...");
+			}
+
+			assert scorer != null;
+			final TransitionRefinery refinery = new TransitionRefinery(
+					timeline, scorer);
+
+			while (!refinery.hasPlateaued()) {
+				timeline = refinery.step();
+
+				if (refinementIterationHook != null) {
+					graph.setWordAlignments(words, timeline, startFrame);
+					refinementIterationHook.run();
+				}
+			}
+		}
+
 		graph.setWordAlignments(words, timeline, startFrame);
 
 		if (COMPUTE_LIKELIHOODS) {
+			assert scorer != null;
 			if (progress != null) {
 				progress.setIndeterminateProgress("Computing likelihood...");
 			}
-			return graph.alignmentLikelihood(timeline, mfcc, startFrame);
+			return scorer.cumulativeAlignmentLikelihood(timeline);
 		} else {
 			return Double.NEGATIVE_INFINITY;
 		}
