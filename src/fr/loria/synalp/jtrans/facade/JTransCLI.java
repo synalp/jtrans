@@ -288,9 +288,31 @@ public class JTransCLI {
 
 
 	/**
+	 * Saves a project with output options specified on the command line.
+	 */
+	public void save(Project project)
+			throws ReflectiveOperationException, IOException
+	{
+		outputDir.mkdirs();
+
+		for (String fmt: outputFormats) {
+			System.out.println("Output: format '" + fmt + "' to directory "
+					+ outputDir);
+
+			fmt = fmt.toLowerCase();
+			String base = FileUtils.noExt(new File(outputDir,
+					inputFile.getName()).getAbsolutePath());
+
+			MarkupSaver saver = MarkupSaverPool.getInstance().make(fmt);
+			saver.save(project, new File(base + saver.getExt()));
+		}
+	}
+
+
+	/**
 	 * Metropolis-Hastings Refinement Iteration Hook for accounting anchor differences
 	 */
-	private static class AnchorDiffRIH implements Runnable {
+	private class AnchorDiffRIH implements Runnable {
 		Project project;
 		Project reference;
 		PrintWriter pw = null;
@@ -326,6 +348,11 @@ public class JTransCLI {
 
 			if (iterations % 100 == 0) {
 				pw.flush();
+				try {
+					save(project);
+				} catch (Exception ex) {
+					throw new Error(ex);
+				}
 			}
 		}
 	}
@@ -387,7 +414,7 @@ public class JTransCLI {
 			assert reference != null;
 
 			aligner.setRefinementIterationHook(
-					new AnchorDiffRIH(project, reference));
+					cli.new AnchorDiffRIH(project, reference));
 		}
 
 		if (cli.align) {
@@ -414,19 +441,7 @@ public class JTransCLI {
 //			System.exit(0);
 		}
 
-		cli.outputDir.mkdirs();
-
-		for (String fmt: cli.outputFormats) {
-			System.out.println("Output: format '" + fmt + "' to directory "
-					+ cli.outputDir);
-
-			fmt = fmt.toLowerCase();
-			String base = FileUtils.noExt(new File(cli.outputDir,
-					cli.inputFile.getName()).getAbsolutePath());
-
-			MarkupSaver saver = MarkupSaverPool.getInstance().make(fmt);
-			saver.save(project, new File(base + saver.getExt()));
-		}
+		cli.save(project);
 	}
 
 }
