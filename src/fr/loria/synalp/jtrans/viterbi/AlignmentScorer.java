@@ -19,6 +19,9 @@ public class AlignmentScorer {
 	/** Number of values in FloatData. */
 	public static final int FRAME_DATA_LENGTH = 39;
 
+	/** Keep variance values from getting too close to zero. */
+	public static final double MIN_VARIANCE = .001;
+
 	private final StateGraph graph;
 	private final float[][] data;
 	private final LogMath lm = HMMModels.getLogMath();
@@ -131,10 +134,11 @@ public class AlignmentScorer {
 			detVar[s] = 1;
 			for (int d = 0; d < FRAME_DATA_LENGTH; d++) {
 				avg[s][d] = sum[s][d] / nMatchF[s];
-				var[s][d] = sumSq[s][d] / nMatchF[s] - avg[s][d] * avg[s][d];
+				var[s][d] = Math.max(MIN_VARIANCE,
+						sumSq[s][d] / nMatchF[s] - avg[s][d] * avg[s][d]);
 				detVar[s] *= var[s][d];
+			}
 
-				// TODO var=min(var,10^-3) - avoids tiny values
 			}
 		}
 
