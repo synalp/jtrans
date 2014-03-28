@@ -19,22 +19,29 @@ public class AlignmentScorer {
 	/** Number of values in FloatData. */
 	public static final int FRAME_DATA_LENGTH = 39;
 
-	final int    nFrames;
-	final int    nStates;
-	int[]        nMatchF; // must be zeroed before use
-	double[][]   sum;     // must be zeroed before use
-	double[][]   sumSq;   // must be zeroed before use
-	double[][]   avg;
-	double[][]   var;
-	double[]     detVar;
-	double[]     likelihood;   // must be zeroed before use
-	float[][]    data;
-	final LogMath lm = HMMModels.getLogMath();
+	private final StateGraph graph;
+	private final float[][] data;
+	private final LogMath lm = HMMModels.getLogMath();
+
+	private final int nFrames;
+	private final int nStates;
+
+	private final int[]        nMatchF; // must be zeroed before use
+	private final double[][]   sum;     // must be zeroed before use
+	private final double[][]   sumSq;   // must be zeroed before use
+	private final double[][]   avg;
+	private final double[][]   var;
+	private final double[]     detVar;
+	private final double[]     likelihood;   // must be zeroed before use
 
 
-	public AlignmentScorer(int nStates, int nFrames, float[][] data) {
-		this.nFrames = nFrames;
-		this.nStates = nStates;
+	/**
+	 * @param data MFCC data
+	 */
+	public AlignmentScorer(StateGraph graph, float[][] data) {
+		this.graph = graph;
+		this.nFrames = data.length;
+		this.nStates = graph.getUniqueStateCount();
 		this.data = data;
 
 		nMatchF     = new int[nStates];
@@ -95,8 +102,7 @@ public class AlignmentScorer {
 
 	/**
 	 * Computes the likelihood of an alignment.
-	 * @param timeline alignment, maps frames to states (a base alignment may be
-	 *                 obtained with viterbi() + backtrack())
+	 * @param timeline alignment that maps frames to nodes in the graph
 	 * @return likelihoods per frame
 	 */
 	public double[] alignmentLikelihood(int[] timeline) {
@@ -113,7 +119,7 @@ public class AlignmentScorer {
 		for (int f = 0; f < nFrames; f++) {
 			for (int d = 0; d < FRAME_DATA_LENGTH; d++) {
 				float x = data[f][d];
-				int s = timeline[f];
+				int s = graph.getUniqueStateIdAt(timeline[f]);
 				sum[s][d] += x;
 				sumSq[s][d] += x * x;
 				nMatchF[s]++;
@@ -134,7 +140,7 @@ public class AlignmentScorer {
 
 		// likelihood for each frame
 		for (int f = 0; f < nFrames; f++) {
-			final int s = timeline[f];
+			int s = graph.getUniqueStateIdAt(timeline[f]);
 
 			double K = -lm.linearToLog(Math.sqrt(
 					2*Math.PI * Math.abs(detVar[s])));

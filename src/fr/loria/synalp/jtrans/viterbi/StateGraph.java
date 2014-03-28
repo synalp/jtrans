@@ -179,6 +179,11 @@ public class StateGraph {
 	}
 
 
+	public int getUniqueStateIdAt(int nodeIdx) {
+		return nodeStates[nodeIdx];
+	}
+
+
 	public String getPhoneAt(int nodeIdx) {
 		return getStateAt(nodeIdx).getHMM().getBaseUnit().getName();
 	}
@@ -187,6 +192,11 @@ public class StateGraph {
 	/** Returns the total number of nodes in the grammar. */
 	public int getNodeCount() {
 		return nNodes;
+	}
+
+
+	public int getUniqueStateCount() {
+		return uniqueStates.length;
 	}
 
 

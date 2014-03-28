@@ -116,8 +116,7 @@ public abstract class AutoAligner {
 
 		AlignmentScorer scorer = null;
 		if (METROPOLIS_HASTINGS_POST_PROCESSING || COMPUTE_LIKELIHOODS) {
-			scorer = new AlignmentScorer(graph.getNodeCount(),
-					timeline.length,
+			scorer = new AlignmentScorer(graph,
 					AlignmentScorer.getData(timeline.length, mfcc, startFrame));
 		}
 
