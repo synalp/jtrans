@@ -40,23 +40,34 @@ public class StateGraph {
 	private static final String[] OPT_SILENCE_RULE = "[ SIL ]".split(" ");
 
 
-	/** All HMM states in the grammar. */
-	private HMMState[] states;
-	// Note: using a set of unique states barely improves performance since
-	// scores are typically cached (see ScoreCachingSenone.getScore)
+	/**
+	 * Maps a phone to the index of the first unique HMM state in the
+	 * uniqueStates array.
+	 */
+	private Map<String, Integer> phoneUStates = new HashMap<String, Integer>();
+
+	/** Pool of unique HMM states. */
+	private HMMState[] uniqueStates;
 
 	/**
-	 * Number of incoming transitions for each HMM state.
+	 * All nodes in the grammar.
+	 * Each node points to a unique HMM state ID.
+	 * There are 3 HMM states per phone, hence 3 nodes per phone.
+	 */
+	private int[] nodeStates;
+
+	/**
+	 * Number of incoming transitions for each node.
 	 * Values in this array should not exceed MAX_TRANSITIONS, otherwise an
 	 * index out of bounds exception will eventually be thrown.
 	 */
 	private final byte[] inCount;
 
 	/**
-	 * HMM State IDs for each incoming transition.
+	 * Node IDs for each incoming transition.
 	 * The first entry is *always* the same state (loop).
 	 */
-	private final int[][] inState;
+	private final int[][] inNode;
 
 	/**
 	 * Probability of each incoming transition.
@@ -67,28 +78,23 @@ public class StateGraph {
 	/** Total number of non-empty phones contained in the grammar. */
 	private final int nPhones;
 
-	/** Total number of HMM states in the grammar. */
-	private final int nStates;
+	/** Total number of nodes in the grammar. */
+	private final int nNodes;
 
-	/** Insertion point for new states in the states array. */
+	/** Insertion point for new nodes in the nodeStates array. */
 	private int insertionPoint;
 
 	/** Human-readable words at the basis of this grammar */
 	private final String[] words;
 
 	/**
-	 * Indices of the initial HMM state of each word.
+	 * Indices of the initial node of each word (i.e. that points to the first
+	 * HMM state of the first phone of the word).
 	 * All potential pronunciations for a given word are inserted contiguously
-	 * in the states array. The order in which the HMM states are inserted
+	 * in the nodes array. The order in which the nodes are inserted
 	 * reflects the order of the words.
 	 */
 	private final int[] wordBoundaries;
-
-	/** Acoustic model (for HMM state lookup) */
-	private final AcousticModel acMod;
-
-	/** Unit pool (for HMM state lookup) */
-	private final UnitManager unitMgr;
 
 	/** Used to report progress in viterbi() and backtrack() (may be null) */
 	private ProgressDisplay progress = null;
@@ -168,13 +174,29 @@ public class StateGraph {
 	}
 
 
+	public HMMState getStateAt(int nodeIdx) {
+		return uniqueStates[nodeStates[nodeIdx]];
+	}
+
+
+	public String getPhoneAt(int nodeIdx) {
+		return getStateAt(nodeIdx).getHMM().getBaseUnit().getName();
+	}
+
+
+	/** Returns the total number of nodes in the grammar. */
+	public int getNodeCount() {
+		return nNodes;
+	}
+
+
 	/**
 	 * Parses a grammar rule and adds the corresponding states to the vector.
 	 * The states are bound together as needed, effectively creating a graph.
 	 * @param tokenIter iterator on rule tokens
-	 * @param tails IDs of states that have no outbound transitions yet (they
-	 *              are always the 3rd state in a phone). New states will be
-	 *              chained to tail states. IMPORTANT: this set is modified by
+	 * @param tails IDs of nodes that have no outbound transitions yet (they
+	 *              are always the 3rd state in a phone). New nodes will be
+	 *              chained to tail nodes. IMPORTANT: this set is modified by
 	 *              this method! After the method has run, the set contains the
 	 *              new tails in the graph.
 	 * @return token an unknown token that stopped the parsing of the grammar,
@@ -191,7 +213,7 @@ public class StateGraph {
 				String phone = PhoneticForcedGrammar.convertPhone(token);
 				int posNewState0 = insertionPoint;
 
-				// Create the actual states
+				// Create the actual nodes
 				insertStateTriplet(phone);
 
 				// Bind tails to the 1st state that just got created
@@ -251,52 +273,43 @@ public class StateGraph {
 
 	/**
 	 * Creates a new incoming transition, but does not set its probability.
-	 * @param dest arrival state
-	 * @param src departure state
+	 * @param dest arrival node
+	 * @param src departure node
 	 */
 	private void addIncomingTransition(int dest, int src) {
 		assert inCount[dest] < MAX_TRANSITIONS - 1: "too many transitions";
-		inState[dest][inCount[dest]++] = src;
+		inNode[dest][inCount[dest]++] = src;
 	}
 
 
 	/**
-	 * Inserts three emitting HMM states corresponding to a phone.
-	 * Binds the three states together. The first state has no inbound
-	 * transitions and the third state has no outbound transitions.
+	 * Inserts three emitting HMM states (corresponding to a phone) as three
+	 * nodes in the graph. Binds the three nodes together. The first node has
+	 * no inbound transitions and the third node has no outbound transitions.
 	 */
 	private int insertStateTriplet(String phone) {
-		// find HMM for this phone
-		HMM hmm = acMod.lookupNearestHMM(
-				unitMgr.getUnit(phone), HMMPosition.UNDEFINED, false);
+		int s = phoneUStates.get(phone);
 
-		// add phone states
+		// add nodes for each state in the phone
 		for (int i = 0; i < 3; i++) {
 			int j = insertionPoint + i;
-			states[j] = hmm.getState(i);
-
-			assert states[j].isEmitting();
-			assert !states[j].isExitState();
-			assert states[j].getSuccessors().length == 2;
+			nodeStates[j] = s + i;
+			HMMState state = uniqueStates[nodeStates[j]];
 
 			addIncomingTransition(j, j);
 			if (i > 0) {
 				addIncomingTransition(j, j-1);
 			}
 
-			assert states[j].getSuccessors().length == 2;
-			for (HMMStateArc arc: states[j].getSuccessors()) {
+			for (HMMStateArc arc: state.getSuccessors()) {
 				HMMState arcState = arc.getHMMState();
 				if (i == 2 && arcState.isExitState())
 					continue;
 
 				float p = arc.getLogProbability();
-				if (arcState == states[j]) {
+				if (arcState == state) {
 					inProb[j][0] = p;
 				} else {
-					assert i != 2;
-					assert !arcState.isExitState();
-					assert arcState == hmm.getState(i+1);
 					inProb[j+1][1] = p;
 				}
 			}
@@ -309,22 +322,82 @@ public class StateGraph {
 
 	/**
 	 * Sets uniform inter-phone probabilities on the first state of an HMM.
-	 * @param stateId ID of the first state of an HMM
+	 * @param nodeId ID of the first state of an HMM
 	 */
-	private void setUniformInterPhoneTransitionProbabilities(int stateId) {
-		assert stateId % 3 == 0 : "not a first state (i.e. multiple of 3)";
-		assert stateId > 0 : "state #0 doesn't have any incoming transitions";
-		assert inCount[stateId] >= 2 : "not linked to the rest of the graph";
-		assert inProb[stateId][0] != 0f : "loop probability must be initialized";
-		assert inProb[stateId][1] == 0f : "non-loop probabilities must be uninitialized";
+	private void setUniformInterPhoneTransitionProbabilities(int nodeId) {
+		assert nodeId % 3 == 0 : "not a first state (i.e. multiple of 3)";
+		assert nodeId > 0 : "node #0 doesn't have any incoming transitions";
+		assert inCount[nodeId] >= 2 : "not linked to the rest of the graph";
+		assert inProb[nodeId][0] != 0f : "loop probability must be initialized";
+		assert inProb[nodeId][1] == 0f : "non-loop probabilities must be uninitialized";
 
 		LogMath lm = HMMModels.getLogMath();
-		double linearLoopProb = lm.logToLinear(inProb[stateId][0]);
+		double linearLoopProb = lm.logToLinear(inProb[nodeId][0]);
 		float p = lm.linearToLog(
-				(1f - linearLoopProb) / (double)(inCount[stateId] - 1));
+				(1f - linearLoopProb) / (double)(inCount[nodeId] - 1));
 
-		for (byte j = 1; j < inCount[stateId]; j++)
-			inProb[stateId][j] = p;
+		for (byte j = 1; j < inCount[nodeId]; j++)
+			inProb[nodeId][j] = p;
+	}
+
+
+	private void initUniqueStates(String[][] rules) {
+		assert uniqueStates == null : "unique states already initialized";
+
+		AcousticModel acMod = HMMModels.getAcousticModels();
+		UnitManager unitMgr = new UnitManager();
+
+		Set<String> unique = new HashSet<String>();
+		int insert = 0;
+
+		unique.add(SILENCE_RULE[0]);
+
+		for (String[] ruleTokens: rules) {
+			if (null == ruleTokens)
+				continue;
+
+			for (String token: ruleTokens) {
+				if (!NONPHONE_PATTERN.matcher(token).matches()) {
+					unique.add(PhoneticForcedGrammar.convertPhone(token));
+				}
+			}
+		}
+
+		uniqueStates = new HMMState[3 * unique.size()];
+
+		for (String phone: unique) {
+			phoneUStates.put(phone, insert);
+			
+			// find HMM for this phone
+			HMM hmm = acMod.lookupNearestHMM(
+					unitMgr.getUnit(phone), HMMPosition.UNDEFINED, false);
+
+			for (int i = 0; i < 3; i++) {
+				HMMState state = hmm.getState(i);
+				uniqueStates[insert + i] = state;
+
+				assert state.isEmitting();
+				assert !state.isExitState();
+				assert state.getSuccessors().length == 2;
+
+				for (HMMStateArc arc: state.getSuccessors()) {
+					HMMState arcState = arc.getHMMState();
+					if (i == 2 && arcState.isExitState()) {
+						continue;
+					}
+
+					if (arcState != state) {
+						assert i != 2;
+						assert !arcState.isExitState();
+						assert arcState == hmm.getState(i+1);
+					}
+				}
+			}
+
+			insert += 3;
+		}
+
+		assert insert == unique.size() * 3;
 	}
 
 
@@ -336,20 +409,17 @@ public class StateGraph {
 	 *              index of the word corresponding to the rule.
 	 */
 	public StateGraph(String[] words, String[][] rules) {
-		acMod = HMMModels.getAcousticModels();
-		unitMgr = new UnitManager();
-
 		this.words = words;
 		wordBoundaries = new int[words.length];
 
+		initUniqueStates(rules);
 		nPhones = countPhones(rules);
-		nStates = 3 * nPhones;
+		nNodes  = 3 * nPhones;
 
-		states = new HMMState[nStates];
-
-		inCount = new byte   [nStates];
-		inState = new int    [nStates][MAX_TRANSITIONS];
-		inProb  = new float  [nStates][MAX_TRANSITIONS];
+		nodeStates = new int  [nNodes];
+		inCount    = new byte [nNodes];
+		inNode     = new int  [nNodes][MAX_TRANSITIONS];
+		inProb     = new float[nNodes][MAX_TRANSITIONS];
 
 		//----------------------------------------------------------------------
 		// Build state graph
@@ -386,19 +456,19 @@ public class StateGraph {
 		parseRule(SILENCE_RULE, tails);
 
 		//----------------------------------------------------------------------
-		// All states have been inserted
+		// All node have been inserted
 
-		assert insertionPoint == nStates : "predicted state count not met : "
-				+ "actual " + insertionPoint + ", expected " + nStates;
-		assert inCount[0] == 1 : "first state can only have 1 incoming transition";
+		assert insertionPoint == nNodes : "predicted node count not met : "
+				+ "actual " + insertionPoint + ", expected " + nNodes;
+		assert inCount[0] == 1 : "first node can only have 1 incoming transition";
 
 		// correct inter-phone transition probabilities
-		for (int i = 3; i < nStates; i += 3) {
+		for (int i = 3; i < nNodes; i += 3) {
 			setUniformInterPhoneTransitionProbabilities(i);
 		}
 
 		// last state can loop forever
-		inProb[nStates-1][0] = 0f; // log domain
+		inProb[nNodes -1][0] = 0f; // log domain
 	}
 
 
@@ -428,13 +498,12 @@ public class StateGraph {
 
 		w.write("digraph {");
 
-		for (int i = 0; i < nStates; i++) {
-			HMMState s = states[i];
+		for (int i = 0; i < nNodes; i++) {
 			w.write(String.format("\nnode%d [ label=\"%s %d\" ]", i,
-					s.getHMM().getBaseUnit().getName(), s.getState()));
+					getPhoneAt(i), getStateAt(i).getState()));
 			for (byte j = 0; j < inCount[i]; j++) {
 				w.write(String.format("\nnode%d -> node%d [ label=%f ]",
-						inState[i][j], i, lm.logToLinear(inProb[i][j])));
+						inNode[i][j], i, lm.logToLinear(inProb[i][j])));
 			}
 		}
 
@@ -444,7 +513,7 @@ public class StateGraph {
 
 
 	/**
-	 * Finds the most likely predecessor of each HMM state for each audio frame
+	 * Finds the most likely predecessor of each node for each audio frame
 	 * (using the Viterbi algorithm).
 	 *
 	 * Each iteration builds upon the likelihoods found in the previous
@@ -480,14 +549,14 @@ public class StateGraph {
 			throws IOException, InterruptedException
 	{
 		// Probability vectors
-		float[] vpf = new float[nStates]; // vector for previous frame (read-only)
-		float[] vcf = new float[nStates]; // vector for current frame (write-only)
+		float[] vpf = new float[nNodes]; // vector for previous frame (read-only)
+		float[] vcf = new float[nNodes]; // vector for current frame (write-only)
 
 		// ID of the incoming transition that yielded bestReachProb for each state
-		byte[] bestInTrans = new byte[nStates];
+		byte[] bestInTrans = new byte[nNodes];
 
 		// Initialize probability vector
-		// We only have one initial state (state #0), probability 1
+		// We only have one initial node (node #0), probability 1
 		Arrays.fill(vpf, Float.NEGATIVE_INFINITY);
 		vpf[0] = 0; // Probabilities are in the log domain
 
@@ -512,23 +581,25 @@ public class StateGraph {
 						(float) (f-startFrame) / (float) frameCount);
 			}
 
-			for (int i = 0; i < nStates; i++) {
+			for (int i = 0; i < nNodes; i++) {
 				// Emission probability (frame score)
-				float emission = states[i].getScore(frame);
+				// We could cache this for unique states, but in practice
+				// ScoreCachingSenone already does it for us.
+				float emission = getStateAt(i).getScore(frame);
 
 				assert inCount[i] >= 1;
 
-				// Probability to reach a state given the previous vector v
-				// i.e. max(P(k -> i) * v[k]) for each predecessor k of state #i
+				// Probability to reach a node given the previous vector v
+				// i.e. max(P(k -> i) * v[k]) for each predecessor k of node #i
 				float bestReachProb;
 
 				// Initialize with first incoming transition
-				bestReachProb = inProb[i][0] + vpf[inState[i][0]]; // log domain
+				bestReachProb = inProb[i][0] + vpf[inNode[i][0]]; // log domain
 				bestInTrans[i] = 0;
 
 				// Find best probability among all incoming transitions
 				for (byte j = 1; j < inCount[i]; j++) {
-					float p = inProb[i][j] + vpf[inState[i][j]]; // log domain
+					float p = inProb[i][j] + vpf[inNode[i][j]]; // log domain
 					if (p > bestReachProb) {
 						bestReachProb = p;
 						bestInTrans[i] = j;
@@ -551,23 +622,23 @@ public class StateGraph {
 
 
 	/**
-	 * Finds the most likely path between the initial and final states using the
+	 * Finds the most likely path between the initial and final nodes using the
 	 * table of most likely predecessors found by viterbi().
 	 *
 	 * @see StateGraph#viterbi first part of the pathfinding process
 	 * @param swapReader reader for the swap file produced by viterbi()
-	 * @return A time line of the most likely state at each frame. Given as an
-	 * array of state IDs, with array indices being frame numbers relative to
+	 * @return A time line of the most likely node at each frame. Given as an
+	 * array of node IDs, with array indices being frame numbers relative to
 	 * the first frame given to StateGraph#viterbi.
 	 */
 	public int[] backtrack(SwapInflater swapReader) throws IOException {
-		int pathLead = nStates-1;
+		int leadNode = nNodes - 1;
 		int[] timeline = new int[swapReader.getFrameCount()];
 		for (int f = timeline.length-1; f >= 0; f--) {
-			byte transID = swapReader.getIncomingTransition(f, pathLead);
-			pathLead = inState[pathLead][transID];
-			timeline[f] = pathLead;
-			assert pathLead >= 0;
+			byte transID = swapReader.getIncomingTransition(f, leadNode);
+			leadNode = inNode[leadNode][transID];
+			timeline[f] = leadNode;
+			assert leadNode >= 0;
 
 			if (progress != null) {
 				progress.setProgress("Viterbi backward pass: frame " + f,
@@ -587,7 +658,7 @@ public class StateGraph {
 				System.out.println(String.format("%8.2f %8d %8s",
 						TimeConverter.frame2sec(f),
 						timeline[f],
-						states[timeline[f]].getHMM().getBaseUnit()));
+						getPhoneAt(timeline[f])));
 			}
 		}
 
@@ -650,7 +721,7 @@ public class StateGraph {
 			if (f == 0 || prevState/3 != currState/3) {
 				if (prevWord >= 0 && prevState >= 0) {
 					alignable.get(currWord).addPhone(
-							states[prevState].getHMM().getBaseUnit().getName(),
+							getPhoneAt(prevState),
 							offset + state0Frame0,
 							offset + f-1);
 				}
@@ -668,17 +739,11 @@ public class StateGraph {
 			// Add last phone
 			if (prevState >= 0) {
 				alignable.get(prevWord).addPhone(
-						states[prevState].getHMM().getBaseUnit().getName(),
+						getPhoneAt(prevState),
 						offset + state0Frame0,
 						offset + timeline.length-1);
 			}
 		}
-	}
-
-
-	/** Returns the total number of HMM states in the grammar. */
-	public int getStateCount() {
-		return nStates;
 	}
 
 
@@ -694,7 +759,7 @@ public class StateGraph {
 
 		StateGraph gv = new StateGraph(words);
 		System.out.println("PHONE COUNT: " + gv.nPhones);
-		System.out.println("GRAPH SIZE: " + gv.nStates);
+		System.out.println("GRAPH SIZE: " + gv.nNodes);
 		gv.dumpDot(new FileWriter("grammar_vector.dot"));
 
 		AudioFileDataSource afds = new AudioFileDataSource(3200, null);
@@ -713,7 +778,7 @@ public class StateGraph {
 		if (!quick) {
 			long t0 = System.currentTimeMillis();
 			SwapDeflater swapper = SwapDeflater.getSensibleSwapDeflater(true);
-			swapper.init(gv.nStates, new FileOutputStream(swapFile));
+			swapper.init(gv.nNodes, new FileOutputStream(swapFile));
 			gv.viterbi(mfcc, swapper, 0, -1);
 			System.out.println("VITERBI TOOK " + (System.currentTimeMillis()-t0)/1000L + " SECONDS");
 			index = swapper.getIndex();

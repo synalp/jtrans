@@ -60,7 +60,7 @@ public class ViterbiAligner extends AutoAligner {
 
 		int appxEndFrame = endFrame < 0? appxTotalFrames: endFrame;
 		long projectedSize =
-				(long)(appxEndFrame-startFrame+1) * graph.getStateCount();
+				(long)(appxEndFrame-startFrame+1) * graph.getNodeCount();
 		assert projectedSize >= 0: "integer overflow";
 
 		if (projectedSize <= SWAP_THRESHOLD_BYTES) {
@@ -96,7 +96,7 @@ public class ViterbiAligner extends AutoAligner {
 		//----------------------------------------------------------------------
 		// Run alignment
 
-		swapWriter.init(graph.getStateCount(), out);
+		swapWriter.init(graph.getNodeCount(), out);
 		graph.viterbi(mfcc, swapWriter, startFrame, endFrame);
 
 		swapReader.init(swapWriter.getIndex(), inFactory);

@@ -31,7 +31,7 @@ public class LinearAligner extends AutoAligner {
 			throws IOException, InterruptedException
 	{
 		final int length = endFrame - startFrame + 1;
-		return fillInterpolate(graph.getStateCount(), new int[length]);
+		return fillInterpolate(graph.getNodeCount(), new int[length]);
 	}
 
 
