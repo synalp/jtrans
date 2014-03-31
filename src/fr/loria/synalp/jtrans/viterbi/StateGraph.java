@@ -707,7 +707,9 @@ public class StateGraph {
 		int currWord = -1;
 
 		int prevState = -1;
-		int state0Frame0 = -1; // 1st frame of the 1st state of the ongoing phone
+		int prevStateWord = -1; // word into which the previous state should be inserted
+		// (technically, the phone pertaining to the previous state)
+		int prevStateFrame0 = -1; // 1st frame of the 1st state of the ongoing phone
 
 		for (int f = 0; f < timeline.length; f++) {
 			int currState = timeline[f];
@@ -729,14 +731,16 @@ public class StateGraph {
 			}
 
 			if (f == 0 || prevState/3 != currState/3) {
-				if (prevWord >= 0 && prevState >= 0) {
-					alignable.get(currWord).addPhone(
+				if (prevStateWord >= 0) {
+					assert prevState >= 0;
+					alignable.get(prevStateWord).addPhone(
 							getPhoneAt(prevState),
-							offset + state0Frame0,
+							offset + prevStateFrame0,
 							offset + f-1);
 				}
+				prevStateWord = currWord;
 				prevState = currState;
-				state0Frame0 = f;
+				prevStateFrame0 = f;
 			}
 		}
 
@@ -745,14 +749,15 @@ public class StateGraph {
 			alignable.get(prevWord).setSegment(
 					offset + prevWordFrame0,
 					offset + timeline.length-1);
+		}
 
-			// Add last phone
-			if (prevState >= 0) {
-				alignable.get(prevWord).addPhone(
-						getPhoneAt(prevState),
-						offset + state0Frame0,
-						offset + timeline.length-1);
-			}
+		// Add last phone
+		if (prevStateWord >= 0) {
+			assert prevState >= 0;
+			alignable.get(prevStateWord).addPhone(
+					getPhoneAt(prevState),
+					offset + prevStateFrame0,
+					offset + timeline.length-1);
 		}
 	}
 
