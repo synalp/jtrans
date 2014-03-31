@@ -200,29 +200,36 @@ public class StateGraphTest {
 				111, 112, 113,
 		};
 
-		sg.setWordAlignments(phrase, timeline, 0);
+		// spice things up with some offset
+		final int F = 1000;
 
-		Assert.assertEquals(3, tu.getSegment().getStartFrame());
-		Assert.assertEquals(8, tu.getSegment().getEndFrame());
+		sg.setWordAlignments(phrase, timeline, F);
+
+		Assert.assertEquals(F+3, tu.getSegment().getStartFrame());
+		Assert.assertEquals(F+8, tu.getSegment().getEndFrame());
 		Assert.assertEquals(2, tu.getPhones().size());
 		Assert.assertEquals("t", tu.getPhones().get(0).toString());
+		Assert.assertEquals(F+3, tu.getPhones().get(0).getSegment().getStartFrame());
+		Assert.assertEquals(F+5, tu.getPhones().get(0).getSegment().getEndFrame());
+		Assert.assertEquals(F+6, tu.getPhones().get(1).getSegment().getStartFrame());
+		Assert.assertEquals(F+8, tu.getPhones().get(1).getSegment().getEndFrame());
 		Assert.assertEquals("y", tu.getPhones().get(1).toString());
 
-		Assert.assertEquals(9, peux.getSegment().getStartFrame());
-		Assert.assertEquals(14, peux.getSegment().getEndFrame());
+		Assert.assertEquals(F+9, peux.getSegment().getStartFrame());
+		Assert.assertEquals(F+14, peux.getSegment().getEndFrame());
 		Assert.assertEquals(2, peux.getPhones().size());
 		Assert.assertEquals("p", peux.getPhones().get(0).toString());
 		Assert.assertEquals("eu", peux.getPhones().get(1).toString());
 
-		Assert.assertEquals(15, pas.getSegment().getStartFrame());
-		Assert.assertEquals(23, pas.getSegment().getEndFrame()); // (+ sil)
+		Assert.assertEquals(F+15, pas.getSegment().getStartFrame());
+		Assert.assertEquals(F+23, pas.getSegment().getEndFrame()); // (+ sil)
 		Assert.assertEquals(3, pas.getPhones().size());  // (+ sil)
 		Assert.assertEquals("p", pas.getPhones().get(0).toString());
 		Assert.assertEquals("a", pas.getPhones().get(1).toString());
 		Assert.assertEquals("SIL", pas.getPhones().get(2).toString());
 
-		Assert.assertEquals(24, savoir.getSegment().getStartFrame());
-		Assert.assertEquals(44, savoir.getSegment().getEndFrame());
+		Assert.assertEquals(F+24, savoir.getSegment().getStartFrame());
+		Assert.assertEquals(F+44, savoir.getSegment().getEndFrame());
 		Assert.assertEquals(7, savoir.getPhones().size());  // + trailing sil
 		Assert.assertEquals("s", savoir.getPhones().get(0).toString());
 		Assert.assertEquals("a", savoir.getPhones().get(1).toString());

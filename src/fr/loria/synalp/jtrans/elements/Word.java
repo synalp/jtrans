@@ -15,14 +15,22 @@ public class Word implements Element {
 	private List<Phone> phones = new ArrayList<Phone>();
 
 
-	public class Segment {
-		private final int start;
-		private final int end;
+	public static class Segment {
+		private int start;
+		private int end;
 
 		public Segment(int start, int end) {
 			this.start = start;
 			this.end = end;
 			assert start <= end;
+		}
+
+		public void setStartFrame(int f) {
+			start = f;
+		}
+
+		public void setEndFrame(int f) {
+			end = f;
 		}
 
 		public float getStartSecond() {
@@ -47,11 +55,11 @@ public class Word implements Element {
 	}
 
 
-	public class Phone {
+	public static class Phone {
 		private String phone;
 		private Segment segment;
 
-		private Phone(String p, Segment s) {
+		public Phone(String p, Segment s) {
 			phone = p;
 			segment = s;
 		}
@@ -99,6 +107,11 @@ public class Word implements Element {
 
 	public void addPhone(String phone, int start, int end) {
 		phones.add(new Phone(phone, new Segment(start, end)));
+	}
+
+
+	public void addPhone(Phone phone) {
+		phones.add(phone);
 	}
 
 

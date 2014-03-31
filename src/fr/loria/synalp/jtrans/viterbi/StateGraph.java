@@ -702,62 +702,37 @@ public class StateGraph {
 			w.clearAlignment();
 		}
 
-		int prevWord = -1;
-		int prevWordFrame0 = -1;
-		int currWord = -1;
-
-		int prevState = -1;
-		int prevStateWord = -1; // word into which the previous state should be inserted
-		// (technically, the phone pertaining to the previous state)
-		int prevStateFrame0 = -1; // 1st frame of the 1st state of the ongoing phone
+		int cw = -1;              // current word idx
+		int ps = -1;              // previous state idx
+		Word word = null;         // current word
+		Word.Phone phone = null;  // current phone
 
 		for (int f = 0; f < timeline.length; f++) {
-			int currState = timeline[f];
+			int cs = timeline[f]; // current state idx
+			int now = offset+f; // absolute frame number
 
-			while (currWord+1 < words.length &&
-					wordBoundaries[currWord+1] <= currState)
-			{
-				currWord++;
+			int pw = cw; // previous word idx
+			while (cw+1 < words.length && wordBoundaries[cw+1] <= cs) {
+				cw++;
 			}
 
-			if (currWord != prevWord) {
-				if (prevWord >= 0) {
-					alignable.get(prevWord).setSegment(
-							offset + prevWordFrame0,
-							offset + f-1);
+			if (cw != pw) {
+				word = alignable.get(cw);
+				word.setSegment(now, now);
+			} else if (null != word) {
+				word.getSegment().setEndFrame(now);
+			}
+
+			if (f == 0 || ps/3 != cs/3) {
+				if (null != word) {
+					phone = new Word.Phone(
+							getPhoneAt(cs), new Word.Segment(now, now));
+					word.addPhone(phone);
 				}
-				prevWord = currWord;
-				prevWordFrame0 = f;
+				ps = cs;
+			} else if (null != phone) {
+				phone.getSegment().setEndFrame(now);
 			}
-
-			if (f == 0 || prevState/3 != currState/3) {
-				if (prevStateWord >= 0) {
-					assert prevState >= 0;
-					alignable.get(prevStateWord).addPhone(
-							getPhoneAt(prevState),
-							offset + prevStateFrame0,
-							offset + f-1);
-				}
-				prevStateWord = currWord;
-				prevState = currState;
-				prevStateFrame0 = f;
-			}
-		}
-
-		// Add last word
-		if (prevWord >= 0) {
-			alignable.get(prevWord).setSegment(
-					offset + prevWordFrame0,
-					offset + timeline.length-1);
-		}
-
-		// Add last phone
-		if (prevStateWord >= 0) {
-			assert prevState >= 0;
-			alignable.get(prevStateWord).addPhone(
-					getPhoneAt(prevState),
-					offset + prevStateFrame0,
-					offset + timeline.length-1);
 		}
 	}
 
