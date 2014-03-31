@@ -189,20 +189,18 @@ public class Project {
 				}
 
 				{
-					Word iw = words.get(0);
+					int iF = words.get(0).getFirstNonSilenceFrame();
 					Anchor ia = sandwich.getInitialAnchor();
-					if (null != ia && !ia.hasTime() && iw.isAligned()) {
-						setTimeOnTimelessAnchors(ia,
-								iw.getSegment().getStartSecond());
+					if (null != ia && !ia.hasTime() && iF >= 0) {
+						setTimeOnTimelessAnchors(ia, iF);
 					}
 				}
 
 				{
-					Word fw = words.get(words.size()-1);
+					int ff = words.get(words.size()-1).getLastNonSilenceFrame();
 					Anchor fa = sandwich.getFinalAnchor();
-					if (null != fa && !fa.hasTime() && fw.isAligned()) {
-						setTimeOnTimelessAnchors(fa,
-								fw.getSegment().getEndSecond());
+					if (null != fa && !fa.hasTime() && ff >= 0) {
+						setTimeOnTimelessAnchors(fa, ff);
 					}
 				}
 			}
@@ -214,9 +212,9 @@ public class Project {
 	 * Sets time for all timeless anchors equal to the reference anchor.
 	 * @param reference reference timeless anchor. MUST be timeless for
 	 *                  Anchor.equals() to work.
-	 * @param seconds time to set
+	 * @param frame time to set
 	 */
-	void setTimeOnTimelessAnchors(Anchor reference, float seconds) {
+	void setTimeOnTimelessAnchors(Anchor reference, int frame) {
 		assert !reference.hasTime();
 
 		for (Track track: tracks) {
@@ -225,13 +223,13 @@ public class Project {
 					Anchor a = (Anchor)el;
 					if (a != reference && a.equals(reference)) {
 						assert !a.hasTime();
-						a.setSeconds(seconds);
+						a.setFrame(frame);
 					}
 				}
 			}
 		}
 
-		reference.setSeconds(seconds);
+		reference.setFrame(frame);
 	}
 
 

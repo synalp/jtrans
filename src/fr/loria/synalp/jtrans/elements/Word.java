@@ -71,6 +71,10 @@ public class Word implements Element {
 		public Segment getSegment() {
 			return segment;
 		}
+
+		public boolean isSilence() {
+			return phone.equals("SIL");
+		}
 	}
 
 
@@ -117,6 +121,32 @@ public class Word implements Element {
 
 	public List<Phone> getPhones() {
 		return phones;
+	}
+
+
+	/**
+	 * @return -1 if the entire word is silent
+	 */
+	public int getFirstNonSilenceFrame() {
+		for (Phone p: phones) {
+			if (!p.isSilence()) {
+				return p.getSegment().getStartFrame();
+			}
+		}
+		return -1;
+	}
+
+
+	/**
+	 * @return -1 if the entire word is silent
+	 */
+	public int getLastNonSilenceFrame() {
+		for (int i = phones.size()-1; i >= 0; i--) {
+			if (!phones.get(i).isSilence()) {
+				return phones.get(i).getSegment().getEndFrame();
+			}
+		}
+		return -1;
 	}
 
 }

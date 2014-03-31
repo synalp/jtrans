@@ -78,6 +78,11 @@ public class Anchor
 	}
 
 
+	public void setFrame(int frame) {
+		seconds = TimeConverter.frame2sec(frame);
+	}
+
+
 	public void setOrder(int order) {
 		timelessOrder = order;
 		seconds = -1f;
