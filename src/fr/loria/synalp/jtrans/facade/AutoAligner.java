@@ -110,7 +110,9 @@ public abstract class AutoAligner {
 			}
 		}
 
-		int[] timeline = (int[])Cache.cachedObject("hmmtimeline", "timeline",
+		int[] timeline = (int[])Cache.cachedObject(
+				getTimelineCacheDirectoryName(),
+				"timeline",
 				new TimelineFactory(),
 				audio, text, startFrame, endFrame);
 
@@ -165,5 +167,19 @@ public abstract class AutoAligner {
 			int startFrame,
 			int endFrame)
 			throws IOException, InterruptedException;
+
+
+	/**
+	 * Returns a name for the directory containing cached timelines produced
+	 * by/for this aligner. Different alignment algorithms should not share the
+	 * same cache!
+	 */
+	protected String getTimelineCacheDirectoryName() {
+		final String suffix = "Aligner";
+		String name = getClass().getSimpleName();
+		assert name.endsWith(suffix);
+		name = name.substring(0, name.length() - suffix.length());
+		return "timeline_" + name.toLowerCase();
+	}
 
 }
