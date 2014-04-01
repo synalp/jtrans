@@ -4,17 +4,22 @@ import fr.loria.synalp.jtrans.utils.ProgressDisplay;
 import fr.loria.synalp.jtrans.viterbi.StateGraph;
 
 import java.io.File;
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
  * Aligns HMM states linearly, that is, every HMM state will last roughly the
- * same amount of time.
- * Very fast, but wildly inaccurate; only useful for debugging.
+ * same amount of time. All states in the graph will be used; does not attempt
+ * to walk a realistic path in the graph.
+ *
+ * Very fast, but wildly inaccurate; for testing purposes only.
+ *
+ * @see RealisticPathLinearAligner
  */
-public class LinearAligner extends AutoAligner {
+public class FastLinearAligner extends AutoAligner {
 
-	public LinearAligner(
+	public FastLinearAligner(
 			File audio,
 			int appxTotalFrames,
 			ProgressDisplay progress)
@@ -28,14 +33,15 @@ public class LinearAligner extends AutoAligner {
 			String text,
 			int startFrame,
 			int endFrame)
-			throws IOException, InterruptedException
 	{
 		final int length = endFrame - startFrame + 1;
 		return fillInterpolate(graph.getNodeCount(), new int[length]);
 	}
 
 
-	public static int[] fillInterpolate(int rangeLength, int[] buf) {
+	public static int[] fillInterpolate(List<Integer> values, int[] buf) {
+		int rangeLength = values.size();
+
 		assert rangeLength > 0;
 		assert buf.length > 0;
 
@@ -53,10 +59,19 @@ public class LinearAligner extends AutoAligner {
 				v++;
 				nextR = (v+1) / (float)rangeLength;
 			}
-			buf[i] = v;
+			buf[i] = values.get(v);
 		}
 
 		return buf;
+	}
+
+
+	public static int[] fillInterpolate(int rangeLength, int[] buf) {
+		List<Integer> values = new ArrayList<Integer>();
+		for (int i = 0; i < rangeLength; i++) {
+			values.add(i);
+		}
+		return fillInterpolate(values, buf);
 	}
 
 }

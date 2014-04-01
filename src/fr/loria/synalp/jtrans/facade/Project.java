@@ -28,7 +28,7 @@ public class Project {
 	public static boolean ALIGN_OVERLAPS = true;
 
 
-	public static boolean USE_LINEAR_ALIGNMENT = false;
+	public static Class<? extends AutoAligner> ALIGNER = ViterbiAligner.class;
 
 
 	public List<Track> tracks = new ArrayList<Track>();
@@ -63,15 +63,11 @@ public class Project {
 
 
 	public AutoAligner getStandardAligner(ProgressDisplay progress)
-			throws IOException
+			throws IOException, ReflectiveOperationException
 	{
-		if (!USE_LINEAR_ALIGNMENT) {
-			return new ViterbiAligner(
-					convertedAudioFile, (int) audioSourceTotalFrames, progress);
-		} else {
-			return new LinearAligner(
-					convertedAudioFile, (int) audioSourceTotalFrames, progress);
-		}
+		return ALIGNER
+				.getConstructor(File.class, int.class, ProgressDisplay.class)
+				.newInstance(convertedAudioFile, (int) audioSourceTotalFrames, progress);
 	}
 
 

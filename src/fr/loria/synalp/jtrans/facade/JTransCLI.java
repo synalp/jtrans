@@ -139,10 +139,16 @@ public class JTransCLI {
 						"and ignore overlaps. Don't use unless you know what " +
 						"you are doing!");
 
-				accepts(
-						"equi",
-						"Use dumb linear alignment instead of Viterbi." +
+				acceptsAll(
+						Arrays.asList("fastlin"),
+						"Use dumb linear alignment instead of Viterbi. " +
 						"Don't use unless you know what you are doing!");
+
+				acceptsAll(
+						Arrays.asList("reallin"),
+						"Use \"realistic\" linear alignment (walking same path " +
+						"as Viterbi), instead of Viterbi. Don't use unless " +
+						"you know what you are doing!");
 			}
 		};
 
@@ -187,9 +193,17 @@ public class JTransCLI {
 			System.out.println("Will ignore overlaps.");
 		}
 
-		if (optset.has("equi")) {
-			Project.USE_LINEAR_ALIGNMENT = true;
-			System.out.println("Will use linear alignment. WARNING: the alignment will suck!");
+		if (optset.has("fastlin") && optset.has("reallin")) {
+			System.err.println("Can't use more than one aligner at once!");
+			System.exit(1);
+		} else if (optset.has("fastlin")) {
+			Project.ALIGNER = FastLinearAligner.class;
+			System.out.println("Will use fast linear alignment. " +
+					"WARNING: massive loss of accuracy!");
+		} else if (optset.has("reallin")) {
+			Project.ALIGNER = RealisticPathLinearAligner.class;
+			System.out.printf("Will use \"realistic\" linear alignment. " +
+					"WARNING: massive loss of accuracy!");
 		}
 
 		inputFile = (File)optset.valueOf("f");
