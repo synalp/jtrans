@@ -138,8 +138,6 @@ public class AlignmentScorer {
 						sumSq[s][d] / nMatchF[s] - avg[s][d] * avg[s][d]);
 				detVar[s] *= var[s][d];
 			}
-
-			}
 		}
 
 		// likelihood for each frame
