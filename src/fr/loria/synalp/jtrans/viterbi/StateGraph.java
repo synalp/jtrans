@@ -40,14 +40,9 @@ public class StateGraph {
 	private static final String[] OPT_SILENCE_RULE = "[ SIL ]".split(" ");
 
 
-	/**
-	 * Maps a phone to the index of the first unique HMM state in the
-	 * uniqueStates array.
-	 */
-	private Map<String, Integer> phoneUStates = new HashMap<String, Integer>();
-
 	/** Pool of unique HMM states. */
-	private HMMState[] uniqueStates;
+	private final StatePool pool;
+
 
 	/**
 	 * All nodes in the grammar.
@@ -175,7 +170,7 @@ public class StateGraph {
 
 
 	public HMMState getStateAt(int nodeIdx) {
-		return uniqueStates[nodeStates[nodeIdx]];
+		return pool.get(nodeStates[nodeIdx]);
 	}
 
 
@@ -192,11 +187,6 @@ public class StateGraph {
 	/** Returns the total number of nodes in the grammar. */
 	public int getNodeCount() {
 		return nNodes;
-	}
-
-
-	public int getUniqueStateCount() {
-		return uniqueStates.length;
 	}
 
 
@@ -298,13 +288,15 @@ public class StateGraph {
 	 * no inbound transitions and the third node has no outbound transitions.
 	 */
 	private int insertStateTriplet(String phone) {
-		int s = phoneUStates.get(phone);
+		pool.check(phone);
 
 		// add nodes for each state in the phone
 		for (int i = 0; i < 3; i++) {
 			int j = insertionPoint + i;
-			nodeStates[j] = s + i;
-			HMMState state = uniqueStates[nodeStates[j]];
+
+			int stateId = pool.getId(phone, i);
+			nodeStates[j] = stateId;
+			HMMState state = pool.get(stateId);
 
 			addIncomingTransition(j, j);
 			if (i > 0) {
@@ -351,66 +343,6 @@ public class StateGraph {
 	}
 
 
-	private void initUniqueStates(String[][] rules) {
-		assert uniqueStates == null : "unique states already initialized";
-
-		AcousticModel acMod = HMMModels.getAcousticModels();
-		UnitManager unitMgr = new UnitManager();
-
-		Set<String> unique = new HashSet<String>();
-		int insert = 0;
-
-		unique.add(SILENCE_RULE[0]);
-
-		for (String[] ruleTokens: rules) {
-			if (null == ruleTokens)
-				continue;
-
-			for (String token: ruleTokens) {
-				if (!NONPHONE_PATTERN.matcher(token).matches()) {
-					unique.add(PhoneticForcedGrammar.convertPhone(token));
-				}
-			}
-		}
-
-		uniqueStates = new HMMState[3 * unique.size()];
-
-		for (String phone: unique) {
-			phoneUStates.put(phone, insert);
-			
-			// find HMM for this phone
-			HMM hmm = acMod.lookupNearestHMM(
-					unitMgr.getUnit(phone), HMMPosition.UNDEFINED, false);
-
-			for (int i = 0; i < 3; i++) {
-				HMMState state = hmm.getState(i);
-				uniqueStates[insert + i] = state;
-
-				assert state.isEmitting();
-				assert !state.isExitState();
-				assert state.getSuccessors().length == 2;
-
-				for (HMMStateArc arc: state.getSuccessors()) {
-					HMMState arcState = arc.getHMMState();
-					if (i == 2 && arcState.isExitState()) {
-						continue;
-					}
-
-					if (arcState != state) {
-						assert i != 2;
-						assert !arcState.isExitState();
-						assert arcState == hmm.getState(i+1);
-					}
-				}
-			}
-
-			insert += 3;
-		}
-
-		assert insert == unique.size() * 3;
-	}
-
-
 	/**
 	 * Constructs a state graph from words, and the rules associated with each
 	 * of them.
@@ -418,11 +350,12 @@ public class StateGraph {
 	 * @param rules a 2D array of rule tokens. The first dimension maps to the
 	 *              index of the word corresponding to the rule.
 	 */
-	public StateGraph(String[] words, String[][] rules) {
+	public StateGraph(StatePool pool, String[][] rules, String[] words) {
 		this.words = words;
+		this.pool = pool;
+
 		wordBoundaries = new int[words.length];
 
-		initUniqueStates(rules);
 		nPhones = countPhones(rules);
 		nNodes  = 3 * nPhones;
 
@@ -486,8 +419,8 @@ public class StateGraph {
 	 * Constructs a state graph from an array of words.
 	 * Rules will be looked up in the standard grammar.
 	 */
-	public StateGraph(String[] words) {
-		this(words, getRules(words));
+	public StateGraph(StatePool pool, String[] words) {
+		this(pool, getRules(words), words);
 	}
 
 
@@ -495,8 +428,8 @@ public class StateGraph {
 	 * Constructs a state graph from whitespace-separated words.
 	 * Rules will be looked up in the standard grammar.
 	 */
-	public StateGraph(String text) {
-		this(trimSplit(text));
+	public StateGraph(StatePool pool, String text) {
+		this(pool, trimSplit(text));
 	}
 
 
@@ -747,7 +680,7 @@ public class StateGraph {
 		final String words = new Scanner(new File(args[1])).useDelimiter("\\Z")
 				.next().replaceAll("[\\n\\r\u001f]", " ");
 
-		StateGraph gv = new StateGraph(words);
+		StateGraph gv = new StateGraph(new StatePool(), words);
 		System.out.println("PHONE COUNT: " + gv.nPhones);
 		System.out.println("GRAPH SIZE: " + gv.nNodes);
 		gv.dumpDot(new FileWriter("grammar_vector.dot"));

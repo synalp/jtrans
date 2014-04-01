@@ -17,6 +17,7 @@ import java.util.List;
  */
 public abstract class AutoAligner {
 
+	protected final StatePool pool;
 	protected final File audio;
 	protected final int appxTotalFrames;
 	protected final S4mfccBuffer mfcc;
@@ -41,6 +42,8 @@ public abstract class AutoAligner {
 		this.audio = audio;
 		this.appxTotalFrames = appxTotalFrames;
 		this.progress = progress;
+
+		pool = new StatePool();
 
 		mfcc = new S4mfccBuffer();
 		AudioFileDataSource afds = new AudioFileDataSource(3200, null);
@@ -92,7 +95,7 @@ public abstract class AutoAligner {
 		}
 		text = textBuilder.toString();
 
-		final StateGraph graph = new StateGraph(wordStrings);
+		final StateGraph graph = new StateGraph(pool, wordStrings);
 		graph.setProgressDisplay(progress, appxTotalFrames);
 
 		// Cache wrapper class for getTimeline()
@@ -118,7 +121,7 @@ public abstract class AutoAligner {
 
 		AlignmentScorer scorer = null;
 		if (METROPOLIS_HASTINGS_POST_PROCESSING || COMPUTE_LIKELIHOODS) {
-			scorer = new AlignmentScorer(graph,
+			scorer = new AlignmentScorer(graph, pool,
 					AlignmentScorer.getData(timeline.length, mfcc, startFrame));
 		}
 

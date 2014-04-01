@@ -23,6 +23,7 @@ public class AlignmentScorer {
 	public static final double MIN_VARIANCE = .001;
 
 	private final StateGraph graph;
+	private final StatePool pool;
 	private final float[][] data;
 	private final LogMath lm = HMMModels.getLogMath();
 
@@ -41,10 +42,11 @@ public class AlignmentScorer {
 	/**
 	 * @param data MFCC data
 	 */
-	public AlignmentScorer(StateGraph graph, float[][] data) {
+	public AlignmentScorer(StateGraph graph, StatePool pool, float[][] data) {
 		this.graph = graph;
+		this.pool = pool;
 		this.nFrames = data.length;
-		this.nStates = graph.getUniqueStateCount();
+		this.nStates = pool.size();
 		this.data = data;
 
 		nMatchF     = new int[nStates];
