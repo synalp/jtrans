@@ -43,13 +43,12 @@ termes.
 
 package fr.loria.synalp.jtrans.speechreco.s4;
 
+import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 
-import edu.cmu.sphinx.frontend.BaseDataProcessor;
-import edu.cmu.sphinx.frontend.Data;
-import edu.cmu.sphinx.frontend.DataEndSignal;
-import edu.cmu.sphinx.frontend.DataProcessingException;
-import edu.cmu.sphinx.frontend.DataStartSignal;
+import edu.cmu.sphinx.frontend.*;
+import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
 
 /**
  * 
@@ -133,4 +132,56 @@ public class S4mfccBuffer extends BaseDataProcessor {
 		return buffer.get(curFrame++);
 	}
 
-}//class RoundBuffer
+
+	/**
+	 * Returns all MFCC data until the end of the buffer.
+	 */
+	public List<FloatData> getAllData() {
+		List<FloatData> data = new ArrayList<>();
+
+		// Get data
+		for (;;) {
+			Data d = getData();
+			if (d instanceof DataEndSignal) {
+				break;
+			}
+
+			try {
+				data.add(FloatData.toFloatData(d));
+			} catch (IllegalArgumentException ex) {
+				// not a FloatData/DoubleData
+			}
+		}
+
+		System.out.println("Got " + data.size() + " frames");
+		return data;
+	}
+
+
+	/**
+	 * Returns all MFCC data in an audio file.
+	 */
+	public static List<FloatData> getAllData(File audio) {
+		AudioFileDataSource afds = new AudioFileDataSource(3200, null);
+		afds.setAudioFile(audio, null);
+		S4mfccBuffer mfcc = new S4mfccBuffer();
+		mfcc.setSource(S4ForceAlignBlocViterbi.getFrontEnd(afds));
+		return mfcc.getAllData();
+	}
+
+
+	/**
+	 * Converts a list of FloatData instances to a 2D float array.
+	 */
+	public static float[][] to2DArray(List<FloatData> dataList) {
+		float[][] data = new float[dataList.size()][];
+
+		for (int i = 0; i < data.length; i++) {
+			data[i] = dataList.get(i).getValues();
+			assert 39 == data[i].length;
+		}
+
+		return data;
+	}
+
+}
