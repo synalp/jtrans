@@ -26,6 +26,7 @@ public class JTransCLI {
 	public boolean clearTimes = false;
 	public boolean align = true;
 	public boolean runAnchorDiffTest = false;
+	public boolean quiet = false;
 
 
 	public final static String[] AUDIO_EXTENSIONS = "wav,ogg,mp3".split(",");
@@ -78,6 +79,8 @@ public class JTransCLI {
 
 				accepts("a", "audio file (wav, ogg, mp3)")
 						.withRequiredArg().ofType(File.class);
+
+				accepts("q", "quietish (no progress display on stdout)");
 
 				acceptsAll(
 						Arrays.asList("A", "detect-audio"),
@@ -212,6 +215,7 @@ public class JTransCLI {
 		clearTimes = optset.has("C");
 		align = !optset.has("N");
 		runAnchorDiffTest = optset.has("anchor-diff-test");
+		quiet = optset.has("q");
 
 		clearTimes |= runAnchorDiffTest;
 
@@ -373,7 +377,7 @@ public class JTransCLI {
 
 
 	public static void main(String args[]) throws Exception {
-		final ProgressDisplay progress;
+		ProgressDisplay progress = null;
 		final Project project;
 		final Project reference;
 		final JTransCLI cli;
@@ -395,7 +399,9 @@ public class JTransCLI {
 			return;
 		}
 
-		progress = new PrintStreamProgressDisplay(2500, System.out);
+		if (!cli.quiet) {
+			progress = new PrintStreamProgressDisplay(2500, System.out);
+		}
 
 		logID += "_" + cli.inputFile.getName();
 
