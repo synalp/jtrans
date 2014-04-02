@@ -66,8 +66,41 @@ public class Project {
 			throws IOException, ReflectiveOperationException
 	{
 		return ALIGNER
-				.getConstructor(File.class, int.class, ProgressDisplay.class)
-				.newInstance(convertedAudioFile, (int) audioSourceTotalFrames, progress);
+				.getConstructor(File.class, ProgressDisplay.class)
+				.newInstance(convertedAudioFile, progress);
+	}
+
+
+	/**
+	 * Aligns all words contained between two anchors (i.e. "anchor sandwich").
+	 */
+	private void align(AutoAligner aligner, AnchorSandwich sandwich)
+			throws IOException, InterruptedException
+	{
+		if (sandwich.isEmpty()) {
+			return;
+		}
+
+		int frameCount = aligner.getFrameCount();
+
+		Anchor iAnchor = sandwich.getInitialAnchor();
+		Anchor fAnchor = sandwich.getFinalAnchor();
+
+		int iFrame = iAnchor == null || !iAnchor.hasTime()?
+				0: iAnchor.getFrame();
+
+		int fFrame = fAnchor == null || !fAnchor.hasTime()?
+				frameCount: fAnchor.getFrame()-1;
+
+		if (fFrame >= frameCount) {
+			System.err.println("WARNING: shaving frames off final anchor! " +
+					"fFrame = " + fFrame + ", frameCount = " + frameCount);
+			fFrame = frameCount - 1;
+		}
+
+		assert iFrame <= fFrame;
+
+		aligner.align(sandwich.getWords(), iFrame, fFrame);
 	}
 
 
@@ -76,14 +109,10 @@ public class Project {
 	 * @param clear If true, clear any previously existing alignment information
 	 *              to start a new alignment from scratch. If false, don't touch
 	 *              aligned words; only attempt to align unaligned words.
-	 * @return overall cumulative likelihood (value meaningful only if
-	 * AutoAligner.COMPUTE_LIKELIHOODS is true)
 	 */
-	public double align(AutoAligner aligner, boolean clear)
+	public void align(AutoAligner aligner, boolean clear)
 			throws IOException, InterruptedException
 	{
-		double overallLikelihood = 0;
-
 		for (Track track: tracks) {
 			if (clear) {
 				track.clearAlignment();
@@ -94,78 +123,38 @@ public class Project {
 			while (iter.hasNext()) {
 				AnchorSandwich sandwich = iter.next();
 
-				if (sandwich.isEmpty() ||
-						(!clear && sandwich.isFullyAligned()))
-				{
-					continue;
+				if (clear || !sandwich.isFullyAligned()) {
+					align(aligner, sandwich);
 				}
-
-				Anchor ia = sandwich.getInitialAnchor();
-				Anchor fa = sandwich.getFinalAnchor();
-
-				overallLikelihood += aligner.align(
-						sandwich.getWords(),
-						ia == null || !ia.hasTime()? 0: ia.getFrame(),
-						fa == null || !fa.hasTime()? -1: fa.getFrame());
 			}
 		}
-
-		return overallLikelihood;
 	}
 
 
 	/**
 	 * Aligns all words in all tracks of this project with timeless anchors.
-	 * @return overall cumulative likelihood (value meaningful only if
-	 * AutoAligner.COMPUTE_LIKELIHOODS is true)
 	 */
-	public double alignInterleaved(AutoAligner aligner)
+	public void alignInterleaved(AutoAligner aligner)
 			throws IOException, InterruptedException
 	{
-		double overallLikelihood = 0;
-
+		// Clear existing alignment
 		for (Track track: tracks) {
 			track.clearAlignment();
 		}
 
-		//----------------------------------------------------------------------
 		// Align big interleaved sequences
-
 		LinearBridge lb = new LinearBridge(tracks);
-
 		while (lb.hasNext()) {
-			AnchorSandwich interleaved = lb.nextInterleavedElementSequence();
-			Anchor ia = interleaved.getInitialAnchor();
-			Anchor fa = interleaved.getFinalAnchor();
-			List<Word> seq = new ArrayList<Word>();
-
-			for (Element el: interleaved) {
-				if (el instanceof Word) {
-					seq.add((Word)el);
-				}
-			}
-
-			overallLikelihood += aligner.align(
-					seq,
-					ia == null || !ia.hasTime()? 0: ia.getFrame(),
-					fa == null || !fa.hasTime()? -1: fa.getFrame());
+			align(aligner, lb.nextInterleavedElementSequence());
 		}
 
-		//----------------------------------------------------------------------
 		// Deduce times on timeless anchors
-
-//		progress.setIndeterminateProgress("Setting anchor times...");
 		deduceTimes();
 
-		//----------------------------------------------------------------------
 		// Align yet-unaligned overlaps
-
 		if (ALIGN_OVERLAPS) {
-//			progress.setIndeterminateProgress("Aligning overlaps...");
-			overallLikelihood += align(aligner, false);
+			align(aligner, false);
 		}
-
-		return overallLikelihood;
 	}
 
 

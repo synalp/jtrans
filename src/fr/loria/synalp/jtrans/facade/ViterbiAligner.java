@@ -34,10 +34,10 @@ public class ViterbiAligner extends AutoAligner {
 	private final SwapInflater swapReader;
 
 
-	public ViterbiAligner(File audio, int appxTotalFrames, ProgressDisplay progress)
+	public ViterbiAligner(File audio, ProgressDisplay progress)
 		throws IOException
 	{
-		super(audio, appxTotalFrames, progress);
+		super(audio, progress);
 
 		swapWriter = SwapDeflater.getSensibleSwapDeflater(true);
 		swapReader = new SwapInflater();
@@ -51,6 +51,8 @@ public class ViterbiAligner extends AutoAligner {
 			int endFrame)
 			throws IOException, InterruptedException
 	{
+		int length = boundCheckLength(startFrame, endFrame);
+
 		final OutputStream out;
 		final SwapInflater.InputStreamFactory inFactory;
 
@@ -58,9 +60,7 @@ public class ViterbiAligner extends AutoAligner {
 		// backpointer table to determine if we're going to swap to disk or
 		// keep it all in RAM
 
-		int appxEndFrame = endFrame < 0? appxTotalFrames: endFrame;
-		long projectedSize =
-				(long)(appxEndFrame-startFrame+1) * graph.getNodeCount();
+		long projectedSize = (long)length * graph.getNodeCount();
 		assert projectedSize >= 0: "integer overflow";
 
 		if (projectedSize <= SWAP_THRESHOLD_BYTES) {
@@ -97,10 +97,13 @@ public class ViterbiAligner extends AutoAligner {
 		// Run alignment
 
 		swapWriter.init(graph.getNodeCount(), out);
-		graph.viterbi(mfcc, swapWriter, startFrame, endFrame);
+		graph.viterbi(data, swapWriter, startFrame, endFrame);
 
 		swapReader.init(swapWriter.getIndex(), inFactory);
-		return graph.backtrack(swapReader);
+		int[] timeline = graph.backtrack(swapReader);
+		assert timeline.length == length;
+
+		return timeline;
 	}
 
 }

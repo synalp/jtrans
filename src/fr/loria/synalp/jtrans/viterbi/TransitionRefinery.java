@@ -20,6 +20,7 @@ public class TransitionRefinery {
 	private double cLhd;
 
 	private Random random;
+	private StateGraph graph;
 	private AlignmentScorer scorer;
 	private LogMath log = HMMModels.getLogMath();
 
@@ -55,19 +56,15 @@ public class TransitionRefinery {
 	/**
 	 * @param baseline Baseline alignment (as found e.g. with viterbi()).
 	 */
-	public TransitionRefinery(int[] baseline, AlignmentScorer scorer) {
+	public TransitionRefinery(StateGraph graph, int[] baseline, AlignmentScorer scorer) {
 		timeline = new int[baseline.length];
 		System.arraycopy(baseline, 0, timeline, 0, timeline.length);
 
 		random = new Random();
-
+		this.graph = graph;
 		this.scorer = scorer;
 
-		/*
-		lhd = scorer.alignmentLikelihood(baseline);
-		cLhd = Scorer.sum(lhd);
-		*/
-		cLhd = scorer.cumulativeAlignmentLikelihood(baseline);
+		cLhd = scorer.cumulativeAlignmentLikelihood(graph, baseline);
 	}
 
 
@@ -150,11 +147,7 @@ public class TransitionRefinery {
 		int backup = timeline[trans+1];
 		timeline[trans+1] = timeline[trans];
 
-		/*
-		double[] newLhd = scorer.alignmentLikelihood(timeline);
-		double newCLhd = Scorer.getSum(newLhd);
-		*/
-		double newCLhd = scorer.cumulativeAlignmentLikelihood(timeline);
+		double newCLhd = scorer.cumulativeAlignmentLikelihood(graph, timeline);
 
 		/*
 		System.out.println("============= TRANSITION CHANGED AT FRAME " + trans + "=============");

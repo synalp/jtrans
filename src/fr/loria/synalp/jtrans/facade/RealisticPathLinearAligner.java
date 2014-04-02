@@ -25,14 +25,11 @@ public class RealisticPathLinearAligner extends AutoAligner {
 	private ViterbiAligner pathfinder;
 
 
-	public RealisticPathLinearAligner(
-			File audio,
-			int appxTotalFrames,
-			ProgressDisplay progress)
+	public RealisticPathLinearAligner(File audio, ProgressDisplay progress)
 			throws IOException
 	{
-		super(audio, appxTotalFrames, progress);
-		pathfinder = new ViterbiAligner(audio, appxTotalFrames, progress);
+		super(audio, progress);
+		pathfinder = new ViterbiAligner(audio, progress);
 	}
 
 
@@ -44,7 +41,7 @@ public class RealisticPathLinearAligner extends AutoAligner {
 			int endFrame)
 			throws IOException, InterruptedException
 	{
-		final int length = endFrame - startFrame + 1;
+		final int length = boundCheckLength(startFrame, endFrame);
 
 		int[] refTL = pathfinder.getTimeline(graph, text, startFrame, endFrame);
 

@@ -1,7 +1,6 @@
 package fr.loria.synalp.jtrans.viterbi;
 
 import edu.cmu.sphinx.frontend.*;
-import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
 import edu.cmu.sphinx.linguist.acoustic.*;
 import edu.cmu.sphinx.util.LogMath;
 import fr.loria.synalp.jtrans.elements.Word;
@@ -113,11 +112,9 @@ public class StateGraph {
 	 * Sets progress reporting parameters. If you don't care about progress
 	 * reporting, you don't have to use this method.
 	 * @param progress progress display
-	 * @param totalFrames approximate total number of frames in the audio file
 	 */
-	public void setProgressDisplay(ProgressDisplay progress, int totalFrames) {
+	public void setProgressDisplay(ProgressDisplay progress) {
 		this.progress = progress;
-		this.progressTotalFrames = totalFrames;
 	}
 
 
@@ -477,20 +474,29 @@ public class StateGraph {
 	 *
 	 * @see StateGraph#backtrack second part of the pathfinding process
 	 * @see SwapInflater
-	 * @param mfcc audio source
+	 * @param data all frames in the audio source
 	 * @param swapWriter object that commits likelihoods to a swap file
 	 *                   or buffer
 	 * @param startFrame first frame to analyze
-	 * @param endFrame last frame to analyze. Use a negative number to use
-	 *                 all frames in the audio source.
+	 * @param endFrame last frame to analyze
 	 */
 	public void viterbi(
-			S4mfccBuffer mfcc,
+			List<FloatData> data,
 			SwapDeflater swapWriter,
 			int startFrame,
 			int endFrame)
 			throws IOException, InterruptedException
 	{
+		if (endFrame >= data.size()) {
+			throw new IllegalArgumentException("endFrame >= data.size()");
+		}
+
+		assert startFrame <= endFrame;
+		assert startFrame >= 0;
+		assert endFrame >= 0;
+
+		int frameCount = 1 + endFrame - startFrame;
+
 		// Probability vectors
 		float[] vpf = new float[nNodes]; // vector for previous frame (read-only)
 		float[] vcf = new float[nNodes]; // vector for current frame (write-only)
@@ -503,18 +509,7 @@ public class StateGraph {
 		Arrays.fill(vpf, Float.NEGATIVE_INFINITY);
 		vpf[0] = 0; // Probabilities are in the log domain
 
-		mfcc.gotoFrame(startFrame);
-
-		// Progress variables
-		int f = startFrame;
-		int frameCount = 1 + (endFrame<0 ? progressTotalFrames: endFrame) - startFrame;
-
-		while (!mfcc.noMoreFramesAvailable && (endFrame < 0 || f <= endFrame)) {
-			Data frame = mfcc.getData();
-			if (frame instanceof DataStartSignal || frame instanceof DataEndSignal)
-				continue;
-			f++;
-
+		for (int f = startFrame; f <= endFrame; f++) {
 			if (progress != null) {
 				progress.setProgress(String.format(
 						"Viterbi forward pass: frame %d of %d (deflated swap: %d MB)",
@@ -528,7 +523,7 @@ public class StateGraph {
 				// Emission probability (frame score)
 				// We could cache this for unique states, but in practice
 				// ScoreCachingSenone already does it for us.
-				float emission = getStateAt(i).getScore(frame);
+				float emission = getStateAt(i).getScore(data.get(f));
 
 				assert inCount[i] >= 1;
 
@@ -685,11 +680,6 @@ public class StateGraph {
 		System.out.println("GRAPH SIZE: " + gv.nNodes);
 		gv.dumpDot(new FileWriter("grammar_vector.dot"));
 
-		AudioFileDataSource afds = new AudioFileDataSource(3200, null);
-		afds.setAudioFile(new File(wavpath), null);
-		S4mfccBuffer mfcc = new S4mfccBuffer();
-		mfcc.setSource(S4ForceAlignBlocViterbi.getFrontEnd(afds));
-
 		System.out.println("Starting Viterbi...");
 
 		File swapFile = Cache.getCacheFile("backtrack", "swp", words);
@@ -702,7 +692,7 @@ public class StateGraph {
 			long t0 = System.currentTimeMillis();
 			SwapDeflater swapper = SwapDeflater.getSensibleSwapDeflater(true);
 			swapper.init(gv.nNodes, new FileOutputStream(swapFile));
-			gv.viterbi(mfcc, swapper, 0, -1);
+			gv.viterbi(S4mfccBuffer.getAllData(new File(wavpath)), swapper, 0, -1);
 			System.out.println("VITERBI TOOK " + (System.currentTimeMillis()-t0)/1000L + " SECONDS");
 			index = swapper.getIndex();
 			index.serialize(new FileOutputStream(indexFile));

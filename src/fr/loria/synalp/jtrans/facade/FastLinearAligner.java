@@ -21,10 +21,9 @@ public class FastLinearAligner extends AutoAligner {
 
 	public FastLinearAligner(
 			File audio,
-			int appxTotalFrames,
 			ProgressDisplay progress)
 	{
-		super(audio, appxTotalFrames, progress);
+		super(audio, progress);
 	}
 
 
@@ -34,7 +33,7 @@ public class FastLinearAligner extends AutoAligner {
 			int startFrame,
 			int endFrame)
 	{
-		final int length = endFrame - startFrame + 1;
+		final int length = boundCheckLength(startFrame, endFrame);
 		return fillInterpolate(graph.getNodeCount(), new int[length]);
 	}
 

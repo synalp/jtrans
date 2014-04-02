@@ -8,6 +8,7 @@ import fr.loria.synalp.jtrans.utils.CrossPlatformFixes;
 import fr.loria.synalp.jtrans.utils.FileUtils;
 import fr.loria.synalp.jtrans.utils.PrintStreamProgressDisplay;
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
+import fr.loria.synalp.jtrans.viterbi.AlignmentScorer;
 import joptsimple.*;
 
 import java.io.*;
@@ -441,15 +442,18 @@ public class JTransCLI {
 			assert aligner != null;
 
 			System.out.println("Aligning...");
-			double lhd;
 			if (cli.clearTimes || !Project.ALIGN_OVERLAPS) {
-				lhd = project.alignInterleaved(aligner);
+				project.alignInterleaved(aligner);
 			} else {
-				lhd = project.align(aligner, true);
+				project.align(aligner, true);
 			}
 			System.out.println("Alignment done.");
 			if (AutoAligner.COMPUTE_LIKELIHOODS) {
-				System.out.println("Overall likelihood: " + lhd);
+				AlignmentScorer scorer = aligner.getScorer();
+				scorer.finishLearning();
+				double[] scores = scorer.score();
+				System.out.println("Overall likelihood: " +
+						AlignmentScorer.sum(scores));
 			}
 		}
 

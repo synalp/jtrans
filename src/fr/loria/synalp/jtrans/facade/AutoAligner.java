@@ -1,8 +1,7 @@
 package fr.loria.synalp.jtrans.facade;
 
-import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
+import edu.cmu.sphinx.frontend.FloatData;
 import fr.loria.synalp.jtrans.elements.Word;
-import fr.loria.synalp.jtrans.speechreco.s4.S4ForceAlignBlocViterbi;
 import fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer;
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
 import fr.loria.synalp.jtrans.viterbi.*;
@@ -18,9 +17,9 @@ import java.util.List;
 public abstract class AutoAligner {
 
 	protected final StatePool pool;
+	protected final AlignmentScorer scorer;
+	protected final List<FloatData> data;
 	protected final File audio;
-	protected final int appxTotalFrames;
-	protected final S4mfccBuffer mfcc;
 	protected final ProgressDisplay progress;
 	protected Runnable refinementIterationHook;
 
@@ -38,17 +37,23 @@ public abstract class AutoAligner {
 	public static boolean METROPOLIS_HASTINGS_POST_PROCESSING = false;
 
 
-	public AutoAligner(File audio, int appxTotalFrames, ProgressDisplay progress) {
-		this.audio = audio;
-		this.appxTotalFrames = appxTotalFrames;
+	public AutoAligner(File audio, ProgressDisplay progress) {
 		this.progress = progress;
+		this.audio = audio;
 
+		data = S4mfccBuffer.getAllData(audio);
 		pool = new StatePool();
 
-		mfcc = new S4mfccBuffer();
-		AudioFileDataSource afds = new AudioFileDataSource(3200, null);
-		afds.setAudioFile(audio, null);
-		mfcc.setSource(S4ForceAlignBlocViterbi.getFrontEnd(afds));
+		if (COMPUTE_LIKELIHOODS || METROPOLIS_HASTINGS_POST_PROCESSING) {
+			scorer = new AlignmentScorer(data);
+		} else {
+			scorer = null;
+		}
+	}
+
+
+	public int getFrameCount() {
+		return data.size();
 	}
 
 
@@ -61,16 +66,20 @@ public abstract class AutoAligner {
 	}
 
 
+	public int boundCheckLength(int startFrame, int endFrame) {
+		assert startFrame <= endFrame;
+		assert startFrame >= 0;
+		assert endFrame >= 0;
+		assert endFrame < data.size();
+		return endFrame - startFrame + 1;
+	}
+
+
 	/**
 	 * Align words between startWord and endWord.
-	 *
-	 * @param endFrame last frame to analyze. Use a negative number to use all
-	 *                 frames in the audio source
-	 *
-	 * @return likelihood of the alignment (or Double.NEGATIVE_INFINITY if
-	 * COMPUTE_LIKELIHOODS is false)
+	 * @param endFrame last frame to analyze
 	 */
-	public double align(
+	public void align(
 			final List<Word> words,
 			final int startFrame,
 			final int endFrame)
@@ -96,7 +105,7 @@ public abstract class AutoAligner {
 		text = textBuilder.toString();
 
 		final StateGraph graph = new StateGraph(pool, wordStrings);
-		graph.setProgressDisplay(progress, appxTotalFrames);
+		graph.setProgressDisplay(progress);
 
 		// Cache wrapper class for getTimeline()
 		class TimelineFactory implements Cache.ObjectFactory {
@@ -119,10 +128,12 @@ public abstract class AutoAligner {
 				new TimelineFactory(),
 				audio, text, startFrame, endFrame);
 
-		AlignmentScorer scorer = null;
-		if (METROPOLIS_HASTINGS_POST_PROCESSING || COMPUTE_LIKELIHOODS) {
-			scorer = new AlignmentScorer(graph, pool,
-					AlignmentScorer.getData(timeline.length, mfcc, startFrame));
+		if (COMPUTE_LIKELIHOODS) {
+			assert scorer != null;
+			if (progress != null) {
+				progress.setIndeterminateProgress("Computing likelihood...");
+			}
+			scorer.learn(graph, timeline, startFrame);
 		}
 
 		if (METROPOLIS_HASTINGS_POST_PROCESSING) {
@@ -132,7 +143,7 @@ public abstract class AutoAligner {
 
 			assert scorer != null;
 			final TransitionRefinery refinery = new TransitionRefinery(
-					timeline, scorer);
+					graph, timeline, scorer);
 
 			while (!refinery.hasPlateaued()) {
 				timeline = refinery.step();
@@ -145,16 +156,6 @@ public abstract class AutoAligner {
 		}
 
 		graph.setWordAlignments(words, timeline, startFrame);
-
-		if (COMPUTE_LIKELIHOODS) {
-			assert scorer != null;
-			if (progress != null) {
-				progress.setIndeterminateProgress("Computing likelihood...");
-			}
-			return scorer.cumulativeAlignmentLikelihood(timeline);
-		} else {
-			return Double.NEGATIVE_INFINITY;
-		}
 	}
 
 
@@ -183,6 +184,11 @@ public abstract class AutoAligner {
 		assert name.endsWith(suffix);
 		name = name.substring(0, name.length() - suffix.length());
 		return "timeline_" + name.toLowerCase();
+	}
+
+
+	public AlignmentScorer getScorer() {
+		return scorer;
 	}
 
 }

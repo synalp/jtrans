@@ -1,18 +1,23 @@
 package fr.loria.synalp.jtrans.viterbi;
 
-import edu.cmu.sphinx.frontend.Data;
-import edu.cmu.sphinx.frontend.DataEndSignal;
 import edu.cmu.sphinx.frontend.FloatData;
 import edu.cmu.sphinx.util.LogMath;
 import fr.loria.synalp.jtrans.speechreco.s4.HMMModels;
 import fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer;
 
 import java.util.Arrays;
+import java.util.List;
 
 /**
- * Computes alignment likelihoods. To avoid frenetic memory allocation activity,
- * an instance of this class is meant to be reused, provided the alignments use
- * the same states across the same number of frames.
+ * Learns Gaussians for every unique state and computes alignment likelihoods.
+ *
+ * To obtain accurate figures, use a single instance of this class across an
+ * entire transcription. This way, the Gaussians that have been learned are
+ * valid on the entire transcription.
+ *
+ * If a transcription must be aligned using a sequence of small alignments, use
+ * repeated calls to learn() instead of creating a new instance for each
+ * sub-alignment.
  */
 public class AlignmentScorer {
 
@@ -22,8 +27,8 @@ public class AlignmentScorer {
 	/** Keep variance values from getting too close to zero. */
 	public static final double MIN_VARIANCE = .001;
 
-	private final StateGraph graph;
-	private final StatePool pool;
+	public static final int MAX_UNIQUE_STATES = 100;
+
 	private final float[][] data;
 	private final LogMath lm = HMMModels.getLogMath();
 
@@ -38,16 +43,17 @@ public class AlignmentScorer {
 	private final double[]     detVar;
 	private final double[]     likelihood;   // must be zeroed before use
 
+	private final int[]        longTimeline;
+	private boolean            learning = false;
 
-	/**
-	 * @param data MFCC data
-	 */
-	public AlignmentScorer(StateGraph graph, StatePool pool, float[][] data) {
-		this.graph = graph;
-		this.pool = pool;
+
+	public AlignmentScorer(float[][] data) {
 		this.nFrames = data.length;
-		this.nStates = pool.size();
+		this.nStates = MAX_UNIQUE_STATES;  // TODO pool.size() would be better
+		// TODO pool.size() currently starts at 0 and increases (anchored alignment)
 		this.data = data;
+
+		longTimeline = new int[nFrames];
 
 		nMatchF     = new int[nStates];
 		sum         = new double[nStates][FRAME_DATA_LENGTH];
@@ -56,43 +62,13 @@ public class AlignmentScorer {
 		var         = new double[nStates][FRAME_DATA_LENGTH];
 		detVar      = new double[nStates];
 		likelihood  = new double[nFrames];
+
+		init();
 	}
 
 
-	/**
-	 * @param mfcc audio data
-	 * @param frameOffset jump to this frame before reading audio data
-	 */
-	public static float[][] getData(
-			int nFrames,
-			S4mfccBuffer mfcc,
-			int frameOffset)
-	{
-		float data[][] = new float[nFrames][FRAME_DATA_LENGTH];
-
-		mfcc.gotoFrame(frameOffset);
-
-		// Get data
-		for (int f = 0; f < nFrames;) {
-			Data d = mfcc.getData();
-			if (d instanceof DataEndSignal) {
-				throw new Error("Out of data!!! "
-						+ (nFrames - f) + " frames missing!");
-			}
-
-			float[] values;
-			try {
-				values = FloatData.toFloatData(d).getValues();
-			} catch (IllegalArgumentException ex) {
-				// not a FloatData/DoubleData
-				continue;
-			}
-			assert values.length == FRAME_DATA_LENGTH;
-			System.arraycopy(values, 0, data[f], 0, FRAME_DATA_LENGTH);
-			f++; // successful
-		}
-
-		return data;
+	public AlignmentScorer(List<FloatData> dataList) {
+		this(S4mfccBuffer.to2DArray(dataList));
 	}
 
 
@@ -105,35 +81,54 @@ public class AlignmentScorer {
 	}
 
 
-	/**
-	 * Computes the likelihood of an alignment.
-	 * @param timeline alignment that maps frames to nodes in the graph
-	 * @return likelihoods per frame
-	 */
-	public double[] alignmentLikelihood(int[] timeline) {
-		assert timeline.length == nFrames;
-
+	public void init() {
+		Arrays.fill(longTimeline, -1);
 		Arrays.fill(nMatchF, 0);
 		Arrays.fill(likelihood, 0);
 		for (int s = 0; s < nStates; s++) {
 			Arrays.fill(sum[s], 0);
 			Arrays.fill(sumSq[s], 0);
 		}
+		learning = true;
+	}
+
+
+	public void learn(StateGraph graph, int[] timeline, int frameOffset) {
+		if (!learning) {
+			throw new IllegalStateException("not ready to learn");
+		}
 
 		// sum, sumSq, nMatchF
-		for (int f = 0; f < nFrames; f++) {
+		for (int f = 0; f < timeline.length; f++) {
+			int absf = f + frameOffset;
+			assert longTimeline[absf] < 0 : "longTimeline already filled here";
+
+			int s = graph.getUniqueStateIdAt(timeline[f]);
+			longTimeline[absf] = s;
+
 			for (int d = 0; d < FRAME_DATA_LENGTH; d++) {
-				float x = data[f][d];
-				int s = graph.getUniqueStateIdAt(timeline[f]);
+				float x = data[absf][d];
 				sum[s][d] += x;
 				sumSq[s][d] += x * x;
 				nMatchF[s]++;
 			}
 		}
+	}
+
+
+	public void finishLearning() {
+		if (!learning) {
+			throw new IllegalStateException("not ready to finish learning");
+		}
 
 		// avg, var, detVar
 		for (int s = 0; s < nStates; s++) {
 			detVar[s] = 1;
+			if (nMatchF[s] == 0) {
+				Arrays.fill(avg[s], 0);
+				Arrays.fill(var[s], 0);
+				continue;
+			}
 			for (int d = 0; d < FRAME_DATA_LENGTH; d++) {
 				avg[s][d] = sum[s][d] / nMatchF[s];
 				var[s][d] = Math.max(MIN_VARIANCE,
@@ -142,9 +137,22 @@ public class AlignmentScorer {
 			}
 		}
 
+		learning = false;
+	}
+
+
+	public double[] score() {
+		if (learning) {
+			throw new IllegalStateException("still learning");
+		}
+
 		// likelihood for each frame
 		for (int f = 0; f < nFrames; f++) {
-			int s = graph.getUniqueStateIdAt(timeline[f]);
+			int s = longTimeline[f];
+
+			if (s < 0) {
+				continue;
+			}
 
 			double K = -lm.linearToLog(Math.sqrt(
 					2*Math.PI * Math.abs(detVar[s])));
@@ -157,37 +165,29 @@ public class AlignmentScorer {
 			}
 
 			likelihood[f] += K - .5 * dot;
-
-			/*
-			System.out.println("Frame " + f +
-					": State #" + s + ":" + states[s].getHMM().getBaseUnit().getName() +
-					",\tK = " + K +
-					",\tDot = " + dot +
-					",\tL = " + likelihood[f]);
-			*/
 		}
-
-		// debug
-		/*
-		for (int s = 0; s < nStates; s++) {
-			System.out.println("STATE #" + s + ":"
-					+ states[s].getHMM().getBaseUnit().getName());
-
-			for (int f = 0; f < nFrames; f++) {
-				if (s == timeline[f]) {
-					System.out.println(String.format(
-							"\tF = %4d\tL = %f ", f, likelihood[f]));
-				}
-			}
-		}
-		*/
 
 		return likelihood;
 	}
 
 
-	public double cumulativeAlignmentLikelihood(int[] timeline) {
-		return sum(alignmentLikelihood(timeline));
+	/**
+	 * Computes the likelihood of an alignment.
+	 * @param timeline alignment that maps frames to nodes in the graph
+	 * @return likelihoods per frame
+	 */
+	public double[] alignmentLikelihood(StateGraph graph, int[] timeline) {
+		assert timeline.length == nFrames;
+		init();
+		learn(graph, timeline, 0);
+		finishLearning();
+		score();
+		return likelihood;
+	}
+
+
+	public double cumulativeAlignmentLikelihood(StateGraph graph, int[] timeline) {
+		return sum(alignmentLikelihood(graph, timeline));
 	}
 
 }
