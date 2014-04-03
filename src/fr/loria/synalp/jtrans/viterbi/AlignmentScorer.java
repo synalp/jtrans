@@ -147,6 +147,8 @@ public class AlignmentScorer {
 			throw new IllegalStateException("still learning");
 		}
 
+		final double logTwoPi = lm.linearToLog(2 * Math.PI);
+
 		// likelihood for each frame
 		for (int f = 0; f < nFrames; f++) {
 			int s = longTimeline[f];
@@ -155,17 +157,16 @@ public class AlignmentScorer {
 				continue;
 			}
 
-			double K = -lm.linearToLog(Math.sqrt(
-					2*Math.PI * Math.abs(detVar[s])));
-
 			double dot = 0;
-
 			for (int d = 0; d < FRAME_DATA_LENGTH; d++) {
 				double numer = data[f][d] - avg[s][d];
 				dot += numer * numer / var[s][d];
 			}
 
-			likelihood[f] += K - .5 * dot;
+			assert detVar[s] > 0;
+
+			// -log(1 / sqrt(2 pi detVar)) = -(log(2 pi)/2 + log(detVar)/2)
+			likelihood[f] = -.5 * (dot + logTwoPi + lm.linearToLog(detVar[s]));
 		}
 
 		return likelihood;
