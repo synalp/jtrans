@@ -110,8 +110,9 @@ public class AlignmentScorer {
 				float x = data[absf][d];
 				sum[s][d] += x;
 				sumSq[s][d] += x * x;
-				nMatchF[s]++;
 			}
+
+			nMatchF[s]++;
 		}
 	}
 
