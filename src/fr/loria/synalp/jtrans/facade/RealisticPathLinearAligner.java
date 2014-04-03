@@ -54,7 +54,7 @@ public class RealisticPathLinearAligner extends AutoAligner {
 			}
 		}
 
-		return FastLinearAligner.fillInterpolate(values, new int[length]);
+		return FastLinearAligner.fillInterpolate(values, new int[length], 0, length);
 	}
 
 }
