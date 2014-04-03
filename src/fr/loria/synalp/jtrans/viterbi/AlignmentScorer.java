@@ -2,6 +2,7 @@ package fr.loria.synalp.jtrans.viterbi;
 
 import edu.cmu.sphinx.frontend.FloatData;
 import edu.cmu.sphinx.util.LogMath;
+import fr.loria.synalp.jtrans.facade.FastLinearAligner;
 import fr.loria.synalp.jtrans.speechreco.s4.HMMModels;
 import fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer;
 
@@ -46,12 +47,15 @@ public class AlignmentScorer {
 	private final int[]        longTimeline;
 	private boolean            learning = false;
 
+	private StatePool pool;
 
-	public AlignmentScorer(float[][] data) {
+
+	public AlignmentScorer(float[][] data, StatePool pool) {
 		this.nFrames = data.length;
 		this.nStates = MAX_UNIQUE_STATES;  // TODO pool.size() would be better
 		// TODO pool.size() currently starts at 0 and increases (anchored alignment)
 		this.data = data;
+		this.pool = pool;
 
 		longTimeline = new int[nFrames];
 
@@ -67,8 +71,8 @@ public class AlignmentScorer {
 	}
 
 
-	public AlignmentScorer(List<FloatData> dataList) {
-		this(S4mfccBuffer.to2DArray(dataList));
+	public AlignmentScorer(List<FloatData> dataList, StatePool pool) {
+		this(S4mfccBuffer.to2DArray(dataList), pool);
 	}
 
 
@@ -106,13 +110,66 @@ public class AlignmentScorer {
 			int s = graph.getUniqueStateIdAt(timeline[f]);
 			longTimeline[absf] = s;
 
-			for (int d = 0; d < FRAME_DATA_LENGTH; d++) {
-				float x = data[absf][d];
-				sum[s][d] += x;
-				sumSq[s][d] += x * x;
-			}
+			learnFrame(absf);
+		}
+	}
 
-			nMatchF[s]++;
+
+	private void learnFrame(int f) {
+		int s = longTimeline[f];
+		assert s >= 0;
+
+		System.out.println("  Learning state " + s + " @ frame " + f);
+
+		for (int d = 0; d < FRAME_DATA_LENGTH; d++) {
+			float x = data[f][d];
+			System.out.println("\t\t" + x);
+			sum[s][d] += x;
+			sumSq[s][d] += x * x;
+		}
+
+		nMatchF[s]++;
+	}
+
+
+	/**
+	 * @param stretch0 inclusive
+	 * @param stretch1 exclusive
+	 */
+	private void fillVoid(int stretch0, int stretch1, List<Integer> silStates) {
+		assert stretch0 < stretch1;
+		System.out.println("Fill Stretch " + stretch0);
+		FastLinearAligner.fillInterpolate(
+				silStates, longTimeline, stretch0, stretch1 - stretch0);
+		for (int i = stretch0; i < stretch1; i++) {
+			System.out.println(longTimeline[i]);
+			learnFrame(i);
+		}
+	}
+
+
+	private void fillVoids() {
+		// fill unfilled stretches with silences
+		int stretch0 = -1;
+
+		List<Integer> silStates = Arrays.asList(
+				pool.getId("SIL", 0),
+				pool.getId("SIL", 1),
+				pool.getId("SIL", 2));
+
+		for (int f = 0; f < nFrames; f++) {
+			if (longTimeline[f] < 0 && stretch0 < 0) {
+				// start new stretch
+				stretch0 = f;
+			} else if (longTimeline[f] >= 0 && stretch0 >= 0) {
+				// fill stretch
+				fillVoid(stretch0, f, silStates);
+				stretch0 = -1;
+			}
+		}
+
+		if (stretch0 >= 0) {
+			fillVoid(stretch0, nFrames, silStates);
 		}
 	}
 
@@ -121,6 +178,8 @@ public class AlignmentScorer {
 		if (!learning) {
 			throw new IllegalStateException("not ready to finish learning");
 		}
+
+		fillVoids();
 
 		// avg, var, detVar
 		for (int s = 0; s < nStates; s++) {

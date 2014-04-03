@@ -45,7 +45,7 @@ public abstract class AutoAligner {
 		pool = new StatePool();
 
 		if (COMPUTE_LIKELIHOODS || METROPOLIS_HASTINGS_POST_PROCESSING) {
-			scorer = new AlignmentScorer(data);
+			scorer = new AlignmentScorer(data, pool);
 		} else {
 			scorer = null;
 		}
