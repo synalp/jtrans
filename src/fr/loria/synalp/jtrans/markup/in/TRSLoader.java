@@ -152,6 +152,10 @@ public class TRSLoader implements MarkupLoader {
 				addUniqueAnchor(t, endTime);
 		}
 
+		for (int i = 0; i < project.tracks.size(); i++) {
+			project.tracks.get(i).setSpeakerOnWords(i);
+		}
+
 		return project;
 	}
 

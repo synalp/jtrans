@@ -23,6 +23,14 @@ public class Track {
 	}
 
 
+	// TODO: replace this with accessor for elts
+	public void setSpeakerOnWords(int id) {
+		for (Word word: getWords()) {
+			word.setSpeaker(id);
+		}
+	}
+
+
 	public List<Word> getWords() {
 		ArrayList<Word> res = new ArrayList<Word>();
 		for (Element element: elts) {

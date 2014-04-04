@@ -46,6 +46,10 @@ public class TextGridLoader implements MarkupLoader {
 			project.tracks.add(track);
 		}
 
+		for (int i = 0; i < project.tracks.size(); i++) {
+			project.tracks.get(i).setSpeakerOnWords(i);
+		}
+
 		return project;
 	}
 

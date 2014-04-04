@@ -449,11 +449,8 @@ public class JTransCLI {
 			}
 			System.out.println("Alignment done.");
 			if (AutoAligner.COMPUTE_LIKELIHOODS) {
-				AlignmentScorer scorer = aligner.getScorer();
-				scorer.finishLearning();
-				double[] scores = scorer.score();
-				System.out.println("Overall likelihood: " +
-						AlignmentScorer.sum(scores));
+				//System.out.println("Overall likelihood: " + aligner.score());
+				aligner.printScores();
 			}
 		}
 

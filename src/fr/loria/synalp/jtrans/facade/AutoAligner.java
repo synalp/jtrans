@@ -7,6 +7,7 @@ import fr.loria.synalp.jtrans.utils.ProgressDisplay;
 import fr.loria.synalp.jtrans.viterbi.*;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -17,7 +18,7 @@ import java.util.List;
 public abstract class AutoAligner {
 
 	protected final StatePool pool;
-	protected final AlignmentScorer scorer;
+	protected List<AlignmentScorer> scorers;
 	protected final List<FloatData> data;
 	protected final File audio;
 	protected final ProgressDisplay progress;
@@ -43,11 +44,18 @@ public abstract class AutoAligner {
 
 		data = S4mfccBuffer.getAllData(audio);
 		pool = new StatePool();
+	}
 
-		if (COMPUTE_LIKELIHOODS || METROPOLIS_HASTINGS_POST_PROCESSING) {
-			scorer = new AlignmentScorer(data, pool);
-		} else {
-			scorer = null;
+	public void setScorers(int speakers) {
+		if (!COMPUTE_LIKELIHOODS && !METROPOLIS_HASTINGS_POST_PROCESSING) {
+			return;
+		}
+
+		scorers = new ArrayList<>(speakers);
+		float[][] dataArray = S4mfccBuffer.to2DArray(data);
+
+		for (int i = 0; i < speakers; i++) {
+			scorers.add(new AlignmentScorer(dataArray, pool, i));
 		}
 	}
 
@@ -92,6 +100,8 @@ public abstract class AutoAligner {
 		// String representations of each word (used to build StateGraph)
 		final String[] wordStrings = new String[words.size()];
 
+		final int[] wordSpeakers = new int[words.size()];
+
 		// Space-separated string of words (used as identifier for cache files)
 		final String text;
 
@@ -100,11 +110,12 @@ public abstract class AutoAligner {
 		for (int i = 0; i < words.size(); i++) {
 			Word w = words.get(i);
 			wordStrings[i] = w.toString();
+			wordSpeakers[i] = w.getSpeaker();
 			textBuilder.append(w.toString()).append(" ");
 		}
 		text = textBuilder.toString();
 
-		final StateGraph graph = new StateGraph(pool, wordStrings);
+		final StateGraph graph = new StateGraph(pool, wordStrings, wordSpeakers);
 		graph.setProgressDisplay(progress);
 
 		// Cache wrapper class for getTimeline()
@@ -129,11 +140,17 @@ public abstract class AutoAligner {
 				audio, text, startFrame, endFrame);
 
 		if (COMPUTE_LIKELIHOODS) {
-			assert scorer != null;
+			assert scorers != null;
 			if (progress != null) {
 				progress.setIndeterminateProgress("Computing likelihood...");
 			}
-			scorer.learn(graph, timeline, startFrame);
+
+			graph.setWordAlignments(words, timeline, startFrame);
+
+			for (Word w: words) {
+				scorers.get(w.getSpeaker())
+						.learn(w, graph, timeline, startFrame);
+			}
 		}
 
 		if (METROPOLIS_HASTINGS_POST_PROCESSING) {
@@ -141,9 +158,12 @@ public abstract class AutoAligner {
 				progress.setIndeterminateProgress("Metropolis-Hastings...");
 			}
 
-			assert scorer != null;
+			assert scorers != null;
+
+			throw new RuntimeException("(re)IMPLEMENT ME!");
+			/*
 			final TransitionRefinery refinery = new TransitionRefinery(
-					graph, timeline, scorer);
+					graph, timeline, scorers.get(speaker));
 
 			while (!refinery.hasPlateaued()) {
 				timeline = refinery.step();
@@ -153,6 +173,7 @@ public abstract class AutoAligner {
 					refinementIterationHook.run();
 				}
 			}
+			*/
 		}
 
 		graph.setWordAlignments(words, timeline, startFrame);
@@ -187,8 +208,23 @@ public abstract class AutoAligner {
 	}
 
 
-	public AlignmentScorer getScorer() {
-		return scorer;
+	public void printScores() {
+		for (int i = 0; i < scorers.size(); i++) {
+			AlignmentScorer scorer = scorers.get(i);
+			double sum = 0;
+
+			scorer.finishLearning();
+			int effectiveFrames = scorer.score();
+			sum += AlignmentScorer.sum(scorer.getLikelihoods());
+
+			System.out.println("Overall likelihood track " + i + "\tFrames: "
+							+ effectiveFrames + "/" + getFrameCount()
+							+ "\tSum: "
+							+ sum
+							+ "\tNormalized: "
+							+ (sum / effectiveFrames)
+			);
+		}
 	}
 
 }

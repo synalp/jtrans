@@ -2,6 +2,7 @@ package fr.loria.synalp.jtrans.viterbi;
 
 import edu.cmu.sphinx.frontend.FloatData;
 import edu.cmu.sphinx.util.LogMath;
+import fr.loria.synalp.jtrans.elements.Word;
 import fr.loria.synalp.jtrans.facade.FastLinearAligner;
 import fr.loria.synalp.jtrans.speechreco.s4.HMMModels;
 import fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer;
@@ -45,18 +46,29 @@ public class AlignmentScorer {
 	private final double[]     likelihood;   // must be zeroed before use
 
 	private final int[]        longTimeline;
-	private boolean            learning = false;
+	private final int logID;
 
 	private StatePool pool;
 
+	private enum SystemState {
+		UNINITIALIZED,
+		LEARNING,
+		LEARNING_COMPLETE,
+		SCORE_READY,
+	}
 
-	public AlignmentScorer(float[][] data, StatePool pool) {
+	private SystemState system = SystemState.UNINITIALIZED;
+
+
+
+	public AlignmentScorer(float[][] data, StatePool pool, int id) {
 		this.nFrames = data.length;
 		this.nStates = MAX_UNIQUE_STATES;  // TODO pool.size() would be better
 		// TODO pool.size() currently starts at 0 and increases (anchored alignment)
 		this.data = data;
 		this.pool = pool;
 
+		logID = id;
 		longTimeline = new int[nFrames];
 
 		nMatchF     = new int[nStates];
@@ -71,8 +83,10 @@ public class AlignmentScorer {
 	}
 
 
-	public AlignmentScorer(List<FloatData> dataList, StatePool pool) {
-		this(S4mfccBuffer.to2DArray(dataList), pool);
+
+
+	public AlignmentScorer(List<FloatData> dataList, StatePool pool, int id) {
+		this(S4mfccBuffer.to2DArray(dataList), pool, id);
 	}
 
 
@@ -93,12 +107,37 @@ public class AlignmentScorer {
 			Arrays.fill(sum[s], 0);
 			Arrays.fill(sumSq[s], 0);
 		}
-		learning = true;
+		system = SystemState.LEARNING;
+	}
+
+
+	public void learn(Word word, StateGraph graph, int[] timeline, int frameOffset) {
+		if (system != SystemState.LEARNING) {
+			throw new IllegalStateException("not ready to learn");
+		}
+
+		Word.Segment seg = word.getSegment();
+		if (seg == null) {
+			System.out.println("NULL SEG!!!");
+			return;
+		}
+		int sf = seg.getStartFrame();
+		int ef = seg.getEndFrame();
+
+		for (int absf = sf; absf <= ef; absf++) {
+			int relf = absf - frameOffset;
+			assert longTimeline[absf] < 0;
+
+			int s = graph.getUniqueStateIdAt(timeline[relf]);
+			longTimeline[absf] = s;
+
+			learnFrame(absf);
+		}
 	}
 
 
 	public void learn(StateGraph graph, int[] timeline, int frameOffset) {
-		if (!learning) {
+		if (system != SystemState.LEARNING) {
 			throw new IllegalStateException("not ready to learn");
 		}
 
@@ -116,14 +155,15 @@ public class AlignmentScorer {
 
 
 	private void learnFrame(int f) {
+		if (system != SystemState.LEARNING) {
+			throw new IllegalStateException("not ready to learn");
+		}
+
 		int s = longTimeline[f];
 		assert s >= 0;
 
-		System.out.println("  Learning state " + s + " @ frame " + f);
-
 		for (int d = 0; d < FRAME_DATA_LENGTH; d++) {
 			float x = data[f][d];
-			System.out.println("\t\t" + x);
 			sum[s][d] += x;
 			sumSq[s][d] += x * x;
 		}
@@ -138,11 +178,9 @@ public class AlignmentScorer {
 	 */
 	private void fillVoid(int stretch0, int stretch1, List<Integer> silStates) {
 		assert stretch0 < stretch1;
-		System.out.println("Fill Stretch " + stretch0);
 		FastLinearAligner.fillInterpolate(
 				silStates, longTimeline, stretch0, stretch1 - stretch0);
 		for (int i = stretch0; i < stretch1; i++) {
-			System.out.println(longTimeline[i]);
 			learnFrame(i);
 		}
 	}
@@ -175,11 +213,11 @@ public class AlignmentScorer {
 
 
 	public void finishLearning() {
-		if (!learning) {
+		if (system != SystemState.LEARNING) {
 			throw new IllegalStateException("not ready to finish learning");
 		}
 
-		fillVoids();
+//		fillVoids();
 
 		// avg, var, detVar
 		for (int s = 0; s < nStates; s++) {
@@ -197,23 +235,28 @@ public class AlignmentScorer {
 			}
 		}
 
-		learning = false;
+		system = SystemState.LEARNING_COMPLETE;
 	}
 
 
-	public double[] score() {
-		if (learning) {
+	public int score() {
+		if (system != SystemState.LEARNING_COMPLETE) {
 			throw new IllegalStateException("still learning");
 		}
 
 		final double logTwoPi = lm.linearToLog(2 * Math.PI);
+
+		int effectiveFrames = 0;
 
 		// likelihood for each frame
 		for (int f = 0; f < nFrames; f++) {
 			int s = longTimeline[f];
 
 			if (s < 0) {
+				likelihood[f] = 0;
 				continue;
+			} else {
+				effectiveFrames++;
 			}
 
 			double dot = 0;
@@ -226,6 +269,17 @@ public class AlignmentScorer {
 
 			// -log(1 / sqrt(2 pi detVar)) = -(log(2 pi)/2 + log(detVar)/2)
 			likelihood[f] = -.5 * (dot + logTwoPi + lm.linearToLog(detVar[s]));
+		}
+
+		system = SystemState.SCORE_READY;
+
+		return effectiveFrames;
+	}
+
+
+	public double[] getLikelihoods() {
+		if (system != SystemState.SCORE_READY) {
+			throw new IllegalStateException("score not ready");
 		}
 
 		return likelihood;

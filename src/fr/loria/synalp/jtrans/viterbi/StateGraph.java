@@ -90,14 +90,10 @@ public class StateGraph {
 	 */
 	private final int[] wordBoundaries;
 
+	private final int[] wordSpeakers;
+
 	/** Used to report progress in viterbi() and backtrack() (may be null) */
 	private ProgressDisplay progress = null;
-
-	/**
-	 * Approximate total number of frames in the audio file.
-	 * Used to report progress as a percentage.
- 	 */
-	private int progressTotalFrames = -1;
 
 
 	/**
@@ -359,11 +355,17 @@ public class StateGraph {
 	 * @param rules a 2D array of rule tokens. The first dimension maps to the
 	 *              index of the word corresponding to the rule.
 	 */
-	public StateGraph(StatePool pool, String[][] rules, String[] words) {
+	public StateGraph(
+			StatePool pool,
+			String[][] rules,
+			String[] words,
+			int[] speakers)
+	{
 		this.words = words;
 		this.pool = pool;
 
 		wordBoundaries = new int[words.length];
+		wordSpeakers = speakers;
 
 		nPhones = countPhones(rules);
 		nNodes  = 3 * nPhones;
@@ -428,17 +430,20 @@ public class StateGraph {
 	 * Constructs a state graph from an array of words.
 	 * Rules will be looked up in the standard grammar.
 	 */
-	public StateGraph(StatePool pool, String[] words) {
-		this(pool, getRules(words), words);
+	public StateGraph(StatePool pool, String[] words, int[] speakers) {
+		this(pool, getRules(words), words, speakers);
 	}
 
 
 	/**
-	 * Constructs a state graph from whitespace-separated words.
-	 * Rules will be looked up in the standard grammar.
+	 * Constructs a state graph for easy testing from whitespace-separated
+	 * words. Rules will be looked up in the standard grammar. Uses an
+	 * independent state pool.
 	 */
-	public StateGraph(StatePool pool, String text) {
-		this(pool, trimSplit(text));
+	public static StateGraph quick(String text) {
+		String[] words = trimSplit(text);
+		int[] speakers = new int[words.length];
+		return new StateGraph(new StatePool(), words, speakers);
 	}
 
 
@@ -687,7 +692,7 @@ public class StateGraph {
 		final String words = new Scanner(new File(args[1])).useDelimiter("\\Z")
 				.next().replaceAll("[\\n\\r\u001f]", " ");
 
-		StateGraph gv = new StateGraph(new StatePool(), words);
+		StateGraph gv = StateGraph.quick(words);
 		System.out.println("PHONE COUNT: " + gv.nPhones);
 		System.out.println("GRAPH SIZE: " + gv.nNodes);
 		gv.dumpDot(new FileWriter("grammar_vector.dot"));

@@ -30,7 +30,9 @@ public class StateGraphTest {
 				rules[i] = StateGraph.trimSplit(wordRules[i]);
 		}
 
-		return new StateGraph(new StatePool(), rules, phrase);
+		int[] speakers = new int[phrase.length];
+
+		return new StateGraph(new StatePool(), rules, phrase, speakers);
 	}
 
 
@@ -130,16 +132,16 @@ public class StateGraphTest {
 		final int expected = 3 * (1 + 1 + 1);
 		StateGraph sg;
 
-		sg = new StateGraph(new StatePool(), "a");
+		sg = StateGraph.quick("a");
 		Assert.assertEquals(expected, sg.getNodeCount());
 
-		sg = new StateGraph(new StatePool(), "() a");
+		sg = StateGraph.quick("() a");
 		Assert.assertEquals(expected, sg.getNodeCount());
 
-		sg = new StateGraph(new StatePool(), "a ()");
+		sg = StateGraph.quick("a ()");
 		Assert.assertEquals(expected, sg.getNodeCount());
 
-		sg = new StateGraph(new StatePool(), "() () () () a () () () ()");
+		sg = StateGraph.quick("() () () () a () () () ()");
 		Assert.assertEquals(expected, sg.getNodeCount());
 	}
 
@@ -150,8 +152,8 @@ public class StateGraphTest {
 		// MAX_TRANSITIONS is set to a small value
 		// TODO: add a new test here every time we bump MAX_TRANSITIONS
 
-		new StateGraph(new StatePool(), "5 à 6 zones c' est 51 10 euros");
-		new StateGraph(new StatePool(), "10 10 10 10");
+		StateGraph.quick("5 à 6 zones c' est 51 10 euros");
+		StateGraph.quick("10 10 10 10");
 	}
 
 

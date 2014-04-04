@@ -65,9 +65,11 @@ public class Project {
 	public AutoAligner getStandardAligner(ProgressDisplay progress)
 			throws IOException, ReflectiveOperationException
 	{
-		return ALIGNER
+		AutoAligner aa = ALIGNER
 				.getConstructor(File.class, ProgressDisplay.class)
 				.newInstance(convertedAudioFile, progress);
+		aa.setScorers(tracks.size());
+		return aa;
 	}
 
 

@@ -11,6 +11,7 @@ import java.util.List;
 public class Word implements Element {
 
 	private final String word;
+	private int speaker = -1;
 	private Segment segment;
 	private List<Phone> phones = new ArrayList<Phone>();
 
@@ -147,6 +148,16 @@ public class Word implements Element {
 			}
 		}
 		return -1;
+	}
+
+
+	public int getSpeaker() {
+		return speaker;
+	}
+
+
+	public void setSpeaker(int id) {
+		speaker = id;
 	}
 
 }
