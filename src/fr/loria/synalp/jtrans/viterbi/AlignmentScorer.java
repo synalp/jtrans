@@ -7,6 +7,7 @@ import fr.loria.synalp.jtrans.facade.FastLinearAligner;
 import fr.loria.synalp.jtrans.speechreco.s4.HMMModels;
 import fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -190,10 +191,10 @@ public class AlignmentScorer {
 		// fill unfilled stretches with silences
 		int stretch0 = -1;
 
-		List<Integer> silStates = Arrays.asList(
-				pool.getId("SIL", 0),
-				pool.getId("SIL", 1),
-				pool.getId("SIL", 2));
+		List<Integer> silStates = new ArrayList<>();
+		for (int i = 0; i < 3; i++) {
+			silStates.add(pool.getId(StatePool.SILENCE_PHONE, i));
+		}
 
 		for (int f = 0; f < nFrames; f++) {
 			if (longTimeline[f] < 0 && stretch0 < 0) {

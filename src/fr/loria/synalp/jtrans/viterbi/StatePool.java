@@ -20,6 +20,9 @@ public class StatePool {
 	private UnitManager unitMgr = new UnitManager();
 
 
+	public static final String SILENCE_PHONE = "SIL";
+
+
 	private int add(String phone) {
 		assert !phoneUStates.containsKey(phone);
 

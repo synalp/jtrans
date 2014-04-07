@@ -35,8 +35,11 @@ public class StateGraph {
 			Pattern.compile("^[^a-zA-Z]$");
 
 	// Extra rules used when building the grammar graph
-	private static final String[] SILENCE_RULE = new String[]{"SIL"};
-	private static final String[] OPT_SILENCE_RULE = "[ SIL ]".split(" ");
+	private static final String[] SILENCE_RULE =
+			{ StatePool.SILENCE_PHONE };
+
+	private static final String[] OPT_SILENCE_RULE =
+			{ "[", StatePool.SILENCE_PHONE, "]" };
 
 
 	/** Pool of unique HMM states. */

@@ -1,6 +1,7 @@
 package fr.loria.synalp.jtrans.elements;
 
 import fr.loria.synalp.jtrans.utils.TimeConverter;
+import fr.loria.synalp.jtrans.viterbi.StatePool;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -74,7 +75,7 @@ public class Word implements Element {
 		}
 
 		public boolean isSilence() {
-			return phone.equals("SIL");
+			return phone.equals(StatePool.SILENCE_PHONE);
 		}
 	}
 
