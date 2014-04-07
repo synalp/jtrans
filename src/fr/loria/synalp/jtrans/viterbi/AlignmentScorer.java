@@ -9,6 +9,7 @@ import fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer;
 
 import java.util.Arrays;
 import java.util.List;
+import static java.lang.System.arraycopy;
 
 /**
  * Learns Gaussians for every unique state and computes alignment likelihoods.
@@ -301,6 +302,55 @@ public class AlignmentScorer {
 
 	public double cumulativeAlignmentLikelihood(StateGraph graph, int[] timeline) {
 		return sum(alignmentLikelihood(graph, timeline));
+	}
+
+
+	public static AlignmentScorer merge(List<AlignmentScorer> scorers) {
+		int totalStateCount = 3;
+		for (AlignmentScorer scorer: scorers) {
+			totalStateCount += scorer.nStates;
+		}
+
+		AlignmentScorer merger =
+				new AlignmentScorer(scorers.get(0).data, totalStateCount);
+
+		int off = 3;
+		for (AlignmentScorer scorer: scorers) {
+			assert scorer.nFrames == merger.nFrames;
+			assert scorer.data == merger.data;
+
+			arraycopy(scorer.nMatchF, 0, merger.nMatchF, off, scorer.nStates);
+			arraycopy(scorer.sum,     0, merger.sum,     off, scorer.nStates);
+			arraycopy(scorer.sumSq,   0, merger.sumSq,   off, scorer.nStates);
+			// No need to copy avg, var, detVar;
+			// they will be filled out by finishLearning()
+
+			for (int f = 0; f < scorer.nFrames; f++) {
+				int stateAt = scorer.longTimeline[f];
+				if (stateAt >= 0) {
+					assert merger.longTimeline[f] < 0;
+					merger.longTimeline[f] = off + stateAt;
+				}
+			}
+
+			off += scorer.nStates;
+		}
+
+		assert totalStateCount == off;
+
+		merger.fillVoids(0, 1, 2);
+
+		return merger;
+	}
+
+
+	public static AlignmentScorer merge(AlignmentScorer... scorers) {
+		return merge(Arrays.asList(scorers));
+	}
+
+
+	public int[] getLongTimeline() {
+		return longTimeline;
 	}
 
 }

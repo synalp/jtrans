@@ -213,22 +213,11 @@ public abstract class AutoAligner {
 
 
 	public void printScores() {
-		for (int i = 0; i < scorers.size(); i++) {
-			AlignmentScorer scorer = scorers.get(i);
-			double sum = 0;
-
-			scorer.finishLearning();
-			int effectiveFrames = scorer.score();
-			sum += AlignmentScorer.sum(scorer.getLikelihoods());
-
-			System.out.println("Overall likelihood track " + i + "\tFrames: "
-							+ effectiveFrames + "/" + getFrameCount()
-							+ "\tSum: "
-							+ sum
-							+ "\tNormalized: "
-							+ (sum / effectiveFrames)
-			);
-		}
+		AlignmentScorer scorer = AlignmentScorer.merge(scorers);
+		scorer.finishLearning();
+		scorer.score();
+		double sum = AlignmentScorer.sum(scorer.getLikelihoods());
+		System.out.println("Overall likelihood " + sum);
 	}
 
 }
