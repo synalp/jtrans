@@ -46,6 +46,7 @@ public abstract class AutoAligner {
 		pool = new StatePool();
 	}
 
+
 	public void setScorers(int speakers) {
 		if (!COMPUTE_LIKELIHOODS && !METROPOLIS_HASTINGS_POST_PROCESSING) {
 			return;
@@ -55,7 +56,10 @@ public abstract class AutoAligner {
 		float[][] dataArray = S4mfccBuffer.to2DArray(data);
 
 		for (int i = 0; i < speakers; i++) {
-			scorers.add(new AlignmentScorer(dataArray, pool, i));
+			scorers.add(new AlignmentScorer(dataArray,
+					AlignmentScorer.MAX_UNIQUE_STATES));
+			// TODO pool.size() would be better
+			// TODO pool.size() currently starts at 0 and increases (anchored alignment)
 		}
 	}
 

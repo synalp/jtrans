@@ -7,7 +7,6 @@ import fr.loria.synalp.jtrans.facade.FastLinearAligner;
 import fr.loria.synalp.jtrans.speechreco.s4.HMMModels;
 import fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -23,6 +22,9 @@ import java.util.List;
  * sub-alignment.
  */
 public class AlignmentScorer {
+
+	private static int logIDCounter = 0;
+	private final int logID;
 
 	/** Number of values in FloatData. */
 	public static final int FRAME_DATA_LENGTH = 39;
@@ -47,9 +49,6 @@ public class AlignmentScorer {
 	private final double[]     likelihood;   // must be zeroed before use
 
 	private final int[]        longTimeline;
-	private final int logID;
-
-	private StatePool pool;
 
 	private enum SystemState {
 		UNINITIALIZED,
@@ -62,14 +61,12 @@ public class AlignmentScorer {
 
 
 
-	public AlignmentScorer(float[][] data, StatePool pool, int id) {
+	public AlignmentScorer(float[][] data, int nStates) {
 		this.nFrames = data.length;
-		this.nStates = MAX_UNIQUE_STATES;  // TODO pool.size() would be better
-		// TODO pool.size() currently starts at 0 and increases (anchored alignment)
+		this.nStates = nStates;
 		this.data = data;
-		this.pool = pool;
 
-		logID = id;
+		logID = logIDCounter++;
 		longTimeline = new int[nFrames];
 
 		nMatchF     = new int[nStates];
@@ -84,10 +81,8 @@ public class AlignmentScorer {
 	}
 
 
-
-
-	public AlignmentScorer(List<FloatData> dataList, StatePool pool, int id) {
-		this(S4mfccBuffer.to2DArray(dataList), pool, id);
+	public AlignmentScorer(List<FloatData> dataList, int nStates) {
+		this(S4mfccBuffer.to2DArray(dataList), nStates);
 	}
 
 
@@ -187,14 +182,16 @@ public class AlignmentScorer {
 	}
 
 
-	private void fillVoids() {
-		// fill unfilled stretches with silences
+	/**
+	 * Fill unfilled stretches with silences
+	 * @param sil0 state ID of SIL #0
+	 * @param sil1 state ID of SIL #1
+	 * @param sil2 state ID of SIL #2
+	 */
+	public void fillVoids(int sil0, int sil1, int sil2) {
 		int stretch0 = -1;
 
-		List<Integer> silStates = new ArrayList<>();
-		for (int i = 0; i < 3; i++) {
-			silStates.add(pool.getId(StatePool.SILENCE_PHONE, i));
-		}
+		List<Integer> silStates = Arrays.asList(sil0, sil1, sil2);
 
 		for (int f = 0; f < nFrames; f++) {
 			if (longTimeline[f] < 0 && stretch0 < 0) {
