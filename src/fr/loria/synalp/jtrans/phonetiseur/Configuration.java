@@ -9,7 +9,6 @@ package fr.loria.synalp.jtrans.phonetiseur;
 
 public class Configuration {
     public static final double EPSILON_ALIGNEMENT_GRAPHEME_PHONEME = 0.000000001;
-    public static final String REPERTOIRE_CIBLE_FICHIERS_DONNEES = System.getProperty("user.dir") + System.getProperty("file.separator");
     public static final String REPERTOIRE_FICHIERS_POUR_LES_TESTS_PHONETISEUR = System.getProperty("user.dir") + System.getProperty("file.separator") + "test" + System.getProperty("file.separator") + "plugins" + System.getProperty("file.separator") + "phonetiseur" + System.getProperty("file.separator");
     //*** La matrice de probas ***//
     public static final double SEUIL_SCORE_ALIGNEMENT_POUR_TENIR_COMPTE_CALCUL_MATRICE_PROBA = .01;

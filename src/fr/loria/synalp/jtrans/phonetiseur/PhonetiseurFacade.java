@@ -22,16 +22,6 @@ public class PhonetiseurFacade {
      * @param cheminRepModel chemin vers le repertoire contenant (ou qui contiendra) la sauvegarde des classifieurs
      */
     public PhonetiseurFacade(String cheminFichierMatriceProbaEtLexique, String cheminRepArff, String cheminRepModel) {
-        if (cheminRepArff.charAt(cheminRepArff.length() - 1) != System.getProperty("file.separator").charAt(0)) {
-            // S'il manque un separateur a la fin du chemin passe en parametre : on le rajoute
-//            cheminRepArff += System.getProperty("file.separator");
-        }
-        if (cheminRepModel.charAt(cheminRepModel.length() - 1) != System.getProperty("file.separator").charAt(0)) {
-            // S'il manque un separateur a la fin du chemin passe en parametre : on le rajoute
-//            cheminRepModel += System.getProperty("file.separator");
-        }
-
-
         this.cheminFichierMatriceProbaEtLexique = cheminFichierMatriceProbaEtLexique;
         this.cheminRepArff = cheminRepArff;
         this.cheminRepModel = cheminRepModel;

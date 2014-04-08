@@ -21,11 +21,6 @@ import fr.loria.synalp.jtrans.speechreco.phonetiseurs.SimplePhonetiseur;
 public class Grammatiseur implements Serializable {
 
 	public static boolean fastLoading=false;
-	
-	public final static String REP_PHONETISEUR = "fichiersPhonetiseur/";
-	public final static String FICHIER_G_P_PROB = "graphemes_phonemes_matriceProba";
-	public final static String RP_ARFF = "entetesArff/";
-	public final static String REP_MODELS = "models/";
 
 	PronunciationsLexicon dictionnaire;
 	HashMap<String, String> numbersMap = new HashMap<String, String>();
@@ -54,12 +49,15 @@ public class Grammatiseur implements Serializable {
 	}
 
 	public void initPhonetiseur() {
-		phonetiseur = new PhonetiseurFacade(REP_PHONETISEUR + FICHIER_G_P_PROB, REP_PHONETISEUR + RP_ARFF, REP_PHONETISEUR + REP_MODELS);
+		phonetiseur = new PhonetiseurFacade(
+				"res/fichiersPhonetiseur/graphemes_phonemes_matriceProba",
+				"res/fichiersPhonetiseur/entetesArff/",
+				"res/fichiersPhonetiseur/models/");
 		try {
 			phonetiseur.chargerClassifieurs();
 		} catch (Exception ex) {
 			System.out.println("Warning : le phonetiseur ne s'est pas charge correctement...");
-			//            ex.printStackTrace();
+			ex.printStackTrace();
 			phonetiseur=null;
 		}
 	}

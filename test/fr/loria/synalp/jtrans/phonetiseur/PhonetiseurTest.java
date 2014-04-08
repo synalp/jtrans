@@ -179,17 +179,21 @@ public class PhonetiseurTest {
         lgp.ajouterPosTag("fefzzzz");
         lgp.ajouterPosTag("fefzzzzz");
 
+		File f = File.createTempFile("test", ".txt");
+		f.deleteOnExit();
+		System.out.println(f);
+
         Phonetiseur p = new Phonetiseur(34, 0, 0, 0, 0, "_g", "_f");
         p.setLexique(lgp);
         p.setMProbaUnGraphemeUnPhoneme(mProbaGP);
         p.setMProbaUnGraphemeDeuxPhonemes(mProbaG2P);
         p.setMCumulAssociationUnGraphemeUnPhoneme(mScoreGP);
         p.setMCumulAssociationUnGraphemeDeuxPhonemes(mScoreG2P);
-        p.enregistrerMatriceProbaEtLexique(Configuration.REPERTOIRE_CIBLE_FICHIERS_DONNEES + "fichierTest______.txt");
+        p.enregistrerMatriceProbaEtLexique(f.getAbsolutePath());
 
         Phonetiseur p2 = new Phonetiseur(34, 0, 0, 0, 0, "_g", "_f");
         p2.setLexique(new LexiqueGraphemesPhonemesPostag());
-        p2.chargerMatriceProbaEtLexique(Configuration.REPERTOIRE_CIBLE_FICHIERS_DONNEES + "fichierTest______.txt");
+        p2.chargerMatriceProbaEtLexique(f.getAbsolutePath());
 
         assertEquals(p2.getLexique().getNbGraphemes(), 3);
         assertEquals(p2.getLexique().getGraphemeFromIndice(0), "a");
@@ -254,9 +258,6 @@ public class PhonetiseurTest {
         assertEquals(p2.getMProbaUnGraphemeDeuxPhonemes()[1][1], .04f, 0.0000001f);
         assertEquals(p2.getMProbaUnGraphemeDeuxPhonemes()[2][0], .1f, 0.0000001f);
         assertEquals(p2.getMProbaUnGraphemeDeuxPhonemes()[2][1], 4f, 0.0000001f);
-
-        File n = new File(Configuration.REPERTOIRE_CIBLE_FICHIERS_DONNEES + "fichierTest______.txt");
-        n.delete();
     }
 
     /**
