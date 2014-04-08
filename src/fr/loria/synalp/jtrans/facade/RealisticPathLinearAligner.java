@@ -48,9 +48,9 @@ public class RealisticPathLinearAligner extends AutoAligner {
 		List<Integer> values = new ArrayList<Integer>();
 
 		for (int i = 0; i < refTL.length; i++) {
-			int state = refTL[i];
-			if (i == 0 || refTL[i-1] != state) {
-				values.add(state);
+			int node = refTL[i];
+			if (i == 0 || refTL[i-1] != node) {
+				values.add(node);
 			}
 		}
 
