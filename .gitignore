@@ -16,6 +16,7 @@ jtrans.jar
 build
 build-test
 test-reports
+dist
 
 # non-binary libraries
 lib/*-sources.jar

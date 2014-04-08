@@ -7,8 +7,10 @@
 	<property name="test" location="test"/>
 	<property name="test.build" location="build-test"/>
 	<property name="test.reports" location="test-reports"/>
+	<property name="dist" location="dist"/>
 	<property name="version" value="0.1-SNAPSHOT"/>
 	<property name="jarfile" location="jtrans.jar"/>
+	<property name="release.prefix" value="jtrans-${version}"/>
 
 	<path id="my.classpath">
 		<fileset dir="${libs}">
@@ -32,6 +34,7 @@
 		<mkdir dir="${build}"/>
 		<mkdir dir="${test.build}"/>
 		<mkdir dir="${test.reports}"/>
+		<mkdir dir="${dist}"/>
 		<copy todir="${build}">
 			<fileset dir="src" includes="**/*.dtd" />
 			<fileset dir="src" includes="**/*.properties" />
@@ -42,11 +45,14 @@
 		<delete dir="${build}"/>
 		<delete dir="${test.build}"/>
 		<delete dir="${test.reports}"/>
+		<delete dir="${dist}"/>
 		<delete file="${jarfile}"/>
 	</target>
 
 	<target name="compile" depends="init">
 		<javac debug="on"
+			source="1.7"
+			target="1.7"
 			srcdir="${src}"
 			destdir="${build}"
 			classpathref="my.classpath"
@@ -93,6 +99,22 @@
 				</fileset>
 			</batchtest>
 		</junit>
+	</target>
+
+	<target name="release" depends="jar">
+		<zip destfile="${dist}/jtrans-${version}.zip">
+			<zipfileset
+				dir="docs"
+				prefix="${release.prefix}/docs"/>
+			<zipfileset
+				dir="."
+				includes="jtrans.jar,README.md,LICENSE.txt"
+				prefix="${release.prefix}"/>
+			<zipfileset
+				dir="${libs}"
+				excludes="*-sources.jar,*-javadoc.jar"
+				prefix="${release.prefix}/lib"/>
+		</zip>
 	</target>
 
 	<target name="ivy-retrieve-binaries"
