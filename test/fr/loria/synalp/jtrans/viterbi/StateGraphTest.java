@@ -160,8 +160,8 @@ public class StateGraphTest {
 		StateGraph sg = bogusSG(
 				"( t e y | t y )",
 				"p eu",
-				"( ( p a s | p e [ sil ] a [ sil ] E s ) [ z ] | p a [ z ] )",
-				"( s a v u a R | s a v w a R )"
+				"( ( p a s | p e [ SIL ] a [ SIL ] eh s ) [ z ] | p a [ z ] )",
+				"( s a v u a r | s a v w a r )"
 		);
 
 

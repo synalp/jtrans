@@ -119,7 +119,8 @@ public class StateGraph {
 
 
 	/**
-	 * Creates grammar rules from a list of words.
+	 * Creates grammar rules from a list of words using the standard
+	 * grammatizer.
 	 * @param words array of whitespace-trimmed words
 	 * @return a 2D array of rule tokens (1st dimension corresponds to word
 	 * indices). If a word can't be processed, its rule is set to null.
@@ -133,8 +134,21 @@ public class StateGraph {
 
 			if (rule == null || rule.isEmpty()) {
 				rules[i] = null;
-			} else {
-				rules[i] = trimSplit(rule);
+				continue;
+			}
+
+			rules[i] = trimSplit(rule);
+
+			for (int j = 0; j < rules[i].length; j++) {
+				String r = rules[i][j];
+
+				// Convert phones - don't touch ()[]|
+				// TODO: gram should handle the conversion transparently
+				if (!NONPHONE_PATTERN.matcher(r).matches()) {
+					rules[i][j] = PhoneticForcedGrammar.convertPhone(r);
+				}
+
+				assert rules[i][j] != null;
 			}
 		}
 
@@ -207,11 +221,9 @@ public class StateGraph {
 				// Compulsory 1-token path
 				// Replace existing tails
 
-				String phone = PhoneticForcedGrammar.convertPhone(token);
-				int posNewState0 = insertionPoint;
-
 				// Create the actual nodes
-				insertStateTriplet(phone);
+				int posNewState0 = insertionPoint;
+				insertStateTriplet(token);
 
 				// Bind tails to the 1st state that just got created
 				for (Integer parentId: tails) {
