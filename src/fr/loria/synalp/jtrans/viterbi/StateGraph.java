@@ -114,6 +114,11 @@ public class StateGraph {
 	}
 
 
+	public List<Word> getWords() {
+		return words;
+	}
+
+
 	/**
 	 * Creates grammar rules from a list of words using the standard
 	 * grammatizer.

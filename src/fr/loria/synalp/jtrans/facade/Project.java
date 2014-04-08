@@ -5,6 +5,8 @@ import fr.loria.synalp.jtrans.elements.Element;
 import fr.loria.synalp.jtrans.elements.Word;
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
 import fr.loria.synalp.jtrans.utils.TimeConverter;
+import fr.loria.synalp.jtrans.viterbi.StateGraph;
+import fr.loria.synalp.jtrans.viterbi.StatePool;
 
 import javax.sound.sampled.*;
 import java.io.*;
@@ -62,14 +64,23 @@ public class Project {
 	}
 
 
-	public AutoAligner getStandardAligner(ProgressDisplay progress)
+	public AutoAligner getAligner(
+			Class<? extends AutoAligner> alignerClass,
+			ProgressDisplay progress)
 			throws IOException, ReflectiveOperationException
 	{
-		AutoAligner aa = ALIGNER
+		AutoAligner aa = alignerClass
 				.getConstructor(File.class, ProgressDisplay.class)
 				.newInstance(convertedAudioFile, progress);
 		aa.setScorers(tracks.size());
 		return aa;
+	}
+
+
+	public AutoAligner getStandardAligner(ProgressDisplay progress)
+			throws IOException, ReflectiveOperationException
+	{
+		return getAligner(ALIGNER, progress);
 	}
 
 
@@ -102,7 +113,8 @@ public class Project {
 
 		assert iFrame <= fFrame;
 
-		aligner.align(sandwich.getWords(), iFrame, fFrame);
+		StateGraph graph = new StateGraph(new StatePool(), sandwich.getWords());
+		aligner.align(graph, iFrame, fFrame);
 	}
 
 
@@ -157,6 +169,48 @@ public class Project {
 		if (ALIGN_OVERLAPS) {
 			align(aligner, false);
 		}
+	}
+
+
+	/**
+	 * Returns a linear state graph matching the state sequence followed in the
+	 * aligned words. Overlapping speech is ignored as per the contract of
+	 * LinearBridge.
+	 */
+	public StateGraph getLinearStateGraph() {
+		// Find all aligned words in a linear sequence
+		List<Word> sequence = new ArrayList<>();
+		LinearBridge bridge = new LinearBridge(tracks);
+		while (bridge.hasNext()) {
+			sequence.addAll(
+					bridge.nextInterleavedElementSequence().getAlignedWords());
+		}
+
+		assert !sequence.isEmpty():
+				"text must be aligned before generating a linear state graph";
+
+		String[][] rules    = new String[sequence.size()][];
+		int        wi       = 0;
+
+		// Fill state graph info
+		for (Word w: sequence) {
+			List<Word.Phone> phones = w.getPhones();
+			String[] rule = new String[phones.size()];
+			for (int i = 0; i < phones.size(); i++) {
+				rule[i] = phones.get(i).toString();
+			}
+
+			rules[wi] = rule;
+			wi++;
+		}
+
+		// Don't use extra optional interword silences. Aligned words already
+		// contain the silence "phones" that come after them.
+		StateGraph sg = new StateGraph(
+				new StatePool(), rules, sequence, false);
+		assert sg.isLinear();
+
+		return sg;
 	}
 
 

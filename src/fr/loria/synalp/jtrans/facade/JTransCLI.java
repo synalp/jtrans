@@ -9,6 +9,7 @@ import fr.loria.synalp.jtrans.utils.FileUtils;
 import fr.loria.synalp.jtrans.utils.PrintStreamProgressDisplay;
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
 import fr.loria.synalp.jtrans.viterbi.AlignmentScorer;
+import fr.loria.synalp.jtrans.viterbi.StateGraph;
 import joptsimple.*;
 
 import java.io.*;
@@ -382,6 +383,7 @@ public class JTransCLI {
 		final Project project;
 		final Project reference;
 		final JTransCLI cli;
+		final StateGraph forcedStateGraph;
 
 		loadLoggingProperties();
 
@@ -415,8 +417,19 @@ public class JTransCLI {
 		}
 
 		if (cli.clearTimes) {
+			/* TODO: forced state graph: should be made accessible through a
+			command line switch and generalized to linear alignments
+			(eliminating the need for RealisticPathLinearAligner) */
+			System.out.println("Computing reference linear state graph...");
+			AutoAligner refAl = project.getAligner(ViterbiAligner.class, progress);
+			project.alignInterleaved(refAl);
+			forcedStateGraph = project.getLinearStateGraph();
+			project.clearAlignment();
+			//------------------------------------------------------------------
 			project.clearAllAnchorTimes();
 			System.out.println("Anchor times cleared.");
+		} else {
+			forcedStateGraph = null;
 		}
 
 		if (cli.runAnchorDiffTest) {
@@ -442,7 +455,9 @@ public class JTransCLI {
 			assert aligner != null;
 
 			System.out.println("Aligning...");
-			if (cli.clearTimes || !Project.ALIGN_OVERLAPS) {
+			if (null != forcedStateGraph) {
+				aligner.align(forcedStateGraph, 0, aligner.getFrameCount()-1);
+			} else if (cli.clearTimes || !Project.ALIGN_OVERLAPS) {
 				project.alignInterleaved(aligner);
 			} else {
 				project.align(aligner, true);

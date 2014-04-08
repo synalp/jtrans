@@ -17,12 +17,11 @@ import java.util.List;
  */
 public abstract class AutoAligner {
 
-	protected final StatePool pool;
 	protected List<AlignmentScorer> scorers;
 	protected final List<FloatData> data;
 	protected final File audio;
 	protected final ProgressDisplay progress;
-	protected Runnable refinementIterationHook;
+	private Runnable refinementIterationHook;
 
 
 	/**
@@ -43,7 +42,6 @@ public abstract class AutoAligner {
 		this.audio = audio;
 
 		data = S4mfccBuffer.getAllData(audio);
-		pool = new StatePool();
 	}
 
 
@@ -88,30 +86,25 @@ public abstract class AutoAligner {
 
 
 	/**
-	 * Align words between startWord and endWord.
+	 * Aligns words in a StateGraph.
 	 * @param endFrame last frame to analyze
 	 */
 	public void align(
-			final List<Word> words,
+			final StateGraph graph,
 			final int startFrame,
 			final int endFrame)
 			throws IOException, InterruptedException
 	{
-		if (progress != null) {
-			progress.setIndeterminateProgress("Setting up state graph...");
-		}
-
 		// Space-separated string of words (used as identifier for cache files)
 		final String text;
 
 		// build wordStrings and text
 		StringBuilder textBuilder = new StringBuilder();
-		for (Word w: words) {
+		for (Word w: graph.getWords()) {
 			textBuilder.append(w.toString()).append(" ");
 		}
 		text = textBuilder.toString();
 
-		final StateGraph graph = new StateGraph(pool, words);
 		graph.setProgressDisplay(progress);
 
 		// Cache wrapper class for getTimeline()
@@ -133,7 +126,7 @@ public abstract class AutoAligner {
 				getTimelineCacheDirectoryName(),
 				"timeline",
 				new TimelineFactory(),
-				audio, text, startFrame, endFrame);
+				audio, text, graph.getNodeCount(), startFrame, endFrame);
 
 		if (COMPUTE_LIKELIHOODS) {
 			assert scorers != null;
@@ -143,7 +136,7 @@ public abstract class AutoAligner {
 
 			graph.setWordAlignments(timeline, startFrame);
 
-			for (Word w: words) {
+			for (Word w: graph.getWords()) {
 				scorers.get(w.getSpeaker())
 						.learn(w, graph, timeline, startFrame);
 			}

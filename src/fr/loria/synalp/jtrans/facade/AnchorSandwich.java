@@ -70,6 +70,20 @@ public class AnchorSandwich
 		return words;
 	}
 
+
+	public List<Word> getAlignedWords() {
+		List<Word> words = new ArrayList<Word>();
+
+		for (Element el: elements) {
+			if (el instanceof Word && ((Word) el).isAligned()) {
+				words.add((Word)el);
+			}
+		}
+
+		return words;
+	}
+
+
 	public String getSpaceSeparatedWords() {
 		StringBuilder sb = new StringBuilder();
 		String prefix = "";
