@@ -71,7 +71,8 @@ public class AlignmentScorerTest {
 				sp,
 				new String[][]{{"a"}, {"o"}},
 				new String[]{"ah", "oh"},
-				new int[]{0, 1});
+				new int[]{0, 1},
+				true);
 
 		spk0 = new AlignmentScorer(data, STATE_COUNT);
 		spk1 = new AlignmentScorer(data, STATE_COUNT);

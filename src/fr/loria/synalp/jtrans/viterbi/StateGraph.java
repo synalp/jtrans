@@ -158,7 +158,7 @@ public class StateGraph {
 	/**
 	 * Counts phones in a list of rules.
 	 */
-	public static int countPhones(String[][] rules) {
+	public static int countPhones(String[][] rules, boolean interWordSilences) {
 		// Mandatory final & initial silence
 		int count = 2;
 
@@ -167,7 +167,7 @@ public class StateGraph {
 				continue;
 
 			// Optional silence between each word
-			if (count > 2)
+			if (interWordSilences && count > 2)
 				count++;
 
 			for (String token: ruleTokens)
@@ -357,12 +357,14 @@ public class StateGraph {
 	 * @param words an array of words
 	 * @param rules a 2D array of rule tokens. The first dimension maps to the
 	 *              index of the word corresponding to the rule.
+	 * @param interWordSilences insert optional silences between each word
 	 */
 	public StateGraph(
 			StatePool pool,
 			String[][] rules,
 			String[] words,
-			int[] speakers)
+			int[] speakers,
+			boolean interWordSilences)
 	{
 		this.words = words;
 		this.pool = pool;
@@ -370,7 +372,7 @@ public class StateGraph {
 		wordBoundaries = new int[words.length];
 		wordSpeakers = speakers;
 
-		nPhones = countPhones(rules);
+		nPhones = countPhones(rules, interWordSilences);
 		nNodes  = 3 * nPhones;
 
 		nodeStates = new int  [nNodes];
@@ -395,7 +397,7 @@ public class StateGraph {
 				continue;
 			}
 
-			if (nonEmptyRules > 0) {
+			if (interWordSilences && nonEmptyRules > 0) {
 				// optional silence between two words
 				parseRule(OPT_SILENCE_RULE, tails);
 			}
@@ -434,7 +436,7 @@ public class StateGraph {
 	 * Rules will be looked up in the standard grammar.
 	 */
 	public StateGraph(StatePool pool, String[] words, int[] speakers) {
-		this(pool, getRules(words), words, speakers);
+		this(pool, getRules(words), words, speakers, true);
 	}
 
 

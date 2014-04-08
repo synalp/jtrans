@@ -15,8 +15,12 @@ public class StateGraphTest {
 	 * words don't matter (bogus words are generated for each rule).
 	 * @param wordRules Rules for each separate word. Rules must be given as
 	 *                  strings of whitespace-separated rule tokens.
+	 * @param interWordSilences insert optional silences between words
 	 */
-	private static StateGraph bogusSG(String... wordRules) {
+	private static StateGraph bogusSG(
+			boolean interWordSilences,
+			String... wordRules)
+	{
 		final int n = wordRules.length;
 
 		String[] phrase = new String[n];
@@ -30,9 +34,25 @@ public class StateGraphTest {
 				rules[i] = StateGraph.trimSplit(wordRules[i]);
 		}
 
+		// initialized to speaker #0
 		int[] speakers = new int[phrase.length];
 
-		return new StateGraph(new StatePool(), rules, phrase, speakers);
+		return new StateGraph(
+				new StatePool(),
+				rules,
+				phrase,
+				speakers,
+				interWordSilences);
+	}
+
+
+	/**
+	 * Constructs a StateGraph with arbitrary rules, inserting optional silences
+	 * between each word.
+	 * @see #bogusSG(boolean, String...)
+	 */
+	private StateGraph bogusSG(String... wordRules) {
+		return bogusSG(true, wordRules);
 	}
 
 
@@ -71,6 +91,21 @@ public class StateGraphTest {
 
 		sg = bogusSG("a", "( a | i )");
 		Assert.assertEquals(3*(1+1+3+1), sg.getNodeCount());
+	}
+
+
+	@Test
+	public void testNoInterWordSilences() {
+		StateGraph sg;
+
+		sg = bogusSG(false, "a", "a");
+		Assert.assertEquals(3*(1+1+1+1), sg.getNodeCount());
+
+		sg = bogusSG(false, "a", "[ a ]");
+		Assert.assertEquals(3*(1+1+1+1), sg.getNodeCount());
+
+		sg = bogusSG(false, "a", "( a | i )");
+		Assert.assertEquals(3*(1+1+2+1), sg.getNodeCount());
 	}
 
 
