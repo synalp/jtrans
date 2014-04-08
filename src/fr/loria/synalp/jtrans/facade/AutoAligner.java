@@ -101,25 +101,17 @@ public abstract class AutoAligner {
 			progress.setIndeterminateProgress("Setting up state graph...");
 		}
 
-		// String representations of each word (used to build StateGraph)
-		final String[] wordStrings = new String[words.size()];
-
-		final int[] wordSpeakers = new int[words.size()];
-
 		// Space-separated string of words (used as identifier for cache files)
 		final String text;
 
 		// build wordStrings and text
 		StringBuilder textBuilder = new StringBuilder();
-		for (int i = 0; i < words.size(); i++) {
-			Word w = words.get(i);
-			wordStrings[i] = w.toString();
-			wordSpeakers[i] = w.getSpeaker();
+		for (Word w: words) {
 			textBuilder.append(w.toString()).append(" ");
 		}
 		text = textBuilder.toString();
 
-		final StateGraph graph = new StateGraph(pool, wordStrings, wordSpeakers);
+		final StateGraph graph = new StateGraph(pool, words);
 		graph.setProgressDisplay(progress);
 
 		// Cache wrapper class for getTimeline()
@@ -149,7 +141,7 @@ public abstract class AutoAligner {
 				progress.setIndeterminateProgress("Computing likelihood...");
 			}
 
-			graph.setWordAlignments(words, timeline, startFrame);
+			graph.setWordAlignments(timeline, startFrame);
 
 			for (Word w: words) {
 				scorers.get(w.getSpeaker())
@@ -180,14 +172,15 @@ public abstract class AutoAligner {
 			*/
 		}
 
-		graph.setWordAlignments(words, timeline, startFrame);
+		graph.setWordAlignments(timeline, startFrame);
 	}
 
 
 	/**
 	 * Aligns a StateGraph and produces an HMM state timeline.
-	 * @param text space-separated words (mainly useful as an identifier for
-	 *             cache files)
+	 * @param text space-separated words. Don't use this for anything serious!
+	 *             It's mainly useful as an identifier for cache files.
+	 *             The actual words are contained in the StateGraph!
 	 * @return a frame-by-frame timeline of HMM states
 	 */
 	protected abstract int[] getTimeline(

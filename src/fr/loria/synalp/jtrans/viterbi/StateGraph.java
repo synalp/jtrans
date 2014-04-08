@@ -4,7 +4,6 @@ import edu.cmu.sphinx.frontend.*;
 import edu.cmu.sphinx.linguist.acoustic.*;
 import edu.cmu.sphinx.util.LogMath;
 import fr.loria.synalp.jtrans.elements.Word;
-import fr.loria.synalp.jtrans.facade.Cache;
 import fr.loria.synalp.jtrans.speechreco.grammaire.Grammatiseur;
 import fr.loria.synalp.jtrans.speechreco.s4.*;
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
@@ -81,8 +80,8 @@ public class StateGraph {
 	/** Insertion point for new nodes in the nodeStates array. */
 	private int insertionPoint;
 
-	/** Human-readable words at the basis of this grammar */
-	private final String[] words;
+	/** Alignable words at the basis of this grammar */
+	private final List<Word> words;
 
 	/**
 	 * Indices of the initial node of each word (i.e. that points to the first
@@ -92,8 +91,6 @@ public class StateGraph {
 	 * reflects the order of the words.
 	 */
 	private final int[] wordBoundaries;
-
-	private final int[] wordSpeakers;
 
 	/** Used to report progress in viterbi() and backtrack() (may be null) */
 	private ProgressDisplay progress = null;
@@ -124,12 +121,12 @@ public class StateGraph {
 	 * @return a 2D array of rule tokens (1st dimension corresponds to word
 	 * indices). If a word can't be processed, its rule is set to null.
 	 */
-	public static String[][] getRules(String[] words) {
-		String[][] rules = new String[words.length][];
+	public static String[][] getRules(List<Word> words) {
+		String[][] rules = new String[words.size()][];
 		Grammatiseur gram = Grammatiseur.getGrammatiseur();
 
-		for (int i = 0; i < words.length; i++) {
-			String rule = gram.getGrammar(words[i]);
+		for (int i = 0; i < words.size(); i++) {
+			String rule = gram.getGrammar(words.get(i).toString());
 
 			if (rule == null || rule.isEmpty()) {
 				rules[i] = null;
@@ -362,15 +359,13 @@ public class StateGraph {
 	public StateGraph(
 			StatePool pool,
 			String[][] rules,
-			String[] words,
-			int[] speakers,
+			List<Word> words,
 			boolean interWordSilences)
 	{
 		this.words = words;
 		this.pool = pool;
 
-		wordBoundaries = new int[words.length];
-		wordSpeakers = speakers;
+		wordBoundaries = new int[words.size()];
 
 		nPhones = countPhones(rules, interWordSilences);
 		nNodes  = 3 * nPhones;
@@ -390,9 +385,9 @@ public class StateGraph {
 
 		int nonEmptyRules = 0;
 
-		for (int i = 0; i < words.length; i++) {
+		for (int i = 0; i < words.size(); i++) {
 			if (null == rules[i]) {
-				System.err.println("Skipping word without a rule: " + words[i]);
+				System.err.println("Skipping word without a rule: " + words.get(i));
 				wordBoundaries[i] = -1;
 				continue;
 			}
@@ -435,8 +430,8 @@ public class StateGraph {
 	 * Constructs a state graph from an array of words.
 	 * Rules will be looked up in the standard grammar.
 	 */
-	public StateGraph(StatePool pool, String[] words, int[] speakers) {
-		this(pool, getRules(words), words, speakers, true);
+	public StateGraph(StatePool pool, List<Word> words) {
+		this(pool, getRules(words), words, true);
 	}
 
 
@@ -446,9 +441,11 @@ public class StateGraph {
 	 * independent state pool.
 	 */
 	public static StateGraph quick(String text) {
-		String[] words = trimSplit(text);
-		int[] speakers = new int[words.length];
-		return new StateGraph(new StatePool(), words, speakers);
+		List<Word> words = new ArrayList<>();
+		for (String str: trimSplit(text)) {
+			words.add(new Word(str));
+		}
+		return new StateGraph(new StatePool(), words);
 	}
 
 
@@ -627,13 +624,13 @@ public class StateGraph {
 		int w = -1;
 		for (int f = 0; f < timeline.length; f++) {
 			int frameState = timeline[f];
-			while (w+1 < words.length && wordBoundaries[w+1] < frameState) {
+			while (w+1 < words.size() && wordBoundaries[w+1] < frameState) {
 				w++;
 			}
 			if (w != pw) {
 				System.out.println(String.format("%8.2f %16s %8d",
 						TimeConverter.frame2sec(f),
-						words[w],
+						words.get(w),
 						wordBoundaries[w]));
 				pw = w;
 			}
@@ -642,13 +639,10 @@ public class StateGraph {
 
 
 	public void setWordAlignments(
-			List<Word> alignable,
 			int[] timeline,
 			int offset)
 	{
-		assert alignable.size() == wordBoundaries.length;
-
-		for (Word w: alignable) {
+		for (Word w: words) {
 			w.clearAlignment();
 		}
 
@@ -662,12 +656,12 @@ public class StateGraph {
 			int now = offset+f; // absolute frame number
 
 			int pw = cw; // previous word idx
-			while (cw+1 < words.length && wordBoundaries[cw+1] <= cs) {
+			while (cw+1 < words.size() && wordBoundaries[cw+1] <= cs) {
 				cw++;
 			}
 
 			if (cw != pw) {
-				word = alignable.get(cw);
+				word = words.get(cw);
 				word.setSegment(now, now);
 			} else if (null != word) {
 				word.getSegment().setEndFrame(now);
@@ -703,51 +697,6 @@ public class StateGraph {
 		}
 
 		return true;
-	}
-
-
-	public static void main(String[] args) throws Exception {
-		if (args.length != 2) {
-			System.out.println("USAGE: StateGraph <SOUNDFILE.WAV> <\"transcription\">");
-			System.exit(1);
-		}
-
-		final String wavpath = args[0];
-		final String words = new Scanner(new File(args[1])).useDelimiter("\\Z")
-				.next().replaceAll("[\\n\\r\u001f]", " ");
-
-		StateGraph gv = StateGraph.quick(words);
-		System.out.println("PHONE COUNT: " + gv.nPhones);
-		System.out.println("GRAPH SIZE: " + gv.nNodes);
-		gv.dumpDot(new FileWriter("grammar_vector.dot"));
-
-		System.out.println("Starting Viterbi...");
-
-		File swapFile = Cache.getCacheFile("backtrack", "swp", words);
-		File indexFile = Cache.getCacheFile("backtrack", "idx", words);
-
-		boolean quick = false;
-		PageIndex index;
-
-		if (!quick) {
-			long t0 = System.currentTimeMillis();
-			SwapDeflater swapper = SwapDeflater.getSensibleSwapDeflater(true);
-			swapper.init(gv.nNodes, new FileOutputStream(swapFile));
-			gv.viterbi(S4mfccBuffer.getAllData(new File(wavpath)), swapper, 0, -1);
-			System.out.println("VITERBI TOOK " + (System.currentTimeMillis()-t0)/1000L + " SECONDS");
-			index = swapper.getIndex();
-			index.serialize(new FileOutputStream(indexFile));
-		} else {
-			index = PageIndex.deserialize(new FileInputStream(indexFile));
-		}
-
-		System.out.println("FRAME COUNT: " + index.getFrameCount());
-
-		System.out.println("Backtracking...");
-		SwapInflater swapReader = new SwapInflater();
-		swapReader.init(index, swapFile);
-		int[] timeline = gv.backtrack(swapReader);
-		gv.prettyPrintTimeline(timeline);
 	}
 
 }

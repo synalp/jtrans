@@ -1,8 +1,11 @@
 package fr.loria.synalp.jtrans.viterbi;
 
+import fr.loria.synalp.jtrans.elements.Word;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.Arrays;
 
 import static fr.loria.synalp.jtrans.facade.FastLinearAligner.fillInterpolate;
 
@@ -67,11 +70,15 @@ public class AlignmentScorerTest {
 
 		sp = new StatePool();
 
+		Word ah = new Word("ah");
+		ah.setSpeaker(0);
+		Word oh = new Word("oh");
+		oh.setSpeaker(1);
+
 		sg = new StateGraph(
 				sp,
 				new String[][]{{"a"}, {"o"}},
-				new String[]{"ah", "oh"},
-				new int[]{0, 1},
+				Arrays.asList(ah, oh),
 				true);
 
 		spk0 = new AlignmentScorer(data, STATE_COUNT);

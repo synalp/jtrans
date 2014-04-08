@@ -23,9 +23,9 @@ public class StateGraphTest {
 	{
 		final int n = wordRules.length;
 
-		String[] phrase = new String[n];
+		List<Word> phrase = new ArrayList<>();
 		for (int i = 0; i < n; i++) {
-			phrase[i] = "Bogus" + i;
+			phrase.add(new Word("Bogus" + i));
 		}
 
 		String[][] rules = new String[n][];
@@ -34,14 +34,10 @@ public class StateGraphTest {
 				rules[i] = StateGraph.trimSplit(wordRules[i]);
 		}
 
-		// initialized to speaker #0
-		int[] speakers = new int[phrase.length];
-
 		return new StateGraph(
 				new StatePool(),
 				rules,
 				phrase,
-				speakers,
 				interWordSilences);
 	}
 
@@ -51,8 +47,19 @@ public class StateGraphTest {
 	 * between each word.
 	 * @see #bogusSG(boolean, String...)
 	 */
-	private StateGraph bogusSG(String... wordRules) {
+	private static StateGraph bogusSG(String... wordRules) {
 		return bogusSG(true, wordRules);
+	}
+
+
+	private static String[][] multiTrimSplit(String... wordRules) {
+		String[][] trimmed = new String[wordRules.length][];
+
+		for (int i = 0; i < wordRules.length; i++) {
+			trimmed[i] = StateGraph.trimSplit(wordRules[i]);
+		}
+
+		return trimmed;
 	}
 
 
@@ -220,13 +227,11 @@ public class StateGraphTest {
 
 	@Test
 	public void testWordBreakdown1() {
-		StateGraph sg = bogusSG(
+		String[][] rules = multiTrimSplit(
 				"( t e y | t y )",
 				"p eu",
 				"( ( p a s | p e [ SIL ] a [ SIL ] eh s ) [ z ] | p a [ z ] )",
-				"( s a v u a r | s a v w a r )"
-		);
-
+				"( s a v u a r | s a v w a r )");
 
 		Word tu, peux, pas, savoir;
 
@@ -235,7 +240,11 @@ public class StateGraphTest {
 		pas = new Word("pas");
 		savoir = new Word("savoir");
 
-		List<Word> phrase = Arrays.asList(tu, peux, pas, savoir);
+		StateGraph sg = new StateGraph(
+				new StatePool(),
+				rules,
+				Arrays.asList(tu, peux, pas, savoir),
+				true);
 
 		int[] timeline = {
 				// frame 0: silence
@@ -266,7 +275,7 @@ public class StateGraphTest {
 		// spice things up with some offset
 		final int F = 1000;
 
-		sg.setWordAlignments(phrase, timeline, F);
+		sg.setWordAlignments(timeline, F);
 
 		Assert.assertEquals(F+3, tu.getSegment().getStartFrame());
 		Assert.assertEquals(F+8, tu.getSegment().getEndFrame());
@@ -309,11 +318,11 @@ public class StateGraphTest {
 		Word ah = new Word("ah");
 		Word meh = new Word("meh");
 
-		List<Word> alignable = new ArrayList<Word>();
-		alignable.add(ah);
-		alignable.add(meh);
-
-		StateGraph sg = bogusSG("a", "m ( e | i )");
+		StateGraph sg = new StateGraph(
+				new StatePool(),
+				multiTrimSplit("a", "m ( e | i )"),
+				Arrays.asList(ah, meh),
+				true);
 
 		Assert.assertEquals(
 				3 * (1 + /*a*/(1) + 1 + (/*m*/1 + /*e|i*/2) + 1),
@@ -353,7 +362,7 @@ public class StateGraphTest {
 				20,
 		};
 
-		sg.setWordAlignments(alignable, timeline, 0);
+		sg.setWordAlignments(timeline, 0);
 
 		Assert.assertTrue(ah.isAligned());
 		Assert.assertTrue(meh.isAligned());
