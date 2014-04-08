@@ -687,6 +687,25 @@ public class StateGraph {
 	}
 
 
+	/**
+	 * Returns true if there is only one possible path through all the nodes.
+	 * In other words, a graph is linear if all nodes transition to no more than
+	 * one other node besides themselves.
+	 */
+	public boolean isLinear() {
+		for (int i = 0; i < nNodes; i++) {
+			assert inCount[i] > 0: "must have at least one transition (loop)";
+			assert inNode[i][0] == i: "first transition must be a loop";
+
+			if (inCount[i] > 2) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+
 	public static void main(String[] args) throws Exception {
 		if (args.length != 2) {
 			System.out.println("USAGE: StateGraph <SOUNDFILE.WAV> <\"transcription\">");

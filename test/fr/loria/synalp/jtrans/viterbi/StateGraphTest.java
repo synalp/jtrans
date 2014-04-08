@@ -63,18 +63,23 @@ public class StateGraphTest {
 		StateGraph sg;
 
 		sg = bogusSG("a");
+		Assert.assertTrue(sg.isLinear());
 		Assert.assertEquals(3*(1+1+1), sg.getNodeCount());
 
 		sg = bogusSG("a [ a ]");
+		Assert.assertFalse(sg.isLinear());
 		Assert.assertEquals(3*(1+1+1+1), sg.getNodeCount());
 
 		sg = bogusSG("a [ a ] [ a ]");
+		Assert.assertFalse(sg.isLinear());
 		Assert.assertEquals(3*(1+1+1+1+1), sg.getNodeCount());
 
 		sg = bogusSG("a ( a | i )");
+		Assert.assertFalse(sg.isLinear());
 		Assert.assertEquals(3*(1+1+2+1), sg.getNodeCount());
 
 		sg = bogusSG("a ( a | [ i ] )");
+		Assert.assertFalse(sg.isLinear());
 		Assert.assertEquals(3*(1+1+2+1), sg.getNodeCount());
 	}
 
@@ -84,12 +89,15 @@ public class StateGraphTest {
 		StateGraph sg;
 
 		sg = bogusSG("a", "a");
+		Assert.assertFalse(sg.isLinear());
 		Assert.assertEquals(3*(1+1+2+1), sg.getNodeCount());
 
 		sg = bogusSG("a", "[ a ]");
+		Assert.assertFalse(sg.isLinear());
 		Assert.assertEquals(3*(1+1+2+1), sg.getNodeCount());
 
 		sg = bogusSG("a", "( a | i )");
+		Assert.assertFalse(sg.isLinear());
 		Assert.assertEquals(3*(1+1+3+1), sg.getNodeCount());
 	}
 
@@ -99,12 +107,15 @@ public class StateGraphTest {
 		StateGraph sg;
 
 		sg = bogusSG(false, "a", "a");
+		Assert.assertTrue(sg.isLinear());
 		Assert.assertEquals(3*(1+1+1+1), sg.getNodeCount());
 
 		sg = bogusSG(false, "a", "[ a ]");
+		Assert.assertFalse(sg.isLinear());
 		Assert.assertEquals(3*(1+1+1+1), sg.getNodeCount());
 
 		sg = bogusSG(false, "a", "( a | i )");
+		Assert.assertFalse(sg.isLinear());
 		Assert.assertEquals(3*(1+1+2+1), sg.getNodeCount());
 	}
 
@@ -112,6 +123,7 @@ public class StateGraphTest {
 	@Test
 	public void testInitialEmptyRule() {
 		StateGraph sg = bogusSG(null, "a");
+		Assert.assertTrue(sg.isLinear());
 		Assert.assertEquals(3*3, sg.getNodeCount());
 	}
 
@@ -121,12 +133,15 @@ public class StateGraphTest {
 		StateGraph sg;
 
 		sg = bogusSG("a", null);
+		Assert.assertTrue(sg.isLinear());
 		Assert.assertEquals(3*3, sg.getNodeCount());
 
 		sg = bogusSG("a", "b", null);
+		Assert.assertFalse(sg.isLinear());
 		Assert.assertEquals(3*(1+1+2+1), sg.getNodeCount());
 
 		sg = bogusSG("a", "b", "a", null);
+		Assert.assertFalse(sg.isLinear());
 		Assert.assertEquals(3*(1+1+2+2+1), sg.getNodeCount());
 	}
 
@@ -134,12 +149,15 @@ public class StateGraphTest {
 	@Test
 	public void testConsecutiveEmptyRules() {
 		StateGraph sg = bogusSG(null, null);
+		Assert.assertTrue(sg.isLinear());
 		Assert.assertEquals(3*2, sg.getNodeCount());
 
 		sg = bogusSG(null, null, null, null, null);
+		Assert.assertTrue(sg.isLinear());
 		Assert.assertEquals(3*2, sg.getNodeCount());
 
 		sg = bogusSG(null, null, "a", null, null, null);
+		Assert.assertTrue(sg.isLinear());
 		Assert.assertEquals(3*3, sg.getNodeCount());
 	}
 
@@ -149,15 +167,19 @@ public class StateGraphTest {
 		final int expected = 3 * (1 + 1 + 2 + 1);
 
 		StateGraph sg = bogusSG("a", null, "b");
+		Assert.assertFalse(sg.isLinear());
 		Assert.assertEquals(expected, sg.getNodeCount());
 
 		sg = bogusSG("a", null, null, null, null, "b");
+		Assert.assertFalse(sg.isLinear());
 		Assert.assertEquals(expected, sg.getNodeCount());
 
 		sg = bogusSG("a", null, null, null, null, "b", null);
+		Assert.assertFalse(sg.isLinear());
 		Assert.assertEquals(expected, sg.getNodeCount());
 
 		sg = bogusSG(null, "a", null, null, null, null, "b", null);
+		Assert.assertFalse(sg.isLinear());
 		Assert.assertEquals(expected, sg.getNodeCount());
 	}
 
@@ -168,15 +190,19 @@ public class StateGraphTest {
 		StateGraph sg;
 
 		sg = StateGraph.quick("a");
+		Assert.assertTrue(sg.isLinear());
 		Assert.assertEquals(expected, sg.getNodeCount());
 
 		sg = StateGraph.quick("() a");
+		Assert.assertTrue(sg.isLinear());
 		Assert.assertEquals(expected, sg.getNodeCount());
 
 		sg = StateGraph.quick("a ()");
+		Assert.assertTrue(sg.isLinear());
 		Assert.assertEquals(expected, sg.getNodeCount());
 
 		sg = StateGraph.quick("() () () () a () () () ()");
+		Assert.assertTrue(sg.isLinear());
 		Assert.assertEquals(expected, sg.getNodeCount());
 	}
 
