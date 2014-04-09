@@ -4,9 +4,7 @@ import fr.loria.synalp.jtrans.elements.Word;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class StateGraphTest {
 
@@ -407,6 +405,84 @@ public class StateGraphTest {
 			Assert.assertEquals("SIL", p.get(2).toString());
 			Assert.assertEquals(46,    p.get(2).getSegment().getStartFrame());
 			Assert.assertEquals(3+2+1, p.get(2).getSegment().getLengthFrames());
+		}
+	}
+
+
+	@Test
+	public void testWordIdx() {
+		StateGraph sg = bogusSG(
+				"a a a a a",
+				"a a a a a",
+				"a a a a a",
+				"a a a a a");
+
+		final int stateCountPerWord = 3 * (5+1);
+
+		Assert.assertEquals(-1, sg.getWordIdxAt(0));
+		Assert.assertEquals(-1, sg.getWordIdxAt(1));
+		Assert.assertEquals(-1, sg.getWordIdxAt(2));
+
+		int node = 3;
+		int fastW = -1;
+
+		for (int w = 0; w < 4; w++) {
+			int lastNode = node + stateCountPerWord;
+
+			for (; node < lastNode; node++) {
+				// slow version (starts from the beginning)
+				int slowW = sg.getWordIdxAt(node);
+
+				// fast version (picks up where we left off)
+				fastW = sg.getWordIdxAt(node, fastW);
+
+				Assert.assertEquals(w, slowW);
+				Assert.assertEquals(w, fastW);
+				Assert.assertTrue(slowW == fastW);
+			}
+		}
+
+		Assert.assertEquals(-1, sg.getWordIdxAt(9999));
+		Assert.assertEquals(-1, sg.getWordIdxAt(9999, fastW));
+	}
+
+
+	@Test
+	public void testWordIdxWithEmptyWords() {
+		String[][] rules = multiTrimSplit(
+				"a a a a a",
+				"",
+				"a a a a a"
+		);
+
+		// Cancel second word
+		rules[1] = null;
+
+		Word bogus = new Word("aaaaa");
+		Word dropped = new Word("dropped");
+
+		StateGraph sg = new StateGraph(
+				new StatePool(),
+				rules,
+				Arrays.asList(bogus, dropped, bogus),
+				true);
+
+		int i = 0;
+
+		for (; i < 3; i++) {
+			Assert.assertEquals(-1, sg.getWordIdxAt(i));
+			Assert.assertEquals(-1, sg.getWordIdxAt(i, -1));
+		}
+
+		for (; i < 3 + 6*3; i++) {
+			Assert.assertEquals(0, sg.getWordIdxAt(i));
+			Assert.assertEquals(0, sg.getWordIdxAt(i, -1));
+		}
+
+		// this is the tricky part (after the dropped word)
+		for (; i < sg.getNodeCount(); i++) {
+			Assert.assertEquals(2, sg.getWordIdxAt(i));
+			Assert.assertEquals(2, sg.getWordIdxAt(i, 0));
 		}
 	}
 

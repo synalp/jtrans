@@ -77,6 +77,9 @@ public class StateGraph {
 	/** Total number of nodes in the grammar. */
 	private final int nNodes;
 
+	/** Total number of words in the grammar. */
+	private final int nWords;
+
 	/** Insertion point for new nodes in the nodeStates array. */
 	private int insertionPoint;
 
@@ -193,6 +196,52 @@ public class StateGraph {
 
 	public String getPhoneAt(int nodeIdx) {
 		return getStateAt(nodeIdx).getHMM().getBaseUnit().getName();
+	}
+
+
+	/**
+	 * Returns the index of the word that belongs to the given node.
+	 * Starts searching from the beginning of the word list.
+	 * @return -1 if the word can't be found
+	 */
+	public int getWordIdxAt(int nodeIdx) {
+		return getWordIdxAt(nodeIdx, -1);
+	}
+
+
+	/**
+	 * Returns the index of the word that belongs to the given node.
+	 * Starts searching from a given position.
+	 * @param currWord Start searching from the word immediately following this
+	 * position. Use -1 to start searching from the beginning of the list!
+	 * @return -1 if the word can't be found
+	 */
+	public int getWordIdxAt(int nodeIdx, int currWord) {
+		assert currWord >= -1;
+
+		if (nodeIdx >= nNodes) {
+			return -1;
+		}
+
+		int currWB = currWord < 0? -1: wordBoundaries[currWord];
+
+		for (int w = currWord+1; w < nWords; w++) {
+			int wb = wordBoundaries[w];
+			if (wb < 0) {
+				continue;
+			}
+
+			assert currWord < 0 || wb > currWB: "can't move backwards";
+
+			if (wb > nodeIdx) {
+				return currWord;
+			}
+
+			currWord = w;
+			currWB = wb;
+		}
+
+		return currWord;
 	}
 
 
@@ -370,10 +419,11 @@ public class StateGraph {
 		this.words = words;
 		this.pool = pool;
 
-		wordBoundaries = new int[words.size()];
-
+		nWords  = words.size();
 		nPhones = countPhones(rules, interWordSilences);
 		nNodes  = 3 * nPhones;
+
+		wordBoundaries = new int[nWords];
 
 		nodeStates = new int  [nNodes];
 		inCount    = new byte [nNodes];
@@ -390,7 +440,7 @@ public class StateGraph {
 
 		int nonEmptyRules = 0;
 
-		for (int i = 0; i < words.size(); i++) {
+		for (int i = 0; i < nWords; i++) {
 			if (null == rules[i]) {
 				System.err.println("Skipping word without a rule: " + words.get(i));
 				wordBoundaries[i] = -1;
@@ -628,10 +678,7 @@ public class StateGraph {
 		int pw = -1;
 		int w = -1;
 		for (int f = 0; f < timeline.length; f++) {
-			int frameNode = timeline[f];
-			while (w+1 < words.size() && wordBoundaries[w+1] < frameNode) {
-				w++;
-			}
+			w = getWordIdxAt(timeline[f], w);
 			if (w != pw) {
 				System.out.println(String.format("%8.2f %16s %8d",
 						TimeConverter.frame2sec(f),
@@ -661,9 +708,7 @@ public class StateGraph {
 			int now = offset+f; // absolute frame number
 
 			int pw = cw; // previous word idx
-			while (cw+1 < words.size() && wordBoundaries[cw+1] <= cn) {
-				cw++;
-			}
+			cw = getWordIdxAt(cn, cw);
 
 			if (cw != pw) {
 				word = words.get(cw);
