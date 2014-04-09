@@ -66,7 +66,7 @@ public class StateGraph {
 	private final int[][] inNode;
 
 	/**
-	 * Probability of each incoming transition.
+	 * Probability of each incoming transition (in the log domain).
 	 * The first entry is *always* the probability of looping on the same state.
 	 */
 	private final float[][] inProb;
@@ -628,8 +628,8 @@ public class StateGraph {
 		int pw = -1;
 		int w = -1;
 		for (int f = 0; f < timeline.length; f++) {
-			int frameState = timeline[f];
-			while (w+1 < words.size() && wordBoundaries[w+1] < frameState) {
+			int frameNode = timeline[f];
+			while (w+1 < words.size() && wordBoundaries[w+1] < frameNode) {
 				w++;
 			}
 			if (w != pw) {
@@ -652,16 +652,16 @@ public class StateGraph {
 		}
 
 		int cw = -1;              // current word idx
-		int ps = -1;              // previous state idx
+		int pn = -1;              // previous node idx
 		Word word = null;         // current word
 		Word.Phone phone = null;  // current phone
 
 		for (int f = 0; f < timeline.length; f++) {
-			int cs = timeline[f]; // current state idx
+			int cn = timeline[f]; // current node idx
 			int now = offset+f; // absolute frame number
 
 			int pw = cw; // previous word idx
-			while (cw+1 < words.size() && wordBoundaries[cw+1] <= cs) {
+			while (cw+1 < words.size() && wordBoundaries[cw+1] <= cn) {
 				cw++;
 			}
 
@@ -672,13 +672,13 @@ public class StateGraph {
 				word.getSegment().setEndFrame(now);
 			}
 
-			if (f == 0 || ps/3 != cs/3) {
+			if (f == 0 || pn/3 != cn/3) {
 				if (null != word) {
 					phone = new Word.Phone(
-							getPhoneAt(cs), new Word.Segment(now, now));
+							getPhoneAt(cn), new Word.Segment(now, now));
 					word.addPhone(phone);
 				}
-				ps = cs;
+				pn = cn;
 			} else if (null != phone) {
 				phone.getSegment().setEndFrame(now);
 			}
