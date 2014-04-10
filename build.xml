@@ -112,7 +112,7 @@
 				prefix="${release.prefix}"/>
 			<zipfileset
 				dir="${libs}"
-				excludes="*-sources.jar,*-javadoc.jar"
+				excludes="junit-*,hamcrest-*,*-sources.jar,*-javadoc.jar"
 				prefix="${release.prefix}/lib"/>
 		</zip>
 	</target>

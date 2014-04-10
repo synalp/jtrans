@@ -14,7 +14,7 @@
 		<dependency org="com.googlecode.soundlibs" name="vorbisspi" rev="1.0.3-1"/>
 		<dependency org="org.fuin" name="utils4j" rev="0.7.0"/>
 		<dependency org="net.sf.jopt-simple" name="jopt-simple" rev="4.6"/>
-		<dependency org="junit" name="junit" rev="4.5"/>
+		<dependency org="junit" name="junit" rev="4.11"/>
 
 	</dependencies>
 </ivy-module>
