@@ -6,6 +6,8 @@ import org.junit.Test;
 
 import java.util.*;
 
+import static org.junit.Assert.*;
+
 public class StateGraphTest {
 
 	/**
@@ -483,6 +485,29 @@ public class StateGraphTest {
 		for (; i < sg.getNodeCount(); i++) {
 			Assert.assertEquals(2, sg.getWordIdxAt(i));
 			Assert.assertEquals(2, sg.getWordIdxAt(i, 0));
+		}
+	}
+
+
+	@Test
+	public void testCopyConstructor() {
+		StateGraph sg = bogusSG("a", "e", "i", "o", "u");
+		StateGraph copy = new StateGraph(sg);
+
+		assertEquals(sg.getNodeCount(), copy.getNodeCount());
+		assertEquals(sg.nWords, copy.nWords);
+		assertEquals(sg.words, copy.words);
+		assertArrayEquals(sg.inCount, copy.inCount);
+		assertArrayEquals(sg.nodeStates, copy.nodeStates);
+		assertArrayEquals(sg.wordBoundaries, copy.wordBoundaries);
+
+		for (int i = 0; i < sg.getNodeCount(); i++) {
+			assertEquals(sg.getPhoneAt(i), copy.getPhoneAt(i));
+			assertEquals(sg.getStateAt(i), copy.getStateAt(i));
+			assertEquals(sg.getUniqueStateIdAt(i), copy.getUniqueStateIdAt(i));
+			assertEquals(sg.getWordIdxAt(i), copy.getWordIdxAt(i));
+			assertArrayEquals(sg.inNode[i], copy.inNode[i]);
+			assertArrayEquals(sg.inProb[i], copy.inProb[i], 0);
 		}
 	}
 

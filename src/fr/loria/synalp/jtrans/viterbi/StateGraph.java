@@ -496,6 +496,32 @@ public class StateGraph {
 
 
 	/**
+	 * Copy constructor.
+	 * Fields are deep-copied except for `words` and `pool`.
+	 */
+	public StateGraph(StateGraph graph) {
+		pool = graph.pool;
+		nNodes = graph.nNodes;
+		nWords = graph.nWords;
+		insertionPoint = graph.insertionPoint;
+
+		nodeStates = Arrays.copyOf(graph.nodeStates, nNodes);
+		inCount = Arrays.copyOf(graph.inCount, nNodes);
+
+		inNode = new int[nNodes][];
+		inProb = new float[nNodes][];
+
+		for (int i = 0; i < nNodes; i++) {
+			inNode[i] = Arrays.copyOf(graph.inNode[i], MAX_TRANSITIONS);
+			inProb[i] = Arrays.copyOf(graph.inProb[i], MAX_TRANSITIONS);
+		}
+
+		words = new ArrayList<>(graph.words);
+		wordBoundaries = Arrays.copyOf(graph.wordBoundaries, nWords);
+	}
+
+
+	/**
 	 * Constructs a state graph for easy testing from whitespace-separated
 	 * words. Rules will be looked up in the standard grammar. Uses an
 	 * independent state pool.
