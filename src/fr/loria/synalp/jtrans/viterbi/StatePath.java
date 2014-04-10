@@ -19,6 +19,32 @@ public class StatePath extends StateGraph {
 
 
 	/**
+	 * Converts a linear StateGraph to a StatePath.
+	 * @throws IllegalArgumentException if the graph is not linear.
+	 */
+	public static StatePath asPath(StateGraph graph) {
+		if (!graph.isLinear()) {
+			throw new IllegalArgumentException("Can't construct StatePath " +
+					"from non-linear StateGraph!");
+		}
+
+		return new StatePath(graph);
+	}
+
+
+	/**
+	 * Constructs a StatePath from a strictly linear StateGraph.
+	 * For internal use only; external callers should use asPath() instead.
+	 */
+	private StatePath(StateGraph graph) {
+		super(graph);
+		assert graph.isLinear();
+		assert isLinear();
+	}
+
+
+
+	/**
 	 * Constructs a "flattened" state graph from an original state graph and
 	 * a timeline of visited nodes.
 	 */

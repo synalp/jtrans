@@ -1,19 +1,20 @@
 package fr.loria.synalp.jtrans.viterbi;
 
-
 import fr.loria.synalp.jtrans.elements.Word;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import static fr.loria.synalp.jtrans.viterbi.StateGraphTest.*;
+import static org.junit.Assert.*;
+
 public class StatePathTest {
 
 	@Test
 	public void testFlattenConstructor() {
-		String[][] rules = StateGraphTest.multiTrimSplit(
+		String[][] rules = multiTrimSplit(
 				// #0
 				"( t e y | t y )",
 
@@ -87,7 +88,7 @@ public class StatePathTest {
 		}
 
 		// Make sure the dropped words don't add any nodes
-		Assert.assertEquals(3 * (1 + (5 + 1) + (2 + 1) + (14 + 1) + (12) + 1),
+		assertEquals(3 * (1 + (5 + 1) + (2 + 1) + (14 + 1) + (12) + 1),
 				fullSG.getNodeCount());
 
 		//----------------------------------------------------------------------
@@ -95,16 +96,16 @@ public class StatePathTest {
 
 		StatePath flatSG = new StatePath(fullSG, timeline);
 
-		Assert.assertEquals(4, flatSG.getWordCount());
-		Assert.assertEquals(tu, flatSG.getWords().get(0));
-		Assert.assertEquals(peux, flatSG.getWords().get(1));
-		Assert.assertEquals(pas, flatSG.getWords().get(2));
-		Assert.assertEquals(savoir, flatSG.getWords().get(3));
+		assertEquals(4, flatSG.getWordCount());
+		assertEquals(tu, flatSG.getWords().get(0));
+		assertEquals(peux, flatSG.getWords().get(1));
+		assertEquals(pas, flatSG.getWords().get(2));
+		assertEquals(savoir, flatSG.getWords().get(3));
 
-		Assert.assertFalse(fullSG.isLinear());
-		Assert.assertTrue(flatSG.isLinear());
+		assertFalse(fullSG.isLinear());
+		assertTrue(flatSG.isLinear());
 
-		Assert.assertEquals(nodeSet.size(), flatSG.getNodeCount());
+		assertEquals(nodeSet.size(), flatSG.getNodeCount());
 
 		//----------------------------------------------------------------------
 		// Expected word boundaries
@@ -123,9 +124,20 @@ public class StatePathTest {
 			int lastNode = ewb[2];
 
 			for (int n = firstNode; n <= lastNode; n++) {
-				Assert.assertEquals(w, flatSG.getWordIdxAt(n));
+				assertEquals(w, flatSG.getWordIdxAt(n));
 			}
 		}
 	}
 
+
+	@Test(expected = IllegalArgumentException.class)
+	public void testNonLinearAsPath() {
+		StatePath.asPath(bogusSG("a [ m ] i"));
+	}
+
+
+	@Test
+	public void testLinearAsPath() {
+		StatePath.asPath(bogusSG(false, "a", "a", "a"));
+	}
 }

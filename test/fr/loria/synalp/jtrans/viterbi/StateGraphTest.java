@@ -17,7 +17,7 @@ public class StateGraphTest {
 	 *                  strings of whitespace-separated rule tokens.
 	 * @param interWordSilences insert optional silences between words
 	 */
-	private static StateGraph bogusSG(
+	public static StateGraph bogusSG(
 			boolean interWordSilences,
 			String... wordRules)
 	{
@@ -47,7 +47,7 @@ public class StateGraphTest {
 	 * between each word.
 	 * @see #bogusSG(boolean, String...)
 	 */
-	private static StateGraph bogusSG(String... wordRules) {
+	public static StateGraph bogusSG(String... wordRules) {
 		return bogusSG(true, wordRules);
 	}
 
