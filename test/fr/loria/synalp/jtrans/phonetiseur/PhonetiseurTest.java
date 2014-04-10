@@ -1,17 +1,14 @@
 package fr.loria.synalp.jtrans.phonetiseur;
 
 import java.io.*;
+
+import fr.loria.synalp.jtrans.utils.FileUtils;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import fr.loria.synalp.jtrans.phonetiseur.AlignementGraphemesPhonemes;
-import fr.loria.synalp.jtrans.phonetiseur.Configuration;
-import fr.loria.synalp.jtrans.phonetiseur.LexiqueGraphemesPhonemesPostag;
-import fr.loria.synalp.jtrans.phonetiseur.Phonetiseur;
-import fr.loria.synalp.jtrans.phonetiseur.Utils;
 import static org.junit.Assert.*;
 
 public class PhonetiseurTest {
@@ -179,9 +176,7 @@ public class PhonetiseurTest {
         lgp.ajouterPosTag("fefzzzz");
         lgp.ajouterPosTag("fefzzzzz");
 
-		File f = File.createTempFile("test", ".txt");
-		f.deleteOnExit();
-		System.out.println(f);
+		File f = FileUtils.createVanishingTempFile("test-", ".txt");
 
         Phonetiseur p = new Phonetiseur(34, 0, 0, 0, 0, "_g", "_f");
         p.setLexique(lgp);

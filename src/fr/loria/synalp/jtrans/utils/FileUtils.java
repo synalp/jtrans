@@ -207,4 +207,17 @@ public class FileUtils {
 	}
 
 
+	/**
+	 * Creates a temporary file that will be deleted when the JVM shuts down.
+	 * @throws IOException
+	 */
+	public static File createVanishingTempFile(String prefix, String suffix)
+			throws IOException
+	{
+		File tempFile = File.createTempFile(prefix, suffix);
+		tempFile.deleteOnExit();
+		System.out.println("createVanishingTempFile: " + tempFile);
+		return tempFile;
+	}
+
 }

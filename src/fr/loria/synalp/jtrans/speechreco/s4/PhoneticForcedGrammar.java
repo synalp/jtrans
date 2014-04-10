@@ -7,7 +7,7 @@ http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html
 
 package fr.loria.synalp.jtrans.speechreco.s4;
 
-import java.io.FileWriter;
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
@@ -30,6 +30,7 @@ import edu.cmu.sphinx.linguist.language.grammar.GrammarNode;
 import edu.cmu.sphinx.util.LogMath;
 import edu.cmu.sphinx.util.props.PropertyException;
 import edu.cmu.sphinx.util.props.PropertySheet;
+import fr.loria.synalp.jtrans.utils.FileUtils;
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
 
 public class PhoneticForcedGrammar extends JSGFGrammar {
@@ -183,34 +184,37 @@ public class PhoneticForcedGrammar extends JSGFGrammar {
 
 		System.out.println("gramstring "+gramstring);
 		
+		try {
+			loadJSGFFromString(gramstring.toString());
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException("Couldn't load JSGF from string!", ex);
+		}
+	}
+
+	public void loadJSGFFromString(String gramstring)
+			throws IOException, JSGFGrammarException, JSGFGrammarParseException
+	{
 		// create JSGF file and load it
-		{
-			try {
-				
-				// bugfix:
-				PrintWriter f = new PrintWriter(new FileWriter("detgrammar.gram"));
-				f.println("#JSGF V1.0;");
-				f.println("grammar detgrammar;");
-				f.println("public <a> = "+gramstring.toString()+";");
-				f.close();
-				
-				loadJSGF("detgrammar");
-//				System.out.println("GRAMMAR JSGF");
+		// TODO: this is an ugly workaround
+
+		File tempFile = FileUtils.createVanishingTempFile("detgram-", ".gram");
+
+		PrintWriter f = new PrintWriter(tempFile);
+		f.println("#JSGF V1.0;");
+		f.println("grammar detgrammar;");
+		f.println("public <a> = "+gramstring+";");
+		f.close();
+
+		setBaseURL(tempFile.getParentFile().toURI().toURL());
+		loadJSGF(FileUtils.noExt(tempFile.getName()));
+
 //				getInitialNode().dump();
-				
-				System.out.println("nb of grammar nodes "+getGrammarNodes().size());
-				System.out.println("final nodes:");
-				for (GrammarNode n : getGrammarNodes()) {
-					if (n.isFinalNode()) {
-						System.out.println("\t"+n);
-					}
-				}
-			} catch (IOException e) {
-				e.printStackTrace();
-			} catch (JSGFGrammarParseException e) {
-				e.printStackTrace();
-			} catch (JSGFGrammarException e) {
-				e.printStackTrace();
+		System.out.println(getGrammarNodes().size() + " grammar nodes");
+		System.out.println("final nodes:");
+		for (GrammarNode n : getGrammarNodes()) {
+			if (n.isFinalNode()) {
+				System.out.println("\t"+n);
 			}
 		}
 	}

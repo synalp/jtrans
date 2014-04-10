@@ -7,15 +7,13 @@ http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html
 
 package fr.loria.synalp.jtrans.speechreco.s4;
 
-import java.io.FileWriter;
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.HashSet;
 
 import edu.cmu.sphinx.jsgf.JSGFGrammar;
-import edu.cmu.sphinx.jsgf.JSGFGrammarException;
-import edu.cmu.sphinx.jsgf.JSGFGrammarParseException;
 import edu.cmu.sphinx.linguist.SearchState;
 import edu.cmu.sphinx.linguist.SearchStateArc;
 import edu.cmu.sphinx.linguist.acoustic.AcousticModel;
@@ -28,9 +26,11 @@ import edu.cmu.sphinx.linguist.dictionary.WordClassification;
 import edu.cmu.sphinx.linguist.flat.FlatLinguist;
 import edu.cmu.sphinx.util.props.PropertyException;
 import edu.cmu.sphinx.util.props.PropertySheet;
-import junit.framework.TestCase;
+import fr.loria.synalp.jtrans.utils.FileUtils;
+import org.junit.Assert;
+import org.junit.Test;
 
-public class JSGFtest extends TestCase {
+public class JSGFTest {
 	
 	class MyPronunc extends Pronunciation {
 		public MyPronunc(Unit[] units, String tag, WordClassification wc, float prob) {
@@ -117,9 +117,12 @@ public class JSGFtest extends TestCase {
 	/**
 	 * probleme: le silence optionnel force ainsi peut se deplacer devant le swa optionnel !
 	 */
+	@Test
 	public void test() {
 		try {
-			PrintWriter f = new PrintWriter(new FileWriter("detgrammar.gram"));
+			File tempFile = FileUtils.createVanishingTempFile("detgrammar-", ".gram");
+
+			PrintWriter f = new PrintWriter(tempFile);
 			f.println("#JSGF V1.0;");
 			f.println("grammar detgrammar;");
 //			f.println("public <a> = ( l a | l );");
@@ -127,35 +130,35 @@ public class JSGFtest extends TestCase {
 			f.println("public <a> = l [ a ];");
 			f.close();
 			
-			JSGFGrammar g = new JSGFGrammar(".",HMMModels.getLogMath(),null,false,true,false,false,dictionary);
+			JSGFGrammar g = new JSGFGrammar(
+					tempFile.getParent(),
+					HMMModels.getLogMath(),
+					null,
+					false,
+					true,
+					false,
+					false,
+					dictionary);
+
+			g.loadJSGF(FileUtils.noExt(tempFile.getName()));
+
 			AcousticModel mods = HMMModels.getAcousticModels();
-			
-			g.loadJSGF("detgrammar");
-			
+
 			FlatLinguist linguist = new FlatLinguist(mods, HMMModels.getLogMath(), g, HMMModels.getUnitManager(), 1, 1, 1, 1, 1, true, true, true, false, 0, 1, mods);
 			linguist.allocate();
 			
 			System.out.println("debug "+linguist.getSearchGraph().getInitialState());
 			
-			g.dumpGrammar("xx.gdl");
+			//g.dumpGrammar("xx.gdl");
 			
 			System.out.println("PARCOURS");
 			
 			SearchState s = linguist.getSearchGraph().getInitialState();
 			recurs("",s);
-		} catch (IOException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		} catch (JSGFGrammarParseException e) {
-			e.printStackTrace();
-		} catch (JSGFGrammarException e) {
-			e.printStackTrace();
+			Assert.fail(e.toString());
 		}
 	}
-	
-	public static void main(String[] args) {
-		JSGFtest m = new JSGFtest();
-		m.test();
-	}
+
 }

@@ -5,7 +5,6 @@
 # files and directories created by JTrans
 res
 cache
-detgrammar.gram
 sr.cfg
 wavout.wav
 out*.wav

@@ -568,8 +568,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 			@Override
 			public Object call() throws Exception {
 				URL url = new URL(RESOURCE_URL);
-				File zip = File.createTempFile("jtrans-res-", ".zip");
-				zip.deleteOnExit();
+				File zip = FileUtils.createVanishingTempFile("jtrans-res-", ".zip");
 				FileUtils.downloadFile(url, zip, progress);
 				progress.setCancelable(false);
 				progress.setIndeterminateProgress("Decompressing...");

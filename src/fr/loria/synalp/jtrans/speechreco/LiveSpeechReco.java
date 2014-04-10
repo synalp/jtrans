@@ -3,9 +3,7 @@ package fr.loria.synalp.jtrans.speechreco;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,7 +44,6 @@ import edu.cmu.sphinx.jsgf.JSGFGrammarException;
 import edu.cmu.sphinx.jsgf.JSGFGrammarParseException;
 import edu.cmu.sphinx.linguist.acoustic.AcousticModel;
 import edu.cmu.sphinx.linguist.flat.FlatLinguist;
-import edu.cmu.sphinx.linguist.language.grammar.GrammarNode;
 import edu.cmu.sphinx.result.Result;
 import edu.cmu.sphinx.util.LogMath;
 import edu.cmu.sphinx.util.props.PropertyException;
@@ -472,32 +469,11 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 
 		System.out.println("gramstring "+gramstring);
 
-		{
-			try {
-				PrintWriter f = new PrintWriter(new FileWriter("detgrammar.gram"));
-				f.println("#JSGF V1.0;");
-				f.println("grammar detgrammar;");
-				f.println("public <a> = "+gramstring.toString());
-				f.close();
-
-				loadJSGF("detgrammar");
-				//				System.out.println("GRAMMAR JSGF");
-				//				getInitialNode().dump();
-
-				System.out.println("nb of grammar nodes "+getGrammarNodes().size());
-				System.out.println("final nodes:");
-				for (GrammarNode n : getGrammarNodes()) {
-					if (n.isFinalNode()) {
-						System.out.println("\t final "+n);
-					}
-				}
-			} catch (IOException e) {
-				e.printStackTrace();
-			} catch (JSGFGrammarParseException e) {
-				e.printStackTrace();
-			} catch (JSGFGrammarException e) {
-				e.printStackTrace();
-			}
+		try {
+			loadJSGFFromString(gramstring.toString());
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException("Couldn't load JSGF from string!", ex);
 		}
 	}
 
