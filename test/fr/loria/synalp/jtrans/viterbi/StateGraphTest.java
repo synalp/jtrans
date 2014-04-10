@@ -50,7 +50,7 @@ public class StateGraphTest {
 	}
 
 
-	private static String[][] multiTrimSplit(String... wordRules) {
+	public static String[][] multiTrimSplit(String... wordRules) {
 		String[][] trimmed = new String[wordRules.length][];
 
 		for (int i = 0; i < wordRules.length; i++) {

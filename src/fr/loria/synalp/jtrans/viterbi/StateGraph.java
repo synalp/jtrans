@@ -42,7 +42,7 @@ public class StateGraph {
 
 
 	/** Pool of unique HMM states. */
-	private final StatePool pool;
+	protected StatePool pool;
 
 
 	/**
@@ -50,38 +50,38 @@ public class StateGraph {
 	 * Each node points to a unique HMM state ID.
 	 * There are 3 HMM states per phone, hence 3 nodes per phone.
 	 */
-	private int[] nodeStates;
+	protected int[] nodeStates;
 
 	/**
 	 * Number of incoming transitions for each node.
 	 * Values in this array should not exceed MAX_TRANSITIONS, otherwise an
 	 * index out of bounds exception will eventually be thrown.
 	 */
-	private final byte[] inCount;
+	protected byte[] inCount;
 
 	/**
 	 * Node IDs for each incoming transition.
 	 * The first entry is *always* the same state (loop).
 	 */
-	private final int[][] inNode;
+	protected int[][] inNode;
 
 	/**
 	 * Probability of each incoming transition (in the log domain).
 	 * The first entry is *always* the probability of looping on the same state.
 	 */
-	private final float[][] inProb;
+	protected float[][] inProb;
 
 	/** Total number of nodes in the grammar. */
-	private final int nNodes;
+	protected int nNodes;
 
 	/** Total number of words in the grammar. */
-	private final int nWords;
+	protected int nWords;
 
 	/** Insertion point for new nodes in the nodeStates array. */
 	private int insertionPoint;
 
 	/** Alignable words at the basis of this grammar */
-	private final List<Word> words;
+	protected List<Word> words;
 
 	/**
 	 * Indices of the initial node of each word (i.e. that points to the first
@@ -90,10 +90,10 @@ public class StateGraph {
 	 * in the nodes array. The order in which the nodes are inserted
 	 * reflects the order of the words.
 	 */
-	private final int[] wordBoundaries;
+	protected int[] wordBoundaries;
 
 	/** Used to report progress in viterbi() and backtrack() (may be null) */
-	private ProgressDisplay progress = null;
+	protected ProgressDisplay progress = null;
 
 
 	/**
@@ -479,6 +479,14 @@ public class StateGraph {
 
 
 	/**
+	 * Empty constructor.
+	 * Subclasses are responsible for initializing everything!
+	 */
+	protected StateGraph() {
+	}
+
+
+	/**
 	 * Constructs a state graph from an array of words.
 	 * Rules will be looked up in the standard grammar.
 	 */
@@ -729,9 +737,11 @@ public class StateGraph {
 
 
 	/**
-	 * Returns true if there is only one possible path through all the nodes.
+	 * Returns true if there is only one possible sequence of nodes (path).
 	 * In other words, a graph is linear if all nodes transition to no more than
 	 * one other node besides themselves.
+	 * Note: looping on the same node is not considered to alter the linearity
+	 * of the graph.
 	 */
 	public boolean isLinear() {
 		for (int i = 0; i < nNodes; i++) {
