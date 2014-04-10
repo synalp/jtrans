@@ -71,9 +71,6 @@ public class StateGraph {
 	 */
 	private final float[][] inProb;
 
-	/** Total number of non-empty phones contained in the grammar. */
-	private final int nPhones;
-
 	/** Total number of nodes in the grammar. */
 	private final int nNodes;
 
@@ -420,7 +417,7 @@ public class StateGraph {
 		this.pool = pool;
 
 		nWords  = words.size();
-		nPhones = countPhones(rules, interWordSilences);
+		int nPhones = countPhones(rules, interWordSilences);
 		nNodes  = 3 * nPhones;
 
 		wordBoundaries = new int[nWords];
