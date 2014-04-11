@@ -60,6 +60,39 @@ public class StatePool {
 	}
 
 
+	/**
+	 * Adds states from another StatePool.
+	 * @return translation map of state indices in the other StatePool to state
+	 * indices in this StatePool
+	 */
+	public int[] addAll(StatePool p) {
+		int[] translations = new int[p.size()];
+		Arrays.fill(translations, -1);
+
+		for (Map.Entry<String, Integer> e: p.phoneUStates.entrySet()) {
+			String phone = e.getKey();
+			int pPhoneStateId = e.getValue();
+
+			Integer thisPhoneStateId = phoneUStates.get(phone);
+
+			if (thisPhoneStateId == null) {
+				thisPhoneStateId = uniqueStates.size();
+				phoneUStates.put(phone, thisPhoneStateId);
+
+				uniqueStates.add(p.uniqueStates.get(pPhoneStateId));
+				uniqueStates.add(p.uniqueStates.get(pPhoneStateId+1));
+				uniqueStates.add(p.uniqueStates.get(pPhoneStateId+2));
+			}
+
+			translations[pPhoneStateId] = thisPhoneStateId;
+			translations[pPhoneStateId+1] = thisPhoneStateId+1;
+			translations[pPhoneStateId+2] = thisPhoneStateId+2;
+		}
+
+		return translations;
+	}
+
+
 	public void check(String phone) {
 		if (!phoneUStates.containsKey(phone)) {
 			add(phone);

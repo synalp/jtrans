@@ -9,6 +9,7 @@ import java.util.Set;
 
 import static fr.loria.synalp.jtrans.viterbi.StateGraphTest.*;
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class StatePathTest {
 
@@ -96,7 +97,7 @@ public class StatePathTest {
 
 		StatePath flatSG = new StatePath(fullSG, timeline);
 
-		assertEquals(4, flatSG.getWordCount());
+		assertEquals(4, flatSG.nWords);
 		assertEquals(tu, flatSG.getWords().get(0));
 		assertEquals(peux, flatSG.getWords().get(1));
 		assertEquals(pas, flatSG.getWords().get(2));
@@ -138,6 +139,58 @@ public class StatePathTest {
 
 	@Test
 	public void testLinearAsPath() {
-		StatePath.asPath(bogusSG(false, "a", "a", "a"));
+		StateGraph sg = bogusSG(false, "a", "a", "a");
+		StatePath sp = StatePath.asPath(sg);
+		translationTorture(sg, sp);
 	}
+
+
+	private static void translationTorture(StateGraph orig, StatePath path) {
+		for (int o = 0; o < orig.getNodeCount(); o++) {
+			int t = path.translateNode(orig, o);
+
+			assertEquals(orig.getPhoneAt(o), path.getPhoneAt(t));
+			assertEquals(orig.getStateAt(o), path.getStateAt(t));
+
+			if (orig.getWordIdxAt(o) >= 0) {
+				Word ow = orig.words.get(orig.getWordIdxAt(o));
+				Word pw = path.words.get(path.getWordIdxAt(t));
+				assertEquals(ow, pw);
+			}
+		}
+	}
+
+
+	@Test
+	public void testConcatenation() {
+		// TODO: test dropped words
+
+		StateGraph sg1 = bogusSG(false, "a", "e");
+		StateGraph sg2 = bogusSG(false, "i", "o");
+
+		assertTrue(sg1.isLinear());
+		assertTrue(sg2.isLinear());
+
+		StatePath sp1 = StatePath.asPath(sg1);
+		StatePath sp2 = StatePath.asPath(sg2);
+		StatePath cat = new StatePath(sp1, sp2);
+
+		assertEquals(4, cat.nWords);
+		assertEquals(4, cat.words.size());
+
+		assertEquals(3*2*(1+2+1), cat.nNodes);
+
+		assertEquals("a", cat.getPhoneAt(3));
+		assertEquals("e", cat.getPhoneAt(6));
+		// 9-11: sp1 final sil
+		// 12-15: sp2 initial sil
+		assertEquals("i", cat.getPhoneAt(16));
+		assertEquals("o", cat.getPhoneAt(19));
+
+		translationTorture(sp1, cat);
+		translationTorture(sp2, cat);
+		translationTorture(sg1, cat);
+		translationTorture(sg2, cat);
+	}
+
 }
