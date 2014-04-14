@@ -59,6 +59,8 @@ public class StatePath extends StateGraph {
 		for (int i = 0; i < graph.nNodes; i++) {
 			nt[i] = i;
 		}
+
+		check();
 	}
 
 
@@ -100,11 +102,15 @@ public class StatePath extends StateGraph {
 		wordBoundaries = new int[nWords];
 
 		nodeStates = new int  [nNodes];
-		inCount    = new byte [nNodes];
-		// Only 2 inbound transitions will ever be possible for any given node
+		outCount   = new byte [nNodes];
+		// Only 2 transitions will ever be possible for any given node
 		// in a path (except for the first node which only has itself)
-		inNode     = new int  [nNodes][2];
-		inProb     = new float[nNodes][2];
+		outNode    = new int  [nNodes][2];
+		outProb    = new float[nNodes][2];
+
+		for (int i = 0; i < outProb.length; i++) {
+			Arrays.fill(outProb[i], UNINITIALIZED_LOG_PROBABILITY);
+		}
 
 		nodeTranslations = new HashMap<>(1);
 		int[] translations = newTranslation(graph);
@@ -125,11 +131,15 @@ public class StatePath extends StateGraph {
 
 			translations[ocn]  = tcn;
 			nodeStates[tcn]    = graph.nodeStates[ocn];
-			// All nodes have 2 inbound transitions, except for node #0 which
-			// only has 1 (this is corrected after the loop)
-			inCount   [tcn]    = 2;
-			inNode    [tcn][0] = tcn;
-			inNode    [tcn][1] = tcn-1;
+			// All nodes have 2 outbound transitions, except for the last node
+			// which only has 1 (this is corrected after the loop)
+			outCount   [tcn]    = 2;
+			outNode    [tcn][0] = tcn;
+			outNode    [tcn][1] = tcn-1;
+
+			assert graph.outNode[ocn][0] == ocn;
+			outProb[tcn][0] = graph.outProb[ocn][0];
+			fillUniformNonLoopTransitionProbabilities(tcn);
 
 			int ocw = graph.getWordIdxAt(ocn, opw);
 			if (ocw != opw) {
@@ -144,13 +154,9 @@ public class StatePath extends StateGraph {
 			opn = ocn;
 		}
 
-		// Correct first node
-		inCount[0] = 1;
-		assert inNode[0][0] == 0;
-		inProb[0][0] = 0; // log domain
-		inNode[0][1] = -1;
+		correctLastNodeTransitions();
 
-		assert super.isLinear(): "flattened StateGraph should be linear";
+		check();
 	}
 
 
@@ -171,9 +177,9 @@ public class StatePath extends StateGraph {
 		words = new ArrayList<>(nWords);
 		wordBoundaries = new int[nWords];
 		nodeStates = new int  [nNodes];
-		inCount    = new byte [nNodes];
-		inNode     = new int  [nNodes][MAX_TRANSITIONS];
-		inProb     = new float[nNodes][MAX_TRANSITIONS];
+		outCount   = new byte [nNodes];
+		outNode    = new int  [nNodes][MAX_TRANSITIONS];
+		outProb    = new float[nNodes][MAX_TRANSITIONS];
 		nodeTranslations = new HashMap<>();
 		pool = new StatePool();
 
@@ -182,6 +188,16 @@ public class StatePath extends StateGraph {
 		for (StatePath path: chain) {
 			n = concatenate(path, n);
 		}
+
+		correctLastNodeTransitions();
+
+		check();
+	}
+
+
+	private void check() {
+		assert super.isLinear();
+		checkTransitions();
 	}
 
 
@@ -189,6 +205,8 @@ public class StatePath extends StateGraph {
 	 * For use by the concatenation constructor only!
 	 * Appends nodes and words from another path to this path, and updates node
 	 * translation tables.
+	 * Should not be used anywhere but in a constructor as it assumes that the
+	 * node arrays are not fully filled out.
 	 * @param n insertion index for new nodes
 	 * @return updated node insertion index
 	 */
@@ -206,11 +224,14 @@ public class StatePath extends StateGraph {
 		int[] poolTrans = pool.addAll(path.pool);
 		int[] nodeTrans = newTranslation(path);
 		for (int pathN = 0; pathN < path.nNodes; pathN++) {
+			assert pathN == path.nNodes-1 || path.outCount[pathN] == 2;
 			nodeTrans[pathN] = n;
 			nodeStates[n] = poolTrans[path.nodeStates[pathN]];
-			inCount[n] = 2;
-			inNode[n][0] = n;
-			inNode[n][1] = n - 1;
+			outCount[n] = 2;
+			outNode[n][0] = n;
+			outNode[n][1] = n + 1;
+			outProb[n][0] = path.outProb[pathN][0];
+			outProb[n][1] = path.outProb[pathN][1];
 			n++;
 		}
 

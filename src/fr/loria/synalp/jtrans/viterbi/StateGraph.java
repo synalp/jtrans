@@ -40,6 +40,12 @@ public class StateGraph {
 	private static final String[] OPT_SILENCE_RULE =
 			{ "[", StatePool.SILENCE_PHONE, "]" };
 
+	/** Filler value for uninitialized log probabilities */
+	public final static float UNINITIALIZED_LOG_PROBABILITY =
+			Float.NEGATIVE_INFINITY;
+
+	/** Epsilon for comparison of linear probabilities */
+	public final static float LIN_PROB_CMP_EPSILON = .0001f;
 
 	/** Pool of unique HMM states. */
 	protected StatePool pool;
@@ -53,23 +59,23 @@ public class StateGraph {
 	protected int[] nodeStates;
 
 	/**
-	 * Number of incoming transitions for each node.
+	 * Number of outbound transitions for each node.
 	 * Values in this array should not exceed MAX_TRANSITIONS, otherwise an
 	 * index out of bounds exception will eventually be thrown.
 	 */
-	protected byte[] inCount;
+	protected byte[] outCount;
 
 	/**
-	 * Node IDs for each incoming transition.
-	 * The first entry is *always* the same state (loop).
+	 * Node IDs for each outbound transition.
+	 * The first entry is *always* the same node (loop).
 	 */
-	protected int[][] inNode;
+	protected int[][] outNode;
 
 	/**
-	 * Probability of each incoming transition (in the log domain).
-	 * The first entry is *always* the probability of looping on the same state.
+	 * Probability of each outbound transition (in the log domain).
+	 * The first entry is *always* the probability of looping on the same node.
 	 */
-	protected float[][] inProb;
+	protected float[][] outProb;
 
 	/** Total number of nodes in the grammar. */
 	protected int nNodes;
@@ -95,6 +101,17 @@ public class StateGraph {
 	/** Used to report progress in viterbi() and backtrack() (may be null) */
 	protected ProgressDisplay progress = null;
 
+
+	/**
+	 * Tests two linear probabilities for equality.
+	 */
+	public static boolean linProbEq(double a, double b) {
+		assert a >= -LIN_PROB_CMP_EPSILON && a <= 1+LIN_PROB_CMP_EPSILON:
+				"linear probability out of bounds: " + a;
+		assert b >= -LIN_PROB_CMP_EPSILON && b <= 1+LIN_PROB_CMP_EPSILON:
+				"linear probability out of bounds: " + b;
+		return Math.abs(a-b) <= LIN_PROB_CMP_EPSILON;
+	}
 
 	/**
 	 * Trims leading and trailing whitespace then splits around whitespace.
@@ -274,7 +291,10 @@ public class StateGraph {
 
 				// Bind tails to the 1st state that just got created
 				for (Integer parentId: tails) {
-					addIncomingTransition(posNewState0, parentId);
+					addOutboundTransition(posNewState0, parentId,
+							UNINITIALIZED_LOG_PROBABILITY);
+					// probability will be corrected in
+					// fillUniformNonLoopTransitionProbabilities()
 				}
 
 				// New sole tail is 3rd state that just got inserted
@@ -328,13 +348,15 @@ public class StateGraph {
 
 
 	/**
-	 * Creates a new incoming transition, but does not set its probability.
+	 * Creates a new outbound transition.
 	 * @param dest arrival node
 	 * @param src departure node
+	 * @param p log probability
 	 */
-	private void addIncomingTransition(int dest, int src) {
-		assert inCount[dest] < MAX_TRANSITIONS - 1: "too many transitions";
-		inNode[dest][inCount[dest]++] = src;
+	private void addOutboundTransition(int dest, int src, float p) {
+		outNode[src][outCount[src]] = dest;
+		outProb[src][outCount[src]] = p;
+		outCount[src]++;
 	}
 
 
@@ -346,6 +368,8 @@ public class StateGraph {
 	private int insertStateTriplet(String phone) {
 		pool.check(phone);
 
+		LogMath lm = HMMModels.getLogMath();
+
 		// add nodes for each state in the phone
 		for (int i = 0; i < 3; i++) {
 			int j = insertionPoint + i;
@@ -353,23 +377,25 @@ public class StateGraph {
 			int stateId = pool.getId(phone, i);
 			nodeStates[j] = stateId;
 			HMMState state = pool.get(stateId);
+			assert state.isEmitting();
 
-			addIncomingTransition(j, j);
-			if (i > 0) {
-				addIncomingTransition(j, j-1);
-			}
+			HMMStateArc[] succ = state.getSuccessors();
+			assert succ.length == 2: "HMMState must have two successors";
+			assert linProbEq(1,
+					lm.logToLinear(succ[0].getLogProbability()) +
+					lm.logToLinear(succ[1].getLogProbability()))
+					: "linear probabilities must sum to 1";
 
-			for (HMMStateArc arc: state.getSuccessors()) {
-				HMMState arcState = arc.getHMMState();
-				if (i == 2 && arcState.isExitState())
-					continue;
+			HMMStateArc loop = succ[0].getHMMState() == state
+					? succ[0]
+					: succ[1];
+			assert loop.getHMMState() == state: "can't find loop arc";
+			HMMStateArc nonLoop = succ[loop==succ[0]? 1: 0];
 
-				float p = arc.getLogProbability();
-				if (arcState == state) {
-					inProb[j][0] = p;
-				} else {
-					inProb[j+1][1] = p;
-				}
+			addOutboundTransition(j, j, loop.getLogProbability());
+
+			if (i < 2) {
+				addOutboundTransition(j+1, j, nonLoop.getLogProbability());
 			}
 		}
 
@@ -379,23 +405,86 @@ public class StateGraph {
 
 
 	/**
-	 * Sets uniform inter-phone probabilities on the first state of an HMM.
-	 * @param nodeId ID of the first state of an HMM
+	 * Sets uniform probabilities on the non-looping transitions of a node.
+	 * That is, every non-looping transition will be set to the same probability
+	 * so that all outbound probabilities sum to one in the linear scale.
+	 * (Reminder: internally, we use log probabilities, not linear.)
+	 * <p/>
+	 * The requested node's transition count ({@code outCount[nodeIdx]}) and
+	 * the probability of looping ({@code outProb[nodeIdx][0]}) must be set
+	 * prior to calling this method!
 	 */
-	private void setUniformInterPhoneTransitionProbabilities(int nodeId) {
-		assert nodeId % 3 == 0 : "not a first state (i.e. multiple of 3)";
-		assert nodeId > 0 : "node #0 doesn't have any incoming transitions";
-		assert inCount[nodeId] >= 2 : "not linked to the rest of the graph";
-		assert inProb[nodeId][0] != 0f : "loop probability must be initialized";
-		assert inProb[nodeId][1] == 0f : "non-loop probabilities must be uninitialized";
+	protected void fillUniformNonLoopTransitionProbabilities(int nodeIdx) {
+		int count = outCount[nodeIdx];
+		float loopLogP = outProb[nodeIdx][0];
+
+		assert count >= 2
+				: "not linked to the rest of the graph";
+
+		assert loopLogP != UNINITIALIZED_LOG_PROBABILITY
+				: "loop probability must be initialized";
 
 		LogMath lm = HMMModels.getLogMath();
-		double linearLoopProb = lm.logToLinear(inProb[nodeId][0]);
 		float p = lm.linearToLog(
-				(1f - linearLoopProb) / (double)(inCount[nodeId] - 1));
+				(1 - lm.logToLinear(loopLogP)) / (double) (count - 1));
 
-		for (byte j = 1; j < inCount[nodeId]; j++)
-			inProb[nodeId][j] = p;
+		for (int i = 1; i < outCount[nodeIdx]; i++) {
+			assert outProb[nodeIdx][i] == UNINITIALIZED_LOG_PROBABILITY
+					: "non-loop probabilities must be uninitialized";
+			outProb[nodeIdx][i] = p;
+		}
+	}
+
+
+	protected void correctLastNodeTransitions() {
+		int last = nNodes - 1;
+		assert outNode[last][0] == last;
+		outCount[last] = 1;
+		/* DON'T set the loop probability of the last node to 1 (linear)!
+		Intuitively, it would make sense to do so, but Viterbi will make sure
+		not to go past the last node anyway. Leaving outProb as is for the last
+		node is required by StatePath's concatenation operator (to string
+		several paths together properly). */
+	}
+
+
+	/**
+	 * Checks the legality of all transitions in the graph.
+	 * @throws IllegalStateException if any transition is illegal
+	 */
+	protected void checkTransitions() {
+		LogMath lm = HMMModels.getLogMath();
+
+		for (int n = 0; n < nNodes-1; n++) {
+			if (outCount[n] < 2) {
+				throw new IllegalStateException(
+						"node #" + n + " isolated from graph");
+			}
+
+			if (outNode[n][0] != n) {
+				throw new IllegalStateException(
+						"node #" + n + "'s first transition should be a loop");
+			}
+
+			float sum = 0;
+			for (int t = 0; t < outCount[n]; t++) {
+				sum += lm.logToLinear(outProb[n][t]);
+			}
+
+			if (!linProbEq(1, sum)) {
+				throw new IllegalStateException(String.format(
+						"linear probabilities of outbound transitions of " +
+						"node #%d do not sum to one (sum=%f)", n, sum));
+			}
+		}
+
+		// Special case for the last node. Don't check the sum of its transition
+		// probabilities (see correctLastNodeTransitions() to learn why)
+		int last = nNodes - 1;
+		if (outCount[last] != 1 || outNode[last][0] != last) {
+			throw new IllegalStateException("last node must have exactly " +
+					"1 transition, i.e. a loop on itself");
+		}
 	}
 
 
@@ -423,9 +512,13 @@ public class StateGraph {
 		wordBoundaries = new int[nWords];
 
 		nodeStates = new int  [nNodes];
-		inCount    = new byte [nNodes];
-		inNode     = new int  [nNodes][MAX_TRANSITIONS];
-		inProb     = new float[nNodes][MAX_TRANSITIONS];
+		outCount   = new byte [nNodes];
+		outNode    = new int  [nNodes][MAX_TRANSITIONS];
+		outProb    = new float[nNodes][MAX_TRANSITIONS];
+
+		for (int i = 0; i < nNodes; i++) {
+			Arrays.fill(outProb[i], UNINITIALIZED_LOG_PROBABILITY);
+		}
 
 		//----------------------------------------------------------------------
 		// Build state graph
@@ -462,19 +555,19 @@ public class StateGraph {
 		parseRule(SILENCE_RULE, tails);
 
 		//----------------------------------------------------------------------
-		// All node have been inserted
+		// All nodes have been inserted
 
 		assert insertionPoint == nNodes : "predicted node count not met : "
 				+ "actual " + insertionPoint + ", expected " + nNodes;
-		assert inCount[0] == 1 : "first node can only have 1 incoming transition";
+
+		correctLastNodeTransitions();
 
 		// correct inter-phone transition probabilities
-		for (int i = 3; i < nNodes; i += 3) {
-			setUniformInterPhoneTransitionProbabilities(i);
+		for (int i = 2; i < nNodes-1; i += 3) {
+			fillUniformNonLoopTransitionProbabilities(i);
 		}
 
-		// last state can loop forever
-		inProb[nNodes -1][0] = 0f; // log domain
+		checkTransitions();
 	}
 
 
@@ -506,14 +599,14 @@ public class StateGraph {
 		insertionPoint = graph.insertionPoint;
 
 		nodeStates = Arrays.copyOf(graph.nodeStates, nNodes);
-		inCount = Arrays.copyOf(graph.inCount, nNodes);
+		outCount = Arrays.copyOf(graph.outCount, nNodes);
 
-		inNode = new int[nNodes][];
-		inProb = new float[nNodes][];
+		outNode = new int[nNodes][];
+		outProb = new float[nNodes][];
 
 		for (int i = 0; i < nNodes; i++) {
-			inNode[i] = Arrays.copyOf(graph.inNode[i], MAX_TRANSITIONS);
-			inProb[i] = Arrays.copyOf(graph.inProb[i], MAX_TRANSITIONS);
+			outNode[i] = Arrays.copyOf(graph.outNode[i], MAX_TRANSITIONS);
+			outProb[i] = Arrays.copyOf(graph.outProb[i], MAX_TRANSITIONS);
 		}
 
 		words = new ArrayList<>(graph.words);
@@ -546,14 +639,48 @@ public class StateGraph {
 		for (int i = 0; i < nNodes; i++) {
 			w.write(String.format("\nnode%d [ label=\"%s %d\" ]", i,
 					getPhoneAt(i), getStateAt(i).getState()));
-			for (byte j = 0; j < inCount[i]; j++) {
+			for (byte j = 0; j < outCount[i]; j++) {
 				w.write(String.format("\nnode%d -> node%d [ label=%f ]",
-						inNode[i][j], i, lm.logToLinear(inProb[i][j])));
+						i, outNode[i][j], lm.logToLinear(outProb[i][j])));
 			}
 		}
 
 		w.write("\n}");
 		w.flush();
+	}
+
+
+	/**
+	 * Converts outbound transitions to inbound transitions.
+	 * Mainly useful for Viterbi.
+	 */
+	protected class InboundTransitionBridge {
+		final int[]     inCount = new int  [nNodes];
+		final int[][]   inNode  = new int  [nNodes][MAX_TRANSITIONS];
+		final float[][] inProb  = new float[nNodes][MAX_TRANSITIONS];
+
+		InboundTransitionBridge() {
+			// force loop as first transition
+			for (int n = 0; n < nNodes; n++) {
+				inCount[n] = 1;
+				inNode[n][0] = n;
+				inProb[n][0] = outProb[n][0];
+				Arrays.fill(inProb[n], 1, inProb[n].length,
+						UNINITIALIZED_LOG_PROBABILITY);
+			}
+
+			// fill non-loop transitions
+			for (int n = 0; n < nNodes; n++) {
+				assert outNode[n][0] == n;
+				for (int t = 1; t < outCount[n]; t++) {
+					int in = outNode[n][t];
+					int it = inCount[in];
+					inNode[in][it] = n;
+					inProb[in][it] = outProb[n][t];
+					inCount[in]++;
+				}
+			}
+		}
 	}
 
 
@@ -602,6 +729,8 @@ public class StateGraph {
 
 		int frameCount = 1 + endFrame - startFrame;
 
+		InboundTransitionBridge in = new InboundTransitionBridge();
+
 		// Probability vectors
 		float[] vpf = new float[nNodes]; // vector for previous frame (read-only)
 		float[] vcf = new float[nNodes]; // vector for current frame (write-only)
@@ -630,19 +759,23 @@ public class StateGraph {
 				// ScoreCachingSenone already does it for us.
 				float emission = getStateAt(i).getScore(data.get(f));
 
-				assert inCount[i] >= 1;
+				assert in.inCount[i] >= 1;
 
 				// Probability to reach a node given the previous vector v
 				// i.e. max(P(k -> i) * v[k]) for each predecessor k of node #i
 				float bestReachProb;
 
 				// Initialize with first incoming transition
-				bestReachProb = inProb[i][0] + vpf[inNode[i][0]]; // log domain
+				// If last node, loop forever (log prob 0).
+				// (Please see correctLastNodeTransitions() for an explanation
+				// of why the last node's log prob isn't just set to 0.)
+				bestReachProb = (i == nNodes-1? 0: in.inProb[i][0])
+						+ vpf[in.inNode[i][0]]; // log domain
 				bestInTrans[i] = 0;
 
 				// Find best probability among all incoming transitions
-				for (byte j = 1; j < inCount[i]; j++) {
-					float p = inProb[i][j] + vpf[inNode[i][j]]; // log domain
+				for (byte j = 1; j < in.inCount[i]; j++) {
+					float p = in.inProb[i][j] + vpf[in.inNode[i][j]]; // log domain
 					if (p > bestReachProb) {
 						bestReachProb = p;
 						bestInTrans[i] = j;
@@ -675,11 +808,13 @@ public class StateGraph {
 	 * the first frame given to StateGraph#viterbi.
 	 */
 	public int[] backtrack(SwapInflater swapReader) throws IOException {
+		InboundTransitionBridge in = new InboundTransitionBridge();
+
 		int leadNode = nNodes - 1;
 		int[] timeline = new int[swapReader.getFrameCount()];
 		for (int f = timeline.length-1; f >= 0; f--) {
 			byte transID = swapReader.getIncomingTransition(f, leadNode);
-			leadNode = inNode[leadNode][transID];
+			leadNode = in.inNode[leadNode][transID];
 			timeline[f] = leadNode;
 			assert leadNode >= 0;
 
@@ -771,10 +906,10 @@ public class StateGraph {
 	 */
 	public boolean isLinear() {
 		for (int i = 0; i < nNodes; i++) {
-			assert inCount[i] > 0: "must have at least one transition (loop)";
-			assert inNode[i][0] == i: "first transition must be a loop";
+			assert outCount[i] > 0: "must have at least one transition (loop)";
+			assert outNode[i][0] == i: "first transition must be a loop";
 
-			if (inCount[i] > 2) {
+			if (outCount[i] > 2) {
 				return false;
 			}
 		}

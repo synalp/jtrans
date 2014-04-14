@@ -497,7 +497,7 @@ public class StateGraphTest {
 		assertEquals(sg.getNodeCount(), copy.getNodeCount());
 		assertEquals(sg.nWords, copy.nWords);
 		assertEquals(sg.words, copy.words);
-		assertArrayEquals(sg.inCount, copy.inCount);
+		assertArrayEquals(sg.outCount, copy.outCount);
 		assertArrayEquals(sg.nodeStates, copy.nodeStates);
 		assertArrayEquals(sg.wordBoundaries, copy.wordBoundaries);
 
@@ -506,8 +506,39 @@ public class StateGraphTest {
 			assertEquals(sg.getStateAt(i), copy.getStateAt(i));
 			assertEquals(sg.getUniqueStateIdAt(i), copy.getUniqueStateIdAt(i));
 			assertEquals(sg.getWordIdxAt(i), copy.getWordIdxAt(i));
-			assertArrayEquals(sg.inNode[i], copy.inNode[i]);
-			assertArrayEquals(sg.inProb[i], copy.inProb[i], 0);
+			assertArrayEquals(sg.outNode[i], copy.outNode[i]);
+			assertArrayEquals(sg.outProb[i], copy.outProb[i], 0);
+		}
+	}
+
+
+	@Test
+	public void testInboundTransitionBridge() {
+		StateGraph sg = bogusSG(false, "[ a ]", "( e | i )");
+
+		StateGraph.InboundTransitionBridge itb = sg.new InboundTransitionBridge();
+
+		int[] inCount = {
+				1, 2, 2, // sil
+				2, 2, 2, // a
+				3, 2, 2, // e
+				3, 2, 2, // i
+				3, 2, 2, // sil
+		};
+
+		int[][] inNode = {
+				{    0   },  { 1, 0}, { 2, 1}, // sil
+				{ 3, 2   },  { 4, 3}, { 5, 4}, // a
+				{ 6, 2, 5},  { 7, 6}, { 8, 7}, // e
+				{ 9, 2, 5},  {10, 9}, {11,10}, // i
+				{12, 8,11},  {13,12}, {14,13}, // sil
+		};
+
+		assertArrayEquals(itb.inCount, inCount);
+		for (int n = 0; n < sg.getNodeCount(); n++) {
+			for (int t = 0; t < inCount[n]; t++) {
+				assertEquals(inNode[n][t], itb.inNode[n][t]);
+			}
 		}
 	}
 
