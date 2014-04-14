@@ -23,6 +23,9 @@ public abstract class AutoAligner {
 	protected final ProgressDisplay progress;
 	private Runnable refinementIterationHook;
 
+	List<StateGraph> concatGraphs = new ArrayList<>();
+	List<int[]> concatTimelines = new ArrayList<>();
+
 
 	/**
 	 * Compute alignment likelihood in each call to align().
@@ -128,6 +131,9 @@ public abstract class AutoAligner {
 				new TimelineFactory(),
 				audio, text, graph.getNodeCount(), startFrame, endFrame);
 
+		concatGraphs.add(graph);
+		concatTimelines.add(timeline);
+
 		if (COMPUTE_LIKELIHOODS) {
 			assert scorers != null;
 			if (progress != null) {
@@ -204,6 +210,16 @@ public abstract class AutoAligner {
 		scorer.score();
 		double sum = AlignmentScorer.sum(scorer.getLikelihoods());
 		System.out.println("Overall likelihood " + sum);
+	}
+
+
+	public StatePath getConcatenatedPath() {
+		// TODO: should throw an error on overlaps
+		StatePath[] paths = new StatePath[concatGraphs.size()];
+		for (int i = 0; i < concatGraphs.size(); i++) {
+			paths[i] = new StatePath(concatGraphs.get(i), concatTimelines.get(i));
+		}
+		return new StatePath(paths);
 	}
 
 }

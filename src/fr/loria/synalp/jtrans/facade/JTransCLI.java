@@ -8,8 +8,7 @@ import fr.loria.synalp.jtrans.utils.CrossPlatformFixes;
 import fr.loria.synalp.jtrans.utils.FileUtils;
 import fr.loria.synalp.jtrans.utils.PrintStreamProgressDisplay;
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
-import fr.loria.synalp.jtrans.viterbi.AlignmentScorer;
-import fr.loria.synalp.jtrans.viterbi.StateGraph;
+import fr.loria.synalp.jtrans.viterbi.StatePath;
 import joptsimple.*;
 
 import java.io.*;
@@ -383,7 +382,7 @@ public class JTransCLI {
 		final Project project;
 		final Project reference;
 		final JTransCLI cli;
-		final StateGraph forcedStateGraph;
+		final StatePath forcedPath;
 
 		loadLoggingProperties();
 
@@ -420,16 +419,16 @@ public class JTransCLI {
 			/* TODO: forced state graph: should be made accessible through a
 			command line switch and generalized to linear alignments
 			(eliminating the need for RealisticPathLinearAligner) */
-			System.out.println("Computing reference linear state graph...");
+			System.out.println("Computing reference path...");
 			AutoAligner refAl = project.getAligner(ViterbiAligner.class, progress);
 			project.alignInterleaved(refAl);
-			forcedStateGraph = project.getLinearStateGraph();
+			forcedPath = refAl.getConcatenatedPath();
 			project.clearAlignment();
 			//------------------------------------------------------------------
 			project.clearAllAnchorTimes();
 			System.out.println("Anchor times cleared.");
 		} else {
-			forcedStateGraph = null;
+			forcedPath = null;
 		}
 
 		if (cli.runAnchorDiffTest) {
@@ -455,8 +454,9 @@ public class JTransCLI {
 			assert aligner != null;
 
 			System.out.println("Aligning...");
-			if (null != forcedStateGraph) {
-				aligner.align(forcedStateGraph, 0, aligner.getFrameCount()-1);
+			if (null != forcedPath) {
+				System.out.println("WARNING: Aligning with forced reference path!");
+				aligner.align(forcedPath, 0, aligner.getFrameCount() - 1);
 			} else if (cli.clearTimes || !Project.ALIGN_OVERLAPS) {
 				project.alignInterleaved(aligner);
 			} else {
