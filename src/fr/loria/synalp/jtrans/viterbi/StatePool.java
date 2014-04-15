@@ -23,6 +23,14 @@ public class StatePool {
 	public static final String SILENCE_PHONE = "SIL";
 
 
+	public StatePool() {
+		check(SILENCE_PHONE);
+		assert 0 == getId(SILENCE_PHONE, 0);
+		assert 1 == getId(SILENCE_PHONE, 1);
+		assert 2 == getId(SILENCE_PHONE, 2);
+	}
+
+
 	private int add(String phone) {
 		assert !phoneUStates.containsKey(phone);
 
@@ -100,6 +108,9 @@ public class StatePool {
 	}
 
 
+	/**
+	 * The silence phone is guaranteed to occupy IDs 0 through 2 inclusive.
+	 */
 	public int getId(String phone, int stateNo) {
 		if (stateNo < 0 || stateNo > 2) {
 			throw new IllegalArgumentException("illegal state number " +

@@ -49,6 +49,11 @@ public class AlignmentScorer {
 	private final double[]     detVar;
 	private final double[]     likelihood;   // must be zeroed before use
 
+	/**
+	 * Timeline of unique states.
+	 * Don't confuse unique *states* with StateGraph *nodes*!
+	 * (Several nodes may represent the same state)
+	 */
 	private final int[]        longTimeline;
 
 	private enum SystemState {
@@ -327,8 +332,9 @@ public class AlignmentScorer {
 
 			for (int f = 0; f < scorer.nFrames; f++) {
 				int stateAt = scorer.longTimeline[f];
-				if (stateAt >= 0) {
-					assert merger.longTimeline[f] < 0;
+				assert stateAt < 0 || merger.longTimeline[f] < 0:
+						"overwriting longTimeline";
+				if (stateAt >= 3) {
 					merger.longTimeline[f] = off + stateAt;
 				}
 			}
