@@ -66,21 +66,27 @@ public class Project {
 
 	public AutoAligner getAligner(
 			Class<? extends AutoAligner> alignerClass,
-			ProgressDisplay progress)
+			ProgressDisplay progress,
+			boolean computeLikelihoods)
 			throws IOException, ReflectiveOperationException
 	{
 		AutoAligner aa = alignerClass
 				.getConstructor(File.class, ProgressDisplay.class)
 				.newInstance(convertedAudioFile, progress);
-		aa.setScorers(tracks.size());
+		if (computeLikelihoods) {
+			aa.setComputeLikelihoods(true);
+			aa.setScorers(tracks.size());
+		}
 		return aa;
 	}
 
 
-	public AutoAligner getStandardAligner(ProgressDisplay progress)
+	public AutoAligner getStandardAligner(
+			ProgressDisplay progress,
+			boolean computeLikelihoods)
 			throws IOException, ReflectiveOperationException
 	{
-		return getAligner(ALIGNER, progress);
+		return getAligner(ALIGNER, progress, computeLikelihoods);
 	}
 
 

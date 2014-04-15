@@ -30,14 +30,13 @@ public abstract class AutoAligner {
 	/**
 	 * Compute alignment likelihood in each call to align().
 	 */
-	public static boolean COMPUTE_LIKELIHOODS = false;
-
+	private boolean computeLikelihoods = false;
 
 	/**
 	 * Refine the baseline alignment with Metropolis-Hastings after completing
 	 * Viterbi.
 	 */
-	public static boolean METROPOLIS_HASTINGS_POST_PROCESSING = false;
+	private boolean refine = false;
 
 
 	public AutoAligner(File audio, ProgressDisplay progress) {
@@ -48,11 +47,17 @@ public abstract class AutoAligner {
 	}
 
 
-	public void setScorers(int speakers) {
-		if (!COMPUTE_LIKELIHOODS && !METROPOLIS_HASTINGS_POST_PROCESSING) {
-			return;
-		}
+	public void setRefine(boolean doRefine) {
+		this.refine = doRefine;
+	}
 
+
+	public void setComputeLikelihoods(boolean computeLikelihoods) {
+		this.computeLikelihoods = computeLikelihoods;
+	}
+
+
+	public void setScorers(int speakers) {
 		scorers = new ArrayList<>(speakers);
 		float[][] dataArray = S4mfccBuffer.to2DArray(data);
 
@@ -134,7 +139,7 @@ public abstract class AutoAligner {
 		concatGraphs.add(graph);
 		concatTimelines.add(timeline);
 
-		if (COMPUTE_LIKELIHOODS) {
+		if (computeLikelihoods) {
 			assert scorers != null;
 			if (progress != null) {
 				progress.setIndeterminateProgress("Computing likelihood...");
@@ -148,27 +153,24 @@ public abstract class AutoAligner {
 			}
 		}
 
-		if (METROPOLIS_HASTINGS_POST_PROCESSING) {
+		if (refine) {
 			if (progress != null) {
 				progress.setIndeterminateProgress("Metropolis-Hastings...");
 			}
 
 			assert scorers != null;
 
-			throw new RuntimeException("(re)IMPLEMENT ME!");
-			/*
 			final TransitionRefinery refinery = new TransitionRefinery(
-					graph, timeline, scorers.get(speaker));
+					graph, timeline, scorers);
 
 			while (!refinery.hasPlateaued()) {
 				timeline = refinery.step();
 
 				if (refinementIterationHook != null) {
-					graph.setWordAlignments(words, timeline, startFrame);
+					graph.setWordAlignments(timeline, startFrame);
 					refinementIterationHook.run();
 				}
 			}
-			*/
 		}
 
 		graph.setWordAlignments(timeline, startFrame);

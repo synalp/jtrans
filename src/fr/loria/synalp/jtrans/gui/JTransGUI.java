@@ -701,7 +701,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		final AutoAligner aligner;
 
 		try {
-			aligner = project.getStandardAligner(this);
+			aligner = project.getStandardAligner(this, false);
 		} catch (ReflectiveOperationException|IOException ex) {
 			ex.printStackTrace();
 			JOptionPane.showMessageDialog(jf, "Couldn't create aligner!\n\n"+ex,

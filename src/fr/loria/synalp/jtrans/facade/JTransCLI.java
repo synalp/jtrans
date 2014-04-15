@@ -27,6 +27,8 @@ public class JTransCLI {
 	public boolean clearTimes = false;
 	public boolean align = true;
 	public boolean runAnchorDiffTest = false;
+	public boolean computeLikelihoods = false;
+	public boolean refine = false;
 	public boolean quiet = false;
 
 
@@ -184,12 +186,11 @@ public class JTransCLI {
 		}
 
 		if (optset.has("L")) {
-			AutoAligner.COMPUTE_LIKELIHOODS = true;
-			System.out.println("Will compute alignment likelihood.");
+			computeLikelihoods = true;
 		}
 
 		if (optset.has("metropolis-hastings")) {
-			AutoAligner.METROPOLIS_HASTINGS_POST_PROCESSING = true;
+			refine = true;
 		}
 
 		if (optset.has("ignore-overlaps")) {
@@ -392,7 +393,7 @@ public class JTransCLI {
 			JTransGUI.installResources();
 		}
 
-		if (!AutoAligner.COMPUTE_LIKELIHOODS &&
+		if (!cli.computeLikelihoods &&
 				!cli.runAnchorDiffTest &&
 				(cli.outputFormats == null || cli.outputFormats.isEmpty()))
 		{
@@ -420,7 +421,8 @@ public class JTransCLI {
 			command line switch and generalized to linear alignments
 			(eliminating the need for RealisticPathLinearAligner) */
 			System.out.println("Computing reference path...");
-			AutoAligner refAl = project.getAligner(ViterbiAligner.class, progress);
+			AutoAligner refAl = project.getAligner(
+					ViterbiAligner.class, progress, false);
 			project.alignInterleaved(refAl);
 			forcedPath = refAl.getConcatenatedPath();
 			project.clearAlignment();
@@ -439,13 +441,13 @@ public class JTransCLI {
 
 		AutoAligner aligner = null;
 		if (cli.align) {
-			aligner = project.getStandardAligner(progress);
+			aligner = project.getStandardAligner(progress, cli.computeLikelihoods);
+			aligner.setRefine(cli.refine);
 		}
 
-		if (cli.runAnchorDiffTest) {
+		if (cli.runAnchorDiffTest && cli.refine) {
 			assert aligner != null;
 			assert reference != null;
-
 			aligner.setRefinementIterationHook(
 					cli.new AnchorDiffRIH(project, reference));
 		}
@@ -463,18 +465,16 @@ public class JTransCLI {
 				project.align(aligner, true);
 			}
 			System.out.println("Alignment done.");
-			if (AutoAligner.COMPUTE_LIKELIHOODS) {
-				//System.out.println("Overall likelihood: " + aligner.score());
+			if (cli.computeLikelihoods) {
 				aligner.printScores();
 			}
 		}
 
 		if (cli.runAnchorDiffTest) {
 			assert reference != null;
-
+			project.deduceTimes();
 			List<Integer> diffs = reference.anchorFrameDiffs(project);
 			printAnchorDiffStats(diffs);
-//			System.exit(0);
 		}
 
 		cli.save(project);

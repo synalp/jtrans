@@ -1,6 +1,7 @@
 package fr.loria.synalp.jtrans.viterbi;
 
 import edu.cmu.sphinx.util.LogMath;
+import fr.loria.synalp.jtrans.elements.Word;
 import fr.loria.synalp.jtrans.facade.JTransCLI;
 import fr.loria.synalp.jtrans.speechreco.s4.HMMModels;
 
@@ -8,6 +9,7 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -21,7 +23,7 @@ public class TransitionRefinery {
 
 	private Random random;
 	private StateGraph graph;
-	private AlignmentScorer scorer;
+	private List<AlignmentScorer> scorers;
 	private LogMath log = HMMModels.getLogMath();
 
 	int rejectionStreak = 0;
@@ -56,15 +58,38 @@ public class TransitionRefinery {
 	/**
 	 * @param baseline Baseline alignment (as found e.g. with viterbi()).
 	 */
-	public TransitionRefinery(StateGraph graph, int[] baseline, AlignmentScorer scorer) {
+	public TransitionRefinery(
+			StateGraph graph,
+			int[] baseline,
+			List<AlignmentScorer> scorers)
+	{
 		timeline = new int[baseline.length];
 		System.arraycopy(baseline, 0, timeline, 0, timeline.length);
 
 		random = new Random();
 		this.graph = graph;
-		this.scorer = scorer;
+		this.scorers = scorers;
 
-		cLhd = scorer.cumulativeAlignmentLikelihood(graph, baseline);
+		cLhd = computeCumulativeLikelihood();
+	}
+
+
+	private double computeCumulativeLikelihood() {
+		// TODO: too much boilerplate -- do these steps really need to be separated?
+
+		for (AlignmentScorer s: scorers) {
+			s.init();
+		}
+
+		for (Word w: graph.getWords()) {
+			scorers.get(w.getSpeaker()).learn(w, graph, timeline, 0);
+		}
+
+		AlignmentScorer merged = AlignmentScorer.merge(scorers);
+		merged.finishLearning();
+		merged.score();
+
+		return AlignmentScorer.sum(merged.getLikelihoods());
 	}
 
 
@@ -147,7 +172,7 @@ public class TransitionRefinery {
 		int backup = timeline[trans+1];
 		timeline[trans+1] = timeline[trans];
 
-		double newCLhd = scorer.cumulativeAlignmentLikelihood(graph, timeline);
+		double newCLhd = computeCumulativeLikelihood();
 
 		/*
 		System.out.println("============= TRANSITION CHANGED AT FRAME " + trans + "=============");
