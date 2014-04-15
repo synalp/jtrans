@@ -1,4 +1,4 @@
-package fr.loria.synalp.jtrans.utils;
+package fr.loria.synalp.jtrans.markup.jtr;
 
 import java.lang.reflect.Type;
 
@@ -10,7 +10,7 @@ import com.google.gson.*;
  * Adds an extra property for class names. Strips package names to save
  * space - therefore all subclasses of T must be in the same package as T!
  */
-public class InterfaceAdapter<T>
+class InterfaceAdapter<T>
 		implements JsonSerializer<T>, JsonDeserializer<T>
 {
 	private String typePropertyName;
