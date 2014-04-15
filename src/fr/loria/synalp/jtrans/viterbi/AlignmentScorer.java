@@ -56,6 +56,9 @@ public class AlignmentScorer {
 	 */
 	private final int[]        longTimeline;
 
+	private static AlignmentScorer kludgeReferenceScorer;
+	private static boolean kludgeModelsUsed = false;
+
 	private enum SystemState {
 		UNINITIALIZED,
 		LEARNING,
@@ -237,6 +240,33 @@ public class AlignmentScorer {
 						sumSq[s][d] / nMatchF[s] - avg[s][d] * avg[s][d]);
 				detVar[s] *= var[s][d];
 			}
+		}
+
+		if (kludgeModelsUsed) {
+			throw new Error("Silence models already used");
+		}
+		else if (kludgeReferenceScorer == null) {
+			// First pass
+			System.out.println("Providing silence models");
+			kludgeReferenceScorer = this;
+		}
+		else {
+			// Second pass
+			System.out.println("Consuming silence models");
+			assert this != kludgeReferenceScorer;
+			assert pool.states.equals(kludgeReferenceScorer.pool.states);
+
+//			for (int i = 0; i < kludgeReferenceScorer.nStates; i++) {
+			for (int i = 0; i < 3; i++) {
+				assert kludgeReferenceScorer.pool.states.get(i) == null;
+
+				// copy stuff used by score()
+				arraycopy(kludgeReferenceScorer.avg[i], 0, avg[i], 0, avg[i].length);
+				arraycopy(kludgeReferenceScorer.var[i], 0, var[i], 0, var[i].length);
+				detVar[i] = kludgeReferenceScorer.detVar[i];
+			}
+
+			kludgeModelsUsed = true;
 		}
 
 		system = SystemState.LEARNING_COMPLETE;

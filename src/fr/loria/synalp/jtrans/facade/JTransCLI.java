@@ -422,9 +422,10 @@ public class JTransCLI {
 			(eliminating the need for RealisticPathLinearAligner) */
 			System.out.println("Computing reference path...");
 			AutoAligner refAl = project.getAligner(
-					ViterbiAligner.class, progress, false);
+					ViterbiAligner.class, progress, true); // KLUDGE!!! true is needed for kludgeReferenceScorer
 			project.alignInterleaved(refAl);
 			forcedPath = refAl.getConcatenatedPath();
+			refAl.printScores(); // KLUDGE!!! learn models (and, incidentally, compute likelihoods) - needed for kludgeReferenceScorer
 			project.clearAlignment();
 			//------------------------------------------------------------------
 			project.clearAllAnchorTimes();
