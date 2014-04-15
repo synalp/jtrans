@@ -4,9 +4,14 @@ import edu.cmu.sphinx.frontend.FloatData;
 import edu.cmu.sphinx.util.LogMath;
 import fr.loria.synalp.jtrans.elements.Word;
 import fr.loria.synalp.jtrans.facade.FastLinearAligner;
+import fr.loria.synalp.jtrans.facade.JTransCLI;
 import fr.loria.synalp.jtrans.speechreco.s4.HMMModels;
 import fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.List;
 import static java.lang.System.arraycopy;
@@ -304,6 +309,25 @@ public class AlignmentScorer {
 			// -log(1 / sqrt(2 pi detVar)) = -(log(2 pi)/2 + log(detVar)/2)
 			likelihood[f] = -.5 * (dot + logTwoPi + lm.linearToLog(detVar[s]));
 		}
+
+
+		try {
+			final String plotName = JTransCLI.logID + "_perframe_" +
+					(kludgeModelsUsed? "clear": "gold") + ".txt";
+			PrintWriter perFrame;
+			perFrame = new PrintWriter(new BufferedWriter(new FileWriter(plotName)));
+			System.err.println("Plot: " + plotName);
+
+			for (int f = 0; f < likelihood.length; f++) {
+				perFrame.println(likelihood[f] + " " + longTimeline[f]);
+			}
+
+			perFrame.flush();
+			perFrame.close();
+		} catch (IOException ex) {
+			throw new RuntimeException(ex);
+		}
+
 
 		system = SystemState.SCORE_READY;
 

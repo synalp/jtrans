@@ -18,7 +18,7 @@ import java.util.logging.LogManager;
 
 public class JTransCLI {
 
-	public static String logID = "JTrans_" + System.currentTimeMillis();
+	public static String logID = ""; //"JTrans_" + System.currentTimeMillis();
 	public MarkupLoader loader;
 	public File inputFile;
 	public File audioFile;
@@ -139,8 +139,8 @@ public class JTransCLI {
 						Arrays.asList("M", "metropolis-hastings"),
 						"Metropolis-Hastings post processing");
 
-				accepts(
-						"ignore-overlaps",
+				acceptsAll(
+						Arrays.asList("I", "ignore-overlaps"),
 						"(Experimental) Force linear bridge when aligning " +
 						"and ignore overlaps. Don't use unless you know what " +
 						"you are doing!");
