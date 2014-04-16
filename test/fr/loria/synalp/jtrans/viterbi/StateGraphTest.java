@@ -504,7 +504,6 @@ public class StateGraphTest {
 		for (int i = 0; i < sg.getNodeCount(); i++) {
 			assertEquals(sg.getPhoneAt(i), copy.getPhoneAt(i));
 			assertEquals(sg.getStateAt(i), copy.getStateAt(i));
-			assertEquals(sg.getUniqueStateIdAt(i), copy.getUniqueStateIdAt(i));
 			assertEquals(sg.getWordIdxAt(i), copy.getWordIdxAt(i));
 			assertArrayEquals(sg.outNode[i], copy.outNode[i]);
 			assertArrayEquals(sg.outProb[i], copy.outProb[i], 0);

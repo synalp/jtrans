@@ -1,18 +1,19 @@
 package fr.loria.synalp.jtrans.viterbi;
 
-import edu.cmu.sphinx.frontend.FloatData;
+import edu.cmu.sphinx.linguist.acoustic.HMMState;
 import edu.cmu.sphinx.util.LogMath;
 import fr.loria.synalp.jtrans.elements.Word;
 import fr.loria.synalp.jtrans.facade.FastLinearAligner;
 import fr.loria.synalp.jtrans.facade.JTransCLI;
 import fr.loria.synalp.jtrans.speechreco.s4.HMMModels;
-import fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import static java.lang.System.arraycopy;
 
@@ -38,13 +39,13 @@ public class AlignmentScorer {
 	/** Keep variance values from getting too close to zero. */
 	public static final double MIN_VARIANCE = .001;
 
-	public static final int MAX_UNIQUE_STATES = 100;
+	public static final int MAX_UNIQUE_STATES = 1000;
 
 	private final float[][] data;
 	private final LogMath lm = HMMModels.getLogMath();
 
 	private final int nFrames;
-	private final int nStates;
+	private int nStates;
 
 	private final int[]        nMatchF; // must be zeroed before use
 	private final double[][]   sum;     // must be zeroed before use
@@ -61,6 +62,38 @@ public class AlignmentScorer {
 	 */
 	private final int[]        longTimeline;
 
+
+	private class QStatePool {
+		HashMap<HMMState, Integer> map = new HashMap<>();
+		List<HMMState> states = new ArrayList<>();
+
+		int getIdx(HMMState s) {
+			if (!map.containsKey(s)) {
+				int idx = states.size();
+				map.put(s, idx);
+				states.add(s);
+				nStates++;
+				return idx;
+			} else {
+				return map.get(s);
+			}
+		}
+
+		String getPhone(int idx) {
+			HMMState s = states.get(idx);
+			return s==null? "null": s.getHMM().getBaseUnit().getName();
+		}
+
+		void clear() {
+			map.clear();
+			states.clear();
+		}
+	}
+
+
+	QStatePool pool = new QStatePool();
+
+
 	private static AlignmentScorer kludgeReferenceScorer;
 	private static boolean kludgeModelsUsed = false;
 
@@ -75,29 +108,25 @@ public class AlignmentScorer {
 
 
 
-	public AlignmentScorer(float[][] data, int nStates) {
+	public AlignmentScorer(float[][] data) {
 		this.nFrames = data.length;
-		this.nStates = nStates;
+		this.nStates = 0;
 		this.data = data;
 
 		logID = logIDCounter++;
 		longTimeline = new int[nFrames];
 
-		nMatchF     = new int[nStates];
-		sum         = new double[nStates][FRAME_DATA_LENGTH];
-		sumSq       = new double[nStates][FRAME_DATA_LENGTH];
-		avg         = new double[nStates][FRAME_DATA_LENGTH];
-		var         = new double[nStates][FRAME_DATA_LENGTH];
-		detVar      = new double[nStates];
+		nMatchF     = new int[MAX_UNIQUE_STATES];
+		sum         = new double[MAX_UNIQUE_STATES][FRAME_DATA_LENGTH];
+		sumSq       = new double[MAX_UNIQUE_STATES][FRAME_DATA_LENGTH];
+		avg         = new double[MAX_UNIQUE_STATES][FRAME_DATA_LENGTH];
+		var         = new double[MAX_UNIQUE_STATES][FRAME_DATA_LENGTH];
+		detVar      = new double[MAX_UNIQUE_STATES];
 		likelihood  = new double[nFrames];
 
 		init();
 	}
 
-
-	public AlignmentScorer(List<FloatData> dataList, int nStates) {
-		this(S4mfccBuffer.to2DArray(dataList), nStates);
-	}
 
 
 	public static double sum(double[] array) {
@@ -118,6 +147,7 @@ public class AlignmentScorer {
 			Arrays.fill(sumSq[s], 0);
 		}
 		system = SystemState.LEARNING;
+		pool.clear();
 	}
 
 
@@ -136,12 +166,7 @@ public class AlignmentScorer {
 
 		for (int absf = sf; absf <= ef; absf++) {
 			int relf = absf - frameOffset;
-			assert longTimeline[absf] < 0;
-
-			int s = graph.getUniqueStateIdAt(timeline[relf]);
-			longTimeline[absf] = s;
-
-			learnFrame(absf);
+			learnNode(graph, timeline[relf], absf);
 		}
 	}
 
@@ -151,14 +176,20 @@ public class AlignmentScorer {
 			throw new IllegalStateException("not ready to learn");
 		}
 
-		// sum, sumSq, nMatchF
 		for (int f = 0; f < timeline.length; f++) {
 			int absf = f + frameOffset;
-			assert longTimeline[absf] < 0 : "longTimeline already filled here";
+			learnNode(graph, timeline[f], absf);
+		}
+	}
 
-			int s = graph.getUniqueStateIdAt(timeline[f]);
-			longTimeline[absf] = s;
 
+	private void learnNode(StateGraph graph, int node, int absf) {
+		assert longTimeline[absf] < 0 : "longTimeline already filled here";
+
+		if (!graph.isSilentAt(node)) {
+			HMMState state = graph.getStateAt(node);
+			int myState = pool.getIdx(state);
+			longTimeline[absf] = myState;
 			learnFrame(absf);
 		}
 	}
@@ -319,7 +350,8 @@ public class AlignmentScorer {
 			System.err.println("Plot: " + plotName);
 
 			for (int f = 0; f < likelihood.length; f++) {
-				perFrame.println(likelihood[f] + " " + longTimeline[f]);
+				perFrame.printf("%6d %6.6f %4d %s\n",
+						f, likelihood[f], longTimeline[f], pool.getPhone(longTimeline[f]));
 			}
 
 			perFrame.flush();
@@ -344,39 +376,25 @@ public class AlignmentScorer {
 	}
 
 
-	/**
-	 * Computes the likelihood of an alignment.
-	 * @param timeline alignment that maps frames to nodes in the graph
-	 * @return likelihoods per frame
-	 */
-	public double[] alignmentLikelihood(StateGraph graph, int[] timeline) {
-		assert timeline.length == nFrames;
-		init();
-		learn(graph, timeline, 0);
-		finishLearning();
-		score();
-		return likelihood;
-	}
-
-
-	public double cumulativeAlignmentLikelihood(StateGraph graph, int[] timeline) {
-		return sum(alignmentLikelihood(graph, timeline));
-	}
-
-
 	public static AlignmentScorer merge(List<AlignmentScorer> scorers) {
-		int totalStateCount = 3;
-		for (AlignmentScorer scorer: scorers) {
-			totalStateCount += scorer.nStates;
-		}
-
 		AlignmentScorer merger =
-				new AlignmentScorer(scorers.get(0).data, totalStateCount);
+				new AlignmentScorer(scorers.get(0).data);
 
-		int off = 3;
+		// states 0, 1, 2: common silences
+		merger.pool.states.add(null);
+		merger.pool.states.add(null);
+		merger.pool.states.add(null);
+		assert merger.pool.states.size() == 3;
+
 		for (AlignmentScorer scorer: scorers) {
+			assert scorer.nStates == scorer.pool.states.size();
 			assert scorer.nFrames == merger.nFrames;
 			assert scorer.data == merger.data;
+
+			// offset at which the new states are inserted
+			int off = merger.pool.states.size();
+			merger.pool.states.addAll(scorer.pool.states);
+			System.out.println("Merge: added " + scorer.pool.states.size() + " states from scorer");
 
 			arraycopy(scorer.nMatchF, 0, merger.nMatchF, off, scorer.nStates);
 			arraycopy(scorer.sum,     0, merger.sum,     off, scorer.nStates);
@@ -385,20 +403,28 @@ public class AlignmentScorer {
 			// they will be filled out by finishLearning()
 
 			for (int f = 0; f < scorer.nFrames; f++) {
-				int stateAt = scorer.longTimeline[f];
-				assert stateAt < 0 || merger.longTimeline[f] < 0:
-						"overwriting longTimeline";
-				if (stateAt >= 3) {
-					merger.longTimeline[f] = off + stateAt;
-				}
-			}
+				int sus = scorer.longTimeline[f];
 
-			off += scorer.nStates;
+				if (sus < 0) {
+					continue;
+				}
+
+				int mus = off + sus;
+
+				assert merger.longTimeline[f] < 0: "overwriting longTimeline";
+				assert !scorer.pool.getPhone(sus).equals("SIL"): "unexpected SIL";
+				assert scorer.pool.states.get(sus).equals(merger.pool.states.get(mus));
+				assert scorer.nMatchF[sus] == merger.nMatchF[mus];
+				assert scorer.sum    [sus] == merger.sum    [mus];
+				assert scorer.sumSq  [sus] == merger.sumSq  [mus];
+
+				merger.longTimeline[f] = mus;
+			}
 		}
 
-		assert totalStateCount == off;
-
+		merger.nStates = merger.pool.states.size();
 		merger.fillVoids(0, 1, 2);
+		merger.finishLearning();
 
 		return merger;
 	}

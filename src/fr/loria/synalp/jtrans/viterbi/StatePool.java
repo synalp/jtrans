@@ -135,4 +135,11 @@ public class StatePool {
 		return uniqueStates.size();
 	}
 
+
+	public boolean isSilent(int id) {
+		assert id < 0 || id > 2 ||
+				get(id).getHMM().getBaseUnit().getName().equals(SILENCE_PHONE);
+		return id >= 0 && id <= 2;
+	}
+
 }

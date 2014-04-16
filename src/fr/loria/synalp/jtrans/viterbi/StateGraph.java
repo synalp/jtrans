@@ -203,8 +203,8 @@ public class StateGraph {
 	}
 
 
-	public int getUniqueStateIdAt(int nodeIdx) {
-		return nodeStates[nodeIdx];
+	public boolean isSilentAt(int nodeIdx) {
+		return pool.isSilent(nodeStates[nodeIdx]);
 	}
 
 

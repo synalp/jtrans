@@ -81,8 +81,8 @@ public class AlignmentScorerTest {
 				Arrays.asList(ah, oh),
 				true);
 
-		spk0 = new AlignmentScorer(data, STATE_COUNT);
-		spk1 = new AlignmentScorer(data, STATE_COUNT);
+		spk0 = new AlignmentScorer(data);
+		spk1 = new AlignmentScorer(data);
 
 		// standard scenario:
 		// 'ah' is uttered right before 'oh', the rest is silence
@@ -209,7 +209,7 @@ public class AlignmentScorerTest {
 		// Proposal 1: different speakers
 		// Starting point: existing speaker says 'ah' at frame 0 (spk0)
 		// *New* speaker learns 'ah' at frame PLEN
-		AlignmentScorer ah2AS = new AlignmentScorer(data, STATE_COUNT);
+		AlignmentScorer ah2AS = new AlignmentScorer(data);
 		ah2AS.learn(sg, AH_TL, PLEN);
 		double differentSpeakers = merge(spk0, ah2AS);
 

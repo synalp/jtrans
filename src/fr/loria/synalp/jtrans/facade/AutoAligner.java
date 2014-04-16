@@ -62,10 +62,7 @@ public abstract class AutoAligner {
 		float[][] dataArray = S4mfccBuffer.to2DArray(data);
 
 		for (int i = 0; i < speakers; i++) {
-			scorers.add(new AlignmentScorer(dataArray,
-					AlignmentScorer.MAX_UNIQUE_STATES));
-			// TODO pool.size() would be better
-			// TODO pool.size() currently starts at 0 and increases (anchored alignment)
+			scorers.add(new AlignmentScorer(dataArray));
 		}
 	}
 
@@ -208,7 +205,6 @@ public abstract class AutoAligner {
 
 	public void printScores() {
 		AlignmentScorer scorer = AlignmentScorer.merge(scorers);
-		scorer.finishLearning();
 		scorer.score();
 		double sum = AlignmentScorer.sum(scorer.getLikelihoods());
 		System.out.println("Overall likelihood " + sum);
