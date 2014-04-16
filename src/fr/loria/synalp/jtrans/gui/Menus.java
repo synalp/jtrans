@@ -144,10 +144,7 @@ public class Menus {
 				try {
 					new JTRSaver().save(aligneur.project, file);
 				} catch (IOException ex) {
-					JOptionPane.showMessageDialog(aligneur.jf,
-							"Couldn't save. An I/O error occured.\n\n" + ex,
-							"IOException",
-							JOptionPane.ERROR_MESSAGE);
+					aligneur.errorMessage("Couldn't save!", ex);
 				}
 			}
 		});
@@ -171,7 +168,7 @@ public class Menus {
 					fc.addChoosableFileFilter(new SaverFF(str));
 				}
 				fc.setAcceptAllFileFilterUsed(false);
-				//fc.setFileFilter(filterTextGridWordsOnly);
+				fc.setFileFilter(fc.getChoosableFileFilters()[0]);
 
 				int rc = fc.showSaveDialog(aligneur.jf);
 
@@ -180,14 +177,13 @@ public class Menus {
 
 				SaverFF ff = (SaverFF)fc.getFileFilter();
 				File file = fc.getSelectedFile();
+				System.out.println(ff);
+				System.out.println(ff.formatName);
 				try {
 					MarkupSaver saver = pool.make(ff.formatName);
 					saver.save(aligneur.project, file);
 				} catch (Exception ex) {
-					JOptionPane.showMessageDialog(aligneur.jf,
-							"Couldn't export. An error occured.\n\n" + ex,
-							"IOException",
-							JOptionPane.ERROR_MESSAGE);
+					aligneur.errorMessage("Couldn't export!", ex);
 				}
 			}
 		});

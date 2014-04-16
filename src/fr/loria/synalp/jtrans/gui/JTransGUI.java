@@ -637,39 +637,26 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 			return;
 		}
 
-		final AutoAligner aligner;
-
-		try {
-			aligner = project.getStandardAligner(this, false);
-		} catch (ReflectiveOperationException|IOException ex) {
-			ex.printStackTrace();
-			JOptionPane.showMessageDialog(jf, "Couldn't create aligner!\n\n"+ex,
-					"Error",
-					JOptionPane.ERROR_MESSAGE);
-			return;
-		}
-
 		new Thread() {
 			@Override
 			public void run() {
+				AutoAligner aligner;
+
+				try {
+					aligner = project.getStandardAligner(JTransGUI.this, false);
+				} catch (ReflectiveOperationException|IOException ex) {
+					errorMessage("Couldn't create aligner!", ex);
+					return;
+				}
+
 				try {
 					if (interleaved) {
 						project.alignInterleaved(aligner);
 					} else {
 						project.align(aligner, true);
 					}
-				} catch (final Exception ex) {
-					ex.printStackTrace();
-					SwingUtilities.invokeLater(new Runnable() {
-						@Override
-						public void run() {
-							JOptionPane.showMessageDialog(
-									jf,
-									ex.getMessage(),
-									"Alignment exception",
-									JOptionPane.ERROR_MESSAGE);
-						}
-					});
+				} catch (Exception ex) {
+					errorMessage("An error occured during the alignment!", ex);
 				}
 
 				SwingUtilities.invokeLater(new Runnable() {
@@ -689,6 +676,44 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		setAudioSource(project.audioFile);
 		initPanel();
 		jf.setContentPane(this);
+	}
+
+
+	/**
+	 * Shows an error dialog, optionally describing a Throwable or its cause
+	 * (if any) and printing its stack trace.
+	 * @param t may be null
+	 */
+	public void errorMessage(String message, final Throwable t) {
+		String title;
+
+		if (t != null) {
+			Throwable shown = t.getCause();
+			if (shown == null) {
+				shown = t;
+			}
+			String name = t.getClass().getSimpleName();
+
+			message += "\n\n" + name;
+			if (shown.getMessage() != null) {
+				message += "\n" + shown.getMessage();
+			}
+
+			title = name;
+			t.printStackTrace();
+		} else {
+			title = "Error";
+		}
+
+		final String fMessage = message, fTitle = title;
+
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				JOptionPane.showMessageDialog(
+						jf, fMessage, fTitle, JOptionPane.ERROR_MESSAGE);
+			}
+		});
 	}
 
 }

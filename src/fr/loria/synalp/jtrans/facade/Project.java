@@ -70,6 +70,10 @@ public class Project {
 			boolean computeLikelihoods)
 			throws IOException, ReflectiveOperationException
 	{
+		if (progress != null) {
+			progress.setIndeterminateProgress("Initializing aligner...");
+		}
+
 		AutoAligner aa = alignerClass
 				.getConstructor(File.class, ProgressDisplay.class)
 				.newInstance(convertedAudioFile, progress);
