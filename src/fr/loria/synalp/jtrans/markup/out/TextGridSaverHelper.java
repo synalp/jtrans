@@ -1,14 +1,16 @@
 package fr.loria.synalp.jtrans.markup.out;
 
+import fr.loria.synalp.jtrans.elements.Comment;
+import fr.loria.synalp.jtrans.elements.Element;
 import fr.loria.synalp.jtrans.elements.Word;
 import fr.loria.synalp.jtrans.facade.Project;
 import fr.loria.synalp.jtrans.facade.Track;
-import fr.loria.synalp.jtrans.utils.TimeConverter;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.List;
+
+import static fr.loria.synalp.jtrans.utils.TimeConverter.frame2sec;
 
 class TextGridSaverHelper {
 
@@ -24,7 +26,7 @@ class TextGridSaverHelper {
 				.append("\n")
 				.append("\nxmin = 0")
 				.append("\nxmax = ")
-				.append(Float.toString(TimeConverter.frame2sec(frameCount)))
+				.append(Float.toString(frame2sec(frameCount)))
 				.append("\ntiers? <exists>")
 				.append("\nsize = ")
 				.append(Integer.toString(p.tracks.size() * ((withWords?1:0) + (withPhons?1:0))))
@@ -35,32 +37,46 @@ class TextGridSaverHelper {
 			StringBuilder wordSB = new StringBuilder();
 			StringBuilder phoneSB = new StringBuilder();
 
-			List<Word> words = t.getWords();
-
 			int wordCount = 0;
 			int phoneCount = 0;
 
-			for (Word word: words) {
-				if (!word.isAligned()) {
-					continue;
+			// frame onto which to tack 0-length elements
+			int lastFrame = 0;
+
+			for (Element e: t.elts) {
+				Word word = e instanceof Word? (Word)e: null;
+				Comment comment = e instanceof Comment? (Comment)e: null;
+
+				if (word != null && word.isAligned()) {
+					praatInterval(
+							wordSB,
+							wordCount + 1,
+							word.getSegment().getStartFrame(),
+							word.getSegment().getEndFrame(),
+							word.toString());
+					wordCount++;
+
+					for (Word.Phone phone : word.getPhones()) {
+						praatInterval(
+								phoneSB,
+								phoneCount + 1,
+								phone.getSegment().getStartFrame(),
+								phone.getSegment().getEndFrame(),
+								phone.toString());
+						phoneCount++;
+					}
+
+					lastFrame = word.getSegment().getEndFrame();
 				}
 
-				praatInterval(
-						wordSB,
-						wordCount+1,
-						word.getSegment().getStartFrame(),
-						word.getSegment().getEndFrame(),
-						word.toString());
-				wordCount++;
-
-				for (Word.Phone phone: word.getPhones()) {
+				else if (comment != null || word != null) {
 					praatInterval(
-							phoneSB,
-							phoneCount+1,
-							phone.getSegment().getStartFrame(),
-							phone.getSegment().getEndFrame(),
-							phone.toString());
-					phoneCount++;
+							wordSB,
+							wordCount + 1,
+							lastFrame,
+							lastFrame,
+							e.toString());
+					wordCount++;
 				}
 			}
 
@@ -96,7 +112,7 @@ class TextGridSaverHelper {
 				.append("\n\t\tname = \"").append(name).append('"') // TODO escape strings
 				.append("\n\t\txmin = 0")
 				.append("\n\t\txmax = ")
-				.append(Float.toString(TimeConverter.frame2sec(frameCount)))
+				.append(Float.toString(frame2sec(frameCount)))
 				.append("\n\t\tintervals: size = ")
 				.append(Integer.toString(intervalCount));
 	}
@@ -113,11 +129,10 @@ class TextGridSaverHelper {
 	{
 		w.append("\n\t\tintervals [").append(Integer.toString(id)).append("]:")
 				.append("\n\t\t\txmin = ")
-				.append(Float.toString(TimeConverter.frame2sec(xminFrame)))
+				.append(Float.toString(frame2sec(xminFrame)))
 				.append("\n\t\t\txmax = ")
-				.append(Float.toString(TimeConverter.frame2sec(xmaxFrame)))
-				.append("\n\t\t\ttext = \"")
-				.append(content).append('"'); // TODO escape strings
+				.append(Float.toString(frame2sec(xmaxFrame)))
+				.append("\n\t\t\ttext = \"").append(content).append('"'); // TODO escape strings
 	}
 
 }
