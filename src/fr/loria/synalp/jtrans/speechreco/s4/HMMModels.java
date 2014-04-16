@@ -18,6 +18,8 @@ import edu.cmu.sphinx.linguist.acoustic.tiedstate.Sphinx3Loader;
 import edu.cmu.sphinx.linguist.acoustic.tiedstate.TiedStateAcousticModel;
 import edu.cmu.sphinx.util.LogMath;
 
+import static fr.loria.synalp.jtrans.utils.Paths.RES_DIR;
+
 public abstract class HMMModels {
 	private static AcousticModel mods = null;
 	private static LogMath logMath = null;
@@ -47,13 +49,7 @@ public abstract class HMMModels {
 				LogMath logm = getLogMath();
 				
 				// TODO: get the HMM path from a configuration file
-				String path = "res/acmod";
-				URL modurl;
-				if (path.startsWith("http")||path.startsWith("file://")) {
-					modurl = new URL(path);
-				} else {
-					modurl = (new File(path)).toURI().toURL();
-				}
+				URL modurl = (new File(RES_DIR, "acmod")).toURI().toURL();
 //				loader = new Sphinx3Loader(modurl, modelDef, datapath, logm, um, true, false, 39, 0f, 1e-7f, 0.0001f, false);
 				// ancienne version de S4
 				loader = new Sphinx3Loader(modurl,modelDef,datapath,logm,um,0f,1e-7f,0.0001f,false);

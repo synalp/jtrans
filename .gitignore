@@ -3,8 +3,6 @@
 # .git/info/exclude.
 
 # files and directories created by JTrans
-res
-cache
 sr.cfg
 wavout.wav
 out*.wav

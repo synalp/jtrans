@@ -17,6 +17,7 @@ import fr.loria.synalp.jtrans.phonetiseur.PhonetiseurFacade;
 import fr.loria.synalp.jtrans.speechreco.phonetiseurs.Morphalou;
 import fr.loria.synalp.jtrans.speechreco.phonetiseurs.PronunciationsLexicon;
 import fr.loria.synalp.jtrans.speechreco.phonetiseurs.SimplePhonetiseur;
+import static fr.loria.synalp.jtrans.utils.Paths.RES_DIR;
 
 public class Grammatiseur implements Serializable {
 
@@ -50,9 +51,9 @@ public class Grammatiseur implements Serializable {
 
 	public void initPhonetiseur() {
 		phonetiseur = new PhonetiseurFacade(
-				"res/fichiersPhonetiseur/graphemes_phonemes_matriceProba",
-				"res/fichiersPhonetiseur/entetesArff/",
-				"res/fichiersPhonetiseur/models/");
+				RES_DIR.getAbsolutePath() + "/fichiersPhonetiseur/graphemes_phonemes_matriceProba",
+				RES_DIR.getAbsolutePath() + "/fichiersPhonetiseur/entetesArff/",
+				RES_DIR.getAbsolutePath() + "/fichiersPhonetiseur/models/");
 		try {
 			phonetiseur.chargerClassifieurs();
 		} catch (Exception ex) {

@@ -33,6 +33,7 @@ import fr.loria.synalp.jtrans.speechreco.BiaisAdapt;
 import fr.loria.synalp.jtrans.speechreco.s4.S4ForceAlignBlocViterbi;
 import fr.loria.synalp.jtrans.speechreco.grammaire.Grammatiseur;
 import fr.loria.synalp.jtrans.utils.NicerFileChooser;
+import fr.loria.synalp.jtrans.utils.Paths;
 
 public class Menus {
 	JTransGUI aligneur;
@@ -467,7 +468,7 @@ public class Menus {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				try {
-					File vocfile = new File("res/voc.txt");
+					File vocfile = new File(Paths.RES_DIR, "voc.txt");
 					Grammatiseur.fastLoading=true;
 					Grammatiseur.grammatiseur=null;
 					gram = new LiveSpeechReco();

@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import fr.loria.synalp.jtrans.utils.FileUtils;
+import static fr.loria.synalp.jtrans.utils.Paths.RES_DIR;
 
 /**
  * classe qui gère la phonétisation des nombres
@@ -22,7 +23,7 @@ public class Nombres implements Serializable {
 	private String segmentNormed = null;
 	
 	void load() {
-		String sx = "res/Nbrules.txt";
+		String sx = RES_DIR.getAbsolutePath() + "/Nbrules.txt";
 		try {
 			BufferedReader f = FileUtils.openFileUTF(sx);
 			for (;;) {

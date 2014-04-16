@@ -13,11 +13,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.*;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
 import javax.sound.sampled.*;
 import javax.swing.*;
 import javax.swing.Timer;
@@ -33,7 +30,6 @@ import fr.loria.synalp.jtrans.speechreco.SpeechReco;
 import fr.loria.synalp.jtrans.gui.signalViewers.spectroPanel.SpectroControl;
 import fr.loria.synalp.jtrans.speechreco.BiaisAdapt;
 import fr.loria.synalp.jtrans.utils.*;
-import org.fuin.utils4j.Utils4J;
 
 /**
  * Main panel.
@@ -63,8 +59,6 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 
 	public static final int KARAOKE_UPDATE_INTERVAL = 50; // milliseconds
 
-	private static final String RESOURCE_URL =
-			"http://talc1.loria.fr/users/cerisara/jtrans/jtrans_res_20131209.zip";
 
 	public JFrame jf=null;
 
@@ -537,61 +531,6 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	public void biasAdapt() {
 		BiaisAdapt b=new BiaisAdapt(this);
 		b.calculateBiais();
-	}
-
-
-	/**
-	 * Checks that the resources are installed. If not, suggests downloading
-	 * and installing the resources automatically. If the user declines, the
-	 * program is aborted.
-	 */
-	public static void installResources() {
-		if (new File("res").exists())
-			return;
-
-		int rc = JOptionPane.showConfirmDialog(null,
-				"JTrans resources are not installed.\n" +
-				"Would you like to install them now?\n\n" +
-				"Warning: this will trigger a 400 MB download.\n" +
-				"Once installed, the resources take up about\n" +
-				"1 GB of disk space.",
-				"Install resources",
-				JOptionPane.YES_NO_OPTION);
-
-		if (rc != JOptionPane.YES_OPTION)
-			System.exit(1);
-
-		final CancelableProgressDialog progress =
-				new CancelableProgressDialog("Installing JTrans resources", true);
-
-		progress.setTask(new Callable() {
-			@Override
-			public Object call() throws Exception {
-				URL url = new URL(RESOURCE_URL);
-				File zip = FileUtils.createVanishingTempFile("jtrans-res-", ".zip");
-				FileUtils.downloadFile(url, zip, progress);
-				progress.setCancelable(false);
-				progress.setIndeterminateProgress("Decompressing...");
-				Utils4J.unzip(zip, new File("."));
-				zip.delete();
-				progress.setProgressDone();
-				return null;
-			}
-		});
-
-		try {
-			progress.executeInForeground();
-			return;
-		} catch (CancellationException ignore) {
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			JOptionPane.showMessageDialog(null,
-					"Error while installing the resources.\n\n" + ex,
-					"Error",
-					JOptionPane.ERROR_MESSAGE);
-		}
-
-		System.exit(1);
 	}
 
 

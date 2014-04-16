@@ -397,6 +397,19 @@ textgrid).</p>
     <code>outfmt</code>, run:</p>
 <pre>java -jar jtrans.jar --list-outfmt</pre>
 
+<h3>Audio file auto-detection</h3>
+
+<p>If the audio file bears the same name as the markup file (except for the
+suffix) and both files are located in the same directory, you may use the
+<code>-A</code> switch to auto-detect the audio file without specifying it on
+the command line.</p>
+
+<p>Example:</p>
+
+<pre>java -jar jtrans.jar -A blah.trs</pre>
+
+<p>This will load blah.trs, along with any of "blah.ogg", "blah.mp3" or
+"blah.wav".</p>
 
 <h2>Clearing/bypassing the cache</h2>
 
@@ -405,13 +418,14 @@ speeds up some tasks considerably.</p>
 
 <p>However, if you work with a lot of different files, the size of JTrans's
 cache can blow up quickly. You may safely clear JTrans's cache at any time to
-save disk space. To do that, simply delete the contents of the <tt>cache</tt>
-directory next to the <tt>jtrans.jar</tt> file.</p>
+save disk space. To do that, simply delete the contents of the
+<tt>~/.jtrans/cache</tt> directory.</p>
 
 <p>You may also want to <strong>bypass</strong> the cache temporarily,
-especially if you are modifying a critical section of the program.
-Pass the <code>--bypass-cache</code> argument to JTrans on the command line.
-Objects won't be read from the cache, but they will still be written to it.</p>
+especially if you are modifying a critical section of the program.  Pass the
+<code>--bypass-cache</code> argument (shorthand: <code>-B</code> to JTrans on
+the command line.  Objects won't be read from the cache, but they will still be
+written to it.</p>
 
 
 </article>

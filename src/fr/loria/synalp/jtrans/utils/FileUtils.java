@@ -158,7 +158,7 @@ public class FileUtils {
 				}
 
 				progress.setProgress(
-						String.format("Downloading... (%d KB/s)", bps/1024),
+						String.format("Downloading " + url + "... (%d KB/s)", bps/1024),
 						(float)downloadedLen/(float)len);
 
 				// Allow cancellation

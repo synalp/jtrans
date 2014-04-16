@@ -31,12 +31,6 @@ import java.util.zip.ZipFile;
  *
  */
 public abstract class PronunciationsLexicon implements Serializable {
-	final static String dicoperso[] = {
-		"res/dicoperso",
-		"/users/parole/cerisara/cvsreps2/ESTER2/dicoLORIA",
-		"C:/xtof/ESTER2/dicoLORIA"
-	};
-
 	/**
 	 * Les phonemes utilises en sortie sont les suivants:
 	 */
@@ -50,32 +44,14 @@ public abstract class PronunciationsLexicon implements Serializable {
 
 	
 	/**
-	 * ouvre un fichier texte, eventuellement compresse, et retourne un Iterator
+	 * ouvre un fichier texte et retourne un Iterator
 	 * permettant de parcourir toutes les entrees (=lignes) textuelles contenues dans ce fichier
-	 * 
-	 * @param noms tableau de tous les emplacements possibles du fichier a lire
-	 * @return
 	 */
-	public static Enumeration<String> getEntries(String[] noms, boolean isUTF) {
-		int i;
-		for (i=0;i<noms.length;i++) {
-			File f = new File(noms[i]);
-			if (f!=null&&f.exists()) break;
-		}
-		if (i<noms.length) {
+	public static Enumeration<String> getEntries(String fn, boolean isUTF) {
 			// on a trouve un fichier qui existe: on utilise celui-ci
 			final InputStream bif;
 			try {
-				if (noms[i].endsWith(".zip")) {
-					ZipFile zf = new ZipFile(noms[i]);
-					// TODO: je ne lis que la 1ere entry, mais il faudrait aussi traiter les autres ?!
-					Enumeration it = zf.entries();
-					ZipEntry z = (ZipEntry)it.nextElement();
-					bif = zf.getInputStream(z);
-				} else if (noms[i].endsWith(".gz")) {
-					bif = new GZIPInputStream(new FileInputStream(noms[i]));
-				} else
-					bif = new FileInputStream(noms[i]);
+				bif = new FileInputStream(fn);
 				
 				// on a recupere un inputStream vers le fichier
 				class MyEnum implements Enumeration<String> {
@@ -110,43 +86,8 @@ public abstract class PronunciationsLexicon implements Serializable {
 				return new MyEnum(isUTF);
 			} catch (IOException e) {
 				e.printStackTrace();
+				throw new RuntimeException(e);
 			}
-		}
-		return null;
-	}
-	
-	/**
-	 * @deprecated use getEntries instead !!
-	 * @param noms
-	 * @return
-	 */
-	public static BufferedReader getFile(String[] noms) {
-		int i;
-		for (i=0;i<noms.length;i++) {
-			File f = new File(noms[i]);
-			if (f!=null&&f.exists()) break;
-		}
-		if (i<noms.length) {
-			BufferedReader bf;
-			try {
-				if (noms[i].endsWith(".zip")) {
-					ZipFile zf = new ZipFile(noms[i]);
-					// TODO: je ne lis que la 1ere entry, mais il faudrait aussi traiter les autres ?!
-					Enumeration it = zf.entries();
-					ZipEntry z = (ZipEntry)it.nextElement();
-					bf = new BufferedReader(new InputStreamReader(zf.getInputStream(z)));
-				} else if (noms[i].endsWith(".gz")) {
-					bf = new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(noms[i]))));
-				} else
-					bf = new BufferedReader(new FileReader(noms[i]));
-				return bf;
-			} catch (FileNotFoundException e) {
-				// e.printStackTrace();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-		return null;
 	}
 
 	Entree sanstirets(String mot) {

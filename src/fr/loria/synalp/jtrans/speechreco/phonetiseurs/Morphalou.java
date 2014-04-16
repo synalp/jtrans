@@ -13,6 +13,7 @@ import java.io.InputStreamReader;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
+import static fr.loria.synalp.jtrans.utils.Paths.RES_DIR;
 
 /**
  * Cette classe charge les prononciations g�n�r�es par Vincent Colotte pour la base Morphalou,
@@ -23,15 +24,13 @@ import java.util.Iterator;
  */
 public class Morphalou extends PronunciationsLexicon {
 	private static final long serialVersionUID = 1L;
-	final static String corpdir[] = {
-		"res/ListeFinal_Morph_Dico_f.txt",
-		"D:/xtof/corpus/Morphalou/ListeFinal_Morph_Dico_f.txt",
-		"C:/xtof/corpus/Morphalou/ListeFinal_Morph_Dico_f.txt",
-		"/tmp/ListeFinal_Morph_Dico_f.txt",
-		"/media/OS/xtof/corpus/ListeFinal_Morph_Dico_f.txt",
-		"/local/dable2/parole/Ressources/Morphalou/ListeFinal_Morph_Dico_f.txt",
-		"/home/xtof/corpus/Morphalou/ListeFinal_Morph_Dico_f.txt"
-	};
+
+	final static String corpdir =
+			RES_DIR.getAbsolutePath() + "/ListeFinal_Morph_Dico_f.txt";
+
+	final static String dicoperso =
+			RES_DIR.getAbsolutePath() + "/dicoperso";
+
 
 	public Morphalou() {
 		try {

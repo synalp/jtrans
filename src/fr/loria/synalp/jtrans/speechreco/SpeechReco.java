@@ -68,6 +68,8 @@ import edu.cmu.sphinx.util.props.ConfigurationManager;
 import edu.cmu.sphinx.util.props.PropertyException;
 import edu.cmu.sphinx.util.props.PropertySheet;
 
+import static fr.loria.synalp.jtrans.utils.Paths.RES_DIR;
+
 /**
  * 
  * @author xtof
@@ -146,7 +148,7 @@ public class SpeechReco {
 	private SpeechReco() {
 		URL cfg0;
 		try {
-			cfg0 = (new File("res/config.xml")).toURI().toURL();
+			cfg0 = (new File(RES_DIR, "config.xml")).toURI().toURL();
 			cfg = fixCfgPaths(cfg0);
 		} catch (MalformedURLException e) {
 			e.printStackTrace();

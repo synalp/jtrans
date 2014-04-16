@@ -1,5 +1,7 @@
 package fr.loria.synalp.jtrans.facade;
 
+import static fr.loria.synalp.jtrans.utils.Paths.CACHE_DIR;
+
 import java.io.*;
 
 /**
@@ -38,10 +40,6 @@ public class Cache {
 	 * If false, objects are recreated everytime they are requested.
 	 */
 	public static boolean READ_FROM_CACHE = true;
-
-
-	/** Cache files are stored there. */
-	public static final File CACHE_DIR = new File("cache");
 
 
 	/**

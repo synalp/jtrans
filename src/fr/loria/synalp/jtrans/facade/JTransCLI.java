@@ -4,10 +4,7 @@ import fr.loria.synalp.jtrans.gui.JTransGUI;
 import fr.loria.synalp.jtrans.markup.in.*;
 import fr.loria.synalp.jtrans.markup.out.MarkupSaver;
 import fr.loria.synalp.jtrans.markup.out.MarkupSaverPool;
-import fr.loria.synalp.jtrans.utils.CrossPlatformFixes;
-import fr.loria.synalp.jtrans.utils.FileUtils;
-import fr.loria.synalp.jtrans.utils.PrintStreamProgressDisplay;
-import fr.loria.synalp.jtrans.utils.ProgressDisplay;
+import fr.loria.synalp.jtrans.utils.*;
 import fr.loria.synalp.jtrans.viterbi.StatePath;
 import joptsimple.*;
 
@@ -389,8 +386,8 @@ public class JTransCLI {
 
 		cli = new JTransCLI(args);
 
-		if (!new File("res").exists()) {
-			JTransGUI.installResources();
+		if (ResourceInstaller.shouldReinstallResources()) {
+			ResourceInstaller.installResources();
 		}
 
 		if (!cli.computeLikelihoods &&

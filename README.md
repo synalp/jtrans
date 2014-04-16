@@ -80,3 +80,19 @@ run:
 
 	ant ivy-retrieve-sources
 
+
+## Installing the resources
+
+JTrans needs a resource package to function properly. The first time you run
+JTrans, it will download resources and install them in `~/.jtrans`
+(`%userprofile%\.jtrans` on Windows).
+
+You may also install resources manually: download
+http://talc1.loria.fr/users/cerisara/jtrans/jtrans_res_20140416.zip (about 55
+MB) and unzip it in `~/.jtrans`.
+
+
+## Running the unit tests
+
+Please install the resources before running the unit tests (see above).
+
