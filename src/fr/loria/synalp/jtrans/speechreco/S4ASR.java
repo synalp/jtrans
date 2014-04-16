@@ -221,6 +221,14 @@ public class S4ASR implements SignalListener {
     		System.out.println("dico loaded");
     		// LargeNGramModel lm = new LargeNGramModel("arpa", new URL("file://"+bp+"LM_africain_3g.sorted.arpa.utf8.dmp"), null, 100000, 50000, false, n, logMath, dico, false, lw, wip, 0.5f, false);
     		//LargeNGramModel lm = new LargeNGramModel("arpa", new URL("file://"+bp+"LM_africain_3g.sorted.arpa.utf8.dmp"), null, 100000, false, n, logMath, dico, false, lw, wip, 0.5f, false);
+
+			/*
+			This very large (700MB+) file has been removed from the resource
+			pack since this ASR is "broken" as of April 2014.
+			It can still be found in:
+			http://talc1.loria.fr/users/cerisara/jtrans/jtrans_res_20131209.zip
+			*/
+
     		LargeTrigramModel lm = new LargeTrigramModel("dmp",new URL("file://"+bp+"LM_africain_3g.sorted.arpa.utf8.dmp"),null,100000,50000,false,-1,logMath,dico,false,lw,wip,0.5f,false);
     		lm.allocate();
     		System.out.println("lm loaded");

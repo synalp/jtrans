@@ -10,11 +10,11 @@ import java.util.concurrent.CancellationException;
 
 public class ResourceInstaller {
 
-	public static final String CURRENT_VERSION = "20131209";
+	public static final String CURRENT_VERSION = "20140416";
 
-	public static final String APPX_ZIP_SIZE = "400 MB";
+	public static final String APPX_ZIP_SIZE = "55 MB";
 
-	public static final String APPX_UNPACKED_SIZE = "1 GB";
+	public static final String APPX_UNPACKED_SIZE = "120 MB";
 
 	public static final String ZIP_URL =
 			"http://talc1.loria.fr/users/cerisara/jtrans/jtrans_res_"

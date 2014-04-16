@@ -10,7 +10,8 @@ public class Paths {
 	public static final File BASE_DIR =
 			new File(System.getProperty("user.home"), ".jtrans");
 
-	public static final File RES_DIR = new File(BASE_DIR, "res");
+	public static final File RES_DIR = new File(BASE_DIR,
+			"res_" + ResourceInstaller.CURRENT_VERSION);
 
 	public static final File CACHE_DIR = new File(BASE_DIR, "cache");
 
