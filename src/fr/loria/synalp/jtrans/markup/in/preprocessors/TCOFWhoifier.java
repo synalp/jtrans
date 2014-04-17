@@ -77,7 +77,18 @@ public class TCOFWhoifier extends TRSPreprocessor {
 			assert reportOverlap == null || reportScrapped == null;
 
 			if (reportOverlap != null) {
-				turn.setAttribute("speaker", previousSpeaker + " " + singleSpeaker);
+				if (!previousSpeaker.equals(singleSpeaker)) {
+					turn.setAttribute("speaker", previousSpeaker + " " + singleSpeaker);
+				} else {
+					// Ignore the overlap if it's set on the same speaker
+					// (happens quite often in TCOF)
+					System.err.println("TRS WARNING: overlap on same speaker! " + singleSpeaker);
+					for (Node n: reportOverlap) {
+						turn.insertBefore(n, turn.getFirstChild());
+					}
+					reportOverlap = null;
+					hangingOverlap = false;
+				}
 			}
 
 			if (reportScrapped != null) {
@@ -99,6 +110,7 @@ public class TCOFWhoifier extends TRSPreprocessor {
 			Node child = turn.getFirstChild();
 			previousSpeaker = singleSpeaker;
 
+			turnChildLoop:
 			while (null != child) {
 				String name = child.getNodeName();
 				String text = child.getTextContent();
@@ -138,6 +150,22 @@ public class TCOFWhoifier extends TRSPreprocessor {
 				else if (name.equals("#text") && text.contains("<")) {
 					if (reportOverlap != null)
 						throw new ParsingException("overlap already ongoing before '" + text + "'");
+
+					/* Verify that the rest of the Turn doesn't contain any Sync
+					tags; if it does, ignore the overlap.
+
+					After an overlap mark, we expect some text, then a new Turn
+					that immediately contains a Sync tag to signal when the 2nd
+					speaker starts speaking. Putting a Sync tag after an overlap
+					mark without opening a new Turn is meaningless (yet it
+					happens once in a while in TCOF). */
+					for (Node n = child; null != n; n = n.getNextSibling()) {
+						if (n.getNodeName().equals("Sync")) {
+							System.err.println("TRS WARNING: illegal Sync after overlap mark!");
+							child = n;
+							continue turnChildLoop;
+						}
+					}
 
 					int chevronPos = text.indexOf('<');
 					String beforeChevron = text.substring(0, chevronPos);
