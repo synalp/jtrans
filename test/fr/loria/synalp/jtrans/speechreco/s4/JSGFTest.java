@@ -118,8 +118,7 @@ public class JSGFTest {
 	 * probleme: le silence optionnel force ainsi peut se deplacer devant le swa optionnel !
 	 */
 	@Test
-	public void test() {
-		try {
+	public void test() throws Exception {
 			File tempFile = FileUtils.createVanishingTempFile("detgrammar-", ".gram");
 
 			PrintWriter f = new PrintWriter(tempFile);
@@ -155,10 +154,6 @@ public class JSGFTest {
 			
 			SearchState s = linguist.getSearchGraph().getInitialState();
 			recurs("",s);
-		} catch (Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.toString());
-		}
 	}
 
 }

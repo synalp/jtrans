@@ -9,7 +9,6 @@ import java.util.Set;
 
 import static fr.loria.synalp.jtrans.viterbi.StateGraphTest.*;
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
 public class StatePathTest {
 

@@ -6,9 +6,6 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 
-import fr.loria.synalp.jtrans.phonetiseur.AlignementGraphemesPhonemes;
-import fr.loria.synalp.jtrans.phonetiseur.Configuration;
-
 import static org.junit.Assert.*;
 
 public class AlignementGraphemesPhonemesTest {

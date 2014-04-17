@@ -25,9 +25,7 @@ import fr.loria.synalp.jtrans.utils.PrintStreamProgressDisplay;
 import junit.framework.TestCase;
 
 public class GramTest extends TestCase {
-	public void test() {
-		
-		try {
+	public void test() throws Exception {
 			class MyPronunc extends Pronunciation {
 				public MyPronunc(Unit[] units, String tag, WordClassification wc, float prob) {
 					super(units,tag,wc,prob);
@@ -84,28 +82,11 @@ public class GramTest extends TestCase {
 				@Override
 				public void allocate() throws IOException {}
 			};
-
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.out.println("gram parsing error "+e);
-		}
 		
-		PhoneticForcedGrammar gram;
-		try {
-			gram = new PhoneticForcedGrammar();
+		PhoneticForcedGrammar gram = new PhoneticForcedGrammar();
 			String[] words = {"bonjour","il"};
 			gram.setWords(Arrays.asList(words), new PrintStreamProgressDisplay());
 			GrammarNode g = gram.getGram();
 			g.dump();
-		} catch (MalformedURLException e) {
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	public static void main(String args[]) {
-		GramTest m = new GramTest();
-		m.test();
 	}
 }

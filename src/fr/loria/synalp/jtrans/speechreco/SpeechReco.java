@@ -1296,7 +1296,7 @@ public class SpeechReco {
 	/**
 	 * duplique les confusions sets avec des _-'...
 	 */
-	private static Sausage normaliseForAccuracy(Sausage s) {
+	protected static Sausage normaliseForAccuracy(Sausage s) {
 		ArrayList<ArrayList<DetNode>> nodes = new ArrayList<ArrayList<DetNode>>();
 		int pos=0;
 		for (ConfusionSet cs : s) {

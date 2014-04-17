@@ -5,7 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import junit.framework.Assert;
+import static org.junit.Assert.*;
 
 import org.junit.Test;
 
@@ -39,10 +39,8 @@ public class SpeechRecoTest {
 			RecoUtterance mot2 = new RecoUtterance(); mot2.add(m2);
 			candidats.add(mot2);
 		}
-		
-		Object[] args = {pos2candidats,3};
-		Object res = PrivateAccess.callPrivateStaticMethod(SpeechReco.class, "tokenPassing0", args);
-		List<RecoUtteranceImmutable> r = (List<RecoUtteranceImmutable>)res;
+
+		List<RecoUtteranceImmutable> r = SpeechReco.tokenPassing0(pos2candidats, 3);
 		for (RecoUtteranceImmutable utt : r)
 			System.out.println(utt);
 		
@@ -51,9 +49,9 @@ public class SpeechRecoTest {
 		// b c = 0.45
 		// b d = 0.6
 		// donc la bonne solution pour nbest=3 est ad + bd + ac
-		Assert.assertEquals(r.get(0).toString(), "a d ");
-		Assert.assertEquals(r.get(1).toString(), "b d ");
-		Assert.assertEquals(r.get(2).toString(), "a c ");
+		assertEquals(r.get(0).toString(), "a d ");
+		assertEquals(r.get(1).toString(), "b d ");
+		assertEquals(r.get(2).toString(), "a c ");
 	}
 
 }

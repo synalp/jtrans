@@ -3,8 +3,8 @@ package fr.loria.synalp.jtrans.facade;
 import fr.loria.synalp.jtrans.elements.Anchor;
 import fr.loria.synalp.jtrans.elements.Element;
 import fr.loria.synalp.jtrans.elements.Word;
-import junit.framework.Assert;
 import org.junit.Test;
+import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +14,7 @@ public class LinearBridgeTest {
 	@Test
 	public void testEmptyTrackList() {
 		LinearBridge bridge = new LinearBridge(new ArrayList<Track>());
-		Assert.assertFalse(bridge.hasNext());
+		assertFalse(bridge.hasNext());
 	}
 
 
@@ -27,7 +27,7 @@ public class LinearBridgeTest {
 		trackList.add(new Track("C"));
 
 		LinearBridge bridge = new LinearBridge(trackList);
-		Assert.assertFalse(bridge.hasNext());
+		assertFalse(bridge.hasNext());
 	}
 
 
@@ -50,23 +50,23 @@ public class LinearBridgeTest {
 		LinearBridge bridge = new LinearBridge(trackList);
 		AnchorSandwich[] sl;
 
-		Assert.assertTrue(bridge.hasNext());
+		assertTrue(bridge.hasNext());
 		sl = bridge.next();
-		Assert.assertEquals(2, sl.length);
-		Assert.assertEquals(trackA.elts.get(0), sl[0].getInitialAnchor());
-		Assert.assertEquals(trackA.elts.get(2), sl[0].getFinalAnchor());
-		Assert.assertEquals(trackA.elts.subList(1, 2), sl[0]);
-		Assert.assertNull(sl[1]);
+		assertEquals(2, sl.length);
+		assertEquals(trackA.elts.get(0), sl[0].getInitialAnchor());
+		assertEquals(trackA.elts.get(2), sl[0].getFinalAnchor());
+		assertEquals(trackA.elts.subList(1, 2), sl[0]);
+		assertNull(sl[1]);
 
-		Assert.assertTrue(bridge.hasNext());
+		assertTrue(bridge.hasNext());
 		sl = bridge.next();
-		Assert.assertEquals(2, sl.length);
-		Assert.assertNull(sl[0]);
-		Assert.assertEquals(trackB.elts.get(0), sl[1].getInitialAnchor());
-		Assert.assertEquals(trackB.elts.get(2), sl[1].getFinalAnchor());
-		Assert.assertEquals(trackB.elts.subList(1, 2), sl[1]);
+		assertEquals(2, sl.length);
+		assertNull(sl[0]);
+		assertEquals(trackB.elts.get(0), sl[1].getInitialAnchor());
+		assertEquals(trackB.elts.get(2), sl[1].getFinalAnchor());
+		assertEquals(trackB.elts.subList(1, 2), sl[1]);
 
-		Assert.assertFalse(bridge.hasNext());
+		assertFalse(bridge.hasNext());
 	}
 
 
@@ -89,17 +89,17 @@ public class LinearBridgeTest {
 		LinearBridge bridge = new LinearBridge(trackList);
 		AnchorSandwich[] sl;
 
-		Assert.assertTrue(bridge.hasNext());
+		assertTrue(bridge.hasNext());
 		sl = bridge.next();
-		Assert.assertEquals(2, sl.length);
-		Assert.assertEquals(trackA.elts.get(0), sl[0].getInitialAnchor());
-		Assert.assertEquals(trackA.elts.get(2), sl[0].getFinalAnchor());
-		Assert.assertEquals(trackA.elts.subList(1, 2), sl[0]);
-		Assert.assertEquals(trackB.elts.get(0), sl[1].getInitialAnchor());
-		Assert.assertEquals(trackB.elts.get(2), sl[1].getFinalAnchor());
-		Assert.assertEquals(trackB.elts.subList(1, 2), sl[1]);
+		assertEquals(2, sl.length);
+		assertEquals(trackA.elts.get(0), sl[0].getInitialAnchor());
+		assertEquals(trackA.elts.get(2), sl[0].getFinalAnchor());
+		assertEquals(trackA.elts.subList(1, 2), sl[0]);
+		assertEquals(trackB.elts.get(0), sl[1].getInitialAnchor());
+		assertEquals(trackB.elts.get(2), sl[1].getFinalAnchor());
+		assertEquals(trackB.elts.subList(1, 2), sl[1]);
 
-		Assert.assertFalse(bridge.hasNext());
+		assertFalse(bridge.hasNext());
 	}
 
 
@@ -153,25 +153,25 @@ public class LinearBridgeTest {
 		LinearBridge bridge = new LinearBridge(trackList);
 		AnchorSandwich[] sl;
 
-		Assert.assertTrue(bridge.hasNext());
+		assertTrue(bridge.hasNext());
 
 		sl = bridge.next();
-		Assert.assertFalse(nullOrEmpty(sl[0]));
-		Assert.assertTrue(nullOrEmpty(sl[1]));
+		assertFalse(nullOrEmpty(sl[0]));
+		assertTrue(nullOrEmpty(sl[1]));
 
 		sl = bridge.next();
-		Assert.assertTrue(nullOrEmpty(sl[0]));
-		Assert.assertFalse(nullOrEmpty(sl[1]));
+		assertTrue(nullOrEmpty(sl[0]));
+		assertFalse(nullOrEmpty(sl[1]));
 
 		sl = bridge.next();
-		Assert.assertFalse(nullOrEmpty(sl[0]));
-		Assert.assertFalse(nullOrEmpty(sl[1]));
+		assertFalse(nullOrEmpty(sl[0]));
+		assertFalse(nullOrEmpty(sl[1]));
 
 		sl = bridge.next();
-		Assert.assertTrue(nullOrEmpty(sl[0]));
-		Assert.assertFalse(nullOrEmpty(sl[1]));
+		assertTrue(nullOrEmpty(sl[0]));
+		assertFalse(nullOrEmpty(sl[1]));
 
-		Assert.assertFalse(bridge.hasNext());
+		assertFalse(bridge.hasNext());
 	}
 
 
@@ -188,21 +188,21 @@ public class LinearBridgeTest {
 			List<Track> trackList1 = new ArrayList<Track>();
 			trackList1.add(trackA);
 			trackList1.add(trackB);
-			Assert.assertTrue(new LinearBridge(trackList1).hasNext());
+			assertTrue(new LinearBridge(trackList1).hasNext());
 		}
 
 		{
 			List<Track> trackList2 = new ArrayList<Track>();
 			trackList2.add(trackB);
 			trackList2.add(trackA);
-			Assert.assertTrue(new LinearBridge(trackList2).hasNext());
+			assertTrue(new LinearBridge(trackList2).hasNext());
 		}
 
 		{
 			List<Track> trackList3 = new ArrayList<Track>();
 			trackList3.add(trackB);
 			trackList3.add(trackB);
-			Assert.assertFalse(new LinearBridge(trackList3).hasNext());
+			assertFalse(new LinearBridge(trackList3).hasNext());
 		}
 	}
 
@@ -229,33 +229,33 @@ public class LinearBridgeTest {
 		LinearBridge bridge = new LinearBridge(trackList);
 		AnchorSandwich[] sl;
 
-		Assert.assertTrue(bridge.hasNext());
+		assertTrue(bridge.hasNext());
 		sl = bridge.next();
-		Assert.assertEquals(2, sl.length);
-		Assert.assertEquals(trackA.elts.get(0), sl[0].getInitialAnchor());
-		Assert.assertEquals(trackA.elts.get(2), sl[0].getFinalAnchor());
-		Assert.assertEquals(trackA.elts.subList(1, 2), sl[0]);
-		Assert.assertNull(sl[1]);
+		assertEquals(2, sl.length);
+		assertEquals(trackA.elts.get(0), sl[0].getInitialAnchor());
+		assertEquals(trackA.elts.get(2), sl[0].getFinalAnchor());
+		assertEquals(trackA.elts.subList(1, 2), sl[0]);
+		assertNull(sl[1]);
 
-		Assert.assertTrue(bridge.hasNext());
+		assertTrue(bridge.hasNext());
 		sl = bridge.next();
-		Assert.assertEquals(2, sl.length);
-		Assert.assertEquals(trackA.elts.get(2), sl[0].getInitialAnchor());
-		Assert.assertEquals(trackA.elts.get(3), sl[0].getFinalAnchor());
-		Assert.assertTrue(sl[0].isEmpty());
-		Assert.assertEquals(trackB.elts.get(0), sl[1].getInitialAnchor());
-		Assert.assertEquals(trackB.elts.get(2), sl[1].getFinalAnchor());
-		Assert.assertEquals(trackB.elts.subList(1, 2), sl[1]);
+		assertEquals(2, sl.length);
+		assertEquals(trackA.elts.get(2), sl[0].getInitialAnchor());
+		assertEquals(trackA.elts.get(3), sl[0].getFinalAnchor());
+		assertTrue(sl[0].isEmpty());
+		assertEquals(trackB.elts.get(0), sl[1].getInitialAnchor());
+		assertEquals(trackB.elts.get(2), sl[1].getFinalAnchor());
+		assertEquals(trackB.elts.subList(1, 2), sl[1]);
 
-		Assert.assertTrue(bridge.hasNext());
+		assertTrue(bridge.hasNext());
 		sl = bridge.next();
-		Assert.assertEquals(2, sl.length);
-		Assert.assertEquals(trackA.elts.get(3), sl[0].getInitialAnchor());
-		Assert.assertEquals(trackA.elts.get(5), sl[0].getFinalAnchor());
-		Assert.assertEquals(trackA.elts.subList(4, 5), sl[0]);
-		Assert.assertNull(sl[1]);
+		assertEquals(2, sl.length);
+		assertEquals(trackA.elts.get(3), sl[0].getInitialAnchor());
+		assertEquals(trackA.elts.get(5), sl[0].getFinalAnchor());
+		assertEquals(trackA.elts.subList(4, 5), sl[0]);
+		assertNull(sl[1]);
 
-		Assert.assertFalse(bridge.hasNext());
+		assertFalse(bridge.hasNext());
 	}
 
 
@@ -284,14 +284,14 @@ public class LinearBridgeTest {
 
 		LinearBridge lb = new LinearBridge(trackList);
 		AnchorSandwich wordSeq = lb.nextInterleavedElementSequence();
-		Assert.assertEquals(4, wordSeq.size());
-		Assert.assertEquals("abc", wordSeq.get(0).toString());
-		Assert.assertEquals("def", wordSeq.get(1).toString());
-		Assert.assertEquals("ghi", wordSeq.get(2).toString());
-		Assert.assertEquals("jkl", wordSeq.get(3).toString());
-		Assert.assertEquals(Anchor.orderedTimelessAnchor(0),
+		assertEquals(4, wordSeq.size());
+		assertEquals("abc", wordSeq.get(0).toString());
+		assertEquals("def", wordSeq.get(1).toString());
+		assertEquals("ghi", wordSeq.get(2).toString());
+		assertEquals("jkl", wordSeq.get(3).toString());
+		assertEquals(Anchor.orderedTimelessAnchor(0),
 				wordSeq.getInitialAnchor());
-		Assert.assertNull(wordSeq.getFinalAnchor());
+		assertNull(wordSeq.getFinalAnchor());
 	}
 
 
@@ -342,24 +342,24 @@ public class LinearBridgeTest {
 		AnchorSandwich s;
 
 		s = lb.nextSingle();
-		Assert.assertEquals(1, s.size());
-		Assert.assertEquals("abc", s.get(0).toString());
+		assertEquals(1, s.size());
+		assertEquals("abc", s.get(0).toString());
 
 		s = lb.nextSingle();
-		Assert.assertEquals(1, s.size());
-		Assert.assertEquals("def", s.get(0).toString());
+		assertEquals(1, s.size());
+		assertEquals("def", s.get(0).toString());
 
 		s = lb.nextSingle();
-		Assert.assertEquals(3, s.size());
-		Assert.assertEquals("ghi", s.get(0).toString());
-		Assert.assertEquals("jkl", s.get(1).toString());
-		Assert.assertEquals("mno", s.get(2).toString());
+		assertEquals(3, s.size());
+		assertEquals("ghi", s.get(0).toString());
+		assertEquals("jkl", s.get(1).toString());
+		assertEquals("mno", s.get(2).toString());
 
 		s = lb.nextSingle();
-		Assert.assertEquals(1, s.size());
-		Assert.assertEquals("vwx", s.get(0).toString());
+		assertEquals(1, s.size());
+		assertEquals("vwx", s.get(0).toString());
 
-		Assert.assertFalse(lb.hasNext());
+		assertFalse(lb.hasNext());
 	}
 
 }

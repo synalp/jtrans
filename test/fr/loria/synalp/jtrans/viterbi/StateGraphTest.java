@@ -1,7 +1,6 @@
 package fr.loria.synalp.jtrans.viterbi;
 
 import fr.loria.synalp.jtrans.elements.Word;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.*;
@@ -70,24 +69,24 @@ public class StateGraphTest {
 		StateGraph sg;
 
 		sg = bogusSG("a");
-		Assert.assertTrue(sg.isLinear());
-		Assert.assertEquals(3*(1+1+1), sg.getNodeCount());
+		assertTrue(sg.isLinear());
+		assertEquals(3*(1+1+1), sg.getNodeCount());
 
 		sg = bogusSG("a [ a ]");
-		Assert.assertFalse(sg.isLinear());
-		Assert.assertEquals(3*(1+1+1+1), sg.getNodeCount());
+		assertFalse(sg.isLinear());
+		assertEquals(3*(1+1+1+1), sg.getNodeCount());
 
 		sg = bogusSG("a [ a ] [ a ]");
-		Assert.assertFalse(sg.isLinear());
-		Assert.assertEquals(3*(1+1+1+1+1), sg.getNodeCount());
+		assertFalse(sg.isLinear());
+		assertEquals(3*(1+1+1+1+1), sg.getNodeCount());
 
 		sg = bogusSG("a ( a | i )");
-		Assert.assertFalse(sg.isLinear());
-		Assert.assertEquals(3*(1+1+2+1), sg.getNodeCount());
+		assertFalse(sg.isLinear());
+		assertEquals(3*(1+1+2+1), sg.getNodeCount());
 
 		sg = bogusSG("a ( a | [ i ] )");
-		Assert.assertFalse(sg.isLinear());
-		Assert.assertEquals(3*(1+1+2+1), sg.getNodeCount());
+		assertFalse(sg.isLinear());
+		assertEquals(3*(1+1+2+1), sg.getNodeCount());
 	}
 
 
@@ -96,16 +95,16 @@ public class StateGraphTest {
 		StateGraph sg;
 
 		sg = bogusSG("a", "a");
-		Assert.assertFalse(sg.isLinear());
-		Assert.assertEquals(3*(1+1+2+1), sg.getNodeCount());
+		assertFalse(sg.isLinear());
+		assertEquals(3*(1+1+2+1), sg.getNodeCount());
 
 		sg = bogusSG("a", "[ a ]");
-		Assert.assertFalse(sg.isLinear());
-		Assert.assertEquals(3*(1+1+2+1), sg.getNodeCount());
+		assertFalse(sg.isLinear());
+		assertEquals(3*(1+1+2+1), sg.getNodeCount());
 
 		sg = bogusSG("a", "( a | i )");
-		Assert.assertFalse(sg.isLinear());
-		Assert.assertEquals(3*(1+1+3+1), sg.getNodeCount());
+		assertFalse(sg.isLinear());
+		assertEquals(3*(1+1+3+1), sg.getNodeCount());
 	}
 
 
@@ -114,24 +113,24 @@ public class StateGraphTest {
 		StateGraph sg;
 
 		sg = bogusSG(false, "a", "a");
-		Assert.assertTrue(sg.isLinear());
-		Assert.assertEquals(3*(1+1+1+1), sg.getNodeCount());
+		assertTrue(sg.isLinear());
+		assertEquals(3*(1+1+1+1), sg.getNodeCount());
 
 		sg = bogusSG(false, "a", "[ a ]");
-		Assert.assertFalse(sg.isLinear());
-		Assert.assertEquals(3*(1+1+1+1), sg.getNodeCount());
+		assertFalse(sg.isLinear());
+		assertEquals(3*(1+1+1+1), sg.getNodeCount());
 
 		sg = bogusSG(false, "a", "( a | i )");
-		Assert.assertFalse(sg.isLinear());
-		Assert.assertEquals(3*(1+1+2+1), sg.getNodeCount());
+		assertFalse(sg.isLinear());
+		assertEquals(3*(1+1+2+1), sg.getNodeCount());
 	}
 
 
 	@Test
 	public void testInitialEmptyRule() {
 		StateGraph sg = bogusSG(null, "a");
-		Assert.assertTrue(sg.isLinear());
-		Assert.assertEquals(3*3, sg.getNodeCount());
+		assertTrue(sg.isLinear());
+		assertEquals(3*3, sg.getNodeCount());
 	}
 
 
@@ -140,32 +139,32 @@ public class StateGraphTest {
 		StateGraph sg;
 
 		sg = bogusSG("a", null);
-		Assert.assertTrue(sg.isLinear());
-		Assert.assertEquals(3*3, sg.getNodeCount());
+		assertTrue(sg.isLinear());
+		assertEquals(3*3, sg.getNodeCount());
 
 		sg = bogusSG("a", "b", null);
-		Assert.assertFalse(sg.isLinear());
-		Assert.assertEquals(3*(1+1+2+1), sg.getNodeCount());
+		assertFalse(sg.isLinear());
+		assertEquals(3*(1+1+2+1), sg.getNodeCount());
 
 		sg = bogusSG("a", "b", "a", null);
-		Assert.assertFalse(sg.isLinear());
-		Assert.assertEquals(3*(1+1+2+2+1), sg.getNodeCount());
+		assertFalse(sg.isLinear());
+		assertEquals(3*(1+1+2+2+1), sg.getNodeCount());
 	}
 
 
 	@Test
 	public void testConsecutiveEmptyRules() {
 		StateGraph sg = bogusSG(null, null);
-		Assert.assertTrue(sg.isLinear());
-		Assert.assertEquals(3*2, sg.getNodeCount());
+		assertTrue(sg.isLinear());
+		assertEquals(3*2, sg.getNodeCount());
 
 		sg = bogusSG(null, null, null, null, null);
-		Assert.assertTrue(sg.isLinear());
-		Assert.assertEquals(3*2, sg.getNodeCount());
+		assertTrue(sg.isLinear());
+		assertEquals(3*2, sg.getNodeCount());
 
 		sg = bogusSG(null, null, "a", null, null, null);
-		Assert.assertTrue(sg.isLinear());
-		Assert.assertEquals(3*3, sg.getNodeCount());
+		assertTrue(sg.isLinear());
+		assertEquals(3*3, sg.getNodeCount());
 	}
 
 
@@ -174,20 +173,20 @@ public class StateGraphTest {
 		final int expected = 3 * (1 + 1 + 2 + 1);
 
 		StateGraph sg = bogusSG("a", null, "b");
-		Assert.assertFalse(sg.isLinear());
-		Assert.assertEquals(expected, sg.getNodeCount());
+		assertFalse(sg.isLinear());
+		assertEquals(expected, sg.getNodeCount());
 
 		sg = bogusSG("a", null, null, null, null, "b");
-		Assert.assertFalse(sg.isLinear());
-		Assert.assertEquals(expected, sg.getNodeCount());
+		assertFalse(sg.isLinear());
+		assertEquals(expected, sg.getNodeCount());
 
 		sg = bogusSG("a", null, null, null, null, "b", null);
-		Assert.assertFalse(sg.isLinear());
-		Assert.assertEquals(expected, sg.getNodeCount());
+		assertFalse(sg.isLinear());
+		assertEquals(expected, sg.getNodeCount());
 
 		sg = bogusSG(null, "a", null, null, null, null, "b", null);
-		Assert.assertFalse(sg.isLinear());
-		Assert.assertEquals(expected, sg.getNodeCount());
+		assertFalse(sg.isLinear());
+		assertEquals(expected, sg.getNodeCount());
 	}
 
 
@@ -197,20 +196,20 @@ public class StateGraphTest {
 		StateGraph sg;
 
 		sg = StateGraph.quick("a");
-		Assert.assertTrue(sg.isLinear());
-		Assert.assertEquals(expected, sg.getNodeCount());
+		assertTrue(sg.isLinear());
+		assertEquals(expected, sg.getNodeCount());
 
 		sg = StateGraph.quick("() a");
-		Assert.assertTrue(sg.isLinear());
-		Assert.assertEquals(expected, sg.getNodeCount());
+		assertTrue(sg.isLinear());
+		assertEquals(expected, sg.getNodeCount());
 
 		sg = StateGraph.quick("a ()");
-		Assert.assertTrue(sg.isLinear());
-		Assert.assertEquals(expected, sg.getNodeCount());
+		assertTrue(sg.isLinear());
+		assertEquals(expected, sg.getNodeCount());
 
 		sg = StateGraph.quick("() () () () a () () () ()");
-		Assert.assertTrue(sg.isLinear());
-		Assert.assertEquals(expected, sg.getNodeCount());
+		assertTrue(sg.isLinear());
+		assertEquals(expected, sg.getNodeCount());
 	}
 
 
@@ -277,39 +276,39 @@ public class StateGraphTest {
 
 		sg.setWordAlignments(timeline, F);
 
-		Assert.assertEquals(F+3, tu.getSegment().getStartFrame());
-		Assert.assertEquals(F+8, tu.getSegment().getEndFrame());
-		Assert.assertEquals(2, tu.getPhones().size());
-		Assert.assertEquals("t", tu.getPhones().get(0).toString());
-		Assert.assertEquals(F+3, tu.getPhones().get(0).getSegment().getStartFrame());
-		Assert.assertEquals(F+5, tu.getPhones().get(0).getSegment().getEndFrame());
-		Assert.assertEquals(F+6, tu.getPhones().get(1).getSegment().getStartFrame());
-		Assert.assertEquals(F+8, tu.getPhones().get(1).getSegment().getEndFrame());
-		Assert.assertEquals("y", tu.getPhones().get(1).toString());
+		assertEquals(F+3, tu.getSegment().getStartFrame());
+		assertEquals(F+8, tu.getSegment().getEndFrame());
+		assertEquals(2, tu.getPhones().size());
+		assertEquals("t", tu.getPhones().get(0).toString());
+		assertEquals(F+3, tu.getPhones().get(0).getSegment().getStartFrame());
+		assertEquals(F+5, tu.getPhones().get(0).getSegment().getEndFrame());
+		assertEquals(F+6, tu.getPhones().get(1).getSegment().getStartFrame());
+		assertEquals(F+8, tu.getPhones().get(1).getSegment().getEndFrame());
+		assertEquals("y", tu.getPhones().get(1).toString());
 
-		Assert.assertEquals(F+9, peux.getSegment().getStartFrame());
-		Assert.assertEquals(F+14, peux.getSegment().getEndFrame());
-		Assert.assertEquals(2, peux.getPhones().size());
-		Assert.assertEquals("p", peux.getPhones().get(0).toString());
-		Assert.assertEquals("eu", peux.getPhones().get(1).toString());
+		assertEquals(F+9, peux.getSegment().getStartFrame());
+		assertEquals(F+14, peux.getSegment().getEndFrame());
+		assertEquals(2, peux.getPhones().size());
+		assertEquals("p", peux.getPhones().get(0).toString());
+		assertEquals("eu", peux.getPhones().get(1).toString());
 
-		Assert.assertEquals(F+15, pas.getSegment().getStartFrame());
-		Assert.assertEquals(F+23, pas.getSegment().getEndFrame()); // (+ sil)
-		Assert.assertEquals(3, pas.getPhones().size());  // (+ sil)
-		Assert.assertEquals("p", pas.getPhones().get(0).toString());
-		Assert.assertEquals("a", pas.getPhones().get(1).toString());
-		Assert.assertEquals("SIL", pas.getPhones().get(2).toString());
+		assertEquals(F+15, pas.getSegment().getStartFrame());
+		assertEquals(F+23, pas.getSegment().getEndFrame()); // (+ sil)
+		assertEquals(3, pas.getPhones().size());  // (+ sil)
+		assertEquals("p", pas.getPhones().get(0).toString());
+		assertEquals("a", pas.getPhones().get(1).toString());
+		assertEquals("SIL", pas.getPhones().get(2).toString());
 
-		Assert.assertEquals(F+24, savoir.getSegment().getStartFrame());
-		Assert.assertEquals(F+44, savoir.getSegment().getEndFrame());
-		Assert.assertEquals(7, savoir.getPhones().size());  // + trailing sil
-		Assert.assertEquals("s", savoir.getPhones().get(0).toString());
-		Assert.assertEquals("a", savoir.getPhones().get(1).toString());
-		Assert.assertEquals("v", savoir.getPhones().get(2).toString());
-		Assert.assertEquals("w", savoir.getPhones().get(3).toString());
-		Assert.assertEquals("a", savoir.getPhones().get(4).toString());
-		Assert.assertEquals("r", savoir.getPhones().get(5).toString());
-		Assert.assertEquals("SIL", savoir.getPhones().get(6).toString());
+		assertEquals(F+24, savoir.getSegment().getStartFrame());
+		assertEquals(F+44, savoir.getSegment().getEndFrame());
+		assertEquals(7, savoir.getPhones().size());  // + trailing sil
+		assertEquals("s", savoir.getPhones().get(0).toString());
+		assertEquals("a", savoir.getPhones().get(1).toString());
+		assertEquals("v", savoir.getPhones().get(2).toString());
+		assertEquals("w", savoir.getPhones().get(3).toString());
+		assertEquals("a", savoir.getPhones().get(4).toString());
+		assertEquals("r", savoir.getPhones().get(5).toString());
+		assertEquals("SIL", savoir.getPhones().get(6).toString());
 	}
 
 
@@ -324,7 +323,7 @@ public class StateGraphTest {
 				Arrays.asList(ah, meh),
 				true);
 
-		Assert.assertEquals(
+		assertEquals(
 				3 * (1 + /*a*/(1) + 1 + (/*m*/1 + /*e|i*/2) + 1),
 				sg.getNodeCount());
 
@@ -364,49 +363,49 @@ public class StateGraphTest {
 
 		sg.setWordAlignments(timeline, 0);
 
-		Assert.assertTrue(ah.isAligned());
-		Assert.assertTrue(meh.isAligned());
+		assertTrue(ah.isAligned());
+		assertTrue(meh.isAligned());
 
-		Assert.assertEquals(9, ah.getSegment().getStartFrame());
-		Assert.assertEquals(27-1, ah.getSegment().getEndFrame());
+		assertEquals(9, ah.getSegment().getStartFrame());
+		assertEquals(27-1, ah.getSegment().getEndFrame());
 
-		Assert.assertEquals(27, meh.getSegment().getStartFrame());
-		Assert.assertEquals(timeline.length-1, meh.getSegment().getEndFrame());
+		assertEquals(27, meh.getSegment().getStartFrame());
+		assertEquals(timeline.length-1, meh.getSegment().getEndFrame());
 
 		{
 			List<Word.Phone> p = ah.getPhones();
-			Assert.assertEquals(2,    p.size());
+			assertEquals(2,    p.size());
 
 			/*
-			Assert.assertEquals("SIL", p.get(0).toString());
-			Assert.assertEquals(0,     p.get(0).getSegment().getStartFrame());
-			Assert.assertEquals(3+1+5, p.get(0).getSegment().getLengthFrames());
+			assertEquals("SIL", p.get(0).toString());
+			assertEquals(0,     p.get(0).getSegment().getStartFrame());
+			assertEquals(3+1+5, p.get(0).getSegment().getLengthFrames());
 			*/
 
-			Assert.assertEquals("a",   p.get(0).toString());
-			Assert.assertEquals(9,     p.get(0).getSegment().getStartFrame());
-			Assert.assertEquals(21-1,  p.get(0).getSegment().getEndFrame());
+			assertEquals("a",   p.get(0).toString());
+			assertEquals(9,     p.get(0).getSegment().getStartFrame());
+			assertEquals(21-1,  p.get(0).getSegment().getEndFrame());
 
-			Assert.assertEquals("SIL", p.get(1).toString());
-			Assert.assertEquals(21,    p.get(1).getSegment().getStartFrame());
-			Assert.assertEquals(1+4+1, p.get(1).getSegment().getLengthFrames());
+			assertEquals("SIL", p.get(1).toString());
+			assertEquals(21,    p.get(1).getSegment().getStartFrame());
+			assertEquals(1+4+1, p.get(1).getSegment().getLengthFrames());
 		}
 
 		{
 			List<Word.Phone> p = meh.getPhones();
-			Assert.assertEquals(3, p.size());
+			assertEquals(3, p.size());
 
-			Assert.assertEquals("m",   p.get(0).toString());
-			Assert.assertEquals(27,    p.get(0).getSegment().getStartFrame());
-			Assert.assertEquals(5+3+4, p.get(0).getSegment().getLengthFrames());
+			assertEquals("m",   p.get(0).toString());
+			assertEquals(27,    p.get(0).getSegment().getStartFrame());
+			assertEquals(5+3+4, p.get(0).getSegment().getLengthFrames());
 
-			Assert.assertEquals("e",   p.get(1).toString());
-			Assert.assertEquals(39,    p.get(1).getSegment().getStartFrame());
-			Assert.assertEquals(3+1+3, p.get(1).getSegment().getLengthFrames());
+			assertEquals("e",   p.get(1).toString());
+			assertEquals(39,    p.get(1).getSegment().getStartFrame());
+			assertEquals(3+1+3, p.get(1).getSegment().getLengthFrames());
 
-			Assert.assertEquals("SIL", p.get(2).toString());
-			Assert.assertEquals(46,    p.get(2).getSegment().getStartFrame());
-			Assert.assertEquals(3+2+1, p.get(2).getSegment().getLengthFrames());
+			assertEquals("SIL", p.get(2).toString());
+			assertEquals(46,    p.get(2).getSegment().getStartFrame());
+			assertEquals(3+2+1, p.get(2).getSegment().getLengthFrames());
 		}
 	}
 
@@ -421,9 +420,9 @@ public class StateGraphTest {
 
 		final int stateCountPerWord = 3 * (5+1);
 
-		Assert.assertEquals(-1, sg.getWordIdxAt(0));
-		Assert.assertEquals(-1, sg.getWordIdxAt(1));
-		Assert.assertEquals(-1, sg.getWordIdxAt(2));
+		assertEquals(-1, sg.getWordIdxAt(0));
+		assertEquals(-1, sg.getWordIdxAt(1));
+		assertEquals(-1, sg.getWordIdxAt(2));
 
 		int node = 3;
 		int fastW = -1;
@@ -438,14 +437,14 @@ public class StateGraphTest {
 				// fast version (picks up where we left off)
 				fastW = sg.getWordIdxAt(node, fastW);
 
-				Assert.assertEquals(w, slowW);
-				Assert.assertEquals(w, fastW);
-				Assert.assertTrue(slowW == fastW);
+				assertEquals(w, slowW);
+				assertEquals(w, fastW);
+				assertTrue(slowW == fastW);
 			}
 		}
 
-		Assert.assertEquals(-1, sg.getWordIdxAt(9999));
-		Assert.assertEquals(-1, sg.getWordIdxAt(9999, fastW));
+		assertEquals(-1, sg.getWordIdxAt(9999));
+		assertEquals(-1, sg.getWordIdxAt(9999, fastW));
 	}
 
 
@@ -472,19 +471,19 @@ public class StateGraphTest {
 		int i = 0;
 
 		for (; i < 3; i++) {
-			Assert.assertEquals(-1, sg.getWordIdxAt(i));
-			Assert.assertEquals(-1, sg.getWordIdxAt(i, -1));
+			assertEquals(-1, sg.getWordIdxAt(i));
+			assertEquals(-1, sg.getWordIdxAt(i, -1));
 		}
 
 		for (; i < 3 + 6*3; i++) {
-			Assert.assertEquals(0, sg.getWordIdxAt(i));
-			Assert.assertEquals(0, sg.getWordIdxAt(i, -1));
+			assertEquals(0, sg.getWordIdxAt(i));
+			assertEquals(0, sg.getWordIdxAt(i, -1));
 		}
 
 		// this is the tricky part (after the dropped word)
 		for (; i < sg.getNodeCount(); i++) {
-			Assert.assertEquals(2, sg.getWordIdxAt(i));
-			Assert.assertEquals(2, sg.getWordIdxAt(i, 0));
+			assertEquals(2, sg.getWordIdxAt(i));
+			assertEquals(2, sg.getWordIdxAt(i, 0));
 		}
 	}
 

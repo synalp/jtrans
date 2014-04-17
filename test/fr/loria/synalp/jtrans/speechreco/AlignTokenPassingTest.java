@@ -1,8 +1,7 @@
 package fr.loria.synalp.jtrans.speechreco;
 
-import junit.framework.Assert;
-
 import org.junit.Test;
+import static org.junit.Assert.*;
 
 import edu.cmu.sphinx.result.ConfusionSet;
 import edu.cmu.sphinx.result.Sausage;
@@ -25,7 +24,7 @@ public class AlignTokenPassingTest {
 		AlignTokenPassing aligner = new AlignTokenPassing();
 		float wer = aligner.alignSausage(ref, s);
 		System.out.println("wer "+wer);
-		Assert.assertTrue(wer==0.5);
+		assertTrue(wer==0.5);
 	}
 	@Test
 	public void testAlignSausage() {
@@ -42,7 +41,7 @@ public class AlignTokenPassingTest {
 		AlignTokenPassing aligner = new AlignTokenPassing();
 		float wer = aligner.alignSausage(ref, s);
 		System.out.println("wer "+wer);
-		Assert.assertTrue(wer==0);
+		assertTrue(wer==0);
 	}
 	@Test
 	public void testNormalizeSaucisse() {
@@ -51,19 +50,12 @@ public class AlignTokenPassingTest {
 		s.addWordHypothesis(0, "a-b", logMath.linearToLog(1), logMath);
 		s.addWordHypothesis(1, "<sil>", logMath.linearToLog(0.5), logMath);
 		s.addWordHypothesis(2, "d_e", logMath.linearToLog(1), logMath);
-		Object[] args = {s};
-		Object res;
-		try {
-			res = PrivateAccess.callPrivateStaticMethod(Class.forName("main.SpeechReco"), "normaliseForAccuracy", args);
-			s=(Sausage)res;
+			s = SpeechReco.normaliseForAccuracy(s);
 			String[] attendu = {"0.0:a","-20.0:b 0.0:<noop>","-0.0:<sil>","0.0:d","-20.0:e 0.0:<noop>"};
 			int a=0;
 			for (ConfusionSet cs : s) {
 				System.out.println(cs);
-				Assert.assertEquals(attendu[a++], cs.toString().trim());
+				assertEquals(attendu[a++], cs.toString().trim());
 			}
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
 	}
 }

@@ -1,9 +1,9 @@
 package fr.loria.synalp.jtrans.viterbi;
 
 import fr.loria.synalp.jtrans.elements.Word;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import static org.junit.Assert.*;
 
 import java.util.Arrays;
 
@@ -113,7 +113,7 @@ public class AlignmentScorerTest {
 		copy(OH_AS2USTATES, mTL, PLEN);
 		fillInterpolate(3, mTL, 2*PLEN, PLEN);
 
-		Assert.assertArrayEquals(mTL, m.getLongTimeline());
+		assertArrayEquals(mTL, m.getLongTimeline());
 	}
 
 
@@ -126,7 +126,7 @@ public class AlignmentScorerTest {
 		copy(OH_AS1USTATES, mTL, PLEN);
 		fillInterpolate(3, mTL, 2*PLEN, PLEN);
 
-		Assert.assertArrayEquals(mTL, m.getLongTimeline());
+		assertArrayEquals(mTL, m.getLongTimeline());
 	}
 
 
@@ -141,7 +141,7 @@ public class AlignmentScorerTest {
 		copy(OH_AS2USTATES, mTL, PLEN);
 		fillInterpolate(3, mTL, 2*PLEN, PLEN);
 
-		Assert.assertArrayEquals(mTL, m.getLongTimeline());
+		assertArrayEquals(mTL, m.getLongTimeline());
 	}
 
 
@@ -153,7 +153,7 @@ public class AlignmentScorerTest {
 		copy(AH_AS1USTATES, mTL, 0);
 		fillInterpolate(3, mTL, PLEN, 2*PLEN);
 
-		Assert.assertArrayEquals(mTL, m.getLongTimeline());
+		assertArrayEquals(mTL, m.getLongTimeline());
 	}
 
 
@@ -166,7 +166,7 @@ public class AlignmentScorerTest {
 		copy(OH_AS1USTATES, mTL, PLEN);
 		fillInterpolate(3, mTL, 2*PLEN, PLEN);
 
-		Assert.assertArrayEquals(mTL, m.getLongTimeline());
+		assertArrayEquals(mTL, m.getLongTimeline());
 	}
 
 
@@ -182,10 +182,10 @@ public class AlignmentScorerTest {
 		System.out.println(L1);
 		System.out.println(L2);
 
-		Assert.assertTrue(L1x2 == L2x1);
-		Assert.assertTrue(L1 != L2);
-		Assert.assertTrue(L1x2 > L1);
-		Assert.assertTrue(L1x2 > L2);
+		assertTrue(L1x2 == L2x1);
+		assertTrue(L1 != L2);
+		assertTrue(L1x2 > L1);
+		assertTrue(L1x2 > L2);
 	}
 
 
@@ -205,7 +205,7 @@ public class AlignmentScorerTest {
 		double singleSpeaker = merge(spkAh);
 
 		// The likelihoods of the proposals should differ
-		Assert.assertTrue(differentSpeakers != singleSpeaker);
+		assertTrue(differentSpeakers != singleSpeaker);
 	}
 
 
@@ -224,7 +224,7 @@ public class AlignmentScorerTest {
 		double standalone = AlignmentScorer.sum(spkAh.getLikelihoods());
 
 		// the computation must yield the exact same result
-		Assert.assertEquals(merged, standalone, 0);
+		assertEquals(merged, standalone, 0);
 	}
 
 }

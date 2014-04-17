@@ -40,17 +40,11 @@ import edu.cmu.sphinx.util.LogMath;
 import junit.framework.TestCase;
 
 public class GrammarTest extends TestCase {
-	public void test() {
+	public void test() throws Exception {
 		PhoneticForcedGrammar gram;
-		try {
-			gram = new PhoneticForcedGrammar();
-			String rule = "( i | [ au ] ko ( po | a ) | a )";
-			GrammarNode n[]=gram.convertRule2S4(rule, HMMModels.getLogMath());
-		} catch (MalformedURLException e) {
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
+		gram = new PhoneticForcedGrammar();
+		String rule = "( i | [ au ] ko ( po | a ) | a )";
+		GrammarNode n[]=gram.convertRule2S4(rule, HMMModels.getLogMath());
 	}
 	
 	private Data getDataFor(String phone) {
@@ -104,15 +98,8 @@ public class GrammarTest extends TestCase {
 	/**
 	 * test d'alignement force sur 2 phonemes avec un front-end artificiel qui generer les moyennes des gaussiennes
 	 */
-	public void test2() {
-		PhoneticForcedGrammar gram=null;
-		try {
-			gram = new PhoneticForcedGrammar();
-		} catch (MalformedURLException e) {
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
+	public void test2() throws Exception {
+		PhoneticForcedGrammar gram = new PhoneticForcedGrammar();
 		String rule = "a i";
 		LogMath logMath = HMMModels.getLogMath();
 		GrammarNode n[]=gram.convertRule2S4(rule, logMath);
@@ -182,10 +169,5 @@ public class GrammarTest extends TestCase {
 			assertTrue(endframes.get(2)==15);
 			assertTrue(endframes.get(3)==18);
 		}
-	}
-	
-	public static void main(String[] args) {
-		GrammarTest m = new GrammarTest();
-		m.test2();
 	}
 }
