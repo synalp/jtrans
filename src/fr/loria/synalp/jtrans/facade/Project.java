@@ -113,7 +113,23 @@ public class Project {
 				0: iAnchor.getFrame();
 
 		int fFrame = fAnchor == null || !fAnchor.hasTime()?
-				frameCount: fAnchor.getFrame()-1;
+				frameCount: fAnchor.getFrame()-1;  // see explanation below.
+
+		/* Why did we subtract 1 frame from the final anchor's time?
+		Assume that we have 2 contiguous anchor sandwiches. The same anchor
+		serves as the FINAL anchor in the first sandwich, and as the INITIAL
+		anchor in the second sandwich.
+		Conceptually, anchors are like points in time, but we work with frames.
+		So, anchors technically cover an entire frame. Thus, to avoid that two
+		contiguous AnchorSandwiches overlap on 1 frame (i.e. that of the anchor
+		they have in common), we subtract 1 frame from the final anchor. */
+
+		if (iFrame >= frameCount) {
+			throw new IllegalArgumentException(String.format(
+					"Initial frame (%d) beyond frame count (%d)! " +
+					"(in anchor sandwich: %s)",
+					iFrame, frameCount, sandwich));
+		}
 
 		if (fFrame >= frameCount) {
 			System.err.println("WARNING: shaving frames off final anchor! " +
@@ -121,7 +137,22 @@ public class Project {
 			fFrame = frameCount - 1;
 		}
 
-		assert iFrame <= fFrame;
+		if (iFrame - fFrame > 1) {
+			// initial frame after final frame
+			throw new IllegalArgumentException(String.format(
+					"Initial frame (%d, %s) after final frame (%d, %s)! " +
+					"(in anchor sandwich: %s)",
+					iFrame, iAnchor, fFrame, fAnchor, sandwich));
+		} else if (iFrame > fFrame) {
+			// iFrame may legally be ahead of fFrame by 1 at most if the anchors
+			// are too close together (because we have removed 1 frame from the
+			// final frame, see above)
+			System.err.println(String.format("WARNING: skipping anchors too " +
+					"close together: frame %d (initial) vs %d (final) " +
+					"(in anchor sandwich: %s)",
+					iFrame, fFrame, sandwich));
+			return;
+		}
 
 		StateGraph graph = new StateGraph(new StatePool(), sandwich.getWords());
 		aligner.align(graph, iFrame, fFrame);

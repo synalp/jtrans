@@ -99,6 +99,20 @@ public class AnchorSandwich
 	}
 
 
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		String prefix = "";
+
+		for (Element el: elements) {
+			sb.append(prefix).append(el);
+			prefix = " ";
+		}
+
+		return sb.toString();
+	}
+
+
 	public boolean isFullyAligned() {
 		for (Element el: elements) {
 			if (el instanceof Word && !((Word) el).isAligned()) {
