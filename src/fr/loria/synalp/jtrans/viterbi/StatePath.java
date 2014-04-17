@@ -135,7 +135,7 @@ public class StatePath extends StateGraph {
 			// which only has 1 (this is corrected after the loop)
 			outCount   [tcn]    = 2;
 			outNode    [tcn][0] = tcn;
-			outNode    [tcn][1] = tcn-1;
+			outNode    [tcn][1] = tcn+1;
 
 			assert graph.outNode[ocn][0] == ocn;
 			outProb[tcn][0] = graph.outProb[ocn][0];

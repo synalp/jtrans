@@ -466,6 +466,14 @@ public class StateGraph {
 						"node #" + n + "'s first transition should be a loop");
 			}
 
+			// forbid backwards transitions
+			for (int t = 0; t < outCount[n]; t++) {
+				if (outNode[n][t] < n) {
+					throw new IllegalStateException("illegal backwards " +
+							"transition from node " + n + " to " + outNode[n][t]);
+				}
+			}
+
 			float sum = 0;
 			for (int t = 0; t < outCount[n]; t++) {
 				sum += lm.logToLinear(outProb[n][t]);
