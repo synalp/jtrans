@@ -440,6 +440,8 @@ public class StateGraph {
 		int last = nNodes - 1;
 		assert outNode[last][0] == last;
 		outCount[last] = 1;
+		Arrays.fill(outProb[last], 1, outProb[last].length,
+				UNINITIALIZED_LOG_PROBABILITY);
 		/* DON'T set the loop probability of the last node to 1 (linear)!
 		Intuitively, it would make sense to do so, but Viterbi will make sure
 		not to go past the last node anyway. Leaving outProb as is for the last

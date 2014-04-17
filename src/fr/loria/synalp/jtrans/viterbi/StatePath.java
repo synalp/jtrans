@@ -183,6 +183,10 @@ public class StatePath extends StateGraph {
 		nodeTranslations = new HashMap<>();
 		pool = new StatePool();
 
+		for (int i = 0; i < nNodes; i++) {
+			Arrays.fill(outProb[i], UNINITIALIZED_LOG_PROBABILITY);
+		}
+
 		// Concatenate
 		int n = 0;
 		for (StatePath path: chain) {
@@ -207,6 +211,12 @@ public class StatePath extends StateGraph {
 	 * translation tables.
 	 * Should not be used anywhere but in a constructor as it assumes that the
 	 * node arrays are not fully filled out.
+	 * <p/>
+	 * Warning: the last node is left with a "dangling" outbound transition.
+	 * That is, the last appended node transitions to the node that follows it,
+	 * even though that node doesn't exist yet. This enables linking with the
+	 * next path that will be concatenated. However, you will have to remove the
+	 * dangling transition after the last iteration.
 	 * @param n insertion index for new nodes
 	 * @return updated node insertion index
 	 */
@@ -234,6 +244,11 @@ public class StatePath extends StateGraph {
 			outProb[n][1] = path.outProb[pathN][1];
 			n++;
 		}
+
+		// Fix dangling transition probabilities
+		assert outCount[n-1] == 2;
+		outProb[n-1][1] = UNINITIALIZED_LOG_PROBABILITY; // non-loop
+		fillUniformNonLoopTransitionProbabilities(n-1);
 
 		// Make translations for node indices in all "parent" graphs of the
 		// path (which, in turn, adds new "parent" graphs to this)
