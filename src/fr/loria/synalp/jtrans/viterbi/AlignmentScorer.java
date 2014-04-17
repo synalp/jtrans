@@ -171,6 +171,11 @@ public class AlignmentScorer {
 	}
 
 
+	/**
+	 * @param graph
+	 * @param timeline timeline of nodes in the state graph
+	 * @param frameOffset timeline starts at this frame
+	 */
 	public void learn(StateGraph graph, int[] timeline, int frameOffset) {
 		if (system != SystemState.LEARNING) {
 			throw new IllegalStateException("not ready to learn");
@@ -278,6 +283,7 @@ public class AlignmentScorer {
 			}
 		}
 
+/*
 		if (kludgeModelsUsed) {
 			throw new Error("Silence models already used");
 		}
@@ -304,6 +310,7 @@ public class AlignmentScorer {
 
 			kludgeModelsUsed = true;
 		}
+*/
 
 		system = SystemState.LEARNING_COMPLETE;
 	}
