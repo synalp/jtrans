@@ -422,8 +422,12 @@ public class Project {
 			} catch (UnsupportedAudioFileException ex) {
 				audioSourceTotalFrames = -1;
 			}
-		} else
+		} else {
 			convertedAudioFile = null;
+			audioSourceTotalFrames = -1;
+		}
+
+		System.out.println("audioSourceTotalFrames: " + audioSourceTotalFrames);
 	}
 
 
@@ -444,26 +448,26 @@ public class Project {
 			return original;
 		}
 
+		System.out.println("suitableAudioFile: source format " + af);
+
 		if (af.matches(SUITABLE_AUDIO_FORMAT)) {
 			System.out.println("suitableAudioFile: no conversion needed!");
 			return original;
 		}
 
-		System.out.println("suitableAudioFile: need conversion, trying to get one from the cache");
+		System.err.println("WARNING: for best results, provide your own " +
+				"audio file in this format: " + SUITABLE_AUDIO_FORMAT);
 
 		Cache.FileFactory factory = new Cache.FileFactory() {
 			public void write(File f) throws IOException {
-				System.out.println("suitableAudioFile: no cache found... creating one");
-
 				AudioInputStream stream;
 				try {
 					stream = AudioSystem.getAudioInputStream(original);
 				} catch (UnsupportedAudioFileException ex) {
 					ex.printStackTrace();
-					throw new Error("Unsupported audio file; should've been caught above!");
+					throw new IllegalStateException("Unsupported audio file; " +
+							"should've been caught above!");
 				}
-
-				System.out.println("suitableAudioFile: source format " + af);
 
 				// Workaround for sound library bug - Formats with an unknown
 				// sample size (such as OGG and MP3) cannot be converted to the
@@ -473,7 +477,6 @@ public class Project {
 				// up/downsample and/or downmix the stream.
 
 				if (af.getSampleSizeInBits() == AudioSystem.NOT_SPECIFIED) {
-					System.out.println("suitableAudioFile: 16-bit conversion first");
 					stream = AudioSystem.getAudioInputStream(
 						new AudioFormat(
 								af.getSampleRate(),
@@ -489,7 +492,7 @@ public class Project {
 						AudioFileFormat.Type.WAVE,
 						f);
 
-				System.out.println("suitableAudioFile: written!");
+				System.out.println("suitableAudioFile: written! " + f);
 			}
 		};
 
