@@ -43,6 +43,13 @@ public class Cache {
 
 
 	/**
+	 * Mark cache files for deletion once they have been used.
+	 * Saves disk space when aligning large batches.
+	 */
+	public static boolean VOLATILE_CACHE = false;
+
+
+	/**
 	 * Generates a unique path from the hash codes of a combination of several
 	 * objects.
 	 *
@@ -67,8 +74,12 @@ public class Cache {
 		}
 		sb.append(extension);
 		File f = new File(new File(CACHE_DIR, cacheGroup), sb.toString());
-		if (!f.exists())
+		if (!f.exists()) {
 			f.getParentFile().mkdirs();
+		}
+		if (VOLATILE_CACHE) {
+			f.deleteOnExit();
+		}
 		return f;
 	}
 

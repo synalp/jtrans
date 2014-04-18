@@ -128,6 +128,10 @@ public class JTransCLI {
 						Arrays.asList("B", "bypass-cache"),
 						"Don't read objects from cache.");
 
+				accepts("volatile-cache",
+						"Mark cache files for deletion once they have been " +
+						"used. Saves disk space when aligning large batches.");
+
 				acceptsAll(
 						Arrays.asList("L", "likelihood"),
 						"Compute alignment likelihood");
@@ -180,6 +184,10 @@ public class JTransCLI {
 		if (optset.has("bypass-cache")) {
 			Cache.READ_FROM_CACHE = false;
 			System.out.println("Won't read objects from cache.");
+		}
+
+		if (optset.has("volatile-cache")) {
+			Cache.VOLATILE_CACHE = true;
 		}
 
 		if (optset.has("L")) {
