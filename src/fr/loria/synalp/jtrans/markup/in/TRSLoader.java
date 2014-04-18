@@ -6,9 +6,7 @@ import fr.loria.synalp.jtrans.facade.Project;
 import fr.loria.synalp.jtrans.facade.Track;
 import org.w3c.dom.*;
 import org.w3c.dom.Element;
-import org.xml.sax.EntityResolver;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
+import org.xml.sax.*;
 
 import javax.xml.parsers.*;
 import java.io.*;
@@ -47,17 +45,26 @@ public class TRSLoader implements MarkupLoader {
 	}
 
 
-	public Project parse(Document doc) {
+	public Project parse(Document doc) throws ParsingException {
 		Project project = new Project();
 
 		// Map of Transcriber's speaker IDs to JTrans tracks
 		Map<String, Track> trackIDMap = new HashMap<String, Track>();
 
+		// Last sync times per track (to detect unordered sync times)
+		Map<Track, Float> lastSyncTimes = new HashMap<>();
+
 		// end time of last turn
 		float lastEnd = -1f;
 
+		NodeList speakerList = doc.getElementsByTagName("Speakers");
+		if (1 != speakerList.getLength()) {
+			throw new ParsingException("TRS error: expected 1 Speakers tag " +
+					"but found " + speakerList.getLength() + "!");
+		}
+
 		// Create speaker tracks and build ID map
-		for (Node spk = doc.getElementsByTagName("Speakers").item(0).getFirstChild();
+		for (Node spk = speakerList.item(0).getFirstChild();
 			 null != spk;
 			 spk = spk.getNextSibling())
 		{
@@ -113,11 +120,28 @@ public class TRSLoader implements MarkupLoader {
 					}
 				}
 
-				// Anchor. Placed on the last character in the word *PRECEDING* the sync point
+				// Anchor
 				else if (name.equals("Sync")) {
-					float time = Float.parseFloat(((Element)child).getAttribute("time"));
-					for (Track t: uniqueTurnTracks)
+					float time = Float.parseFloat(((Element) child).getAttribute("time"));
+
+					if (time > endTime) {
+						throw new ParsingException(String.format("TRS error: " +
+								"Sync time (%f) exceeds Turn endTime (%f)!",
+								time, endTime));
+					}
+
+					for (Track t: uniqueTurnTracks) {
+						Float previousTime = lastSyncTimes.get(t);
+						if (null != previousTime && previousTime > time) {
+							throw new ParsingException(String.format(
+									"TRS error: Sync times in non-" +
+									"chronological order! (%f after %f)",
+									previousTime, time));
+						}
+
 						addUniqueAnchor(t, time);
+						lastSyncTimes.put(t, time);
+					}
 				}
 
 				// Change speakers in a multi-speaker turn
@@ -189,6 +213,24 @@ public class TRSLoader implements MarkupLoader {
 				}
 
 				return new InputSource(dtd);
+			}
+		});
+
+		builder.setErrorHandler(new ErrorHandler() {
+			@Override
+			public void warning(SAXParseException e) {
+				System.err.println("XML Warning: " + e);
+			}
+
+			@Override
+			public void error(SAXParseException e) {
+				System.err.println("XML Error: " + e);
+			}
+
+			@Override
+			public void fatalError(SAXParseException e) throws SAXException {
+				System.err.println("XML Fatal Error: " + e);
+				throw e;
 			}
 		});
 
