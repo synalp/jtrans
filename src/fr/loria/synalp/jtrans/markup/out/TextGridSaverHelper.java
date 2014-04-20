@@ -1,8 +1,6 @@
 package fr.loria.synalp.jtrans.markup.out;
 
-import fr.loria.synalp.jtrans.elements.Comment;
-import fr.loria.synalp.jtrans.elements.Element;
-import fr.loria.synalp.jtrans.elements.Word;
+import fr.loria.synalp.jtrans.elements.*;
 import fr.loria.synalp.jtrans.facade.Project;
 import fr.loria.synalp.jtrans.facade.Track;
 
@@ -44,10 +42,15 @@ class TextGridSaverHelper {
 			int lastFrame = 0;
 
 			for (Element e: t.elts) {
-				Word word = e instanceof Word? (Word)e: null;
+				Anchor  anchor  = e instanceof Anchor?  (Anchor)e:  null;
+				Word    word    = e instanceof Word?    (Word)e:    null;
 				Comment comment = e instanceof Comment? (Comment)e: null;
 
-				if (word != null && word.isAligned()) {
+				if (anchor != null && anchor.hasTime()) {
+					lastFrame = anchor.getFrame();
+				}
+
+				else if (word != null && word.isAligned()) {
 					praatInterval(
 							wordSB,
 							wordCount + 1,
