@@ -41,6 +41,47 @@ public class Project {
 	public transient long audioSourceTotalFrames = -1;
 
 
+	public void anonymizeWord(String w) {
+		w = w.toLowerCase();
+
+		for (Track track: tracks) {
+			for (Word word: track.getWords()) {
+				if (word.toString().toLowerCase().equals(w)) {
+					word.setAnonymize(true);
+				}
+			}
+		}
+	}
+
+
+	public AnonymizingAudioInputStream getAnonymizingAudioInputStream()
+			throws IOException, UnsupportedAudioFileException
+	{
+		assert convertedAudioFile != null: "no converted audio file!";
+
+		BinarySegmentation sequence = new BinarySegmentation();
+
+		for (Track track: tracks) {
+			for (Word word: track.getWords()) {
+				if (!word.shouldBeAnonymized()) {
+					continue;
+				}
+
+				if (!word.isAligned()) {
+					System.err.println("WARNING: Can't anonymize unaligned word!!!");
+				}
+
+				Word.Segment seg = word.getSegment();
+				sequence.union(seg.getStartSecond(), seg.getLengthSeconds());
+			}
+		}
+
+		return new AnonymizingAudioInputStream(
+				AudioSystem.getAudioInputStream(convertedAudioFile),
+				sequence);
+	}
+
+
 	public void clearAlignment() {
 		for (Track track : tracks)
 			track.clearAlignment();

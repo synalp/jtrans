@@ -15,6 +15,7 @@ public class Word implements Element {
 	private int speaker = -1;
 	private Segment segment;
 	private List<Phone> phones = new ArrayList<Phone>();
+	private boolean anonymize;
 
 
 	public static class Segment {
@@ -53,6 +54,10 @@ public class Word implements Element {
 
 		public int getLengthFrames() {
 			return end-start+1;
+		}
+
+		public float getLengthSeconds() {
+			return TimeConverter.frame2sec(getLengthFrames());
 		}
 	}
 
@@ -123,6 +128,16 @@ public class Word implements Element {
 
 	public List<Phone> getPhones() {
 		return phones;
+	}
+
+
+	public void setAnonymize(boolean anonymize) {
+		this.anonymize = anonymize;
+	}
+
+
+	public boolean shouldBeAnonymized() {
+		return anonymize;
 	}
 
 

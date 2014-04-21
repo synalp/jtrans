@@ -8,6 +8,8 @@ import fr.loria.synalp.jtrans.utils.*;
 import fr.loria.synalp.jtrans.viterbi.StatePath;
 import joptsimple.*;
 
+import javax.sound.sampled.AudioFileFormat;
+import javax.sound.sampled.AudioSystem;
 import java.io.*;
 import java.util.Arrays;
 import java.util.List;
@@ -21,6 +23,7 @@ public class JTransCLI {
 	public File audioFile;
 	public File outputDir;
 	public List<String> outputFormats;
+	public List<String> anonymizedWords;
 	public boolean clearTimes = false;
 	public boolean align = true;
 	public boolean runAnchorDiffTest = false;
@@ -156,6 +159,10 @@ public class JTransCLI {
 						"Use \"realistic\" linear alignment (walking same path " +
 						"as Viterbi), instead of Viterbi. Don't use unless " +
 						"you know what you are doing!");
+
+				accepts("z",
+						"Anonymize word")
+						.withRequiredArg().describedAs("word");
 			}
 		};
 
@@ -237,6 +244,8 @@ public class JTransCLI {
 		}
 
 		outputFormats = (List<String>)optset.valuesOf("outfmt");
+
+		anonymizedWords = (List<String>)optset.valuesOf("z");
 
 		//----------------------------------------------------------------------
 
@@ -481,6 +490,17 @@ public class JTransCLI {
 			project.deduceTimes();
 			List<Integer> diffs = reference.anchorFrameDiffs(project);
 			printAnchorDiffStats(diffs);
+		}
+
+		if (!cli.anonymizedWords.isEmpty()) {
+			for (String w: cli.anonymizedWords) {
+				project.anonymizeWord(w);
+			}
+
+			AudioSystem.write(
+					project.getAnonymizingAudioInputStream(),
+					AudioFileFormat.Type.WAVE,
+					new File("anonymized.wav"));
 		}
 
 		cli.save(project);
