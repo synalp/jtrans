@@ -488,8 +488,7 @@ public class SpeechReco {
 		return null;
 	}
 
-	private void save(Sausage s, String nom) {
-		try {
+	private void save(Sausage s, String nom) throws IOException {
 			PrintWriter f = FileUtils.writeFileUTF(nom);
 			f.println(s.size());
 			for (ConfusionSet cs : s) {
@@ -502,11 +501,6 @@ public class SpeechReco {
 				}
 			}
 			f.close();
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		}
 	}
 
 	int nbest = 10000;
@@ -1397,8 +1391,7 @@ public class SpeechReco {
 		return al;
 	}
 	
-	private void saveBestPhoneSeq(Result result, String filename) {
-		try {
+	private void saveBestPhoneSeq(Result result, String filename) throws IOException {
 			Token tok = result.getBestToken();
 			ArrayList<String> motsetpron = new ArrayList<String>();
 			ArrayList<Integer> frfins = new ArrayList<Integer>();
@@ -1426,11 +1419,6 @@ public class SpeechReco {
 				frdeb=frfin+1;
 			}
 			f.close();
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		}
 	}
 
 	NISTAlign tmpaligner = null;

@@ -4,10 +4,9 @@ import fr.loria.synalp.jtrans.elements.*;
 import fr.loria.synalp.jtrans.facade.Project;
 import fr.loria.synalp.jtrans.facade.Track;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 
+import static fr.loria.synalp.jtrans.utils.FileUtils.getUTF8Writer;
 import static fr.loria.synalp.jtrans.utils.TimeConverter.frame2sec;
 
 class TextGridSaverHelper {
@@ -15,7 +14,7 @@ class TextGridSaverHelper {
 	public static void savePraat(Project p, File f, boolean withWords, boolean withPhons)
 			throws IOException
 	{
-		FileWriter w = new FileWriter(f);
+		Writer w = getUTF8Writer(f);
 
 		final int frameCount = (int) p.audioSourceTotalFrames;
 

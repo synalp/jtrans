@@ -11,6 +11,7 @@ import org.mozilla.universalchardet.UniversalDetector;
 
 import java.io.*;
 import java.net.*;
+import java.nio.charset.Charset;
 
 public class FileUtils {
 	public static BufferedReader openFileUTF(String nom) throws UnsupportedEncodingException, FileNotFoundException {
@@ -23,12 +24,15 @@ public class FileUtils {
 		return new BufferedReader(new InputStreamReader(fis, "ISO-8859-1"));
 	}
 
-	public static PrintWriter writeFileISO(String nom) throws UnsupportedEncodingException, FileNotFoundException {
-		return new PrintWriter(nom, "ISO-8859-1");
+	public static PrintWriter writeFileUTF(String nom) throws FileNotFoundException {
+		return new PrintWriter(getUTF8Writer(new File(nom)));
 	}
 
-	public static PrintWriter writeFileUTF(String nom) throws UnsupportedEncodingException, FileNotFoundException {
-		return new PrintWriter(nom, "UTF-8");
+	public static Writer getUTF8Writer(File f) throws FileNotFoundException {
+		// http://stackoverflow.com/a/9853261
+		return new BufferedWriter(new OutputStreamWriter(
+				new FileOutputStream(f),
+				Charset.forName("UTF-8").newEncoder()));
 	}
 
 	/**
