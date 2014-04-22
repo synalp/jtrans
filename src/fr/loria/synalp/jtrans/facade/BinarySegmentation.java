@@ -26,11 +26,19 @@ public class BinarySegmentation {
 		}
 
 		public boolean isAhead(float sec) {
-			return sec < off;
+			return sec < getStart();
 		}
 
 		public boolean isBehind(float sec) {
-			return sec >= off+len;
+			return sec >= getEnd();
+		}
+
+		public float getStart() {
+			return off;
+		}
+
+		public float getEnd() {
+			return off+len;
 		}
 
 		@Override
@@ -63,8 +71,8 @@ public class BinarySegmentation {
 
 		while (itr.hasNext()) {
 			Segment seg = itr.next();
-			float b1 = seg.off;
-			float b2 = seg.off+seg.len;
+			float b1 = seg.getStart();
+			float b2 = seg.getEnd();
 
 			if (a1 > b2) {
 				continue;
