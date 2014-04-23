@@ -120,8 +120,10 @@ public class TCOFWhoifier extends TRSPreprocessor {
 
 					Element who1 = doc.createElement("Who");
 					who1.setAttribute("nb", ""+1);
+					who1.setAttribute("JTransOrderedAnchor", "end");
 					Element who2 = doc.createElement("Who");
 					who2.setAttribute("nb", ""+2);
+					who2.setAttribute("JTransOrderedAnchor", "chevron");
 
 					turn.insertBefore(who1, nextChild);
 					for (Node n: reportOverlap)

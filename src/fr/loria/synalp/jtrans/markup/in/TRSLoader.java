@@ -107,6 +107,8 @@ public class TRSLoader implements MarkupLoader {
 			if (endTime > lastEnd)
 				lastEnd = endTime;
 
+			String orderedAnchorInWhoTag = null;
+
 			while (null != child) {
 				String name = child.getNodeName();
 
@@ -117,6 +119,19 @@ public class TRSLoader implements MarkupLoader {
 						currentTrack.elts.addAll(RawTextLoader.parseString(
 								text,
 								RawTextLoader.DEFAULT_PATTERNS));
+						if (orderedAnchorInWhoTag != null && orderedAnchorInWhoTag.equals("chevron")) {
+							for (int j = currentTrack.elts.size()-1; j >= 0; j--) {
+								fr.loria.synalp.jtrans.elements.Element el =
+										currentTrack.elts.get(j);
+
+								if (el instanceof Comment && ((Comment) el).getType() == Comment.Type.OVERLAP_END_MARK) {
+									currentTrack.elts.add(j+1, Anchor.orderedTimelessAnchor(0));
+									System.out.println("Adding in " + currentTrack);
+									orderedAnchorInWhoTag = null;
+									break;
+								}
+							}
+						}
 					}
 				}
 
@@ -146,9 +161,17 @@ public class TRSLoader implements MarkupLoader {
 
 				// Change speakers in a multi-speaker turn
 				else if (name.equals("Who")) {
+					if (orderedAnchorInWhoTag != null) {
+						if (orderedAnchorInWhoTag.equals("end")) {
+							currentTrack.elts.add(Anchor.orderedTimelessAnchor(0));
+						}
+					}
+
 					// Speaker numbering starts at 1 in the XML file
 					int nb = Integer.parseInt(((Element)child).getAttribute("nb"));
 					currentTrack = turnTracks.get(nb - 1);
+
+					orderedAnchorInWhoTag = ((Element)child).getAttribute("JTransOrderedAnchor");
 				}
 
 				else if (name.equals("Comment")) {
