@@ -1,6 +1,7 @@
 package fr.loria.synalp.jtrans.markup.out;
 
 import fr.loria.synalp.jtrans.project.Project;
+import fr.loria.synalp.jtrans.markup.jtr.JTR.ProjectWrapper;
 import static fr.loria.synalp.jtrans.markup.jtr.JTR.*;
 import static fr.loria.synalp.jtrans.utils.FileUtils.getUTF8Writer;
 
@@ -14,7 +15,7 @@ public class JTRSaver implements MarkupSaver {
 	@Override
 	public void save(Project project, File file) throws IOException {
 		Writer w = getUTF8Writer(file);
-		newGson().toJson(project, w);
+		newGson().toJson(new ProjectWrapper(project), w);
 		w.close();
 	}
 

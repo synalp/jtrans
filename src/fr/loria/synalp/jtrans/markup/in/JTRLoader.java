@@ -1,6 +1,7 @@
 package fr.loria.synalp.jtrans.markup.in;
 
 import fr.loria.synalp.jtrans.project.Project;
+import fr.loria.synalp.jtrans.markup.jtr.JTR.ProjectWrapper;
 import static fr.loria.synalp.jtrans.markup.jtr.JTR.*;
 
 import java.io.File;
@@ -15,9 +16,9 @@ public class JTRLoader implements MarkupLoader {
 	@Override
 	public Project parse(File file) throws ParsingException, IOException {
 		FileReader r = new FileReader(file);
-		Project project = newGson().fromJson(r, Project.class);
+		ProjectWrapper pw = newGson().fromJson(r, ProjectWrapper.class);
 		r.close();
-		return project;
+		return pw.project;
 	}
 
 
