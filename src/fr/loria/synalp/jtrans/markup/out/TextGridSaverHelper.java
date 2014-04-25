@@ -1,10 +1,11 @@
 package fr.loria.synalp.jtrans.markup.out;
 
 import fr.loria.synalp.jtrans.elements.*;
-import fr.loria.synalp.jtrans.facade.Project;
-import fr.loria.synalp.jtrans.facade.Track;
+import fr.loria.synalp.jtrans.project.AnchorSandwich;
+import fr.loria.synalp.jtrans.project.Project;
 
 import java.io.*;
+import java.util.Iterator;
 
 import static fr.loria.synalp.jtrans.utils.FileUtils.getUTF8Writer;
 import static fr.loria.synalp.jtrans.utils.TimeConverter.frame2sec;
@@ -26,69 +27,67 @@ class TextGridSaverHelper {
 				.append(Float.toString(frame2sec(frameCount)))
 				.append("\ntiers? <exists>")
 				.append("\nsize = ")
-				.append(Integer.toString(p.tracks.size() * ((withWords?1:0) + (withPhons?1:0))))
+				.append(Integer.toString(p.speakerCount() * ((withWords?1:0) + (withPhons?1:0))))
 				.append("\nitem []:");
 
 		int id = 1;
-		for (Track t: p.tracks) {
+		for (int i = 0; i < p.speakerCount(); i++) {
 			StringBuilder wordSB = new StringBuilder();
 			StringBuilder phoneSB = new StringBuilder();
 
 			int wordCount = 0;
 			int phoneCount = 0;
 
-			// frame onto which to tack 0-length elements
-			int lastFrame = 0;
+			Iterator<AnchorSandwich> itr = p.sandwichIterator(i);
+			while (itr.hasNext()) {
+				AnchorSandwich sandwich = itr.next();
 
-			for (Element e: t.elts) {
-				Anchor  anchor  = e instanceof Anchor?  (Anchor)e:  null;
-				Word    word    = e instanceof Word?    (Word)e:    null;
-				Comment comment = e instanceof Comment? (Comment)e: null;
+				// frame onto which to tack 0-length elements
+				int lastFrame = sandwich.getInitialAnchor().getFrame();
 
-				if (anchor != null && anchor.hasTime()) {
-					lastFrame = anchor.getFrame();
-				}
+				for (Element e: sandwich) {
+					Word word = e instanceof Word ? (Word) e : null;
+					Comment comment = e instanceof Comment ? (Comment) e : null;
 
-				else if (word != null && word.isAligned()) {
-					praatInterval(
-							wordSB,
-							wordCount + 1,
-							word.getSegment().getStartFrame(),
-							word.getSegment().getEndFrame(),
-							word.toString());
-					wordCount++;
-
-					for (Word.Phone phone : word.getPhones()) {
+					if (word != null && word.isAligned()) {
 						praatInterval(
-								phoneSB,
-								phoneCount + 1,
-								phone.getSegment().getStartFrame(),
-								phone.getSegment().getEndFrame(),
-								phone.toString());
-						phoneCount++;
+								wordSB,
+								wordCount + 1,
+								word.getSegment().getStartFrame(),
+								word.getSegment().getEndFrame(),
+								word.toString());
+						wordCount++;
+
+						for (Word.Phone phone : word.getPhones()) {
+							praatInterval(
+									phoneSB,
+									phoneCount + 1,
+									phone.getSegment().getStartFrame(),
+									phone.getSegment().getEndFrame(),
+									phone.toString());
+							phoneCount++;
+						}
+
+						lastFrame = word.getSegment().getEndFrame();
+					} else if (comment != null || word != null) {
+						praatInterval(
+								wordSB,
+								wordCount + 1,
+								lastFrame,
+								lastFrame,
+								e.toString());
+						wordCount++;
 					}
-
-					lastFrame = word.getSegment().getEndFrame();
-				}
-
-				else if (comment != null || word != null) {
-					praatInterval(
-							wordSB,
-							wordCount + 1,
-							lastFrame,
-							lastFrame,
-							e.toString());
-					wordCount++;
 				}
 			}
 
 			if (withWords) {
-				praatTierHeader(w, id++, t.speakerName + " words", wordCount, frameCount);
+				praatTierHeader(w, id++, p.getSpeakerName(i) + " words", wordCount, frameCount);
 				w.write(wordSB.toString());
 			}
 
 			if (withPhons) {
-				praatTierHeader(w, id++, t.speakerName + " phons", phoneCount, frameCount);
+				praatTierHeader(w, id++, p.getSpeakerName(i) + " phons", phoneCount, frameCount);
 				w.write(phoneSB.toString());
 			}
 		}

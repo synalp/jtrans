@@ -1,6 +1,6 @@
 package fr.loria.synalp.jtrans.markup.in.preprocessors;
 
-import fr.loria.synalp.jtrans.facade.Project;
+import fr.loria.synalp.jtrans.project.Project;
 import fr.loria.synalp.jtrans.markup.in.ParsingException;
 import fr.loria.synalp.jtrans.markup.in.TRSLoader;
 import org.w3c.dom.Document;

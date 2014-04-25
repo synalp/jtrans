@@ -1,8 +1,8 @@
 package fr.loria.synalp.jtrans.markup.in;
 
 import fr.loria.synalp.jtrans.elements.*;
-import fr.loria.synalp.jtrans.facade.Project;
-import fr.loria.synalp.jtrans.facade.Track;
+import fr.loria.synalp.jtrans.project.TurnProject;
+import fr.loria.synalp.jtrans.project.Project;
 import fr.loria.synalp.jtrans.utils.FileUtils;
 
 import java.io.*;
@@ -98,8 +98,7 @@ public class RawTextLoader implements MarkupLoader {
 
 			// Line right before
 			if (start > prevEnd) {
-				String line = normedText.substring(prevEnd, start);
-				parserListeMot(line, prevEnd, elList, normedText);
+				elList.addAll(parseWords(normedText.substring(prevEnd, start)));
 			}
 
 			// Create the actual element
@@ -111,37 +110,19 @@ public class RawTextLoader implements MarkupLoader {
 
 		// Line after the last element
 		if (normedText.length() > prevEnd) {
-			String line = normedText.substring(prevEnd);
-			parserListeMot(line, prevEnd, elList, normedText);
+			elList.addAll(parseWords(normedText.substring(prevEnd)));
 		}
 
 		return elList;
 	}
 
 
-	private static void parserListeMot(String ligne, int precfin, List<Element> listeElts, String text) {
-		int index = 0;
-		int debutMot;
-		//on parcourt toute la ligne
-		while(index < ligne.length()){
-
-			//on saute les espaces
-			while(index < ligne.length() &&
-					Character.isWhitespace(ligne.charAt(index))){
-				index++;
-			}
-
-			debutMot =  index;
-			//on avance jusqu'au prochain espace
-
-			while((index < ligne.length()) && (!Character.isWhitespace(ligne.charAt(index)))){
-				index++;
-			}
-
-			if (index > debutMot){
-				listeElts.add(new Word(text.substring(debutMot + precfin, index + precfin)));
-			}
+	private static List<Word> parseWords(String text) {
+		List<Word> list = new ArrayList<>();
+		for (String w: text.trim().split("\\s+")) {
+			list.add(new Word(w));
 		}
+		return list;
 	}
 
 
@@ -157,18 +138,16 @@ public class RawTextLoader implements MarkupLoader {
 
 	@Override
 	public Project parse(File file) throws ParsingException, IOException {
-		Project project = new Project();
+		TurnProject project = new TurnProject();
 		BufferedReader reader = FileUtils.openFileAutoCharset(file);
 
-		int order = 0;
 		boolean ongoingOverlap = false;
 
 		// Add default speaker
-		Track currentTrack = new Track("Unknown");
-		project.tracks.add(currentTrack);
-		currentTrack.elts.add(Anchor.orderedTimelessAnchor(order));
+		int spkID = project.newSpeaker("Unknown");
+		TurnProject.Turn turn = project.newTurn();
 
-		Map<String, Track> trackMap = new HashMap<String, Track>();
+		Map<String, Integer> spkIDMap = new HashMap<>();
 
 		for (int lineNo = 1; true; lineNo++) {
 			String line = reader.readLine();
@@ -181,23 +160,15 @@ public class RawTextLoader implements MarkupLoader {
 						((Comment) el).getType(): null;
 
 				if (ctype == Comment.Type.SPEAKER_MARK) {
-					/*
-					Cordon off current speaker's speech by adding an ordered
-					anchor in the current track. Warning: If an overlap is
-					ongoing, `order` is the order ID that *starts* the overlap.
-					*/
-					currentTrack.elts.add(Anchor.orderedTimelessAnchor(
-							ongoingOverlap? order+1: order));
+					turn = project.newTurn();
 
-					String speaker = el.toString().trim();
-					currentTrack = trackMap.get(speaker);
-					if (currentTrack == null) {
-						currentTrack = new Track(speaker);
-						project.tracks.add(currentTrack);
-						trackMap.put(speaker, currentTrack);
+					String spkName = el.toString().trim();
+					if (!spkIDMap.containsKey(spkName)) {
+						spkID = project.newSpeaker(spkName);
+						spkIDMap.put(spkName, spkID);
+					} else {
+						spkID = spkIDMap.get(spkName);
 					}
-					currentTrack.elts.add(Anchor.orderedTimelessAnchor(order));
-					order++;
 				}
 
 				else if (ctype == Comment.Type.OVERLAP_START_MARK) {
@@ -206,11 +177,8 @@ public class RawTextLoader implements MarkupLoader {
 								"An overlap is already ongoing");
 					}
 
-					currentTrack.elts.add(Anchor.orderedTimelessAnchor(order));
-					currentTrack.elts.add(el);
+					turn = project.newTurn();
 					ongoingOverlap = true;
-					// Don't increment order; next SPEAKER_MARK will use the
-					// current order and appear simultaneously
 				}
 
 				else if (ctype == Comment.Type.OVERLAP_END_MARK) {
@@ -218,14 +186,13 @@ public class RawTextLoader implements MarkupLoader {
 						throw new ParsingException(lineNo, line,
 								"Trying to end non-existant overlap");
 					}
-					currentTrack.elts.add(el);
-					currentTrack.elts.add(Anchor.orderedTimelessAnchor(order));
-					order++;
+
+					turn = project.newTurn();
 					ongoingOverlap = false;
 				}
 
 				else {
-					currentTrack.elts.add(el);
+					turn.add(spkID, el);
 				}
 			}
 		}

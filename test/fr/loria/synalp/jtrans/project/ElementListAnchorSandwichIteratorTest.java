@@ -1,19 +1,20 @@
-package fr.loria.synalp.jtrans.facade;
+package fr.loria.synalp.jtrans.project;
 
 import fr.loria.synalp.jtrans.elements.Anchor;
 import fr.loria.synalp.jtrans.elements.Element;
 import fr.loria.synalp.jtrans.elements.Word;
+import fr.loria.synalp.jtrans.project.Track.ElementListAnchorSandwichIterator;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class AnchorSandwichIteratorTest {
+public class ElementListAnchorSandwichIteratorTest {
 
 	@Test
 	public void testEmptyElementList() {
-		AnchorSandwichIterator i = new AnchorSandwichIterator(
+		ElementListAnchorSandwichIterator i = new ElementListAnchorSandwichIterator(
 				new ArrayList<Element>());
 		assertFalse(i.hasNext());
 	}
@@ -25,14 +26,14 @@ public class AnchorSandwichIteratorTest {
 		L.add(new Word("a"));
 		L.add(new Word("b"));
 		L.add(new Word("c"));
-		L.add(Anchor.timedAnchor(10)); // #3
+		L.add(new Anchor(10)); // #3
 		L.add(new Word("d"));
 		L.add(new Word("e"));
-		L.add(Anchor.timedAnchor(15)); // #6
+		L.add(new Anchor(15)); // #6
 		L.add(new Word("f"));
 		L.add(new Word("g"));
 
-		AnchorSandwichIterator i = new AnchorSandwichIterator(L);
+		ElementListAnchorSandwichIterator i = new ElementListAnchorSandwichIterator(L);
 
 		assertTrue(i.hasNext());
 		assertEquals(L.subList(0, 3), i.next());
@@ -45,13 +46,13 @@ public class AnchorSandwichIteratorTest {
 	@Test
 	public void testLeadingAnchor() {
 		List<Element> L = new ArrayList<Element>();
-		L.add(Anchor.timedAnchor(10));
+		L.add(new Anchor(10));
 		L.add(new Word("d"));
 		L.add(new Word("e"));
 		L.add(new Word("f"));
 		L.add(new Word("g"));
 
-		AnchorSandwichIterator i = new AnchorSandwichIterator(L);
+		ElementListAnchorSandwichIterator i = new ElementListAnchorSandwichIterator(L);
 
 		assertTrue(i.hasNext());
 		assertEquals(L.subList(1, L.size()), i.next());
@@ -66,9 +67,9 @@ public class AnchorSandwichIteratorTest {
 		L.add(new Word("e"));
 		L.add(new Word("f"));
 		L.add(new Word("g"));
-		L.add(Anchor.timedAnchor(15));
+		L.add(new Anchor(15));
 
-		AnchorSandwichIterator i = new AnchorSandwichIterator(L);
+		ElementListAnchorSandwichIterator i = new ElementListAnchorSandwichIterator(L);
 
 		assertTrue(i.hasNext());
 		assertEquals(L.subList(0, 4), i.next());
@@ -80,7 +81,7 @@ public class AnchorSandwichIteratorTest {
 	@Test
 	public void testEmpty() {
 		List<Element> L = new ArrayList<Element>();
-		AnchorSandwichIterator i = new AnchorSandwichIterator(L);
+		ElementListAnchorSandwichIterator i = new ElementListAnchorSandwichIterator(L);
 		assertFalse(i.hasNext());
 	}
 
@@ -88,12 +89,12 @@ public class AnchorSandwichIteratorTest {
 	@Test
 	public void testAnchorsOnly() {
 		List<Element> L = new ArrayList<Element>();
-		L.add(Anchor.timedAnchor(5));
-		L.add(Anchor.timedAnchor(10));
-		L.add(Anchor.timedAnchor(15));
-		L.add(Anchor.timedAnchor(20));
+		L.add(new Anchor(5));
+		L.add(new Anchor(10));
+		L.add(new Anchor(15));
+		L.add(new Anchor(20));
 
-		AnchorSandwichIterator iter = new AnchorSandwichIterator(L);
+		ElementListAnchorSandwichIterator iter = new ElementListAnchorSandwichIterator(L);
 
 		for (int i = 0; i < L.size()-1; i++) {
 			AnchorSandwich s = iter.next();
@@ -110,14 +111,14 @@ public class AnchorSandwichIteratorTest {
 	public void testEmptySandwich() {
 		List<Element> L = new ArrayList<Element>();
 
-		L.add(Anchor.timedAnchor(5));
+		L.add(new Anchor(5));
 		L.add(new Word("abc"));
-		L.add(Anchor.timedAnchor(10));
-		L.add(Anchor.timedAnchor(15));
+		L.add(new Anchor(10));
+		L.add(new Anchor(15));
 		L.add(new Word("def"));
-		L.add(Anchor.timedAnchor(20));
+		L.add(new Anchor(20));
 
-		AnchorSandwichIterator iter = new AnchorSandwichIterator(L);
+		ElementListAnchorSandwichIterator iter = new ElementListAnchorSandwichIterator(L);
 		AnchorSandwich s;
 
 		assertTrue(iter.hasNext());

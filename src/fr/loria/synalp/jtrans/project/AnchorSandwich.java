@@ -1,4 +1,4 @@
-package fr.loria.synalp.jtrans.facade;
+package fr.loria.synalp.jtrans.project;
 
 import fr.loria.synalp.jtrans.elements.Anchor;
 import fr.loria.synalp.jtrans.elements.Element;
@@ -16,7 +16,7 @@ public class AnchorSandwich
 	private final Anchor initialAnchor;
 	private final Anchor finalAnchor;
 
-	AnchorSandwich(List<Element> baseList) {
+	public AnchorSandwich(List<Element> baseList) {
 		final int subListStart, subListEnd;
 
 		Element first = baseList.get(0);
@@ -44,7 +44,7 @@ public class AnchorSandwich
 		}
 	}
 
-	AnchorSandwich(List<Element> elements, Anchor initialAnchor, Anchor finalAnchor) {
+	public AnchorSandwich(List<Element> elements, Anchor initialAnchor, Anchor finalAnchor) {
 		this.elements = elements;
 		this.initialAnchor = initialAnchor;
 		this.finalAnchor = finalAnchor;

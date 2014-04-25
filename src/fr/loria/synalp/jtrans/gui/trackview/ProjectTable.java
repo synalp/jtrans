@@ -1,8 +1,11 @@
 package fr.loria.synalp.jtrans.gui.trackview;
 
 import fr.loria.synalp.jtrans.elements.*;
-import fr.loria.synalp.jtrans.facade.*;
 import fr.loria.synalp.jtrans.gui.*;
+import fr.loria.synalp.jtrans.project.Project;
+import fr.loria.synalp.jtrans.project.Track;
+import fr.loria.synalp.jtrans.project.TrackProject;
+import fr.loria.synalp.jtrans.project.TurnProject;
 import fr.loria.synalp.jtrans.utils.*;
 import fr.loria.synalp.jtrans.utils.spantable.SpanTable;
 
@@ -10,7 +13,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.Arrays;
 import javax.swing.*;
 import javax.swing.table.*;
 
@@ -23,7 +25,7 @@ renderers and "editors". */
  * Represents tracks as columns.
  * Renders groups of words between two anchors as a JTextArea cell.
  */
-public class MultiTrackTable
+public class ProjectTable
 		extends SpanTable
 		implements TableCellRenderer
 {
@@ -32,9 +34,7 @@ public class MultiTrackTable
 
 	private Project project;
 	private JTransGUI gui; // used in UI callbacks
-	private MultiTrackTableModel model;
-	private boolean[] visibility;
-	private int visibleCount;
+	private ProjectModel model;
 
 	// Cell rendering attributes
 	private JPanel silenceComp;
@@ -46,13 +46,9 @@ public class MultiTrackTable
 	 * @param gui used in UI callbacks. May be null ONLY if interactive is null!
 	 * @param interactive whether to react to mouse events
 	 */
-	public MultiTrackTable(Project project, JTransGUI gui, boolean interactive) {
+	public ProjectTable(Project project, JTransGUI gui, boolean interactive) {
 		this.project = project;
 		this.gui = gui;
-
-		visibility = new boolean[project.tracks.size()];
-		Arrays.fill(visibility, true);
-		visibleCount = visibility.length;
 
 		refreshModel();
 		setEnabled(interactive);
@@ -99,9 +95,9 @@ public class MultiTrackTable
 		if (value instanceof TextCell) {
 			textComp.setCell((TextCell) value);
 
-			MultiTrackTableModel model = (MultiTrackTableModel)table.getModel();
+			ProjectModel model = (ProjectModel)table.getModel();
 			if (model.getHighlightedRow(column) == row) {
-				textComp.highlight(model.getHighlightedWord(column));
+				textComp.highlight((Word)model.getHighlightedElement(column));
 			}
 
 			return textComp;
@@ -125,7 +121,6 @@ public class MultiTrackTable
 
 			int row = rowAtPoint(e.getPoint());
 			int col = columnAtPoint(e.getPoint());
-			Track track = project.tracks.get(model.getTrackForColumn(col));
 			JPopupMenu popup = null;
 
 			if (row < 0 || col < 0)
@@ -141,7 +136,7 @@ public class MultiTrackTable
 			p.translate(-cprect.x, -cprect.y);
 
 			if (cell instanceof TextCell) {
-				CellPane pane = (CellPane)prepareRenderer(MultiTrackTable.this, row, col);
+				CellPane pane = (CellPane)prepareRenderer(ProjectTable.this, row, col);
 				pane.setSize(getColumnModel().getColumn(col).getWidth(), getRowHeight(row));
 
 				TextCell textCell = (TextCell)cell;
@@ -152,19 +147,22 @@ public class MultiTrackTable
 					word = (Word)el;
 
 				if (isPopupTrigger) {
-					popup = wordPopupMenu(textCell.anchor, track, word);
+//					popup = wordPopupMenu(textCell.anchor, col, word);
+					JOptionPane.showMessageDialog(null, "Reimplement me");
 				} else if (word != null) {
-					selectWord(textCell.track, word);
+					selectWord(textCell.spkID, word);
 				}
 			}
 
 			else if (cell instanceof Anchor) {
-				if (isPopupTrigger)
-					popup = anchorPopupMenu((Anchor)cell, track);
+//				if (isPopupTrigger)
+//					popup = anchorPopupMenu((Anchor)cell, col);
+				JOptionPane.showMessageDialog(null, "Reimplement me");
 			}
 
 			if (popup != null)
-				popup.show(MultiTrackTable.this, e.getX(), e.getY());
+				popup.show(ProjectTable.this, e.getX(), e.getY());
+
 		}
 	}
 
@@ -174,7 +172,14 @@ public class MultiTrackTable
 	 * hidden or shown.
 	 */
 	public void refreshModel() {
-		model = new MultiTrackTableModel(project, visibility);
+		if (project instanceof TurnProject) {
+			model = new TurnModel((TurnProject)project);
+		} else if (project instanceof TrackProject) {
+			model = new TrackModel((TrackProject)project);
+		} else {
+			throw new IllegalArgumentException("no table model available " +
+					"for project class " + project.getClass());
+		}
 		setModel(model);
 	}
 
@@ -203,19 +208,21 @@ public class MultiTrackTable
 		for (int row = 0; row < getRowCount(); row++) {
 			int newRowHeight = 1;
 			int col = 0;
-			for (int i = 0; i < project.tracks.size(); i++) {
-				if (!visibility[i])
-					continue;
-
+			for (int i = 0; i < project.speakerCount(); i++) {
 				TableColumn tableCol = tcm.getColumn(col);
 				Component cell = prepareRenderer(tableCol.getCellRenderer(),
 						row, col);
 
+				int prefHeight = cell.getPreferredSize().height;
+				if (prefHeight < 16) {
+					prefHeight = 16;
+				}
+
 				cell.setSize(
 						tableCol.getWidth() - getIntercellSpacing().width,
-						cell.getPreferredSize().height);
+						prefHeight);
 
-				int h = cell.getPreferredSize().height + getIntercellSpacing().height;
+				int h = prefHeight + getIntercellSpacing().height;
 				if (h > newRowHeight)
 					newRowHeight = h;
 
@@ -234,30 +241,8 @@ public class MultiTrackTable
 	}
 
 
-	public void setTrackVisible(int index, boolean v) {
-		assert index >= 0 && index < project.tracks.size();
-
-		if (v && !visibility[index]) {
-			visibleCount++;
-		} else if (!v && visibility[index]) {
-			visibleCount--;
-		} else {
-			return;
-		}
-
-		visibility[index] = v;
-		refreshModel();
-		doLayout();
-	}
-
-
-	public int getVisibleCount() {
-		return visibleCount;
-	}
-
-
 	public void highlightWord(int trackIdx, Word word) {
-		model.highlightWord(trackIdx, word);
+		model.highlightElement(trackIdx, word);
 	}
 
 
@@ -322,7 +307,7 @@ public class MultiTrackTable
 					Track.Neighborhood<Anchor> ancRange =
 							track.getNeighbors(anchor, Anchor.class);
 					track.clearAlignmentBetween(anchor, ancRange.next);
-					MultiTrackTable.this.repaint();
+					ProjectTable.this.repaint();
 				}
 			});
 		}});
@@ -393,7 +378,7 @@ public class MultiTrackTable
 		float newPos = Float.parseFloat(positionString);
 
 		if (sanitizeAnchorPosition(range, newPos)) {
-			Anchor anchor = Anchor.timedAnchor(newPos);
+			Anchor anchor = new Anchor(newPos);
 			track.elts.add(track.elts.indexOf(word) + (before?0:1), anchor);
 			track.clearAlignmentAround(anchor);
 			refreshModel(); //setTextFromElements();
@@ -440,16 +425,15 @@ public class MultiTrackTable
 	 * Highlights a word and sets the playback position to the beginning of the
 	 * word.
 	 */
-	public void selectWord(int trackIdx, Word word) {
+	public void selectWord(int spkID, Word word) {
 		PlayerGUI player = gui.ctrlbox.getPlayerGUI();
 		boolean replay = player.isPlaying();
 		player.stopPlaying();
-		Track track = project.tracks.get(trackIdx);
 
 		if (word.isAligned()) {
-			model.highlightWord(trackIdx, word);
+			model.highlightElement(spkID, word);
 			gui.setCurPosInSec(word.getSegment().getStartSecond());
-			gui.sigpan.setTrack(track);
+			gui.sigpan.setSpeaker(spkID);
 		} else {
 			replay = false;
 		}

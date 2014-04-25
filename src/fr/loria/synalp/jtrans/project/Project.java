@@ -1,8 +1,8 @@
-package fr.loria.synalp.jtrans.facade;
+package fr.loria.synalp.jtrans.project;
 
 import fr.loria.synalp.jtrans.elements.Anchor;
-import fr.loria.synalp.jtrans.elements.Element;
 import fr.loria.synalp.jtrans.elements.Word;
+import fr.loria.synalp.jtrans.facade.*;
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
 import fr.loria.synalp.jtrans.utils.TimeConverter;
 import fr.loria.synalp.jtrans.viterbi.StateGraph;
@@ -10,14 +10,13 @@ import fr.loria.synalp.jtrans.viterbi.StatePool;
 
 import javax.sound.sampled.*;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * An audio file and alignment tracks.
  * This class is mainly useful for easy serialization.
  */
-public class Project {
+public abstract class Project {
 
 	/**
 	 * Target audio format. Any input audio files that do not match this format
@@ -27,13 +26,8 @@ public class Project {
 			new AudioFormat(16000, 16, 1, true, false);
 
 
-	public static boolean ALIGN_OVERLAPS = true;
-
-
 	public static Class<? extends AutoAligner> ALIGNER = ViterbiAligner.class;
 
-
-	public List<Track> tracks = new ArrayList<Track>();
 
 	public File audioFile;
 	/** Audio file in a suitable format for processing */
@@ -41,14 +35,44 @@ public class Project {
 	public transient long audioSourceTotalFrames = -1;
 
 
+	protected List<String> speakerNames = new ArrayList<>();
+
+
+	public int speakerCount() {
+		return speakerNames.size();
+	}
+
+	public String getSpeakerName(int speaker) {
+		return speakerNames.get(speaker);
+	}
+
+	public abstract List<Word> getWords(int speaker);
+
+	public abstract List<Word> getAlignedWords(int speaker);
+
+	public abstract Iterator<AnchorSandwich> sandwichIterator(int speaker);
+
+	public LinearBridge linearBridge() {
+		return new LinearBridge(this);
+	}
+
+	public Set<Word> getAllWords() {
+		Set<Word> set = new HashSet<>();
+
+		for (int i = 0; i < speakerCount(); i++) {
+			set.addAll(getWords(i));
+		}
+
+		return set;
+	}
+
+
 	public void anonymizeWord(String w) {
 		w = w.toLowerCase();
 
-		for (Track track: tracks) {
-			for (Word word: track.getWords()) {
-				if (word.toString().toLowerCase().equals(w)) {
-					word.setAnonymize(true);
-				}
+		for (Word word: getAllWords()) {
+			if (word.toString().toLowerCase().equals(w)) {
+				word.setAnonymize(true);
 			}
 		}
 	}
@@ -61,19 +85,17 @@ public class Project {
 
 		BinarySegmentation sequence = new BinarySegmentation();
 
-		for (Track track: tracks) {
-			for (Word word: track.getWords()) {
-				if (!word.shouldBeAnonymized()) {
-					continue;
-				}
-
-				if (!word.isAligned()) {
-					System.err.println("WARNING: Can't anonymize unaligned word!!!");
-				}
-
-				Word.Segment seg = word.getSegment();
-				sequence.union(seg.getStartSecond(), seg.getLengthSeconds());
+		for (Word word: getAllWords()) {
+			if (!word.shouldBeAnonymized()) {
+				continue;
 			}
+
+			if (!word.isAligned()) {
+				System.err.println("WARNING: Can't anonymize unaligned word!!!");
+			}
+
+			Word.Segment seg = word.getSegment();
+			sequence.union(seg.getStartSecond(), seg.getLengthSeconds());
 		}
 
 		return new AnonymizingAudioInputStream(
@@ -83,24 +105,8 @@ public class Project {
 
 
 	public void clearAlignment() {
-		for (Track track : tracks)
-			track.clearAlignment();
-	}
-
-
-	public void clearAllAnchorTimes() {
-		LinearBridge lb = new LinearBridge(tracks);
-		int order = 0;
-
-		while (lb.hasNext()) {
-			AnchorSandwich[] simultaneousSandwiches = lb.next();
-
-			for (AnchorSandwich sandwich: simultaneousSandwiches) {
-				if (sandwich != null && sandwich.getInitialAnchor() != null) {
-					setOrderOnTimedAnchors(sandwich.getInitialAnchor(), order++);
-					break;
-				}
-			}
+		for (Word w: getAllWords()) {
+			w.clearAlignment();
 		}
 	}
 
@@ -120,7 +126,7 @@ public class Project {
 				.newInstance(convertedAudioFile, progress);
 		if (computeLikelihoods) {
 			aa.setComputeLikelihoods(true);
-			aa.setScorers(tracks.size());
+			aa.setScorers(speakerCount());
 		}
 		return aa;
 	}
@@ -135,26 +141,17 @@ public class Project {
 	}
 
 
-	/**
-	 * Aligns all words contained between two anchors (i.e. "anchor sandwich").
-	 */
-	private void align(AutoAligner aligner, AnchorSandwich sandwich)
+	protected void align(AutoAligner aligner, Anchor start, Anchor end, List<Word> words)
 			throws IOException, InterruptedException
 	{
-		if (sandwich.isEmpty()) {
+		if (words.isEmpty()) {
 			return;
 		}
 
 		int frameCount = aligner.getFrameCount();
 
-		Anchor iAnchor = sandwich.getInitialAnchor();
-		Anchor fAnchor = sandwich.getFinalAnchor();
-
-		int iFrame = iAnchor == null || !iAnchor.hasTime()?
-				0: iAnchor.getFrame();
-
-		int fFrame = fAnchor == null || !fAnchor.hasTime()?
-				frameCount: fAnchor.getFrame()-1;  // see explanation below.
+		int iFrame = start == null? 0: start.getFrame();
+		int fFrame = end   == null? frameCount: end.getFrame()-1;  // see explanation below.
 
 		/* Why did we subtract 1 frame from the final anchor's time?
 		Assume that we have 2 contiguous anchor sandwiches. The same anchor
@@ -168,8 +165,8 @@ public class Project {
 		if (iFrame >= frameCount) {
 			throw new IllegalArgumentException(String.format(
 					"Initial frame (%d) beyond frame count (%d)! " +
-					"(in anchor sandwich: %s)",
-					iFrame, frameCount, sandwich));
+							"(in anchor sandwich: %s)",
+					iFrame, frameCount, words));
 		}
 
 		if (fFrame >= frameCount) {
@@ -182,194 +179,29 @@ public class Project {
 			// initial frame after final frame
 			throw new IllegalArgumentException(String.format(
 					"Initial frame (%d, %s) after final frame (%d, %s)! " +
-					"(in anchor sandwich: %s)",
-					iFrame, iAnchor, fFrame, fAnchor, sandwich));
+							"(in anchor sandwich: %s)",
+					iFrame, start, fFrame, end, words));
 		} else if (iFrame > fFrame) {
 			// iFrame may legally be ahead of fFrame by 1 at most if the anchors
 			// are too close together (because we have removed 1 frame from the
 			// final frame, see above)
 			System.err.println(String.format("WARNING: skipping anchors too " +
-					"close together: frame %d (initial) vs %d (final) " +
-					"(in anchor sandwich: %s)",
-					iFrame, fFrame, sandwich));
+							"close together: frame %d (initial) vs %d (final) " +
+							"(in anchor sandwich: %s)",
+					iFrame, fFrame, words));
 			return;
 		}
 
-		StateGraph graph = new StateGraph(new StatePool(), sandwich.getWords());
+		StateGraph graph = new StateGraph(new StatePool(), words);
 		aligner.align(graph, iFrame, fFrame);
 	}
 
 
 	/**
-	 * Aligns all words in all tracks of this project with timed anchors.
-	 * @param clear If true, clear any previously existing alignment information
-	 *              to start a new alignment from scratch. If false, don't touch
-	 *              aligned words; only attempt to align unaligned words.
+	 * Aligns each speaker independently.
 	 */
-	public void align(AutoAligner aligner, boolean clear)
-			throws IOException, InterruptedException
-	{
-		for (Track track: tracks) {
-			if (clear) {
-				track.clearAlignment();
-			}
-
-			AnchorSandwichIterator iter = track.sandwichIterator();
-
-			while (iter.hasNext()) {
-				AnchorSandwich sandwich = iter.next();
-
-				if (clear || !sandwich.isFullyAligned()) {
-					align(aligner, sandwich);
-				}
-			}
-		}
-	}
-
-
-	/**
-	 * Aligns all words in all tracks of this project with timeless anchors.
-	 */
-	public void alignInterleaved(AutoAligner aligner)
-			throws IOException, InterruptedException
-	{
-		// Clear existing alignment
-		for (Track track: tracks) {
-			track.clearAlignment();
-		}
-
-		// Align big interleaved sequences
-		LinearBridge lb = new LinearBridge(tracks);
-		while (lb.hasNext()) {
-			align(aligner, lb.nextInterleavedElementSequence());
-		}
-
-		// Deduce times on timeless anchors
-		deduceTimes();
-
-		// Align yet-unaligned overlaps
-		if (ALIGN_OVERLAPS) {
-			align(aligner, false);
-		}
-	}
-
-
-	/**
-	 * Returns a linear state graph matching the state sequence followed in the
-	 * aligned words. Overlapping speech is ignored as per the contract of
-	 * LinearBridge.
-	 */
-	public StateGraph getLinearStateGraph() {
-		// Find all aligned words in a linear sequence
-		List<Word> sequence = new ArrayList<>();
-		LinearBridge bridge = new LinearBridge(tracks);
-		while (bridge.hasNext()) {
-			sequence.addAll(
-					bridge.nextInterleavedElementSequence().getAlignedWords());
-		}
-
-		assert !sequence.isEmpty():
-				"text must be aligned before generating a linear state graph";
-
-		String[][] rules    = new String[sequence.size()][];
-		int        wi       = 0;
-
-		// Fill state graph info
-		for (Word w: sequence) {
-			List<Word.Phone> phones = w.getPhones();
-			String[] rule = new String[phones.size()];
-			for (int i = 0; i < phones.size(); i++) {
-				rule[i] = phones.get(i).toString();
-			}
-
-			rules[wi] = rule;
-			wi++;
-		}
-
-		// Don't use extra optional interword silences. Aligned words already
-		// contain the silence "phones" that come after them.
-		StateGraph sg = new StateGraph(
-				new StatePool(), rules, sequence, false);
-		assert sg.isLinear();
-
-		return sg;
-	}
-
-
-	/**
-	 * Deduce times on timeless anchors
-	 */
-	public void deduceTimes() {
-		for (Track track: tracks) {
-			AnchorSandwichIterator iter = track.sandwichIterator();
-
-			while (iter.hasNext()) {
-				AnchorSandwich sandwich = iter.next();
-				List<Word> words = sandwich.getWords();
-
-				if (words.isEmpty()) {
-					continue;
-				}
-
-				{
-					int iF = words.get(0).getFirstNonSilenceFrame();
-					Anchor ia = sandwich.getInitialAnchor();
-					if (null != ia && !ia.hasTime() && iF >= 0) {
-						setTimeOnTimelessAnchors(ia, iF);
-					}
-				}
-
-				{
-					int ff = words.get(words.size()-1).getLastNonSilenceFrame();
-					Anchor fa = sandwich.getFinalAnchor();
-					if (null != fa && !fa.hasTime() && ff >= 0) {
-						setTimeOnTimelessAnchors(fa, ff);
-					}
-				}
-			}
-		}
-	}
-
-
-	/**
-	 * Sets time for all timeless anchors equal to the reference anchor.
-	 * @param reference reference timeless anchor. MUST be timeless for
-	 *                  Anchor.equals() to work.
-	 * @param frame time to set
-	 */
-	void setTimeOnTimelessAnchors(Anchor reference, int frame) {
-		assert !reference.hasTime();
-
-		for (Track track: tracks) {
-			for (Element el: track.elts) {
-				if (el instanceof Anchor) {
-					Anchor a = (Anchor)el;
-					if (a != reference && a.equals(reference)) {
-						assert !a.hasTime();
-						a.setFrame(frame);
-					}
-				}
-			}
-		}
-
-		reference.setFrame(frame);
-	}
-
-
-	void setOrderOnTimedAnchors(Anchor reference, int order) {
-		for (Track track: tracks) {
-			for (Element el: track.elts) {
-				if (el instanceof Anchor) {
-					Anchor a = (Anchor)el;
-					if (a != reference && a.equals(reference)) {
-						a.setOrder(order);
-					}
-				}
-			}
-		}
-
-		reference.setOrder(order);
-	}
+	public abstract void align(AutoAligner aligner)
+			throws IOException, InterruptedException;
 
 
 	/**
@@ -384,52 +216,32 @@ public class Project {
 	public List<Integer> anchorFrameDiffs(Project p)
 			throws IllegalArgumentException
 	{
-		List<Integer> diffs = new ArrayList<Integer>();
-		if (tracks.size() != p.tracks.size()) {
+		List<Integer> diffs = new ArrayList<>();
+		if (speakerCount() != p.speakerCount()) {
 			throw new IllegalArgumentException(
 					"projects have different track counts");
 		}
 
-		for (int i = 0; i < tracks.size(); i++) {
-			Track t1 = tracks.get(i);
-			Track t2 = p.tracks.get(i);
+		for (int i = 0; i < speakerCount(); i++) {
+			Iterator<AnchorSandwich> itr1 = sandwichIterator(i);
+			Iterator<AnchorSandwich> itr2 = p.sandwichIterator(i);
 
-			if (t1.elts.size() != t2.elts.size()) {
-				throw new IllegalArgumentException(
-						"projects have different lengths for track #" + i);
+			while (itr1.hasNext()) {
+				if (!itr2.hasNext()) {
+					throw new IllegalArgumentException("counterpart speaker "
+							+ i + " ran out of anchor sandwiches");
+				}
+
+				AnchorSandwich as1 = itr1.next();
+				AnchorSandwich as2 = itr2.next();
+
+				diffs.add(as2.getInitialAnchor().getFrame() - as1.getFinalAnchor().getFrame());
+				diffs.add(as2.getFinalAnchor().getFrame() - as1.getFinalAnchor().getFrame());
 			}
 
-			for (int j = 0; j < t1.elts.size(); j++) {
-				Element e1 = t1.elts.get(j);
-				Element e2 = t2.elts.get(j);
-
-				if (e1 instanceof Anchor) {
-					if (!(e2 instanceof Anchor)) {
-						throw new IllegalArgumentException(
-								"counterpart element #" + j + " not an anchor");
-					}
-
-					Anchor a1 = (Anchor)e1;
-					Anchor a2 = (Anchor)e2;
-
-					if (!a1.hasTime()) {
-						throw new IllegalArgumentException("anchor " + a1 +
-								"(reference project) has no time");
-					}
-
-					if (!a2.hasTime()) {
-						System.err.println("Warning: " + a2 +
-								" (counterpart) has no time; skipping...");
-						continue;
-					}
-
-					diffs.add(a2.getFrame() - a1.getFrame());
-				}
-
-				else if (!e1.getClass().equals(e2.getClass())) {
-					throw new IllegalArgumentException("counterpart element #"
-							+ j + " instance of different class");
-				}
+			if (itr2.hasNext()) {
+				throw new IllegalArgumentException("counterpart speaker "
+						+ i + " has more anchor sandwiches than me");
 			}
 		}
 

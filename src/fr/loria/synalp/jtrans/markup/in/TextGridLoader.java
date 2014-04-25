@@ -1,8 +1,9 @@
 package fr.loria.synalp.jtrans.markup.in;
 
 import fr.loria.synalp.jtrans.elements.*;
-import fr.loria.synalp.jtrans.facade.Project;
-import fr.loria.synalp.jtrans.facade.Track;
+import fr.loria.synalp.jtrans.project.TrackProject;
+import fr.loria.synalp.jtrans.project.Project;
+import fr.loria.synalp.jtrans.project.Track;
 import fr.loria.synalp.jtrans.utils.FileUtils;
 
 import java.io.*;
@@ -17,13 +18,13 @@ public class TextGridLoader implements MarkupLoader {
 	public Project parse(File file)
 			throws ParsingException, IOException
 	{
-		Project project = new Project();
+		TrackProject project = new TrackProject();
 		BufferedReader reader = FileUtils.openFileAutoCharset(file);
 		TextGridStateMachine machine = new TextGridStateMachine(reader);
 		reader.close();
 
 		for (int i = 0; i < machine.tiers.size(); i++) {
-			Track track = new Track(machine.tierNames.get(i));
+			Track track = new Track();
 			float prevXmax = -1;
 
 			for (TextGridStateMachine.Interval interval: machine.tiers.get(i)) {
@@ -31,19 +32,19 @@ public class TextGridLoader implements MarkupLoader {
 				// different from previous anchor
 
 				if (prevXmax != interval.xmin) {
-					track.elts.add(Anchor.timedAnchor(interval.xmin));
+					track.elts.add(new Anchor(interval.xmin));
 				}
 
 				String normalized = RawTextLoader.normalizeText(interval.text);
 				track.elts.addAll(RawTextLoader.parseString(
 						normalized, RawTextLoader.DEFAULT_PATTERNS));
 
-				track.elts.add(Anchor.timedAnchor(interval.xmax));
+				track.elts.add(new Anchor(interval.xmax));
 
 				prevXmax = interval.xmax;
 			}
 
-			project.tracks.add(track);
+			project.addTrack(machine.tierNames.get(i), track);
 		}
 
 		for (int i = 0; i < project.tracks.size(); i++) {

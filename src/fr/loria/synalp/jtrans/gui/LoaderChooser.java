@@ -1,7 +1,7 @@
 package fr.loria.synalp.jtrans.gui;
 
-import fr.loria.synalp.jtrans.facade.Project;
-import fr.loria.synalp.jtrans.gui.trackview.MultiTrackTable;
+import fr.loria.synalp.jtrans.project.Project;
+import fr.loria.synalp.jtrans.gui.trackview.ProjectTable;
 import fr.loria.synalp.jtrans.markup.in.MarkupLoader;
 import fr.loria.synalp.jtrans.markup.in.MarkupLoaderPool;
 
@@ -51,7 +51,7 @@ public class LoaderChooser extends JDialog {
 			return;
 		}
 
-		previewPane.setViewportView(new MultiTrackTable(project, null, false));
+		previewPane.setViewportView(new ProjectTable(project, null, false));
 		loadButton.setEnabled(true);
 	}
 

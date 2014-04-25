@@ -39,7 +39,7 @@ public class CellPane extends JTextPane {
 
 	private final Color normalBG;
 	private TextCell cell;
-	private Word highlighted;
+	private Element highlighted;
 
 
 	private static final Map<Comment.Type, AttributeSet> styleCache =
@@ -125,17 +125,17 @@ public class CellPane extends JTextPane {
 	}
 
 
-	public void highlight(Word w) {
+	public void highlight(Element el) {
 		setBackground(KARAOKE_CELL_BG);
 
 		if (highlighted != null) {
 			setDefaultStyle(cell.elts.indexOf(highlighted), highlighted);
 		}
 
-		if (w != null) {
-			setStyle(cell.elts.indexOf(w), HIGHLIGHTED_STYLE, false);
+		if (el != null) {
+			setStyle(cell.elts.indexOf(el), HIGHLIGHTED_STYLE, false);
 		}
 
-		highlighted = w;
+		highlighted = el;
 	}
 }

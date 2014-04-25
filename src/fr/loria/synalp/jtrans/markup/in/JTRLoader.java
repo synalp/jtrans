@@ -1,6 +1,6 @@
 package fr.loria.synalp.jtrans.markup.in;
 
-import fr.loria.synalp.jtrans.facade.Project;
+import fr.loria.synalp.jtrans.project.Project;
 import static fr.loria.synalp.jtrans.markup.jtr.JTR.*;
 
 import java.io.File;
