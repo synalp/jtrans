@@ -51,9 +51,9 @@ public class TurnProject extends Project {
 		public Anchor end;
 		public List<List<Element>> elts;
 
-		private Turn() {
+		public Turn() {
 			elts = new ArrayList<>();
-			for (int i = 0; i < speakerNames.size(); i++) {
+			for (int i = 0; i < speakerCount(); i++) {
 				elts.add(new ArrayList<Element>());
 			}
 		}
@@ -111,6 +111,14 @@ public class TurnProject extends Project {
 
 			return maxSpeaker;
 		}
+
+		public void clearAlignment() {
+			for (int i = 0; i < speakerCount(); i++) {
+				for (Word w: getWords(i)) {
+					w.clearAlignment();
+				}
+			}
+		}
 	}
 
 
@@ -134,6 +142,7 @@ public class TurnProject extends Project {
 		return r;
 	}
 
+
 	public int newSpeaker(String name) {
 		for (Turn r: turns) {
 			assert r.elts.size() == speakerNames.size();
@@ -148,7 +157,8 @@ public class TurnProject extends Project {
 
 
 	/**
-	 * Aligns all words in all tracks of this project with timeless anchors.
+	 * Clears all manual timing information in the project, then aligns all
+	 * turns.
 	 */
 	public void alignWithoutTimes(AutoAligner aligner)
 			throws IOException, InterruptedException
@@ -162,21 +172,60 @@ public class TurnProject extends Project {
 			turn.end = null;
 		}
 
+		alignTurnChain(aligner, turns, ALIGN_OVERLAPS);
+	}
+
+
+	/**
+	 * Aligns a chain of turns lacking timing information.
+	 * <p/>
+	 * Time boundaries for the alignment are defined by the initial anchor in
+	 * the first turn and the final anchor in the last turn of the chain.
+	 * These two anchors may be null, in which case the chain will be aligned
+	 * throughout the length of the entire audio file.
+	 * <p/>
+	 * Besides the two aforementioned initial and final anchors, <strong>all
+	 * other anchors in the chain list must be null</strong>.
+	 * <p/>
+	 * The alignment is done in two passes. First, a linear word sequence
+	 * without overlapping speech is aligned. Then, the overlapping speech is
+	 * aligned with timing information inferred from the first pass.
+	 * @param aligner
+	 * @param turns chain of turns lacking timing information
+	 * @param overlaps If false, skip the second pass (don't align overlapping
+	 *                 speech)
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
+	public static void alignTurnChain(
+			AutoAligner aligner,
+			List<Turn> turns,
+			boolean overlaps)
+			throws IOException, InterruptedException
+	{
+		// Clear
+		for (Turn turn: turns) {
+			turn.clearAlignment();
+		}
+
 		// Big interleaved sequence
 		List<Word> words = new ArrayList<>();
 		for (Turn turn: turns) {
+			assert null == turn.start || turn == turns.get(0);
+			assert null == turn.end   || turn == turns.get(turns.size()-1);
+
 			int pSpk = turn.prioritySpeaker();
 			if (pSpk >= 0) {
 				words.addAll(turn.getWords(pSpk));
 			}
 		}
 
-		align(aligner, null, null, words);
+		align(aligner,
+				turns.get(0).start,
+				turns.get(turns.size()-1).end,
+				words);
 
-		deduceAnchors();
-
-		// Align yet-unaligned overlaps
-		if (ALIGN_OVERLAPS) {
+		if (overlaps) {
 			for (Turn turn: turns) {
 				int pSpk = turn.prioritySpeaker();
 				float[] minMax = turn.getMinMax();
@@ -184,7 +233,7 @@ public class TurnProject extends Project {
 					continue;
 				}
 
-				for (int i = 0; i < speakerCount(); i++) {
+				for (int i = 0; i < turn.elts.size(); i++) {
 					if (i == pSpk) {
 						continue;
 					}
@@ -205,22 +254,55 @@ public class TurnProject extends Project {
 	}
 
 
+	/**
+	 * Aligns all turns.
+	 * <p/>
+	 * Any turns with incomplete timing information are chained together.
+	 *
+	 * @see TurnProject#alignTurnChain
+	 */
 	public void align(AutoAligner aligner, boolean overlaps)
 			throws IOException, InterruptedException
 	{
 		clearAlignment();
 
-		for (Turn t : turns) {
-			int pSpk = overlaps? -1: t.prioritySpeaker();
+		// Index of the first turn in the current chain of turns lacking
+		// timing information
+		int chainStart = -1;
 
-			for (int i = 0; i < speakerCount(); i++) {
-				if (!overlaps && i == pSpk) {
-					continue;
+		for (int t = 0; t < turns.size(); t++) {
+			Turn turn = turns.get(t);
+
+			if (chainStart >= 0) {
+				assert null == turn.start;
+				if (null != turn.end || t == turns.size()-1) {
+					// Stop chaining
+					alignTurnChain(aligner,
+							turns.subList(chainStart, t + 1), overlaps);
+					chainStart = -1;
 				}
+				// Otherwise, keep chaining
+			}
 
-				align(aligner, t.start, t.end, t.getWords(i));
+			else if (null == turn.end) {
+				// Start a chain
+				chainStart = t;
+			}
+
+			else {
+				// Independent turn (timing information)
+				int pSpk = overlaps? -1: turn.prioritySpeaker();
+
+				for (int i = 0; i < speakerCount(); i++) {
+					if (!overlaps && i != pSpk) {
+						continue;
+					}
+					align(aligner, turn.start, turn.end, turn.getWords(i));
+				}
 			}
 		}
+
+		assert chainStart < 0;
 	}
 
 

@@ -38,14 +38,14 @@ public class TRSLoader implements MarkupLoader {
 	}
 
 
-	public Project parse(File file)
+	public TurnProject parse(File file)
 			throws ParsingException, IOException
 	{
 		return parse(parseXML(file));
 	}
 
 
-	public Project parse(Document doc) throws ParsingException {
+	public TurnProject parse(Document doc) throws ParsingException {
 		TurnProject project = new TurnProject();
 
 		// Map of Transcriber's speaker IDs to JTrans tracks
@@ -100,9 +100,6 @@ public class TRSLoader implements MarkupLoader {
 			int spkID = turnTracks.get(0);
 
 			TurnProject.Turn pTurn = project.newTurn();
-
-			// The same speaker may be repeated in the speaker attribute
-			Set<Integer> uniqueTurnTracks = new HashSet<>(turnTracks);
 
 			float endTime = Float.parseFloat(turn.getAttribute("endTime"));
 			if (endTime > lastEnd)

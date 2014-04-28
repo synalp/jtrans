@@ -38,12 +38,17 @@ class TextGridSaverHelper {
 			int wordCount = 0;
 			int phoneCount = 0;
 
+			// frame onto which to tack 0-length elements
+			int lastFrame = 0;
+
 			Iterator<Phrase> itr = p.phraseIterator(i);
 			while (itr.hasNext()) {
 				Phrase phrase = itr.next();
 
 				// frame onto which to tack 0-length elements
-				int lastFrame = phrase.getInitialAnchor().getFrame();
+				if (phrase.getInitialAnchor() != null) {
+					lastFrame = phrase.getInitialAnchor().getFrame();
+				}
 
 				for (Element e: phrase) {
 					Word word = e instanceof Word ? (Word) e : null;
