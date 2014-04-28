@@ -49,9 +49,6 @@ public abstract class Project {
 
 	public abstract Iterator<Phrase> phraseIterator(int speaker);
 
-	public LinearBridge linearBridge() {
-		return new LinearBridge(this);
-	}
 
 	public Set<Word> getAllWords() {
 		Set<Word> set = new HashSet<>();
