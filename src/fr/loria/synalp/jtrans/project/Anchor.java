@@ -1,9 +1,9 @@
-package fr.loria.synalp.jtrans.elements;
+package fr.loria.synalp.jtrans.project;
 
 import fr.loria.synalp.jtrans.utils.TimeConverter;
 
 public class Anchor
-		implements Element, Comparable<Anchor>
+		implements Comparable<Anchor>
 {
 
 	public float seconds;

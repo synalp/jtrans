@@ -1,6 +1,5 @@
 package fr.loria.synalp.jtrans.project;
 
-import fr.loria.synalp.jtrans.elements.Anchor;
 import fr.loria.synalp.jtrans.elements.Element;
 import fr.loria.synalp.jtrans.elements.Word;
 import org.junit.Test;
@@ -8,72 +7,58 @@ import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import static java.util.Arrays.asList;
 
 public class LinearBridgeTest {
 
-	private static LinearBridge lb(List<Track> trackList) {
-		TrackProject p = new TrackProject();
-		for (Track t: trackList) {
-			p.addTrack(t.toString(), t);
+	private AnchorSandwich AS(float start, float end, String... words) {
+		List<Element> wordList = new ArrayList<>();
+		for (String w: words) {
+			wordList.add(new Word(w));
 		}
-		return new LinearBridge(p);
+		return new AnchorSandwich(new Anchor(start), new Anchor(end), wordList);
 	}
 
 
 	@Test
 	public void testEmptyTrackList() {
-		LinearBridge bridge = lb(new ArrayList<Track>());
+		LinearBridge bridge = new LinearBridge(new TrackProject());
 		assertFalse(bridge.hasNext());
 	}
 
 
 	@Test
 	public void testEmptyTracks() {
-		List<Track> trackList = new ArrayList<Track>();
+		TrackProject p = new TrackProject();
 
-		trackList.add(new Track());
-		trackList.add(new Track());
-		trackList.add(new Track());
+		p.addTrack("A", new ArrayList<AnchorSandwich>());
+		p.addTrack("B", new ArrayList<AnchorSandwich>());
+		p.addTrack("C", new ArrayList<AnchorSandwich>());
 
-		LinearBridge bridge = lb(trackList);
+		LinearBridge bridge = new LinearBridge(p);
 		assertFalse(bridge.hasNext());
 	}
 
 
 	@Test
 	public void testWellFormed() {
-		List<Track> trackList = new ArrayList<Track>();
-
-		Track trackA = new Track();
-		trackA.elts.add(new Anchor(5));
-		trackA.elts.add(new Word("abc"));
-		trackA.elts.add(new Anchor(10));
-		trackList.add(trackA);
-
-		Track trackB = new Track();
-		trackB.elts.add(new Anchor(10));
-		trackB.elts.add(new Word("def"));
-		trackB.elts.add(new Anchor(15));
-		trackList.add(trackB);
-
-		LinearBridge bridge = lb(trackList);
+		TrackProject p = new TrackProject();
+		p.addTrack("A", asList(AS(5, 10, "abc")));
+		p.addTrack("B", asList(AS(10, 15, "def")));
+		LinearBridge bridge = new LinearBridge(p);
 		AnchorSandwich[] sl;
 
 		assertTrue(bridge.hasNext());
 		sl = bridge.next();
 		assertEquals(2, sl.length);
-		assertEquals(trackA.elts.get(0), sl[0].getInitialAnchor());
-		assertEquals(trackA.elts.get(2), sl[0].getFinalAnchor());
-		assertEquals(trackA.elts.subList(1, 2), sl[0]);
+		assertEquals(p.tracks.get(0).get(0), sl[0]);
 		assertNull(sl[1]);
 
 		assertTrue(bridge.hasNext());
 		sl = bridge.next();
 		assertEquals(2, sl.length);
 		assertNull(sl[0]);
-		assertEquals(trackB.elts.get(0), sl[1].getInitialAnchor());
-		assertEquals(trackB.elts.get(2), sl[1].getFinalAnchor());
-		assertEquals(trackB.elts.subList(1, 2), sl[1]);
+		assertEquals(p.tracks.get(1).get(0), sl[1]);
 
 		assertFalse(bridge.hasNext());
 	}
@@ -81,33 +66,17 @@ public class LinearBridgeTest {
 
 	@Test
 	public void testSimultaneous() {
-		List<Track> trackList = new ArrayList<Track>();
-
-		Track trackA = new Track();
-		trackA.elts.add(new Anchor(5));
-		trackA.elts.add(new Word("abc"));
-		trackA.elts.add(new Anchor(10));
-		trackList.add(trackA);
-
-		Track trackB = new Track();
-		trackB.elts.add(new Anchor(5));
-		trackB.elts.add(new Word("def"));
-		trackB.elts.add(new Anchor(15));
-		trackList.add(trackB);
-
-		LinearBridge bridge = lb(trackList);
+		TrackProject p = new TrackProject();
+		p.addTrack("A", asList(AS(5, 10, "abc")));
+		p.addTrack("B", asList(AS(5, 15, "def")));
+		LinearBridge bridge = new LinearBridge(p);
 		AnchorSandwich[] sl;
 
 		assertTrue(bridge.hasNext());
 		sl = bridge.next();
 		assertEquals(2, sl.length);
-		assertEquals(trackA.elts.get(0), sl[0].getInitialAnchor());
-		assertEquals(trackA.elts.get(2), sl[0].getFinalAnchor());
-		assertEquals(trackA.elts.subList(1, 2), sl[0]);
-		assertEquals(trackB.elts.get(0), sl[1].getInitialAnchor());
-		assertEquals(trackB.elts.get(2), sl[1].getFinalAnchor());
-		assertEquals(trackB.elts.subList(1, 2), sl[1]);
-
+		assertEquals(p.tracks.get(0).get(0), sl[0]);
+		assertEquals(p.tracks.get(1).get(0), sl[1]);
 		assertFalse(bridge.hasNext());
 	}
 
@@ -118,48 +87,22 @@ public class LinearBridgeTest {
 
 	@Test
 	public void testSimultaneous2() {
-		List<Track> trackList = new ArrayList<Track>();
-		Track trackA = new Track();
-		Track trackB = new Track();
-		trackList.add(trackA);
-		trackList.add(trackB);
+		TrackProject p = new TrackProject();
 
-		{
-			final List<Element> e = trackA.elts;
+		p.addTrack("A", asList(
+				AS(0, 1, "abc"),
+				// B says "def" here
+				AS(2, 3, "ghi", "jkl", "mno")
+		));
 
-			e.add(new Anchor(0));
-			e.add(new Word("abc"));
-			e.add(new Anchor(1));
+		p.addTrack("B", asList(
+				// A says "abc" here
+				AS(1, 2, "def"),
+				AS(2, 3, "pqr", "stu"),
+				AS(3, 4, "vwx")
+		));
 
-			// B: "def"
-
-			e.add(new Anchor(2));
-			e.add(new Word("ghi"));
-			e.add(new Word("jkl"));
-			e.add(new Word("mno"));
-			e.add(new Anchor(3));
-		}
-
-		{
-			final List<Element> e = trackB.elts;
-
-			// A: "abc"
-
-			e.add(new Anchor(1));
-			e.add(new Word("def"));
-//			e.add(new Anchor(2));
-
-			e.add(new Anchor(2));
-			e.add(new Word("pqr"));
-			e.add(new Word("stu"));
-			e.add(new Anchor(3));
-
-//			e.add(new Anchor(3));
-			e.add(new Word("vwx"));
-			e.add(new Anchor(4));
-		}
-
-		LinearBridge bridge = lb(trackList);
+		LinearBridge bridge = new LinearBridge(p);
 		AnchorSandwich[] sl;
 
 		assertTrue(bridge.hasNext());
@@ -186,82 +129,56 @@ public class LinearBridgeTest {
 
 	@Test
 	public void testHasNext() {
-		Track trackA = new Track();
-		trackA.elts.add(new Anchor(5));
-		trackA.elts.add(new Word("abc"));
-		trackA.elts.add(new Anchor(10));
-
-		Track trackB = new Track();
+		List<AnchorSandwich> trackA = asList(AS(5, 10, "abc"));
+		List<AnchorSandwich> trackB = new ArrayList<>();
 
 		{
-			List<Track> trackList1 = new ArrayList<Track>();
-			trackList1.add(trackA);
-			trackList1.add(trackB);
-			assertTrue(lb(trackList1).hasNext());
+			TrackProject p = new TrackProject();
+			p.addTrack("A", trackA);
+			p.addTrack("B", trackB);
+			assertTrue(new LinearBridge(p).hasNext());
 		}
 
 		{
-			List<Track> trackList2 = new ArrayList<Track>();
-			trackList2.add(trackB);
-			trackList2.add(trackA);
-			assertTrue(lb(trackList2).hasNext());
+			TrackProject p = new TrackProject();
+			p.addTrack("B", trackB);
+			p.addTrack("A", trackA);
+			assertTrue(new LinearBridge(p).hasNext());
 		}
 
 		{
-			List<Track> trackList3 = new ArrayList<Track>();
-			trackList3.add(trackB);
-			trackList3.add(trackB);
-			assertFalse(lb(trackList3).hasNext());
+			TrackProject p = new TrackProject();
+			p.addTrack("B1", trackB);
+			p.addTrack("B2", trackB);
+			assertFalse(new LinearBridge(p).hasNext());
 		}
 	}
 
 
 	@Test
 	public void testEmptySandwiches() {
-		List<Track> trackList = new ArrayList<Track>();
-
-		Track trackA = new Track();
-		trackA.elts.add(new Anchor(5));
-		trackA.elts.add(new Word("abc"));
-		trackA.elts.add(new Anchor(10));
-		trackA.elts.add(new Anchor(15));
-		trackA.elts.add(new Word("def"));
-		trackA.elts.add(new Anchor(20));
-		trackList.add(trackA);
-
-		Track trackB = new Track();
-		trackB.elts.add(new Anchor(10));
-		trackB.elts.add(new Word("ghi"));
-		trackB.elts.add(new Anchor(12));
-		trackList.add(trackB);
-
-		LinearBridge bridge = lb(trackList);
+		TrackProject p = new TrackProject();
+		p.addTrack("A", asList(AS(5, 10, "abc"), AS(15, 20, "def")));
+		p.addTrack("B", asList(AS(10, 12, "ghi")));
+		LinearBridge bridge = new LinearBridge(p);
 		AnchorSandwich[] sl;
 
 		assertTrue(bridge.hasNext());
 		sl = bridge.next();
 		assertEquals(2, sl.length);
-		assertEquals(trackA.elts.get(0), sl[0].getInitialAnchor());
-		assertEquals(trackA.elts.get(2), sl[0].getFinalAnchor());
-		assertEquals(trackA.elts.subList(1, 2), sl[0]);
+		assertEquals(p.tracks.get(0).get(0), sl[0]);
 		assertNull(sl[1]);
 
 		assertTrue(bridge.hasNext());
 		sl = bridge.next();
 		assertEquals(2, sl.length);
-		assertEquals(trackA.elts.get(2), sl[0].getInitialAnchor());
-		assertEquals(trackA.elts.get(3), sl[0].getFinalAnchor());
-		assertTrue(sl[0].isEmpty());
-		assertEquals(trackB.elts.get(0), sl[1].getInitialAnchor());
-		assertEquals(trackB.elts.get(2), sl[1].getFinalAnchor());
-		assertEquals(trackB.elts.subList(1, 2), sl[1]);
+		assertNull(sl[0]);
+		assertEquals(p.tracks.get(1).get(0), sl[1]);
 
 		assertTrue(bridge.hasNext());
 		sl = bridge.next();
 		assertEquals(2, sl.length);
-		assertEquals(trackA.elts.get(3), sl[0].getInitialAnchor());
-		assertEquals(trackA.elts.get(5), sl[0].getFinalAnchor());
-		assertEquals(trackA.elts.subList(4, 5), sl[0]);
+		assertEquals(p.tracks.get(0).get(1), sl[0]);
 		assertNull(sl[1]);
 
 		assertFalse(bridge.hasNext());

@@ -1,6 +1,5 @@
 package fr.loria.synalp.jtrans.project;
 
-import fr.loria.synalp.jtrans.elements.Anchor;
 import fr.loria.synalp.jtrans.elements.Element;
 import fr.loria.synalp.jtrans.elements.Word;
 import fr.loria.synalp.jtrans.facade.AutoAligner;
@@ -43,7 +42,7 @@ public class TurnProject extends Project {
 		public AnchorSandwich next() {
 			Turn cTurn = rowItr.next();
 			// TODO skip empty?
-			return new AnchorSandwich(cTurn.elts.get(spkID), cTurn.start, cTurn.end);
+			return new AnchorSandwich(cTurn.start, cTurn.end, cTurn.elts.get(spkID));
 		}
 	}
 
@@ -128,18 +127,6 @@ public class TurnProject extends Project {
 		return words;
 	}
 
-	@Override
-	public List<Word> getAlignedWords(int speaker) {
-		List<Word> words = new ArrayList<>();
-		for (Turn r: turns) {
-			for (Element e: r.elts.get(speaker)) {
-				if (e instanceof Word && ((Word) e).isAligned()) {
-					words.add((Word)e);
-				}
-			}
-		}
-		return words;
-	}
 
 	public Turn newTurn() {
 		Turn r = new Turn();

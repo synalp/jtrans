@@ -1,6 +1,5 @@
 package fr.loria.synalp.jtrans.project;
 
-import fr.loria.synalp.jtrans.elements.Anchor;
 import fr.loria.synalp.jtrans.elements.Element;
 import fr.loria.synalp.jtrans.elements.Word;
 
@@ -16,35 +15,7 @@ public class AnchorSandwich
 	private final Anchor initialAnchor;
 	private final Anchor finalAnchor;
 
-	public AnchorSandwich(List<Element> baseList) {
-		final int subListStart, subListEnd;
-
-		Element first = baseList.get(0);
-		if (first instanceof Anchor) {
-			initialAnchor = (Anchor)first;
-			subListStart = 1;
-		} else {
-			initialAnchor = null;
-			subListStart = 0;
-		}
-
-		Element last = baseList.get(baseList.size()-1);
-		if (last instanceof Anchor) {
-			finalAnchor = (Anchor)last;
-			subListEnd = baseList.size()-1;
-		} else {
-			finalAnchor = null;
-			subListEnd = baseList.size();
-		}
-
-		if (first == last && initialAnchor != null) {
-			elements = baseList.subList(0, 0);
-		} else {
-			elements = baseList.subList(subListStart, subListEnd);
-		}
-	}
-
-	public AnchorSandwich(List<Element> elements, Anchor initialAnchor, Anchor finalAnchor) {
+	public AnchorSandwich(Anchor initialAnchor, Anchor finalAnchor, List<Element> elements) {
 		this.elements = elements;
 		this.initialAnchor = initialAnchor;
 		this.finalAnchor = finalAnchor;
@@ -63,19 +34,6 @@ public class AnchorSandwich
 
 		for (Element el: elements) {
 			if (el instanceof Word) {
-				words.add((Word)el);
-			}
-		}
-
-		return words;
-	}
-
-
-	public List<Word> getAlignedWords() {
-		List<Word> words = new ArrayList<Word>();
-
-		for (Element el: elements) {
-			if (el instanceof Word && ((Word) el).isAligned()) {
 				words.add((Word)el);
 			}
 		}
@@ -133,6 +91,21 @@ public class AnchorSandwich
 	public int size() {
 		return elements.size();
 	}
+
+
+	@Override
+	public boolean equals(Object o) {
+		if (!(o instanceof AnchorSandwich)) {
+			return false;
+		}
+
+		AnchorSandwich as = (AnchorSandwich)o;
+
+		return as.initialAnchor.equals(initialAnchor) &&
+				as.finalAnchor.equals(finalAnchor) &&
+				super.equals(o);
+	}
+
 
 	@Override
 	public int compareTo(AnchorSandwich o) {

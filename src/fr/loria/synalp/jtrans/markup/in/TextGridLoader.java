@@ -1,9 +1,9 @@
 package fr.loria.synalp.jtrans.markup.in;
 
-import fr.loria.synalp.jtrans.elements.*;
+import fr.loria.synalp.jtrans.project.Anchor;
+import fr.loria.synalp.jtrans.project.AnchorSandwich;
 import fr.loria.synalp.jtrans.project.TrackProject;
 import fr.loria.synalp.jtrans.project.Project;
-import fr.loria.synalp.jtrans.project.Track;
 import fr.loria.synalp.jtrans.utils.FileUtils;
 
 import java.io.*;
@@ -24,32 +24,25 @@ public class TextGridLoader implements MarkupLoader {
 		reader.close();
 
 		for (int i = 0; i < machine.tiers.size(); i++) {
-			Track track = new Track();
-			float prevXmax = -1;
+			List<AnchorSandwich> track = new ArrayList<>();
 
 			for (TextGridStateMachine.Interval interval: machine.tiers.get(i)) {
-				// Avoid redundant anchors - only create start anchor if
-				// different from previous anchor
-
-				if (prevXmax != interval.xmin) {
-					track.elts.add(new Anchor(interval.xmin));
-				}
-
-				String normalized = RawTextLoader.normalizeText(interval.text);
-				track.elts.addAll(RawTextLoader.parseString(
-						normalized, RawTextLoader.DEFAULT_PATTERNS));
-
-				track.elts.add(new Anchor(interval.xmax));
-
-				prevXmax = interval.xmax;
+				track.add(new AnchorSandwich(
+						new Anchor(interval.xmin),
+						new Anchor(interval.xmax),
+						RawTextLoader.parseString(
+								RawTextLoader.normalizeText(interval.text),
+								RawTextLoader.DEFAULT_PATTERNS)));
 			}
 
 			project.addTrack(machine.tierNames.get(i), track);
 		}
 
+		/* TODO
 		for (int i = 0; i < project.tracks.size(); i++) {
 			project.tracks.get(i).setSpeakerOnWords(i);
 		}
+		*/
 
 		return project;
 	}

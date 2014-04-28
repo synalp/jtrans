@@ -1,6 +1,5 @@
 package fr.loria.synalp.jtrans.project;
 
-import fr.loria.synalp.jtrans.elements.Anchor;
 import fr.loria.synalp.jtrans.elements.Word;
 import fr.loria.synalp.jtrans.facade.*;
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
@@ -47,8 +46,6 @@ public abstract class Project {
 	}
 
 	public abstract List<Word> getWords(int speaker);
-
-	public abstract List<Word> getAlignedWords(int speaker);
 
 	public abstract Iterator<AnchorSandwich> sandwichIterator(int speaker);
 

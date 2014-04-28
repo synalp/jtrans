@@ -2,8 +2,8 @@ package fr.loria.synalp.jtrans.gui.trackview;
 
 import fr.loria.synalp.jtrans.elements.*;
 import fr.loria.synalp.jtrans.gui.*;
+import fr.loria.synalp.jtrans.project.Anchor;
 import fr.loria.synalp.jtrans.project.Project;
-import fr.loria.synalp.jtrans.project.Track;
 import fr.loria.synalp.jtrans.project.TrackProject;
 import fr.loria.synalp.jtrans.project.TurnProject;
 import fr.loria.synalp.jtrans.utils.*;
@@ -247,6 +247,7 @@ public class ProjectTable
 
 
 
+	/*
 	private JPopupMenu anchorPopupMenu(final Anchor anchor, final Track track) {
 		JPopupMenu popup = new JPopupMenu("Anchor");
 
@@ -314,12 +315,14 @@ public class ProjectTable
 
 		return popup;
 	}
+	*/
 
 
 	/**
 	 * Dialog box to prompt the user where to reposition the anchor.
 	 * User input is sanitized with sanitizeAnchorPosition().
 	 */
+	/*
 	private void repositionAnchor(Anchor anchor, Track track) {
 		String newPosString = JOptionPane.showInputDialog(gui.jf,
 				"Enter new anchor position in seconds:",
@@ -342,6 +345,7 @@ public class ProjectTable
 
 		refreshModel();
 	}
+	*/
 
 
 	/**
@@ -349,6 +353,7 @@ public class ProjectTable
 	 * @param before If true, the new anchor will be placed before the word in
 	 *               the element list. If false, it'll be placed after the word.
 	 */
+	/*
 	private void newAnchorNextToWord(Track track, Word word, boolean before) {
 		Track.Neighborhood<Anchor> range =
 				track.getNeighbors(word, Anchor.class);
@@ -384,6 +389,7 @@ public class ProjectTable
 			refreshModel(); //setTextFromElements();
 		}
 	}
+	*/
 
 
 	/**
@@ -391,6 +397,7 @@ public class ProjectTable
 	 * range; if not, informs the user with error messages.
 	 * @return true if the position is valid
 	 */
+	/*
 	private boolean sanitizeAnchorPosition(
 			Track.Neighborhood<Anchor> range, float newPos)
 	{
@@ -420,6 +427,7 @@ public class ProjectTable
 		return true;
 	}
 
+	*/
 
 	/**
 	 * Highlights a word and sets the playback position to the beginning of the

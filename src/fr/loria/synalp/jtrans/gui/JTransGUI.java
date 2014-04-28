@@ -336,9 +336,14 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	}
 
 	public void newplaystarted() {
-		final List<List<Word>> words = new ArrayList<List<Word>>();
+		final List<List<Word>> words = new ArrayList<>();
 		for (int i = 0; i < project.speakerCount(); i++) {
-			words.add(project.getAlignedWords(i));
+			words.add(new ArrayList<Word>());
+			for (Word w: project.getWords(i)) {
+				if (w.isAligned()) {
+					words.get(i).add(w);
+				}
+			}
 		}
 
 		karaokeHighlighter = new Timer(KARAOKE_UPDATE_INTERVAL, new AbstractAction() {

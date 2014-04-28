@@ -1,6 +1,5 @@
 package fr.loria.synalp.jtrans.gui.trackview;
 
-import fr.loria.synalp.jtrans.elements.Anchor;
 import fr.loria.synalp.jtrans.elements.Element;
 import fr.loria.synalp.jtrans.project.AnchorSandwich;
 import fr.loria.synalp.jtrans.project.LinearBridge;
@@ -77,12 +76,7 @@ public class TrackModel extends ProjectModel<TrackProject> {
 
 		for (int i = 0; i < project.speakerCount(); i++) {
 			columns.add(new TrackColumn(i));
-
-			for (Element el: project.tracks.get(i).elts) {
-				if (el instanceof Anchor) {
-					rows += 2;
-				}
-			}
+			rows += 3 * project.tracks.get(i).size();
 		}
 
 		for (Column c: columns) {

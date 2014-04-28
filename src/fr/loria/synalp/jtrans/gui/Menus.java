@@ -20,7 +20,7 @@ import javax.swing.filechooser.FileFilter;
 
 import edu.cmu.sphinx.result.Result;
 
-import fr.loria.synalp.jtrans.elements.Anchor;
+import fr.loria.synalp.jtrans.project.Anchor;
 import fr.loria.synalp.jtrans.gui.trackview.ProjectTable;
 import fr.loria.synalp.jtrans.markup.in.MarkupLoader;
 import fr.loria.synalp.jtrans.markup.out.JTRSaver;
