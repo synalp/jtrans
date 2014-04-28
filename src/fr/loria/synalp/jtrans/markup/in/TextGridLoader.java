@@ -1,7 +1,7 @@
 package fr.loria.synalp.jtrans.markup.in;
 
 import fr.loria.synalp.jtrans.project.Anchor;
-import fr.loria.synalp.jtrans.project.AnchorSandwich;
+import fr.loria.synalp.jtrans.project.Phrase;
 import fr.loria.synalp.jtrans.project.TrackProject;
 import fr.loria.synalp.jtrans.project.Project;
 import fr.loria.synalp.jtrans.utils.FileUtils;
@@ -24,10 +24,10 @@ public class TextGridLoader implements MarkupLoader {
 		reader.close();
 
 		for (int i = 0; i < machine.tiers.size(); i++) {
-			List<AnchorSandwich> track = new ArrayList<>();
+			List<Phrase> track = new ArrayList<>();
 
 			for (TextGridStateMachine.Interval interval: machine.tiers.get(i)) {
-				track.add(new AnchorSandwich(
+				track.add(new Phrase(
 						new Anchor(interval.xmin),
 						new Anchor(interval.xmax),
 						RawTextLoader.parseString(

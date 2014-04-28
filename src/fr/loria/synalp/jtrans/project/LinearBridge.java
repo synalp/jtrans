@@ -4,23 +4,23 @@ import java.util.Arrays;
 import java.util.Iterator;
 
 public class LinearBridge
-		implements Iterator<AnchorSandwich[]>
+		implements Iterator<Phrase[]>
 {
 	private final int nTracks;
-	private final Iterator<AnchorSandwich>[] sandwichIterators;
-	private final AnchorSandwich[] currentSandwiches;
+	private final Iterator<Phrase>[] phraseIterators;
+	private final Phrase[] currentPhrases;
 
 
 	public LinearBridge(Project p) {
 		nTracks = p.speakerCount();
-		sandwichIterators = new Iterator[nTracks];
-		currentSandwiches = new AnchorSandwich[nTracks];
+		phraseIterators = new Iterator[nTracks];
+		currentPhrases = new Phrase[nTracks];
 
 		for (int i = 0; i < nTracks; i++) {
-			Iterator<AnchorSandwich> iter = p.sandwichIterator(i);
-			sandwichIterators[i] = iter;
+			Iterator<Phrase> iter = p.phraseIterator(i);
+			phraseIterators[i] = iter;
 			if (iter.hasNext()) {
-				currentSandwiches[i] = iter.next();
+				currentPhrases[i] = iter.next();
 			}
 		}
 	}
@@ -32,7 +32,7 @@ public class LinearBridge
 			return false;
 		}
 
-		for (AnchorSandwich s: currentSandwiches) {
+		for (Phrase s: currentPhrases) {
 			if (s != null) {
 				return true;
 			}
@@ -43,30 +43,30 @@ public class LinearBridge
 
 
 	@Override
-	public AnchorSandwich[] next() {
-		AnchorSandwich[] simultaneous = new AnchorSandwich[nTracks];
-		AnchorSandwich earliest = null;
+	public Phrase[] next() {
+		Phrase[] simultaneous = new Phrase[nTracks];
+		Phrase earliest = null;
 
 		// Find track containing the earliest upcoming anchor
 		for (int i = 0; i < nTracks; i++) {
-			AnchorSandwich sandwich = currentSandwiches[i];
+			Phrase phrase = currentPhrases[i];
 
-			if (sandwich == null) {
+			if (phrase == null) {
 				continue;
 			}
 
 			if (earliest == null) {
-				simultaneous[i] = sandwich;
-				earliest = sandwich;
+				simultaneous[i] = phrase;
+				earliest = phrase;
 			} else {
-				int cmp = sandwich.compareTo(earliest);
+				int cmp = phrase.compareTo(earliest);
 
 				if (cmp < 0) {
 					Arrays.fill(simultaneous, 0, i, null);
-					simultaneous[i] = sandwich;
-					earliest = sandwich;
+					simultaneous[i] = phrase;
+					earliest = phrase;
 				} else if (cmp == 0) {
-					simultaneous[i] = sandwich;
+					simultaneous[i] = phrase;
 				}
 			}
 		}
@@ -74,10 +74,10 @@ public class LinearBridge
 		for (int i = 0; i < nTracks; i++) {
 			if (simultaneous[i] == null) {
 				;
-			} else if (!sandwichIterators[i].hasNext()) {
-				currentSandwiches[i] = null;
+			} else if (!phraseIterators[i].hasNext()) {
+				currentPhrases[i] = null;
 			} else {
-				currentSandwiches[i] = sandwichIterators[i].next();
+				currentPhrases[i] = phraseIterators[i].next();
 			}
 		}
 

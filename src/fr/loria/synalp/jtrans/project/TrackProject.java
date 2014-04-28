@@ -10,12 +10,12 @@ import java.util.Iterator;
 import java.util.List;
 
 public class TrackProject extends Project {
-	public List<List<AnchorSandwich>> tracks = new ArrayList<>();
+	public List<List<Phrase>> tracks = new ArrayList<>();
 
 	@Override
 	public List<Word> getWords(int speaker) {
 		ArrayList<Word> res = new ArrayList<>();
-		for (AnchorSandwich phrase: tracks.get(speaker)) {
+		for (Phrase phrase: tracks.get(speaker)) {
 			for (Element element: phrase) {
 				if (element instanceof Word) {
 					res.add((Word) element);
@@ -26,7 +26,7 @@ public class TrackProject extends Project {
 	}
 
 	@Override
-	public Iterator<AnchorSandwich> sandwichIterator(int speaker) {
+	public Iterator<Phrase> phraseIterator(int speaker) {
 		return tracks.get(speaker).iterator();
 	}
 
@@ -37,22 +37,22 @@ public class TrackProject extends Project {
 		clearAlignment();
 
 		for (int i = 0; i < speakerCount(); i++) {
-			Iterator<AnchorSandwich> itr = sandwichIterator(i);
+			Iterator<Phrase> itr = phraseIterator(i);
 
 			while (itr.hasNext()) {
-				AnchorSandwich sandwich = itr.next();
+				Phrase phrase = itr.next();
 
-				if (/*clear || */ !sandwich.isFullyAligned()) {
+				if (!phrase.isFullyAligned()) {
 					align(aligner,
-							sandwich.getInitialAnchor(),
-							sandwich.getFinalAnchor(),
-							sandwich.getWords());
+							phrase.getInitialAnchor(),
+							phrase.getFinalAnchor(),
+							phrase.getWords());
 				}
 			}
 		}
 	}
 
-	public void addTrack(String name, List<AnchorSandwich> t) {
+	public void addTrack(String name, List<Phrase> t) {
 		speakerNames.add(name);
 		tracks.add(t);
 		assert tracks.size() == speakerNames.size();

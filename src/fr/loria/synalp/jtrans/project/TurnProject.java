@@ -20,15 +20,15 @@ public class TurnProject extends Project {
 
 
 	@Override
-	public Iterator<AnchorSandwich> sandwichIterator(int speaker) {
-		return new TurnASI(speaker);
+	public Iterator<Phrase> phraseIterator(int speaker) {
+		return new TurnPhraseIterator(speaker);
 	}
 
-	protected class TurnASI implements Iterator<AnchorSandwich> {
+	protected class TurnPhraseIterator implements Iterator<Phrase> {
 		final int spkID;
 		final Iterator<Turn> rowItr;
 
-		protected TurnASI(int spkID) {
+		protected TurnPhraseIterator(int spkID) {
 			this.spkID = spkID;
 			rowItr = turns.iterator();
 		}
@@ -39,10 +39,10 @@ public class TurnProject extends Project {
 		}
 
 		@Override
-		public AnchorSandwich next() {
+		public Phrase next() {
 			Turn cTurn = rowItr.next();
 			// TODO skip empty?
-			return new AnchorSandwich(cTurn.start, cTurn.end, cTurn.elts.get(spkID));
+			return new Phrase(cTurn.start, cTurn.end, cTurn.elts.get(spkID));
 		}
 	}
 

@@ -47,7 +47,7 @@ public abstract class Project {
 
 	public abstract List<Word> getWords(int speaker);
 
-	public abstract Iterator<AnchorSandwich> sandwichIterator(int speaker);
+	public abstract Iterator<Phrase> phraseIterator(int speaker);
 
 	public LinearBridge linearBridge() {
 		return new LinearBridge(this);
@@ -138,7 +138,11 @@ public abstract class Project {
 	}
 
 
-	protected void align(AutoAligner aligner, Anchor start, Anchor end, List<Word> words)
+	protected static void align(
+			AutoAligner aligner,
+			Anchor start,
+			Anchor end,
+			List<Word> words)
 			throws IOException, InterruptedException
 	{
 		if (words.isEmpty()) {
@@ -151,18 +155,18 @@ public abstract class Project {
 		int fFrame = end   == null? frameCount: end.getFrame()-1;  // see explanation below.
 
 		/* Why did we subtract 1 frame from the final anchor's time?
-		Assume that we have 2 contiguous anchor sandwiches. The same anchor
-		serves as the FINAL anchor in the first sandwich, and as the INITIAL
-		anchor in the second sandwich.
+		Assume that we have 2 contiguous phrases. The same anchor
+		serves as the FINAL anchor in the first phrase, and as the INITIAL
+		anchor in the second phrase.
 		Conceptually, anchors are like points in time, but we work with frames.
 		So, anchors technically cover an entire frame. Thus, to avoid that two
-		contiguous AnchorSandwiches overlap on 1 frame (i.e. that of the anchor
+		contiguous phrases overlap on 1 frame (i.e. that of the anchor
 		they have in common), we subtract 1 frame from the final anchor. */
 
 		if (iFrame >= frameCount) {
 			throw new IllegalArgumentException(String.format(
 					"Initial frame (%d) beyond frame count (%d)! " +
-							"(in anchor sandwich: %s)",
+							"(in phrase: %s)",
 					iFrame, frameCount, words));
 		}
 
@@ -176,7 +180,7 @@ public abstract class Project {
 			// initial frame after final frame
 			throw new IllegalArgumentException(String.format(
 					"Initial frame (%d, %s) after final frame (%d, %s)! " +
-							"(in anchor sandwich: %s)",
+							"(in phrase: %s)",
 					iFrame, start, fFrame, end, words));
 		} else if (iFrame > fFrame) {
 			// iFrame may legally be ahead of fFrame by 1 at most if the anchors
@@ -184,7 +188,7 @@ public abstract class Project {
 			// final frame, see above)
 			System.err.println(String.format("WARNING: skipping anchors too " +
 							"close together: frame %d (initial) vs %d (final) " +
-							"(in anchor sandwich: %s)",
+							"(in phrase: %s)",
 					iFrame, fFrame, words));
 			return;
 		}
@@ -220,17 +224,17 @@ public abstract class Project {
 		}
 
 		for (int i = 0; i < speakerCount(); i++) {
-			Iterator<AnchorSandwich> itr1 = sandwichIterator(i);
-			Iterator<AnchorSandwich> itr2 = p.sandwichIterator(i);
+			Iterator<Phrase> itr1 = phraseIterator(i);
+			Iterator<Phrase> itr2 = p.phraseIterator(i);
 
 			while (itr1.hasNext()) {
 				if (!itr2.hasNext()) {
 					throw new IllegalArgumentException("counterpart speaker "
-							+ i + " ran out of anchor sandwiches");
+							+ i + " ran out of phrases");
 				}
 
-				AnchorSandwich as1 = itr1.next();
-				AnchorSandwich as2 = itr2.next();
+				Phrase as1 = itr1.next();
+				Phrase as2 = itr2.next();
 
 				diffs.add(as2.getInitialAnchor().getFrame() - as1.getFinalAnchor().getFrame());
 				diffs.add(as2.getFinalAnchor().getFrame() - as1.getFinalAnchor().getFrame());
@@ -238,7 +242,7 @@ public abstract class Project {
 
 			if (itr2.hasNext()) {
 				throw new IllegalArgumentException("counterpart speaker "
-						+ i + " has more anchor sandwiches than me");
+						+ i + " has more phrases than me");
 			}
 		}
 

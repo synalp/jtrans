@@ -1,7 +1,7 @@
 package fr.loria.synalp.jtrans.markup.out;
 
 import fr.loria.synalp.jtrans.elements.*;
-import fr.loria.synalp.jtrans.project.AnchorSandwich;
+import fr.loria.synalp.jtrans.project.Phrase;
 import fr.loria.synalp.jtrans.project.Project;
 
 import java.io.*;
@@ -38,14 +38,14 @@ class TextGridSaverHelper {
 			int wordCount = 0;
 			int phoneCount = 0;
 
-			Iterator<AnchorSandwich> itr = p.sandwichIterator(i);
+			Iterator<Phrase> itr = p.phraseIterator(i);
 			while (itr.hasNext()) {
-				AnchorSandwich sandwich = itr.next();
+				Phrase phrase = itr.next();
 
 				// frame onto which to tack 0-length elements
-				int lastFrame = sandwich.getInitialAnchor().getFrame();
+				int lastFrame = phrase.getInitialAnchor().getFrame();
 
-				for (Element e: sandwich) {
+				for (Element e: phrase) {
 					Word word = e instanceof Word ? (Word) e : null;
 					Comment comment = e instanceof Comment ? (Comment) e : null;
 

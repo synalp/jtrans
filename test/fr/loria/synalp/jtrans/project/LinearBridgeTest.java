@@ -11,12 +11,12 @@ import static java.util.Arrays.asList;
 
 public class LinearBridgeTest {
 
-	private AnchorSandwich AS(float start, float end, String... words) {
+	private Phrase phr(float start, float end, String... words) {
 		List<Element> wordList = new ArrayList<>();
 		for (String w: words) {
 			wordList.add(new Word(w));
 		}
-		return new AnchorSandwich(new Anchor(start), new Anchor(end), wordList);
+		return new Phrase(new Anchor(start), new Anchor(end), wordList);
 	}
 
 
@@ -31,9 +31,9 @@ public class LinearBridgeTest {
 	public void testEmptyTracks() {
 		TrackProject p = new TrackProject();
 
-		p.addTrack("A", new ArrayList<AnchorSandwich>());
-		p.addTrack("B", new ArrayList<AnchorSandwich>());
-		p.addTrack("C", new ArrayList<AnchorSandwich>());
+		p.addTrack("A", new ArrayList<Phrase>());
+		p.addTrack("B", new ArrayList<Phrase>());
+		p.addTrack("C", new ArrayList<Phrase>());
 
 		LinearBridge bridge = new LinearBridge(p);
 		assertFalse(bridge.hasNext());
@@ -43,10 +43,10 @@ public class LinearBridgeTest {
 	@Test
 	public void testWellFormed() {
 		TrackProject p = new TrackProject();
-		p.addTrack("A", asList(AS(5, 10, "abc")));
-		p.addTrack("B", asList(AS(10, 15, "def")));
+		p.addTrack("A", asList(phr(5, 10, "abc")));
+		p.addTrack("B", asList(phr(10, 15, "def")));
 		LinearBridge bridge = new LinearBridge(p);
-		AnchorSandwich[] sl;
+		Phrase[] sl;
 
 		assertTrue(bridge.hasNext());
 		sl = bridge.next();
@@ -67,10 +67,10 @@ public class LinearBridgeTest {
 	@Test
 	public void testSimultaneous() {
 		TrackProject p = new TrackProject();
-		p.addTrack("A", asList(AS(5, 10, "abc")));
-		p.addTrack("B", asList(AS(5, 15, "def")));
+		p.addTrack("A", asList(phr(5, 10, "abc")));
+		p.addTrack("B", asList(phr(5, 15, "def")));
 		LinearBridge bridge = new LinearBridge(p);
-		AnchorSandwich[] sl;
+		Phrase[] sl;
 
 		assertTrue(bridge.hasNext());
 		sl = bridge.next();
@@ -81,7 +81,7 @@ public class LinearBridgeTest {
 	}
 
 
-	private static boolean nullOrEmpty(AnchorSandwich s) {
+	private static boolean nullOrEmpty(Phrase s) {
 		return s == null || s.isEmpty();
 	}
 
@@ -90,20 +90,20 @@ public class LinearBridgeTest {
 		TrackProject p = new TrackProject();
 
 		p.addTrack("A", asList(
-				AS(0, 1, "abc"),
+				phr(0, 1, "abc"),
 				// B says "def" here
-				AS(2, 3, "ghi", "jkl", "mno")
+				phr(2, 3, "ghi", "jkl", "mno")
 		));
 
 		p.addTrack("B", asList(
 				// A says "abc" here
-				AS(1, 2, "def"),
-				AS(2, 3, "pqr", "stu"),
-				AS(3, 4, "vwx")
+				phr(1, 2, "def"),
+				phr(2, 3, "pqr", "stu"),
+				phr(3, 4, "vwx")
 		));
 
 		LinearBridge bridge = new LinearBridge(p);
-		AnchorSandwich[] sl;
+		Phrase[] sl;
 
 		assertTrue(bridge.hasNext());
 
@@ -129,8 +129,8 @@ public class LinearBridgeTest {
 
 	@Test
 	public void testHasNext() {
-		List<AnchorSandwich> trackA = asList(AS(5, 10, "abc"));
-		List<AnchorSandwich> trackB = new ArrayList<>();
+		List<Phrase> trackA = asList(phr(5, 10, "abc"));
+		List<Phrase> trackB = new ArrayList<>();
 
 		{
 			TrackProject p = new TrackProject();
@@ -156,12 +156,12 @@ public class LinearBridgeTest {
 
 
 	@Test
-	public void testEmptySandwiches() {
+	public void testEmptyPhrases() {
 		TrackProject p = new TrackProject();
-		p.addTrack("A", asList(AS(5, 10, "abc"), AS(15, 20, "def")));
-		p.addTrack("B", asList(AS(10, 12, "ghi")));
+		p.addTrack("A", asList(phr(5, 10, "abc"), phr(15, 20, "def")));
+		p.addTrack("B", asList(phr(10, 12, "ghi")));
 		LinearBridge bridge = new LinearBridge(p);
-		AnchorSandwich[] sl;
+		Phrase[] sl;
 
 		assertTrue(bridge.hasNext());
 		sl = bridge.next();

@@ -7,15 +7,18 @@ import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AnchorSandwich
+/**
+ * Piece of text sandwiched between two anchors.
+ */
+public class Phrase
 		extends AbstractList<Element>
-		implements Comparable<AnchorSandwich>
+		implements Comparable<Phrase>
 {
 	private final List<Element> elements;
 	private final Anchor initialAnchor;
 	private final Anchor finalAnchor;
 
-	public AnchorSandwich(Anchor initialAnchor, Anchor finalAnchor, List<Element> elements) {
+	public Phrase(Anchor initialAnchor, Anchor finalAnchor, List<Element> elements) {
 		this.elements = elements;
 		this.initialAnchor = initialAnchor;
 		this.finalAnchor = finalAnchor;
@@ -95,11 +98,11 @@ public class AnchorSandwich
 
 	@Override
 	public boolean equals(Object o) {
-		if (!(o instanceof AnchorSandwich)) {
+		if (!(o instanceof Phrase)) {
 			return false;
 		}
 
-		AnchorSandwich as = (AnchorSandwich)o;
+		Phrase as = (Phrase)o;
 
 		return as.initialAnchor.equals(initialAnchor) &&
 				as.finalAnchor.equals(finalAnchor) &&
@@ -108,7 +111,7 @@ public class AnchorSandwich
 
 
 	@Override
-	public int compareTo(AnchorSandwich o) {
+	public int compareTo(Phrase o) {
 		Anchor myIA = getInitialAnchor();
 		Anchor theirIA = o.getInitialAnchor();
 

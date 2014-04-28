@@ -1,7 +1,7 @@
 package fr.loria.synalp.jtrans.gui.trackview;
 
 import fr.loria.synalp.jtrans.elements.Element;
-import fr.loria.synalp.jtrans.project.AnchorSandwich;
+import fr.loria.synalp.jtrans.project.Phrase;
 import fr.loria.synalp.jtrans.project.LinearBridge;
 import fr.loria.synalp.jtrans.project.TrackProject;
 import fr.loria.synalp.jtrans.utils.spantable.Span;
@@ -31,14 +31,14 @@ public class TrackModel extends ProjectModel<TrackProject> {
 				spanModel.addSpan(new Span(lastRow, spkID, rowSpan, 1));
 		}
 
-		int ontoNextCell(int currentRow, AnchorSandwich sandwich) {
+		int ontoNextCell(int currentRow, Phrase phrase) {
 			if (cells == null)
 				return 0;
 
-			cells[currentRow] = sandwich.getInitialAnchor();
+			cells[currentRow] = phrase.getInitialAnchor();
 
-			if (!sandwich.isEmpty()) {
-				cells[currentRow+1] = new TextCell(spkID, sandwich);
+			if (!phrase.isEmpty()) {
+				cells[currentRow+1] = new TextCell(spkID, phrase);
 				lastCellWasText = true;
 				lastRow = currentRow + 1;
 				return 2;
@@ -94,23 +94,23 @@ public class TrackModel extends ProjectModel<TrackProject> {
 
 		while (lb.hasNext()) {
 			int maxDelta = 0;
-			AnchorSandwich[] sandwiches = lb.next();
-			assert sandwiches.length == project.speakerCount();
+			Phrase[] phrases = lb.next();
+			assert phrases.length == project.speakerCount();
 
 			for (int i = 0; i < project.speakerCount(); i++) {
-				if (sandwiches[i] == null) {
+				if (phrases[i] == null) {
 					continue;
 				}
 
 				TrackColumn col = (TrackColumn)columns.get(i);
 
-				for (Element el: sandwiches[i]) {
+				for (Element el: phrases[i]) {
 					// row+1 because a row must be left for the anchor
 					col.elementRowMap.put(el, row+1);
 				}
 
 				col.addRowSpan(row);
-				int d = col.ontoNextCell(row, sandwiches[i]);
+				int d = col.ontoNextCell(row, phrases[i]);
 				maxDelta = Math.max(d, maxDelta);
 			}
 			row += maxDelta;
