@@ -157,26 +157,6 @@ public class TurnProject extends Project {
 
 
 	/**
-	 * Clears all manual timing information in the project, then aligns all
-	 * turns.
-	 */
-	public void alignWithoutTimes(AutoAligner aligner)
-			throws IOException, InterruptedException
-	{
-		// Clear existing alignment
-		clearAlignment();
-
-		// Clear anchor times
-		for (Turn turn: turns) {
-			turn.start = null;
-			turn.end = null;
-		}
-
-		alignTurnChain(aligner, turns, ALIGN_OVERLAPS);
-	}
-
-
-	/**
 	 * Aligns a chain of turns lacking timing information.
 	 * <p/>
 	 * Time boundaries for the alignment are defined by the initial anchor in
@@ -306,14 +286,31 @@ public class TurnProject extends Project {
 	}
 
 
-	public void deduceAnchors() {
+	public void clearAnchorTimes() {
+		for (Turn turn: turns) {
+			turn.start = null;
+			turn.end = null;
+		}
+	}
+
+
+	/**
+	 * Infer anchor timing from timing extrema in each aligned turn.
+	 * @return number of inferred anchors
+	 */
+	public int inferAnchors() {
+		int inferred = 0;
+
 		for (Turn t: turns) {
 			float[] minMax = t.getMinMax();
 			if (null != minMax) {
 				t.start = new Anchor(minMax[0]);
 				t.end   = new Anchor(minMax[1]);
+				inferred++;
 			}
 		}
+
+		return inferred;
 	}
 
 }

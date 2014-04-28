@@ -419,11 +419,6 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		 */
 	}
 
-	public void clearAlign() {
-		project.clearAlignment();
-		setProject(project); // force refresh
-	}
-
 	private void getRecoResult(SpeechReco asr) {
 		List<String> lmots = getRecoResultOld(asr);
 		//    	alignement.merge(asr.fullalign,0);
@@ -604,7 +599,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		return true;
 	}
 
-	public void alignAll(final boolean interleaved) {
+	public void alignAll() {
 		if (project.audioFile == null) {
 			JOptionPane.showMessageDialog(
 					jf,
@@ -613,11 +608,6 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 					"No audio file",
 					JOptionPane.ERROR_MESSAGE);
 			return;
-		}
-
-		if (interleaved && !(project instanceof TurnProject)) {
-			errorMessage("Only turn-based projects may be aligned " +
-					"without anchor times.", null);
 		}
 
 		new Thread() {
@@ -633,11 +623,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 				}
 
 				try {
-					if (interleaved) {
-						((TurnProject)project).alignWithoutTimes(aligner);
-					} else {
-						project.align(aligner);
-					}
+					project.align(aligner);
 				} catch (Exception ex) {
 					errorMessage("An error occured during the alignment!", ex);
 				}

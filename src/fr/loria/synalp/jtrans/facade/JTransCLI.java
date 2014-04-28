@@ -372,7 +372,7 @@ public class JTransCLI {
 				System.err.println("anchordiff: " + name);
 			}
 
-			project.deduceAnchors();
+			project.inferAnchors();
 			List<Integer> diffs = reference.anchorFrameDiffs(project);
 
 			int absDiffSum = 0;
@@ -442,6 +442,7 @@ public class JTransCLI {
 			forcedPath = refAl.getConcatenatedPath();
 			refAl.printScores(); // KLUDGE!!! learn models (and, incidentally, compute likelihoods) - needed for kludgeReferenceScorer
 			project.clearAlignment();
+			((TurnProject) project).clearAnchorTimes();
 		} else {
 			forcedPath = null;
 		}
@@ -472,8 +473,6 @@ public class JTransCLI {
 			if (null != forcedPath) {
 				System.out.println("WARNING: Aligning with forced reference path!");
 				aligner.align(forcedPath, 0, aligner.getFrameCount() - 1);
-			} else if (cli.clearTimes) {
-				((TurnProject)project).alignWithoutTimes(aligner);
 			} else {
 				project.align(aligner);
 			}
@@ -485,7 +484,7 @@ public class JTransCLI {
 
 		if (cli.runAnchorDiffTest) {
 			assert reference != null;
-			((TurnProject)project).deduceAnchors();
+			((TurnProject)project).inferAnchors();
 			List<Integer> diffs = reference.anchorFrameDiffs(project);
 			printAnchorDiffStats(diffs);
 		}
