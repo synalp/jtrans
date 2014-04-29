@@ -119,6 +119,15 @@ public class TurnProject extends Project {
 				}
 			}
 		}
+
+		public boolean isEmpty() {
+			for (List<Element> elList: elts) {
+				if (!elList.isEmpty()) {
+					return false;
+				}
+			}
+			return true;
+		}
 	}
 
 

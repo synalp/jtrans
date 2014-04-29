@@ -3,7 +3,6 @@ package fr.loria.synalp.jtrans.markup.in;
 import fr.loria.synalp.jtrans.elements.Comment;
 import fr.loria.synalp.jtrans.project.Anchor;
 import fr.loria.synalp.jtrans.project.TurnProject;
-import fr.loria.synalp.jtrans.project.Project;
 import org.w3c.dom.*;
 import org.w3c.dom.Element;
 import org.xml.sax.*;
@@ -110,12 +109,9 @@ public class TRSLoader implements MarkupLoader {
 
 				// Speech text
 				if (name.equals("#text")) {
-					String text = RawTextLoader.normalizeText(child.getTextContent().trim());
-					if (!text.isEmpty()) {
-						pTurn.addAll(spkID, RawTextLoader.parseString(
-								text,
-								RawTextLoader.DEFAULT_PATTERNS));
-					}
+					pTurn.addAll(spkID, RawTextLoader.parseString(
+							RawTextLoader.normalizeText(child.getTextContent().trim()),
+							RawTextLoader.DEFAULT_PATTERNS));
 				}
 
 				// Anchor
@@ -151,29 +147,17 @@ public class TRSLoader implements MarkupLoader {
 					spkID = turnTracks.get(nb - 1);
 				}
 
-				else if (name.equals("Comment")) {
-					pTurn.add(spkID, new Comment(
-							((Element) child).getAttribute("desc"),
-							Comment.Type.FREEFORM));
-				}
-
-				else if (name.equals("Event")) {
-					pTurn.add(spkID, new Comment(
-							((Element) child).getAttribute("desc"),
-							Comment.Type.NOISE));
-				}
-
-				// Ignore unknown tag
 				else {
-					System.out.println("TRS WARNING: Ignoring inknown tag " + name);
+					fr.loria.synalp.jtrans.elements.Element el = transformNode(child);
+					if (null != el) {
+						pTurn.add(spkID, el);
+					}
 				}
 
 				// Onto next Turn child
 				child = child.getNextSibling();
 			}
 
-//			for (Track t: uniqueTurnTracks)
-//				addUniqueAnchor(t, endTime);
 			pTurn.end = new Anchor(endTime);
 		}
 
@@ -183,6 +167,27 @@ public class TRSLoader implements MarkupLoader {
 //		}
 
 		return project;
+	}
+
+
+	public static fr.loria.synalp.jtrans.elements.Element transformNode(Node n) {
+		String name = n.getNodeName();
+
+		switch (name) {
+			case "Comment":
+				return new Comment(
+						((Element) n).getAttribute("desc"),
+						Comment.Type.FREEFORM);
+			case "Event":
+				return new Comment(
+						((Element) n).getAttribute("desc"),
+						Comment.Type.NOISE);
+			default:
+				System.out.println("TRS WARNING: Ignoring inknown tag " + name);
+				break;
+		}
+
+		return null;
 	}
 
 
