@@ -14,9 +14,9 @@ import java.net.*;
 import java.nio.charset.Charset;
 
 public class FileUtils {
-	public static BufferedReader openFileUTF(String nom) throws UnsupportedEncodingException, FileNotFoundException {
-		FileInputStream fis = new FileInputStream(nom);
-		return new BufferedReader(new InputStreamReader(fis, "UTF-8"));
+	/** @deprecated use getUTF8Reader instead */
+	public static BufferedReader openFileUTF(String nom) throws FileNotFoundException {
+		return getUTF8Reader(new File(nom));
 	}
 
 	public static BufferedReader openFileISO(String nom) throws UnsupportedEncodingException, FileNotFoundException {
@@ -24,8 +24,15 @@ public class FileUtils {
 		return new BufferedReader(new InputStreamReader(fis, "ISO-8859-1"));
 	}
 
+	/** @deprecated use getUTF8Writer instead */
 	public static PrintWriter writeFileUTF(String nom) throws FileNotFoundException {
 		return new PrintWriter(getUTF8Writer(new File(nom)));
+	}
+
+	public static BufferedReader getUTF8Reader(File f) throws FileNotFoundException {
+		return new BufferedReader(new InputStreamReader(
+				new FileInputStream(f),
+				Charset.forName("UTF-8").newDecoder()));
 	}
 
 	public static Writer getUTF8Writer(File f) throws FileNotFoundException {
