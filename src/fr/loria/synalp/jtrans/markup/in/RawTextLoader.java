@@ -28,15 +28,18 @@ public class RawTextLoader implements MarkupLoader {
 	}
 
 
+	public static final Pattern ANONYMOUS_WORD_PATTERN =
+			Pattern.compile("\\*([^\\*\\s]+)\\*");
+
+
 	public static final Map<Comment.Type, String> DEFAULT_PATTERNS =
 			new HashMap<Comment.Type, String>()
 	{{
 		put(Comment.Type.FREEFORM,     "(\\{[^\\}]*\\}|\\[[^\\]]*\\]|\\+)");
-		put(Comment.Type.NOISE,        "\\*+");
+		put(Comment.Type.NOISE,        "XXX");
 		put(Comment.Type.OVERLAP_START_MARK, "<");
 		put(Comment.Type.OVERLAP_END_MARK,   ">");
 		put(Comment.Type.PUNCTUATION,  "(\\?|\\:|\\;|\\,|\\.|\\!)");
-		put(Comment.Type.BEEP,         "\\*[^\\*\\s]+\\*");
 		put(Comment.Type.SPEAKER_MARK, "(^|\\n)(\\s)*L\\d+\\s");
 	}};
 
@@ -120,7 +123,17 @@ public class RawTextLoader implements MarkupLoader {
 	private static List<Word> parseWords(String text) {
 		List<Word> list = new ArrayList<>();
 		for (String w: text.trim().split("\\s+")) {
-			list.add(new Word(w));
+			Word word;
+
+			Matcher m = ANONYMOUS_WORD_PATTERN.matcher(w);
+			if (m.matches()) {
+				word = new Word(m.group(1));
+				word.setAnonymize(true);
+			} else {
+				word = new Word(w);
+			}
+
+			list.add(word);
 		}
 		return list;
 	}

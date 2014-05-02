@@ -31,6 +31,18 @@ public class CellPane extends JTextPane {
 				addAttribute(StyleConstants.Underline, true);
 			}};
 
+	private static final AttributeSet ALIGNED_ANONYMOUS_STYLE =
+			new SimpleAttributeSet(ALIGNED_STYLE) {{
+				addAttribute(StyleConstants.StrikeThrough, true);
+				addAttribute(StyleConstants.Bold, true);
+			}};
+
+	private static final AttributeSet UNALIGNED_ANONYMOUS_STYLE =
+			new SimpleAttributeSet(UNALIGNED_STYLE) {{
+				addAttribute(StyleConstants.StrikeThrough, true);
+				addAttribute(StyleConstants.Bold, true);
+			}};
+
 	private static final AttributeSet HIGHLIGHTED_STYLE =
 			new SimpleAttributeSet() {{
 				addAttribute(StyleConstants.Background, Color.WHITE);
@@ -56,7 +68,6 @@ public class CellPane extends JTextPane {
 			put(Comment.Type.FREEFORM,      Color.YELLOW);
 			put(Comment.Type.NOISE,         Color.CYAN);
 			put(Comment.Type.PUNCTUATION,   Color.ORANGE);
-			put(Comment.Type.BEEP,          Color.RED);
 			put(Comment.Type.OVERLAP_START_MARK, Color.PINK);
 			put(Comment.Type.OVERLAP_END_MARK,   Color.PINK);
 			put(Comment.Type.SPEAKER_MARK,  Color.GREEN.brighter());
@@ -100,9 +111,12 @@ public class CellPane extends JTextPane {
 		AttributeSet style = null;
 
 		if (el instanceof Word) {
-			style = ((Word) el).isAligned() ?
-					ALIGNED_STYLE : UNALIGNED_STYLE;
-
+			Word w = (Word)el;
+			if (w.shouldBeAnonymized()) {
+				style = w.isAligned()? ALIGNED_ANONYMOUS_STYLE: UNALIGNED_ANONYMOUS_STYLE;
+			} else {
+				style = w.isAligned()? ALIGNED_STYLE: UNALIGNED_STYLE;
+			}
 		} else if (el instanceof Comment) {
 			style = styleCache.get(((Comment) el).getType());
 			if (style == null) {

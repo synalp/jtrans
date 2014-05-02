@@ -10,7 +10,6 @@ public class Comment implements Element {
 	public static enum Type {
 		FREEFORM,
 		NOISE,
-		BEEP,
 		PUNCTUATION,
 		OVERLAP_START_MARK,
 		OVERLAP_END_MARK,
