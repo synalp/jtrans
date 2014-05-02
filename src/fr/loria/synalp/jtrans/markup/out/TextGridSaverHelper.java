@@ -10,25 +10,33 @@ import java.util.Iterator;
 import static fr.loria.synalp.jtrans.utils.FileUtils.getUTF8Writer;
 import static fr.loria.synalp.jtrans.utils.TimeConverter.frame2sec;
 
-class TextGridSaverHelper {
+public class TextGridSaverHelper {
 
-	public static void savePraat(Project p, File f, boolean withWords, boolean withPhons)
+	/**
+	 * If true, anonymized words will be replaced with "*ANON*" and their
+	 * phones will not be shown.
+	 */
+	public static boolean censorAnonWords = true;
+
+
+	protected TextGridSaverHelper() {
+		// Don't let anyone but subclasses instantiate
+	}
+
+	public static void savePraat(
+			Project p,
+			File f,
+			boolean withWords,
+			boolean withPhons)
 			throws IOException
 	{
 		Writer w = getUTF8Writer(f);
 
 		final int frameCount = (int) p.audioSourceTotalFrames;
 
-		w.append("File type = \"ooTextFile\"")
-				.append("\nObject class = \"TextGrid\"")
-				.append("\n")
-				.append("\nxmin = 0")
-				.append("\nxmax = ")
-				.append(Float.toString(frame2sec(frameCount)))
-				.append("\ntiers? <exists>")
-				.append("\nsize = ")
-				.append(Integer.toString(p.speakerCount() * ((withWords?1:0) + (withPhons?1:0))))
-				.append("\nitem []:");
+		praatFileHeader(w,
+				frameCount,
+				p.speakerCount() * ((withWords?1:0) + (withPhons?1:0)));
 
 		int id = 1;
 		for (int i = 0; i < p.speakerCount(); i++) {
@@ -55,22 +63,26 @@ class TextGridSaverHelper {
 					Comment comment = e instanceof Comment ? (Comment) e : null;
 
 					if (word != null && word.isAligned()) {
+						boolean censored = censorAnonWords && word.shouldBeAnonymized();
+
 						praatInterval(
 								wordSB,
 								wordCount + 1,
 								word.getSegment().getStartFrame(),
 								word.getSegment().getEndFrame(),
-								word.toString());
+								censored? "*ANON*": word.toString());
 						wordCount++;
 
-						for (Word.Phone phone : word.getPhones()) {
-							praatInterval(
-									phoneSB,
-									phoneCount + 1,
-									phone.getSegment().getStartFrame(),
-									phone.getSegment().getEndFrame(),
-									phone.toString());
-							phoneCount++;
+						if (!censored) {
+							for (Word.Phone phone : word.getPhones()) {
+								praatInterval(
+										phoneSB,
+										phoneCount + 1,
+										phone.getSegment().getStartFrame(),
+										phone.getSegment().getEndFrame(),
+										phone.toString());
+								phoneCount++;
+							}
 						}
 
 						lastFrame = word.getSegment().getEndFrame();
@@ -101,6 +113,22 @@ class TextGridSaverHelper {
 	}
 
 
+	public static void praatFileHeader(Appendable w, int frameCount, int tierCount)
+		throws IOException
+	{
+		w.append("File type = \"ooTextFile\"")
+				.append("\nObject class = \"TextGrid\"")
+				.append("\n")
+				.append("\nxmin = 0")
+				.append("\nxmax = ")
+				.append(Float.toString(frame2sec(frameCount)))
+				.append("\ntiers? <exists>")
+				.append("\nsize = ")
+				.append(Integer.toString(tierCount))
+				.append("\nitem []:");
+	}
+
+
 	/**
 	 * Appends a Praat tier header.
 	 * @param w Append text to this writer
@@ -108,7 +136,7 @@ class TextGridSaverHelper {
 	 * @param name Tier name
 	 * @param intervalCount Number of intervals in the tier
 	 */
-	private static void praatTierHeader(
+	public static void praatTierHeader(
 			Appendable w, int id, String name, int intervalCount, int frameCount)
 			throws IOException
 	{
@@ -129,7 +157,7 @@ class TextGridSaverHelper {
 	 * @param w Append text to this writer
 	 * @param id Interval ID (Interval numbering starts at 1 and is contiguous!)
 	 */
-	private static void praatInterval(
+	public static void praatInterval(
 			Appendable w, int id, int xminFrame, int xmaxFrame, String content)
 			throws IOException
 	{
