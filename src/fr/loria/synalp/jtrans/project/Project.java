@@ -118,10 +118,20 @@ public abstract class Project {
 		AutoAligner aa = alignerClass
 				.getConstructor(File.class, ProgressDisplay.class)
 				.newInstance(convertedAudioFile, progress);
+
 		if (computeLikelihoods) {
 			aa.setComputeLikelihoods(true);
 			aa.setScorers(speakerCount());
+
+			// Set word speakers. This is necessary for scoring a set of words
+			// belonging to various speakers with speaker-dependent Gaussians.
+			for (int i = 0; i < speakerCount(); i++) {
+				for (Word w: getWords(i)) {
+					w.setSpeaker(i);
+				}
+			}
 		}
+
 		return aa;
 	}
 
