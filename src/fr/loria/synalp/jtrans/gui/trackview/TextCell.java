@@ -1,6 +1,5 @@
 package fr.loria.synalp.jtrans.gui.trackview;
 
-import fr.loria.synalp.jtrans.elements.Anchor;
 import fr.loria.synalp.jtrans.elements.Element;
 
 import java.util.List;
@@ -11,18 +10,15 @@ import java.util.List;
  * Ready for use in a MultiTrackTableModel.
  */
 class TextCell {
-	final int track;
-	/** Anchor before the text */
-	final Anchor anchor;
+	final int spkID;
 	final String text;
 
 	final List<Element> elts;
 	final int[] elStart;
 	final int[] elEnd;
 
-	public TextCell(int t, Anchor a, List<Element> elList) {
-		track = t;
-		anchor = a;
+	public TextCell(int spkID, List<Element> elList) {
+		this.spkID = spkID;
 
 		elts = elList;
 		elStart = new int[elList.size()];

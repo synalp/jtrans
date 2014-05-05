@@ -11,7 +11,6 @@ import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import fr.loria.synalp.jtrans.facade.Track;
 import fr.loria.synalp.jtrans.gui.JTransGUI;
 import fr.loria.synalp.jtrans.utils.TimeConverter;
 
@@ -32,24 +31,24 @@ public class SpectroControl extends JPanel {
 	JLabel posdeb = new JLabel("0 sec");
 	JButton p1s = new JButton("+1sec");
 	JButton m1s = new JButton("-1sec");
-	JTransGUI aligneur;
-	private JComboBox<Track> trackChooser;
-	private Track currentTrack;
+	JTransGUI gui;
+	private JComboBox<String> chooser;
+	private int spkID;
 
 	public SpectroControl(JTransGUI main) {
-		aligneur=main;
+		gui = main;
 		initgui();
-		spectro.aligneur=aligneur;
+		spectro.aligneur= gui;
 	}
 
-	public void setTrack(Track t) {
-		currentTrack = t;
-		trackChooser.setSelectedItem(t);
+	public void setSpeaker(int spkID) {
+		this.spkID = spkID;
+		chooser.setSelectedIndex(spkID);
 		refreshWords();
 	}
 
 	public void refreshWords() {
-		words.setTrack(currentTrack);
+		words.setWords(gui.project.getWords(spkID));
 		words.setFirstFrame(TimeConverter.second2frame(startSeconds));
 		words.repaint();
 	}
@@ -64,15 +63,15 @@ public class SpectroControl extends JPanel {
 	//	}
 	//	
 	private void initgui() {
-		trackChooser = new JComboBox<Track>();
-		for (Track t: aligneur.project.tracks) {
-			trackChooser.addItem(t);
+		chooser = new JComboBox<>();
+		for (int i = 0; i < gui.project.speakerCount(); i++) {
+			chooser.addItem(gui.project.getSpeakerName(i));
 		}
 
-		trackChooser.addActionListener(new AbstractAction() {
+		chooser.addActionListener(new AbstractAction() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				setTrack((Track)trackChooser.getSelectedItem());
+				setSpeaker(chooser.getSelectedIndex());
 			}
 		});
 
@@ -84,7 +83,7 @@ public class SpectroControl extends JPanel {
 
 
 		Box b1 = Box.createHorizontalBox();
-		b1.add(trackChooser);
+		b1.add(chooser);
 		b1.add(Box.createHorizontalGlue());
 		b1.add(posdeb);
 		b1.add(p1s);
@@ -104,7 +103,7 @@ public class SpectroControl extends JPanel {
 			public void actionPerformed(ActionEvent e) {
 				float curs = Float.parseFloat(posdeb.getText());
 				curs+=1;
-				aligneur.setCurPosInSec(curs);
+				gui.setCurPosInSec(curs);
 			}
 		});
 		m1s.addActionListener(new ActionListener() {
@@ -112,7 +111,7 @@ public class SpectroControl extends JPanel {
 			public void actionPerformed(ActionEvent e) {
 				float curs = Float.parseFloat(posdeb.getText());
 				curs-=1;
-				aligneur.setCurPosInSec(curs);
+				gui.setCurPosInSec(curs);
 			}
 		});
 		refresh.addActionListener(new ActionListener() {

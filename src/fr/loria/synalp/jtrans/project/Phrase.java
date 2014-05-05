@@ -1,6 +1,5 @@
-package fr.loria.synalp.jtrans.facade;
+package fr.loria.synalp.jtrans.project;
 
-import fr.loria.synalp.jtrans.elements.Anchor;
 import fr.loria.synalp.jtrans.elements.Element;
 import fr.loria.synalp.jtrans.elements.Word;
 
@@ -8,43 +7,18 @@ import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AnchorSandwich
+/**
+ * Piece of text sandwiched between two anchors.
+ */
+public class Phrase
 		extends AbstractList<Element>
-		implements Comparable<AnchorSandwich>
+		implements Comparable<Phrase>
 {
 	private final List<Element> elements;
 	private final Anchor initialAnchor;
 	private final Anchor finalAnchor;
 
-	AnchorSandwich(List<Element> baseList) {
-		final int subListStart, subListEnd;
-
-		Element first = baseList.get(0);
-		if (first instanceof Anchor) {
-			initialAnchor = (Anchor)first;
-			subListStart = 1;
-		} else {
-			initialAnchor = null;
-			subListStart = 0;
-		}
-
-		Element last = baseList.get(baseList.size()-1);
-		if (last instanceof Anchor) {
-			finalAnchor = (Anchor)last;
-			subListEnd = baseList.size()-1;
-		} else {
-			finalAnchor = null;
-			subListEnd = baseList.size();
-		}
-
-		if (first == last && initialAnchor != null) {
-			elements = baseList.subList(0, 0);
-		} else {
-			elements = baseList.subList(subListStart, subListEnd);
-		}
-	}
-
-	AnchorSandwich(List<Element> elements, Anchor initialAnchor, Anchor finalAnchor) {
+	public Phrase(Anchor initialAnchor, Anchor finalAnchor, List<Element> elements) {
 		this.elements = elements;
 		this.initialAnchor = initialAnchor;
 		this.finalAnchor = finalAnchor;
@@ -63,19 +37,6 @@ public class AnchorSandwich
 
 		for (Element el: elements) {
 			if (el instanceof Word) {
-				words.add((Word)el);
-			}
-		}
-
-		return words;
-	}
-
-
-	public List<Word> getAlignedWords() {
-		List<Word> words = new ArrayList<Word>();
-
-		for (Element el: elements) {
-			if (el instanceof Word && ((Word) el).isAligned()) {
 				words.add((Word)el);
 			}
 		}
@@ -134,8 +95,23 @@ public class AnchorSandwich
 		return elements.size();
 	}
 
+
 	@Override
-	public int compareTo(AnchorSandwich o) {
+	public boolean equals(Object o) {
+		if (!(o instanceof Phrase)) {
+			return false;
+		}
+
+		Phrase as = (Phrase)o;
+
+		return as.initialAnchor.equals(initialAnchor) &&
+				as.finalAnchor.equals(finalAnchor) &&
+				super.equals(o);
+	}
+
+
+	@Override
+	public int compareTo(Phrase o) {
 		Anchor myIA = getInitialAnchor();
 		Anchor theirIA = o.getInitialAnchor();
 

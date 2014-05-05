@@ -1,36 +1,45 @@
 package fr.loria.synalp.jtrans.markup.out;
 
 import fr.loria.synalp.jtrans.elements.*;
-import fr.loria.synalp.jtrans.facade.Project;
-import fr.loria.synalp.jtrans.facade.Track;
+import fr.loria.synalp.jtrans.project.Phrase;
+import fr.loria.synalp.jtrans.project.Project;
 
 import java.io.*;
+import java.util.Iterator;
 
 import static fr.loria.synalp.jtrans.utils.FileUtils.getUTF8Writer;
 import static fr.loria.synalp.jtrans.utils.TimeConverter.frame2sec;
 
-class TextGridSaverHelper {
+public class TextGridSaverHelper {
 
-	public static void savePraat(Project p, File f, boolean withWords, boolean withPhons)
+	/**
+	 * If true, anonymized words will be replaced with "*ANON*" and their
+	 * phones will not be shown.
+	 */
+	public static boolean censorAnonWords = true;
+
+
+	protected TextGridSaverHelper() {
+		// Don't let anyone but subclasses instantiate
+	}
+
+	public static void savePraat(
+			Project p,
+			File f,
+			boolean withWords,
+			boolean withPhons)
 			throws IOException
 	{
 		Writer w = getUTF8Writer(f);
 
 		final int frameCount = (int) p.audioSourceTotalFrames;
 
-		w.append("File type = \"ooTextFile\"")
-				.append("\nObject class = \"TextGrid\"")
-				.append("\n")
-				.append("\nxmin = 0")
-				.append("\nxmax = ")
-				.append(Float.toString(frame2sec(frameCount)))
-				.append("\ntiers? <exists>")
-				.append("\nsize = ")
-				.append(Integer.toString(p.tracks.size() * ((withWords?1:0) + (withPhons?1:0))))
-				.append("\nitem []:");
+		praatFileHeader(w,
+				frameCount,
+				p.speakerCount() * ((withWords?1:0) + (withPhons?1:0)));
 
 		int id = 1;
-		for (Track t: p.tracks) {
+		for (int i = 0; i < p.speakerCount(); i++) {
 			StringBuilder wordSB = new StringBuilder();
 			StringBuilder phoneSB = new StringBuilder();
 
@@ -40,60 +49,83 @@ class TextGridSaverHelper {
 			// frame onto which to tack 0-length elements
 			int lastFrame = 0;
 
-			for (Element e: t.elts) {
-				Anchor  anchor  = e instanceof Anchor?  (Anchor)e:  null;
-				Word    word    = e instanceof Word?    (Word)e:    null;
-				Comment comment = e instanceof Comment? (Comment)e: null;
+			Iterator<Phrase> itr = p.phraseIterator(i);
+			while (itr.hasNext()) {
+				Phrase phrase = itr.next();
 
-				if (anchor != null && anchor.hasTime()) {
-					lastFrame = anchor.getFrame();
+				// frame onto which to tack 0-length elements
+				if (phrase.getInitialAnchor() != null) {
+					lastFrame = phrase.getInitialAnchor().getFrame();
 				}
 
-				else if (word != null && word.isAligned()) {
-					praatInterval(
-							wordSB,
-							wordCount + 1,
-							word.getSegment().getStartFrame(),
-							word.getSegment().getEndFrame(),
-							word.toString());
-					wordCount++;
+				for (Element e: phrase) {
+					Word word = e instanceof Word ? (Word) e : null;
+					Comment comment = e instanceof Comment ? (Comment) e : null;
 
-					for (Word.Phone phone : word.getPhones()) {
+					if (word != null && word.isAligned()) {
+						boolean censored = censorAnonWords && word.shouldBeAnonymized();
+
 						praatInterval(
-								phoneSB,
-								phoneCount + 1,
-								phone.getSegment().getStartFrame(),
-								phone.getSegment().getEndFrame(),
-								phone.toString());
-						phoneCount++;
+								wordSB,
+								wordCount + 1,
+								word.getSegment().getStartFrame(),
+								word.getSegment().getEndFrame(),
+								censored? "*ANON*": word.toString());
+						wordCount++;
+
+						if (!censored) {
+							for (Word.Phone phone : word.getPhones()) {
+								praatInterval(
+										phoneSB,
+										phoneCount + 1,
+										phone.getSegment().getStartFrame(),
+										phone.getSegment().getEndFrame(),
+										phone.toString());
+								phoneCount++;
+							}
+						}
+
+						lastFrame = word.getSegment().getEndFrame();
+					} else if (comment != null || word != null) {
+						praatInterval(
+								wordSB,
+								wordCount + 1,
+								lastFrame,
+								lastFrame,
+								e.toString());
+						wordCount++;
 					}
-
-					lastFrame = word.getSegment().getEndFrame();
-				}
-
-				else if (comment != null || word != null) {
-					praatInterval(
-							wordSB,
-							wordCount + 1,
-							lastFrame,
-							lastFrame,
-							e.toString());
-					wordCount++;
 				}
 			}
 
 			if (withWords) {
-				praatTierHeader(w, id++, t.speakerName + " words", wordCount, frameCount);
+				praatTierHeader(w, id++, p.getSpeakerName(i) + " words", wordCount, frameCount);
 				w.write(wordSB.toString());
 			}
 
 			if (withPhons) {
-				praatTierHeader(w, id++, t.speakerName + " phons", phoneCount, frameCount);
+				praatTierHeader(w, id++, p.getSpeakerName(i) + " phons", phoneCount, frameCount);
 				w.write(phoneSB.toString());
 			}
 		}
 
 		w.close();
+	}
+
+
+	public static void praatFileHeader(Appendable w, int frameCount, int tierCount)
+		throws IOException
+	{
+		w.append("File type = \"ooTextFile\"")
+				.append("\nObject class = \"TextGrid\"")
+				.append("\n")
+				.append("\nxmin = 0")
+				.append("\nxmax = ")
+				.append(Float.toString(frame2sec(frameCount)))
+				.append("\ntiers? <exists>")
+				.append("\nsize = ")
+				.append(Integer.toString(tierCount))
+				.append("\nitem []:");
 	}
 
 
@@ -104,7 +136,7 @@ class TextGridSaverHelper {
 	 * @param name Tier name
 	 * @param intervalCount Number of intervals in the tier
 	 */
-	private static void praatTierHeader(
+	public static void praatTierHeader(
 			Appendable w, int id, String name, int intervalCount, int frameCount)
 			throws IOException
 	{
@@ -125,7 +157,7 @@ class TextGridSaverHelper {
 	 * @param w Append text to this writer
 	 * @param id Interval ID (Interval numbering starts at 1 and is contiguous!)
 	 */
-	private static void praatInterval(
+	public static void praatInterval(
 			Appendable w, int id, int xminFrame, int xmaxFrame, String content)
 			throws IOException
 	{

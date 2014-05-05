@@ -53,7 +53,7 @@ var MAP_STRINGS = {
 
 	spectro: {
 		title: "Spectrogram",
-		description: "A graphical rendition of the sound around the currently selected word. The word timeline shows the aligned words in the selected track."
+		description: "A graphical rendition of the sound around the currently selected word. The word timeline shows the aligned words for the selected speaker."
 	},
 
 	visspk: {
@@ -67,7 +67,7 @@ var MAP_STRINGS = {
 	},
 
 	spkhdr: {
-		title: "Speaker track names",
+		title: "Speaker names",
 		description: "You may resize each column."
 	},
 }
@@ -197,23 +197,56 @@ level.</li>
 <h2>How to run JTrans</h2>
 
 <p>Run <tt>jtrans.jar</tt>. The first time you open JTrans, it will attempt to
-download and install the resources it needs to function properly. This is a 400
+download and install the resources it needs to function properly. This is a 55
 MB download.</p>
 
 
 <h2>Project structure</h2>
 
-<p>A JTrans project consists of <strong>parallel* speaker tracks</strong>, each
-of which containing <strong>text</strong>. The text is peppered with
-<strong>timing anchors</strong> to aid the alignment process**.</p>
+<h3>Speakers and anchors</h3>
 
-<p>* "Parallel" means that several speakers may speak simultaneously.</p>
+<p>A JTrans project consists of one or more <strong>speakers</strong>. Each
+speaker has their own speech <strong>text</strong> (which may occur
+simultaneously as other speakers). The text is peppered with <strong>timing
+anchors</strong> to aid the alignment process.</p>
 
-<p>** In "hectic" parts of a sound file, JTrans may have trouble aligning every
-word. Placing manual timing anchors tells JTrans where exactly a group of words
-starts and ends, and therefore enhances the precision with which each
-individual phoneme is aligned.</p>
+<p>Timing anchors are necessary, because, in "hectic" parts of a sound file,
+JTrans may have trouble aligning every word. Placing manual timing anchors
+tells JTrans where exactly a group of words starts and ends, and therefore
+enhances the precision with which each individual phoneme is aligned.</p>
 
+
+<h3>Turn-based vs. Track-based projects</h3>
+
+<p class="important">Please read this paragraph if you intend to align a
+recording without any timing information.</p>
+
+<p>Internally, JTrans distinguishes two types of projects:</p>
+
+<ul>
+
+	<li><strong>Turn-based</strong>: all speech occurs in turns. A turn has the
+	same start and end time for all speakers. If several speakers speak
+	simultaneously, all overlapped speech must occur in the same turn. (Such
+	projects typically originate from Transcriber or raw text.)</li>
+
+	<li><strong>Track-based</strong>: each speaker is assigned its own
+	independent track.  In a given track, speech timing is not affected by any
+	other tracks.  (Such projects typically originate from Praat.)</li>
+
+</ul>
+
+<p>The downside to turn-based projects is that overlapping speech is more
+loosely delimited than what is possible with track-based projects. However,
+<strong>turn-based projects may be aligned without any timing
+information</strong>, and missing anchor times can be deduced. This is
+<strong>not</strong> possible with track-based projects, which require
+complete timing information to be useful.</p>
+
+<p>Note: there is no functional difference between turn-based and
+track-based projects that contain one single speaker. If you have a
+single-speaker, track-based project and you need to align without timing info,
+you should convert the project to turn-based.</p>
 
 <h2>Workflow</h2>
 
@@ -297,10 +330,10 @@ be lost. Currently, JTrans may only <em>export</em> a project to Praat's format
 
 <h2>Main window</h2>
 
-<p>Each speaker is assigned a distinct <strong>speech track</strong>. Speech
-tracks are shown as parallel vertical bands in the main window.</p>
+<p>Speaker text is shown as parallel vertical bands in the main window (one
+band per speaker).</p>
 
-<p>Tracks contain text shown in cells arranged chronologically from
+<p>Text is shown in cells arranged chronologically from
 top to bottom. Each <strong>speech cell</strong> is delimited by two
 surrounding <strong>time anchors</strong>. Speech cells contain text; text can
 either be aligned (shown in blue) or unaligned (shown in red).</p>

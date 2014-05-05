@@ -4,6 +4,8 @@ import fr.loria.synalp.jtrans.gui.JTransGUI;
 import fr.loria.synalp.jtrans.markup.in.*;
 import fr.loria.synalp.jtrans.markup.out.MarkupSaver;
 import fr.loria.synalp.jtrans.markup.out.MarkupSaverPool;
+import fr.loria.synalp.jtrans.project.Project;
+import fr.loria.synalp.jtrans.project.TurnProject;
 import fr.loria.synalp.jtrans.utils.*;
 import fr.loria.synalp.jtrans.viterbi.StatePath;
 import joptsimple.*;
@@ -206,7 +208,7 @@ public class JTransCLI {
 		}
 
 		if (optset.has("ignore-overlaps")) {
-			Project.ALIGN_OVERLAPS = false;
+			TurnProject.ALIGN_OVERLAPS = false;
 			System.out.println("Will ignore overlaps.");
 		}
 
@@ -347,12 +349,12 @@ public class JTransCLI {
 	 * Metropolis-Hastings Refinement Iteration Hook for accounting anchor differences
 	 */
 	private class AnchorDiffRIH implements Runnable {
-		Project project;
-		Project reference;
+		TurnProject project;
+		TurnProject reference;
 		PrintWriter pw = null;
 		int iterations = 0;
 
-		public AnchorDiffRIH(Project p, Project r) {
+		public AnchorDiffRIH(TurnProject p, TurnProject r) {
 			this.project = p;
 			this.reference = r;
 		}
@@ -370,8 +372,7 @@ public class JTransCLI {
 				System.err.println("anchordiff: " + name);
 			}
 
-			project.clearAllAnchorTimes();
-			project.deduceTimes();
+			project.inferAnchors();
 			List<Integer> diffs = reference.anchorFrameDiffs(project);
 
 			int absDiffSum = 0;
@@ -437,13 +438,11 @@ public class JTransCLI {
 			System.out.println("Computing reference path...");
 			AutoAligner refAl = project.getAligner(
 					ViterbiAligner.class, progress, true); // KLUDGE!!! true is needed for kludgeReferenceScorer
-			project.alignInterleaved(refAl);
+			((TurnProject)project).align(refAl, false);
 			forcedPath = refAl.getConcatenatedPath();
 			refAl.printScores(); // KLUDGE!!! learn models (and, incidentally, compute likelihoods) - needed for kludgeReferenceScorer
 			project.clearAlignment();
-			//------------------------------------------------------------------
-			project.clearAllAnchorTimes();
-			System.out.println("Anchor times cleared.");
+			((TurnProject) project).clearAnchorTimes();
 		} else {
 			forcedPath = null;
 		}
@@ -464,7 +463,7 @@ public class JTransCLI {
 			assert aligner != null;
 			assert reference != null;
 			aligner.setRefinementIterationHook(
-					cli.new AnchorDiffRIH(project, reference));
+					cli.new AnchorDiffRIH((TurnProject)project, (TurnProject)reference));
 		}
 
 		if (cli.align) {
@@ -474,10 +473,8 @@ public class JTransCLI {
 			if (null != forcedPath) {
 				System.out.println("WARNING: Aligning with forced reference path!");
 				aligner.align(forcedPath, 0, aligner.getFrameCount() - 1);
-			} else if (cli.clearTimes || !Project.ALIGN_OVERLAPS) {
-				project.alignInterleaved(aligner);
 			} else {
-				project.align(aligner, true);
+				project.align(aligner);
 			}
 			System.out.println("Alignment done.");
 			if (cli.computeLikelihoods) {
@@ -487,7 +484,7 @@ public class JTransCLI {
 
 		if (cli.runAnchorDiffTest) {
 			assert reference != null;
-			project.deduceTimes();
+			((TurnProject)project).inferAnchors();
 			List<Integer> diffs = reference.anchorFrameDiffs(project);
 			printAnchorDiffStats(diffs);
 		}

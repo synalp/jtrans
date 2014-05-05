@@ -1,15 +1,14 @@
 package fr.loria.synalp.jtrans.gui.signalViewers.spectroPanel;
 
 import fr.loria.synalp.jtrans.elements.Word;
-import fr.loria.synalp.jtrans.facade.Track;
-
-import java.awt.*;
 
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
+import java.awt.*;
+import java.util.List;
 
 public class TimelineWords extends JPanel {
-	private Track track;
+	private List<Word> words;
 	private int firstFrame;
 	private float zoom=1f;
 	private FontMetrics metrics;
@@ -19,8 +18,8 @@ public class TimelineWords extends JPanel {
 		metrics = getFontMetrics(getFont());
 	}
 
-	public void setTrack(Track t) {
-		track = t;
+	public void setWords(List<Word> words) {
+		this.words = words;
 	}
 
 	public void setFirstFrame(int fr) {
@@ -58,7 +57,7 @@ public class TimelineWords extends JPanel {
 
 		super.paintComponent(g);
 
-		if (track == null) {
+		if (words == null) {
 			return;
 		}
 
@@ -67,7 +66,7 @@ public class TimelineWords extends JPanel {
 
 		final int lastFrame = firstFrame + (int)(w/zoom);
 
-		for (Word word: track.getWords()) {
+		for (Word word: words) {
 			if (!word.isAligned() ||
 					word.getSegment().getEndFrame() < firstFrame)
 			{

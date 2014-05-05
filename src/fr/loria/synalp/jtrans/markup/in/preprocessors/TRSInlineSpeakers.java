@@ -27,6 +27,16 @@ public class TRSInlineSpeakers extends TRSPreprocessor {
 	}
 
 
+	public static String[] speakerPattern(String line) {
+		Matcher m = INLINE_SPEAKER_PATTERN.matcher(line);
+		if (m.matches()) {
+			return new String[] { m.group(1).trim(), m.group(2).trim() };
+		} else {
+			return null;
+		}
+	}
+
+
 	public void preprocess(Document doc) throws ParsingException {
 		Set<String> speakers = new HashSet<String>();
 		String currentSpeaker = null;
@@ -68,9 +78,9 @@ public class TRSInlineSpeakers extends TRSPreprocessor {
 				if (text.isEmpty())
 					continue;
 
-				Matcher m = INLINE_SPEAKER_PATTERN.matcher(text);
-				if (m.matches()) {
-					String newSpeaker = m.group(1);
+				String[] sp = speakerPattern(text);
+				if (null != sp) {
+					String newSpeaker = sp[0];
 
 					if (!speakers.contains(newSpeaker)) {
 						speakers.add(newSpeaker);
@@ -101,7 +111,7 @@ public class TRSInlineSpeakers extends TRSPreprocessor {
 						// Consume sync time
 						lastSyncTime = null;
 
-						String remainder = m.group(2).trim();
+						String remainder = sp[1];
 						if (!remainder.isEmpty()) {
 							currentSyntheticTurn.appendChild(
 									doc.createTextNode(remainder));

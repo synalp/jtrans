@@ -1,9 +1,8 @@
 package fr.loria.synalp.jtrans.markup.in;
 
-import fr.loria.synalp.jtrans.elements.*;
 import fr.loria.synalp.jtrans.elements.Comment;
-import fr.loria.synalp.jtrans.facade.Project;
-import fr.loria.synalp.jtrans.facade.Track;
+import fr.loria.synalp.jtrans.project.Anchor;
+import fr.loria.synalp.jtrans.project.TurnProject;
 import org.w3c.dom.*;
 import org.w3c.dom.Element;
 import org.xml.sax.*;
@@ -38,21 +37,21 @@ public class TRSLoader implements MarkupLoader {
 	}
 
 
-	public Project parse(File file)
+	public TurnProject parse(File file)
 			throws ParsingException, IOException
 	{
 		return parse(parseXML(file));
 	}
 
 
-	public Project parse(Document doc) throws ParsingException {
-		Project project = new Project();
+	public TurnProject parse(Document doc) throws ParsingException {
+		TurnProject project = new TurnProject();
 
 		// Map of Transcriber's speaker IDs to JTrans tracks
-		Map<String, Track> trackIDMap = new HashMap<String, Track>();
+		Map<String, Integer> spkIDMap = new HashMap<>();
 
-		// Last sync times per track (to detect unordered sync times)
-		Map<Track, Float> lastSyncTimes = new HashMap<>();
+		// Last sync times (to detect unordered sync times)
+		float lastSyncTime = -1f;
 
 		// end time of last turn
 		float lastEnd = -1f;
@@ -75,9 +74,8 @@ public class TRSLoader implements MarkupLoader {
 			String trsID   = el.getAttribute("id");
 			String name    = el.getAttribute("name");
 
-			Track newTrack = new Track(name);
-			project.tracks.add(newTrack);
-			trackIDMap.put(trsID, newTrack);
+			int newSpkID = project.newSpeaker(name);
+			spkIDMap.put(trsID, newSpkID);
 		}
 
 		// Extract relevant information (speech text, Sync tags...) from Turn tags.
@@ -93,15 +91,14 @@ public class TRSLoader implements MarkupLoader {
 				continue;
 			}
 
-			List<Track> turnTracks = new ArrayList<Track>();
+			List<Integer> turnTracks = new ArrayList<>();
 			for (String turnSpeaker: speakerAttr.split(" "))
-				turnTracks.add(trackIDMap.get(turnSpeaker));
+				turnTracks.add(spkIDMap.get(turnSpeaker));
 
 			// Start with the first speaker in case the first "Who" tag is missing
-			Track currentTrack = turnTracks.get(0);
+			int spkID = turnTracks.get(0);
 
-			// The same speaker may be repeated in the speaker attribute
-			Set<Track> uniqueTurnTracks = new HashSet<Track>(turnTracks);
+			TurnProject.Turn pTurn = project.newTurn();
 
 			float endTime = Float.parseFloat(turn.getAttribute("endTime"));
 			if (endTime > lastEnd)
@@ -112,12 +109,9 @@ public class TRSLoader implements MarkupLoader {
 
 				// Speech text
 				if (name.equals("#text")) {
-					String text = RawTextLoader.normalizeText(child.getTextContent().trim());
-					if (!text.isEmpty()) {
-						currentTrack.elts.addAll(RawTextLoader.parseString(
-								text,
-								RawTextLoader.DEFAULT_PATTERNS));
-					}
+					pTurn.addAll(spkID, RawTextLoader.parseString(
+							RawTextLoader.normalizeText(child.getTextContent().trim()),
+							RawTextLoader.DEFAULT_PATTERNS));
 				}
 
 				// Anchor
@@ -130,57 +124,70 @@ public class TRSLoader implements MarkupLoader {
 								time, endTime));
 					}
 
-					for (Track t: uniqueTurnTracks) {
-						Float previousTime = lastSyncTimes.get(t);
-						if (null != previousTime && previousTime > time) {
-							throw new ParsingException(String.format(
-									"TRS error: Sync times in non-" +
-									"chronological order! (%f after %f)",
-									previousTime, time));
-						}
-
-						addUniqueAnchor(t, time);
-						lastSyncTimes.put(t, time);
+					if (lastSyncTime > time) {
+						throw new ParsingException(String.format(
+								"TRS error: Sync times in non-" +
+								"chronological order! (%f after %f)",
+								lastSyncTime, time));
 					}
+
+					if (null != pTurn.start) {
+						assert null == pTurn.end;
+						pTurn.end = new Anchor(time);
+						pTurn = project.newTurn();
+					}
+
+					pTurn.start = new Anchor(time);
 				}
 
 				// Change speakers in a multi-speaker turn
 				else if (name.equals("Who")) {
 					// Speaker numbering starts at 1 in the XML file
 					int nb = Integer.parseInt(((Element)child).getAttribute("nb"));
-					currentTrack = turnTracks.get(nb - 1);
+					spkID = turnTracks.get(nb - 1);
 				}
 
-				else if (name.equals("Comment")) {
-					currentTrack.elts.add(new Comment(
-							((Element)child).getAttribute("desc"),
-							Comment.Type.FREEFORM));
-				}
-
-				else if (name.equals("Event")) {
-					currentTrack.elts.add(new Comment(
-							((Element)child).getAttribute("desc"),
-							Comment.Type.NOISE));
-				}
-
-				// Ignore unknown tag
 				else {
-					System.out.println("TRS WARNING: Ignoring inknown tag " + name);
+					fr.loria.synalp.jtrans.elements.Element el = transformNode(child);
+					if (null != el) {
+						pTurn.add(spkID, el);
+					}
 				}
 
 				// Onto next Turn child
 				child = child.getNextSibling();
 			}
 
-			for (Track t: uniqueTurnTracks)
-				addUniqueAnchor(t, endTime);
+			pTurn.end = new Anchor(endTime);
 		}
 
-		for (int i = 0; i < project.tracks.size(); i++) {
-			project.tracks.get(i).setSpeakerOnWords(i);
-		}
+// TODO
+//		for (int i = 0; i < project.tracks.size(); i++) {
+//			project.tracks.get(i).setSpeakerOnWords(i);
+//		}
 
 		return project;
+	}
+
+
+	public static fr.loria.synalp.jtrans.elements.Element transformNode(Node n) {
+		String name = n.getNodeName();
+
+		switch (name) {
+			case "Comment":
+				return new Comment(
+						((Element) n).getAttribute("desc"),
+						Comment.Type.FREEFORM);
+			case "Event":
+				return new Comment(
+						((Element) n).getAttribute("desc"),
+						Comment.Type.NOISE);
+			default:
+				System.out.println("TRS WARNING: Ignoring inknown tag " + name);
+				break;
+		}
+
+		return null;
 	}
 
 
@@ -235,22 +242,6 @@ public class TRSLoader implements MarkupLoader {
 		});
 
 		return builder;
-	}
-
-
-	/**
-	 * Adds an anchor to a track only if it hasn't been added to it already.
-	 */
-	private static void addUniqueAnchor(Track t, float seconds) {
-		Anchor anchor = Anchor.timedAnchor(seconds);
-
-		if (!t.elts.isEmpty()) {
-			fr.loria.synalp.jtrans.elements.Element lastEl = t.elts.get(t.elts.size()-1);
-			if (anchor.equals(lastEl))
-				return;
-		}
-
-		t.elts.add(anchor);
 	}
 
 

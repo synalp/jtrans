@@ -1,8 +1,10 @@
 package fr.loria.synalp.jtrans.markup.in.preprocessors;
 
-import fr.loria.synalp.jtrans.facade.Project;
+import fr.loria.synalp.jtrans.project.Project;
 import fr.loria.synalp.jtrans.markup.in.ParsingException;
 import fr.loria.synalp.jtrans.markup.in.TRSLoader;
+import fr.loria.synalp.jtrans.project.TrackProject;
+import fr.loria.synalp.jtrans.project.TurnProject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
@@ -33,12 +35,19 @@ abstract class TRSPreprocessor extends TRSLoader {
 
 
 	@Override
-	public final Project parse(File file)
+	public final TurnProject parse(File file)
 			throws ParsingException, IOException
 	{
-		org.w3c.dom.Document doc = parseXML(file);
+		Document doc = parseXML(file);
 		preprocess(doc);
-		return parse(doc);
+		TurnProject p = parse(doc);
+		postprocess(p);
+		return p;
+	}
+
+
+	protected void postprocess(TurnProject p) throws ParsingException {
+		// no-op by default
 	}
 
 

@@ -28,7 +28,7 @@ public class ControlBox extends JPanel implements ActionListener {
 		alignButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				aligneur.alignAll(false);
+				aligneur.alignAll();
 			}
 		});
 

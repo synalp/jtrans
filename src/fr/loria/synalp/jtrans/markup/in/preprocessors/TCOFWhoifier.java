@@ -1,9 +1,18 @@
 package fr.loria.synalp.jtrans.markup.in.preprocessors;
 
+import fr.loria.synalp.jtrans.elements.*;
 import fr.loria.synalp.jtrans.markup.in.ParsingException;
-import org.w3c.dom.*;
+import fr.loria.synalp.jtrans.project.Anchor;
+import fr.loria.synalp.jtrans.project.TurnProject;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.ListIterator;
 
 /**
  * Adds Who tags to Transcriber files that use the TCOF convention for
@@ -194,6 +203,61 @@ public class TCOFWhoifier extends TRSPreprocessor {
 			if (hangingOverlap)
 				throw new ParsingException("hanging overlap - missing Sync tag?");
 		}
+	}
+
+
+	@Override
+	protected void postprocess(TurnProject p) throws ParsingException {
+		for (int t = 0; t < p.turns.size(); t++) {
+			TurnProject.Turn turn = p.turns.get(t);
+
+			boolean turnContainsOEM = false;
+
+			for (int spkID = 0; spkID < p.speakerCount(); spkID++) {
+
+				for (int elID = 0; elID < turn.elts.get(spkID).size(); elID++) {
+					fr.loria.synalp.jtrans.elements.Element el = turn.elts.get(spkID).get(elID);
+
+					if (el instanceof Comment) {
+						Comment comment = (Comment) el;
+						if (comment.getType() == Comment.Type.OVERLAP_END_MARK) {
+							if (turnContainsOEM) {
+								throw new ParsingException("illegal overlap end mark");
+							}
+							t = breakUpOverlapEnd(p, t, spkID, elID);
+							turnContainsOEM = true;
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+	/**
+	 * @return new ID of the current turn
+	 */
+	private int breakUpOverlapEnd(TurnProject p, int turnID, int spkID, int elID) {
+		ListIterator<fr.loria.synalp.jtrans.elements.Element> elItr =
+				p.turns.get(turnID).elts.get(spkID).listIterator(elID + 1);
+
+		TurnProject.Turn newTurn = p.new Turn();
+
+		final boolean empty = !elItr.hasNext();
+
+		while (elItr.hasNext()) {
+			newTurn.add(spkID, elItr.next());
+			elItr.remove();
+		}
+
+		if (!empty) {
+			newTurn.end = p.turns.get(turnID).end;
+			p.turns.get(turnID).end = null;
+			p.turns.add(turnID+1, newTurn);
+			return turnID+1;
+		}
+
+		return turnID;
 	}
 
 }

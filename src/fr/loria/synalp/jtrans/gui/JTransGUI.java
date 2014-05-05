@@ -21,10 +21,12 @@ import javax.swing.Timer;
 
 import fr.loria.synalp.jtrans.elements.Word;
 import fr.loria.synalp.jtrans.facade.*;
-import fr.loria.synalp.jtrans.gui.trackview.MultiTrackTable;
-import fr.loria.synalp.jtrans.gui.trackview.SpeakerVisibilityControl;
+import fr.loria.synalp.jtrans.gui.trackview.ProjectTable;
 import fr.loria.synalp.jtrans.markup.in.MarkupLoader;
 import fr.loria.synalp.jtrans.markup.in.ParsingException;
+import fr.loria.synalp.jtrans.project.Project;
+import fr.loria.synalp.jtrans.project.TrackProject;
+import fr.loria.synalp.jtrans.project.TurnProject;
 import fr.loria.synalp.jtrans.speechreco.SpeechReco;
 
 import fr.loria.synalp.jtrans.gui.signalViewers.spectroPanel.SpectroControl;
@@ -36,11 +38,8 @@ import fr.loria.synalp.jtrans.utils.*;
  */
 public class JTransGUI extends JPanel implements ProgressDisplay {
 
-	/*
-	 * TODO THIS NEEDS TO BE FIXED ASAP
-	 */
+
 	public static void REIMPLEMENT_DEC2013() {
-		// TODO
 		System.err.println("REIMPLEMENT ME!");
 		new Throwable().printStackTrace();
 		JOptionPane.showMessageDialog(null,
@@ -85,12 +84,11 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	public ToolBarTemporalSig toolbar = null;
 	*/
 
-	public MultiTrackTable multitrack;
-	public SpeakerVisibilityControl speakerVisibility;
+	public ProjectTable table;
 
 	// position lue pour la derniere fois dans le flux audio
 	long currentSample = 0;
-	public Project project = new Project();
+	public Project project = new TrackProject();
 	private JProgressBar progressBar = new JProgressBar(0, 1000);
 	private JLabel infoLabel = new JLabel();
 
@@ -286,11 +284,9 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		removeAll();
 		setLayout(new BorderLayout());
 
-		multitrack = new MultiTrackTable(project, this, true);
-		JScrollPane multiTrackScrollPane = new JScrollPane(multitrack);
+		table = new ProjectTable(project, this, true);
+		JScrollPane multiTrackScrollPane = new JScrollPane(table);
 		multiTrackScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-		speakerVisibility = new SpeakerVisibilityControl(project, multitrack);
-//		multitrack.setPreferredSize(new Dimension(1000, 500));
 
 		ctrlbox = new ControlBox(this);
 		playergui = ctrlbox.getPlayerGUI();
@@ -311,7 +307,6 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		// Add everything to the panel
 
 		add(ctrlbox, BorderLayout.PAGE_START);
-		add(speakerVisibility, BorderLayout.LINE_END);
 		add(multiTrackScrollPane, BorderLayout.CENTER);
 
 		add(new JPanel(new BorderLayout()) {{
@@ -341,13 +336,18 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	}
 
 	public void newplaystarted() {
-		final List<List<Word>> words = new ArrayList<List<Word>>();
-		for (Track t: project.tracks) {
-			words.add(t.getAlignedWords());
+		final List<List<Word>> words = new ArrayList<>();
+		for (int i = 0; i < project.speakerCount(); i++) {
+			words.add(new ArrayList<Word>());
+			for (Word w: project.getWords(i)) {
+				if (w.isAligned()) {
+					words.get(i).add(w);
+				}
+			}
 		}
 
 		karaokeHighlighter = new Timer(KARAOKE_UPDATE_INTERVAL, new AbstractAction() {
-			int[] hl = new int[project.tracks.size()];
+			int[] hl = new int[project.speakerCount()];
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -357,7 +357,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 				// ajoute le debut du segment joué
 				curfr += playergui.getRelativeStartingSec()*100;
 
-				for (int i = 0; i < project.tracks.size(); i++) {
+				for (int i = 0; i < project.speakerCount(); i++) {
 					List<Word> wordList = words.get(i);
 					if (wordList.isEmpty()) {
 						continue;
@@ -377,8 +377,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 					// Only update UI if the word wasn't already highlighted
 					Word w = wordList.get(newHl);
 					if (hl[i] != newHl) {
-						multitrack.highlightWord(i, w);
-						speakerVisibility.pulse(i);
+						table.highlightWord(i, w);
 					}
 
 					hl[i] = newHl;
@@ -419,41 +418,6 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		}, currentSample);
 		 */
 	}
-
-	public void clearAlign() {
-		project.clearAlignment();
-		setProject(project); // force refresh
-	}
-
-/* TODO PARALLEL TRACKS
-	void clearAlignFrom(int mot) {
-		// cherche le prochain mot qui est aligné
-		int seg4mot=-1;
-		List<Word> mots = project.elts.getMots();
-		for (;mot<mots.size();mot++) {
-			seg4mot = mots.get(mot).posInAlign;
-			if (seg4mot>=0&&!project.words.getSegmentLabel(seg4mot).equals("SIL")) break;
-		}
-		if (seg4mot<0) return; // rien n'est aligne
-		// supprimer les alignements
-		int fr = project.words.getSegmentDebFrame(seg4mot);
-		project.words.cutAfterFrame(fr);
-		project.phons.cutAfterFrame(fr);
-		project.words.clearIndex();
-		project.phons.clearIndex();
-		
-		// supprimer la correspondance mots/segments
-		for (int i=mot;i<project.elts.getMots().size();i++) {
-			project.elts.getMot(i).posInAlign=-1;
-		}
-		// decolorier les mots qui ne sont plus alignes:
-		if (edit!=null) {
-			edit.getHighlighter().removeAllHighlights();
-			if (mot>0) edit.colorizeWords(0, mot - 1);
-		}
-		repaint();
-	}
-*/
 
 	private void getRecoResult(SpeechReco asr) {
 		List<String> lmots = getRecoResultOld(asr);
@@ -575,7 +539,16 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		}
 
 		setProgressDone();
-		jf.setTitle(markupFile.getName());
+
+		String title = markupFile.getName();
+		if (project instanceof TurnProject) {
+			title += " [turn-based]";
+		} else if (project instanceof TrackProject) {
+			title += " [track-based]";
+		} else {
+			title += " [" + project.getClass().getSimpleName() + "]";
+		}
+		jf.setTitle(title);
 
 		if (forcedAudioFile != null) {
 			setAudioSource(forcedAudioFile);
@@ -626,7 +599,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		return true;
 	}
 
-	public void alignAll(final boolean interleaved) {
+	public void alignAll() {
 		if (project.audioFile == null) {
 			JOptionPane.showMessageDialog(
 					jf,
@@ -650,11 +623,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 				}
 
 				try {
-					if (interleaved) {
-						project.alignInterleaved(aligner);
-					} else {
-						project.align(aligner, true);
-					}
+					project.align(aligner);
 				} catch (Exception ex) {
 					errorMessage("An error occured during the alignment!", ex);
 				}
@@ -662,7 +631,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 				SwingUtilities.invokeLater(new Runnable() {
 					@Override
 					public void run() {
-						multitrack.refreshModel();
+						table.refreshModel();
 					}
 				});
 

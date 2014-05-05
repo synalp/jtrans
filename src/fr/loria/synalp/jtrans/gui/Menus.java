@@ -20,12 +20,13 @@ import javax.swing.filechooser.FileFilter;
 
 import edu.cmu.sphinx.result.Result;
 
-import fr.loria.synalp.jtrans.elements.Anchor;
-import fr.loria.synalp.jtrans.gui.trackview.MultiTrackTable;
+import fr.loria.synalp.jtrans.project.Anchor;
+import fr.loria.synalp.jtrans.gui.trackview.ProjectTable;
 import fr.loria.synalp.jtrans.markup.in.MarkupLoader;
 import fr.loria.synalp.jtrans.markup.out.JTRSaver;
 import fr.loria.synalp.jtrans.markup.out.MarkupSaver;
 import fr.loria.synalp.jtrans.markup.out.MarkupSaverPool;
+import fr.loria.synalp.jtrans.project.TurnProject;
 import fr.loria.synalp.jtrans.speechreco.LiveSpeechReco;
 
 import fr.loria.synalp.jtrans.speechreco.RecoListener;
@@ -41,7 +42,7 @@ public class Menus {
 	String reco;
 	boolean[] done = {false};
 	LiveSpeechReco gram;
-	private Font currentFont = MultiTrackTable.DEFAULT_FONT;
+	private Font currentFont = ProjectTable.DEFAULT_FONT;
 
 	private static final int[] FONT_SIZES = {
 			10, 11, 12, 13, 14, 16, 18, 20, 24, 28, 36
@@ -214,7 +215,7 @@ public class Menus {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				Anchor.showMinutes = ((AbstractButton)e.getSource()).isSelected();
-				aligneur.multitrack.repaint();
+				aligneur.table.repaint();
 			}
 		});
 
@@ -228,7 +229,7 @@ public class Menus {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					currentFont = new Font(currentFont.getName(), Font.PLAIN, points);
-					aligneur.multitrack.setViewFont(currentFont);
+					aligneur.table.setViewFont(currentFont);
 				}
 			});
 
@@ -246,7 +247,7 @@ public class Menus {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					currentFont = new Font(name, Font.PLAIN, currentFont.getSize());
-					aligneur.multitrack.setViewFont(currentFont);
+					aligneur.table.setViewFont(currentFont);
 				}
 			});
 
@@ -257,46 +258,93 @@ public class Menus {
 
 		// //////////////////////////////////////////////////////////////
 		JMenu alignMenu = new JMenu("Align");
-		JMenuItem autoAnchors = new JMenuItem("Auto-align between anchors...");
-		JMenuItem autoInterleaved = new JMenuItem("Auto-align as interleaved word sequence...");
-		JMenuItem clearAll = new JMenuItem("Clear entire alignment");
-		JMenuItem clearAnchorTimes = new JMenuItem("Clear all anchor times");
+		final JMenuItem align = new JMenuItem("Align...");
+		JMenuItem clearAlignment = new JMenuItem("Clear alignment");
+		JMenuItem clearAnchors = new JMenuItem("Clear anchors...");
+		JMenuItem inferAnchors = new JMenuItem("Infer anchor timing from alignment...");
 		menubar.add(alignMenu);
-		alignMenu.add(autoAnchors);
-		alignMenu.add(autoInterleaved);
+
+		alignMenu.add(align);
+		alignMenu.add(clearAlignment);
 		alignMenu.addSeparator();
-		alignMenu.add(clearAll);
-		alignMenu.add(clearAnchorTimes);
+		alignMenu.add(clearAnchors);
+		alignMenu.add(inferAnchors);
 
-		autoAnchors.setAccelerator(KeyStroke.getKeyStroke('A', modifier | InputEvent.SHIFT_MASK));
+		align.setAccelerator(KeyStroke.getKeyStroke('A', modifier | InputEvent.SHIFT_MASK));
 
-		autoAnchors.addActionListener(new ActionListener() {
+		align.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				aligneur.alignAll(false);
+				aligneur.alignAll();
 			}
 		});
 
-		autoInterleaved.setAccelerator(KeyStroke.getKeyStroke('I', modifier | InputEvent.SHIFT_MASK));
-
-		autoInterleaved.addActionListener(new ActionListener() {
-			@Override
+		clearAlignment.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				aligneur.alignAll(true);
+				aligneur.project.clearAlignment();
+				aligneur.setProject(aligneur.project); // force refresh
 			}
 		});
 
-		clearAll.addActionListener(new ActionListener() {
+		clearAnchors.addActionListener(new ActionListener() {
+			@Override
 			public void actionPerformed(ActionEvent e) {
-				aligneur.clearAlign();
+				if (!(aligneur.project instanceof TurnProject)) {
+					aligneur.errorMessage(
+							"Anchor timing may only be cleared\n" +
+									"in turn-based projects.\n\n" +
+									"Track-based projects are rendered useless\n" +
+									"once the anchors have been cleared.",
+							null
+					);
+					return;
+				}
+
+				int rc = JOptionPane.showConfirmDialog(aligneur.jf,
+						"This is a lossy operation." +
+								"\nManual anchor times will be lost." +
+								"\nProceed anyway?",
+						"Align without anchor times",
+						JOptionPane.OK_CANCEL_OPTION,
+						JOptionPane.WARNING_MESSAGE);
+
+				if (rc != JOptionPane.OK_OPTION) {
+					return;
+				}
+
+				((TurnProject)aligneur.project).clearAnchorTimes();
+				aligneur.setProject(aligneur.project); // force refresh
 			}
 		});
 
-		clearAnchorTimes.addActionListener(new AbstractAction() {
+		inferAnchors.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				aligneur.project.clearAllAnchorTimes();
-				aligneur.multitrack.refreshModel();
+				if (!(aligneur.project instanceof TurnProject)) {
+					aligneur.errorMessage(
+							"Anchor timing may only be inferred\n" +
+									"in turn-based projects.",
+							null);
+					return;
+				}
+
+				int inferred = ((TurnProject)aligneur.project).inferAnchors();
+
+				String message = "Timing information inferred for "
+						+ inferred + " anchor(s).";
+
+				if (inferred == 0) {
+					message = "Couldn't infer timing information.\n\n" +
+							"Please align the file once inferring anchor times.";
+				}
+
+				JOptionPane.showMessageDialog(
+						aligneur.jf,
+						message,
+						"Infer anchor timing",
+						JOptionPane.INFORMATION_MESSAGE);
+
+				aligneur.setProject(aligneur.project); // force refresh
 			}
 		});
 

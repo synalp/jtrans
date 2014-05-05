@@ -1,8 +1,9 @@
 package fr.loria.synalp.jtrans.markup.in;
 
-import fr.loria.synalp.jtrans.elements.*;
-import fr.loria.synalp.jtrans.facade.Project;
-import fr.loria.synalp.jtrans.facade.Track;
+import fr.loria.synalp.jtrans.project.Anchor;
+import fr.loria.synalp.jtrans.project.Phrase;
+import fr.loria.synalp.jtrans.project.TrackProject;
+import fr.loria.synalp.jtrans.project.Project;
 import fr.loria.synalp.jtrans.utils.FileUtils;
 
 import java.io.*;
@@ -17,38 +18,31 @@ public class TextGridLoader implements MarkupLoader {
 	public Project parse(File file)
 			throws ParsingException, IOException
 	{
-		Project project = new Project();
+		TrackProject project = new TrackProject();
 		BufferedReader reader = FileUtils.openFileAutoCharset(file);
 		TextGridStateMachine machine = new TextGridStateMachine(reader);
 		reader.close();
 
 		for (int i = 0; i < machine.tiers.size(); i++) {
-			Track track = new Track(machine.tierNames.get(i));
-			float prevXmax = -1;
+			List<Phrase> track = new ArrayList<>();
 
 			for (TextGridStateMachine.Interval interval: machine.tiers.get(i)) {
-				// Avoid redundant anchors - only create start anchor if
-				// different from previous anchor
-
-				if (prevXmax != interval.xmin) {
-					track.elts.add(Anchor.timedAnchor(interval.xmin));
-				}
-
-				String normalized = RawTextLoader.normalizeText(interval.text);
-				track.elts.addAll(RawTextLoader.parseString(
-						normalized, RawTextLoader.DEFAULT_PATTERNS));
-
-				track.elts.add(Anchor.timedAnchor(interval.xmax));
-
-				prevXmax = interval.xmax;
+				track.add(new Phrase(
+						new Anchor(interval.xmin),
+						new Anchor(interval.xmax),
+						RawTextLoader.parseString(
+								RawTextLoader.normalizeText(interval.text),
+								RawTextLoader.DEFAULT_PATTERNS)));
 			}
 
-			project.tracks.add(track);
+			project.addTrack(machine.tierNames.get(i), track);
 		}
 
+		/* TODO
 		for (int i = 0; i < project.tracks.size(); i++) {
 			project.tracks.get(i).setSpeakerOnWords(i);
 		}
+		*/
 
 		return project;
 	}
