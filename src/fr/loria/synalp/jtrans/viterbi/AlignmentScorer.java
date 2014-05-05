@@ -45,7 +45,6 @@ public class AlignmentScorer {
 	private final LogMath lm = HMMModels.getLogMath();
 
 	private final int nFrames;
-	private int nStates;
 
 	private final int[]        nMatchF; // must be zeroed before use
 	private final double[][]   sum;     // must be zeroed before use
@@ -72,7 +71,6 @@ public class AlignmentScorer {
 				int idx = states.size();
 				map.put(s, idx);
 				states.add(s);
-				nStates++;
 				return idx;
 			} else {
 				return map.get(s);
@@ -87,6 +85,10 @@ public class AlignmentScorer {
 		void clear() {
 			map.clear();
 			states.clear();
+		}
+
+		int size() {
+			return states.size();
 		}
 	}
 
@@ -110,7 +112,6 @@ public class AlignmentScorer {
 
 	public AlignmentScorer(float[][] data) {
 		this.nFrames = data.length;
-		this.nStates = 0;
 		this.data = data;
 
 		logID = logIDCounter++;
@@ -142,7 +143,7 @@ public class AlignmentScorer {
 		Arrays.fill(longTimeline, -1);
 		Arrays.fill(nMatchF, 0);
 		Arrays.fill(likelihood, 0);
-		for (int s = 0; s < nStates; s++) {
+		for (int s = 0; s < MAX_UNIQUE_STATES; s++) {
 			Arrays.fill(sum[s], 0);
 			Arrays.fill(sumSq[s], 0);
 		}
@@ -268,7 +269,7 @@ public class AlignmentScorer {
 //		fillVoids();
 
 		// avg, var, detVar
-		for (int s = 0; s < nStates; s++) {
+		for (int s = 0; s < pool.size(); s++) {
 			detVar[s] = 1;
 			if (nMatchF[s] == 0) {
 				Arrays.fill(avg[s], 0);
@@ -394,7 +395,6 @@ public class AlignmentScorer {
 		assert merger.pool.states.size() == 3;
 
 		for (AlignmentScorer scorer: scorers) {
-			assert scorer.nStates == scorer.pool.states.size();
 			assert scorer.nFrames == merger.nFrames;
 			assert scorer.data == merger.data;
 
@@ -403,9 +403,9 @@ public class AlignmentScorer {
 			merger.pool.states.addAll(scorer.pool.states);
 			System.out.println("Merge: added " + scorer.pool.states.size() + " states from scorer");
 
-			arraycopy(scorer.nMatchF, 0, merger.nMatchF, off, scorer.nStates);
-			arraycopy(scorer.sum,     0, merger.sum,     off, scorer.nStates);
-			arraycopy(scorer.sumSq,   0, merger.sumSq,   off, scorer.nStates);
+			arraycopy(scorer.nMatchF, 0, merger.nMatchF, off, scorer.pool.size());
+			arraycopy(scorer.sum,     0, merger.sum,     off, scorer.pool.size());
+			arraycopy(scorer.sumSq,   0, merger.sumSq,   off, scorer.pool.size());
 			// No need to copy avg, var, detVar;
 			// they will be filled out by finishLearning()
 
@@ -429,7 +429,6 @@ public class AlignmentScorer {
 			}
 		}
 
-		merger.nStates = merger.pool.states.size();
 		merger.fillVoids(0, 1, 2);
 		merger.finishLearning();
 

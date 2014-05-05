@@ -86,7 +86,6 @@ public class TransitionRefinery {
 		}
 
 		AlignmentScorer merged = AlignmentScorer.merge(scorers);
-		merged.finishLearning();
 		merged.score();
 
 		return AlignmentScorer.sum(merged.getLikelihoods());
