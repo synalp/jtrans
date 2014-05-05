@@ -5,7 +5,7 @@ import fr.loria.synalp.jtrans.facade.*;
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
 import fr.loria.synalp.jtrans.utils.TimeConverter;
 import fr.loria.synalp.jtrans.viterbi.StateGraph;
-import fr.loria.synalp.jtrans.viterbi.StatePool;
+import fr.loria.synalp.jtrans.viterbi.StateSet;
 
 import javax.sound.sampled.*;
 import java.io.*;
@@ -121,7 +121,7 @@ public abstract class Project {
 
 		if (computeLikelihoods) {
 			aa.setComputeLikelihoods(true);
-			aa.setScorers(speakerCount());
+			aa.initTrainers(speakerCount());
 
 			// Set word speakers. This is necessary for scoring a set of words
 			// belonging to various speakers with speaker-dependent Gaussians.
@@ -200,7 +200,7 @@ public abstract class Project {
 			return;
 		}
 
-		StateGraph graph = new StateGraph(new StatePool(), words);
+		StateGraph graph = new StateGraph(new StateSet(), words);
 		aligner.align(graph, iFrame, fFrame);
 	}
 

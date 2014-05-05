@@ -34,7 +34,7 @@ public class StateGraphTest {
 		}
 
 		return new StateGraph(
-				new StatePool(),
+				new StateSet(),
 				rules,
 				phrase,
 				interWordSilences);
@@ -240,7 +240,7 @@ public class StateGraphTest {
 		savoir = new Word("savoir");
 
 		StateGraph sg = new StateGraph(
-				new StatePool(),
+				new StateSet(),
 				rules,
 				Arrays.asList(tu, peux, pas, savoir),
 				true);
@@ -318,7 +318,7 @@ public class StateGraphTest {
 		Word meh = new Word("meh");
 
 		StateGraph sg = new StateGraph(
-				new StatePool(),
+				new StateSet(),
 				multiTrimSplit("a", "m ( e | i )"),
 				Arrays.asList(ah, meh),
 				true);
@@ -463,7 +463,7 @@ public class StateGraphTest {
 		Word dropped = new Word("dropped");
 
 		StateGraph sg = new StateGraph(
-				new StatePool(),
+				new StateSet(),
 				rules,
 				Arrays.asList(bogus, dropped, bogus),
 				true);

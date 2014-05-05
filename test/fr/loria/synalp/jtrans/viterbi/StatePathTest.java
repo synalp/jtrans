@@ -51,7 +51,7 @@ public class StatePathTest {
 		dropped = new Word("word_intentionally_dropped");
 
 		StateGraph fullSG = new StateGraph(
-				new StatePool(),
+				new StateSet(),
 				rules,
 				Arrays.asList(tu, peux, dropped, pas, dropped, savoir, dropped),
 				true);

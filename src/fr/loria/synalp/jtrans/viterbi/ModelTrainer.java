@@ -4,16 +4,9 @@ import edu.cmu.sphinx.linguist.acoustic.HMMState;
 import edu.cmu.sphinx.util.LogMath;
 import fr.loria.synalp.jtrans.elements.Word;
 import fr.loria.synalp.jtrans.facade.FastLinearAligner;
-import fr.loria.synalp.jtrans.facade.JTransCLI;
 import fr.loria.synalp.jtrans.speechreco.s4.HMMModels;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import static java.lang.System.arraycopy;
 
@@ -28,7 +21,7 @@ import static java.lang.System.arraycopy;
  * repeated calls to learn() instead of creating a new instance for each
  * sub-alignment.
  */
-public class AlignmentScorer {
+public class ModelTrainer {
 
 	private static int logIDCounter = 0;
 	private final int logID;
@@ -62,41 +55,10 @@ public class AlignmentScorer {
 	private final int[]        longTimeline;
 
 
-	private class QStatePool {
-		HashMap<HMMState, Integer> map = new HashMap<>();
-		List<HMMState> states = new ArrayList<>();
-
-		int getIdx(HMMState s) {
-			if (!map.containsKey(s)) {
-				int idx = states.size();
-				map.put(s, idx);
-				states.add(s);
-				return idx;
-			} else {
-				return map.get(s);
-			}
-		}
-
-		String getPhone(int idx) {
-			HMMState s = states.get(idx);
-			return s==null? "null": s.getHMM().getBaseUnit().getName();
-		}
-
-		void clear() {
-			map.clear();
-			states.clear();
-		}
-
-		int size() {
-			return states.size();
-		}
-	}
+	StatePool pool = new StateSet();
 
 
-	QStatePool pool = new QStatePool();
-
-
-	private static AlignmentScorer kludgeReferenceScorer;
+	private static ModelTrainer kludgeReferenceScorer;
 	private static boolean kludgeModelsUsed = false;
 
 	private enum SystemState {
@@ -110,7 +72,7 @@ public class AlignmentScorer {
 
 
 
-	public AlignmentScorer(float[][] data) {
+	public ModelTrainer(float[][] data) {
 		this.nFrames = data.length;
 		this.data = data;
 
@@ -194,7 +156,10 @@ public class AlignmentScorer {
 
 		if (!graph.isSilentAt(node)) {
 			HMMState state = graph.getStateAt(node);
-			int myState = pool.getIdx(state);
+			int myState = pool.indexOf(state);
+			if (myState < 0) {
+				myState = pool.add(state);
+			}
 			longTimeline[absf] = myState;
 			learnFrame(absf);
 		}
@@ -349,7 +314,7 @@ public class AlignmentScorer {
 			likelihood[f] = -.5 * (dot + logTwoPi + lm.linearToLog(detVar[s]));
 		}
 
-
+/*
 		try {
 			final String plotName = JTransCLI.logID + "_perframe_" +
 					(kludgeModelsUsed? "clear": "gold") + ".txt";
@@ -367,7 +332,7 @@ public class AlignmentScorer {
 		} catch (IOException ex) {
 			throw new RuntimeException(ex);
 		}
-
+*/
 
 		system = SystemState.SCORE_READY;
 
@@ -384,24 +349,31 @@ public class AlignmentScorer {
 	}
 
 
-	public static AlignmentScorer merge(List<AlignmentScorer> scorers) {
-		AlignmentScorer merger =
-				new AlignmentScorer(scorers.get(0).data);
+	public static ModelTrainer merge(List<ModelTrainer> scorers) {
+		ModelTrainer merger =
+				new ModelTrainer(scorers.get(0).data);
+
+		merger.pool = new StateList();
 
 		// states 0, 1, 2: common silences
-		merger.pool.states.add(null);
-		merger.pool.states.add(null);
-		merger.pool.states.add(null);
-		assert merger.pool.states.size() == 3;
+		merger.pool.add(null);
+		merger.pool.add(null);
+		merger.pool.add(null);
+		assert merger.pool.size() == 3;
 
-		for (AlignmentScorer scorer: scorers) {
+		for (ModelTrainer scorer: scorers) {
 			assert scorer.nFrames == merger.nFrames;
 			assert scorer.data == merger.data;
 
 			// offset at which the new states are inserted
-			int off = merger.pool.states.size();
-			merger.pool.states.addAll(scorer.pool.states);
-			System.out.println("Merge: added " + scorer.pool.states.size() + " states from scorer");
+			int off = merger.pool.size();
+			int[] translation = merger.pool.addAll(scorer.pool);
+			for (int i = 0; i < translation.length; i++) {
+				assert translation[i] == off + i:
+						i + " " + translation[i] + " " + off;
+			}
+
+//			System.out.println("Merge: added " + scorer.pool.states.size() + " states from scorer");
 
 			arraycopy(scorer.nMatchF, 0, merger.nMatchF, off, scorer.pool.size());
 			arraycopy(scorer.sum,     0, merger.sum,     off, scorer.pool.size());
@@ -420,7 +392,7 @@ public class AlignmentScorer {
 
 				assert merger.longTimeline[f] < 0: "overwriting longTimeline";
 				assert !scorer.pool.getPhone(sus).equals("SIL"): "unexpected SIL";
-				assert scorer.pool.states.get(sus).equals(merger.pool.states.get(mus));
+				assert scorer.pool.get(sus).equals(merger.pool.get(mus));
 				assert scorer.nMatchF[sus] == merger.nMatchF[mus];
 				assert scorer.sum    [sus] == merger.sum    [mus];
 				assert scorer.sumSq  [sus] == merger.sumSq  [mus];
@@ -436,7 +408,7 @@ public class AlignmentScorer {
 	}
 
 
-	public static AlignmentScorer merge(AlignmentScorer... scorers) {
+	public static ModelTrainer merge(ModelTrainer... scorers) {
 		return merge(Arrays.asList(scorers));
 	}
 

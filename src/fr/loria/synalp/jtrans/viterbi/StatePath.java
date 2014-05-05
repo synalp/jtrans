@@ -181,7 +181,7 @@ public class StatePath extends StateGraph {
 		outNode    = new int  [nNodes][MAX_TRANSITIONS];
 		outProb    = new float[nNodes][MAX_TRANSITIONS];
 		nodeTranslations = new HashMap<>();
-		pool = new StatePool();
+		pool = new StateSet();
 
 		for (int i = 0; i < nNodes; i++) {
 			Arrays.fill(outProb[i], UNINITIALIZED_LOG_PROBABILITY);

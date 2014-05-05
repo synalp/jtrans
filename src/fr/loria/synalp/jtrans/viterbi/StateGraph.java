@@ -48,7 +48,7 @@ public class StateGraph {
 	public final static float LIN_PROB_CMP_EPSILON = .0001f;
 
 	/** Pool of unique HMM states. */
-	protected StatePool pool;
+	protected StateSet pool;
 
 
 	/**
@@ -507,7 +507,7 @@ public class StateGraph {
 	 * @param interWordSilences insert optional silences between each word
 	 */
 	public StateGraph(
-			StatePool pool,
+			StateSet pool,
 			String[][] rules,
 			List<Word> words,
 			boolean interWordSilences)
@@ -593,7 +593,7 @@ public class StateGraph {
 	 * Constructs a state graph from an array of words.
 	 * Rules will be looked up in the standard grammar.
 	 */
-	public StateGraph(StatePool pool, List<Word> words) {
+	public StateGraph(StateSet pool, List<Word> words) {
 		this(pool, getRules(words), words, true);
 	}
 
@@ -634,7 +634,7 @@ public class StateGraph {
 		for (String str: trimSplit(text)) {
 			words.add(new Word(str));
 		}
-		return new StateGraph(new StatePool(), words);
+		return new StateGraph(new StateSet(), words);
 	}
 
 

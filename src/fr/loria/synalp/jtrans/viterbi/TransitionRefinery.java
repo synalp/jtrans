@@ -23,7 +23,7 @@ public class TransitionRefinery {
 
 	private Random random;
 	private StateGraph graph;
-	private List<AlignmentScorer> scorers;
+	private List<ModelTrainer> trainers;
 	private LogMath log = HMMModels.getLogMath();
 
 	int rejectionStreak = 0;
@@ -61,14 +61,14 @@ public class TransitionRefinery {
 	public TransitionRefinery(
 			StateGraph graph,
 			int[] baseline,
-			List<AlignmentScorer> scorers)
+			List<ModelTrainer> trainers)
 	{
 		timeline = new int[baseline.length];
 		System.arraycopy(baseline, 0, timeline, 0, timeline.length);
 
 		random = new Random();
 		this.graph = graph;
-		this.scorers = scorers;
+		this.trainers = trainers;
 
 		cLhd = computeCumulativeLikelihood();
 	}
@@ -77,18 +77,18 @@ public class TransitionRefinery {
 	private double computeCumulativeLikelihood() {
 		// TODO: too much boilerplate -- do these steps really need to be separated?
 
-		for (AlignmentScorer s: scorers) {
+		for (ModelTrainer s: trainers) {
 			s.init();
 		}
 
 		for (Word w: graph.getWords()) {
-			scorers.get(w.getSpeaker()).learn(w, graph, timeline, 0);
+			trainers.get(w.getSpeaker()).learn(w, graph, timeline, 0);
 		}
 
-		AlignmentScorer merged = AlignmentScorer.merge(scorers);
+		ModelTrainer merged = ModelTrainer.merge(trainers);
 		merged.score();
 
-		return AlignmentScorer.sum(merged.getLikelihoods());
+		return ModelTrainer.sum(merged.getLikelihoods());
 	}
 
 

@@ -9,13 +9,13 @@ import java.util.Arrays;
 
 import static fr.loria.synalp.jtrans.facade.FastLinearAligner.fillInterpolate;
 
-public class AlignmentScorerTest {
+public class ModelTrainerTest {
 
 	float[][] data;
 	StateGraph sg;
-	StatePool sp;
-	AlignmentScorer spkAh;
-	AlignmentScorer spkOh;
+	StateSet sp;
+	ModelTrainer spkAh;
+	ModelTrainer spkOh;
 
 	/**
 	 * Timeline of an 'ah' utterance preceded by a silence
@@ -54,15 +54,15 @@ public class AlignmentScorerTest {
 	 */
 	@Before
 	public void setUp() {
-		data = new float[FRAMES][AlignmentScorer.FRAME_DATA_LENGTH];
+		data = new float[FRAMES][ModelTrainer.FRAME_DATA_LENGTH];
 
 		for (int i = 0; i < data.length; i++) {
-			for (int j = 0; j < AlignmentScorer.FRAME_DATA_LENGTH; j++) {
+			for (int j = 0; j < ModelTrainer.FRAME_DATA_LENGTH; j++) {
 				data[i][j] = i * 100 + j;
 			}
 		}
 
-		sp = new StatePool();
+		sp = new StateSet();
 
 		Word ah = new Word("ah");
 		ah.setSpeaker(0);
@@ -75,8 +75,8 @@ public class AlignmentScorerTest {
 				Arrays.asList(ah, oh),
 				true);
 
-		spkAh = new AlignmentScorer(data);
-		spkOh = new AlignmentScorer(data);
+		spkAh = new ModelTrainer(data);
+		spkOh = new ModelTrainer(data);
 
 		// standard scenario:
 		// 'ah' is uttered right before 'oh', the rest is silence
@@ -85,8 +85,8 @@ public class AlignmentScorerTest {
 	}
 
 
-	private static double merge(AlignmentScorer... scorers) {
-		AlignmentScorer merger = AlignmentScorer.merge(scorers);
+	private static double merge(ModelTrainer... scorers) {
+		ModelTrainer merger = ModelTrainer.merge(scorers);
 
 		System.out.println("***MERGER***");
 		for (Integer i: merger.getLongTimeline()) {
@@ -95,7 +95,7 @@ public class AlignmentScorerTest {
 		System.out.println();
 
 		merger.score();
-		return AlignmentScorer.sum(merger.getLikelihoods());
+		return ModelTrainer.sum(merger.getLikelihoods());
 	}
 
 
@@ -106,7 +106,7 @@ public class AlignmentScorerTest {
 
 	@Test
 	public void testMergeAhOh2Speakers() {
-		AlignmentScorer m = AlignmentScorer.merge(spkAh, spkOh);
+		ModelTrainer m = ModelTrainer.merge(spkAh, spkOh);
 
 		int[] mTL = new int[FRAMES];
 		copy(AH_AS1USTATES, mTL, 0);
@@ -119,7 +119,7 @@ public class AlignmentScorerTest {
 
 	@Test
 	public void testMergeOhAh2Speakers() {
-		AlignmentScorer m = AlignmentScorer.merge(spkOh, spkAh);
+		ModelTrainer m = ModelTrainer.merge(spkOh, spkAh);
 		int[] mTL = new int[FRAMES];
 
 		copy(AH_AS2USTATES, mTL, 0);
@@ -134,7 +134,7 @@ public class AlignmentScorerTest {
 	public void testMergeAhOh1Speaker() {
 		spkAh.learn(sg, OH_SGNODES, PLEN);
 
-		AlignmentScorer m = AlignmentScorer.merge(spkAh);
+		ModelTrainer m = ModelTrainer.merge(spkAh);
 
 		int[] mTL = new int[FRAMES];
 		copy(AH_AS1USTATES, mTL, 0);
@@ -147,7 +147,7 @@ public class AlignmentScorerTest {
 
 	@Test
 	public void testMergeAh() {
-		AlignmentScorer m = AlignmentScorer.merge(spkAh);
+		ModelTrainer m = ModelTrainer.merge(spkAh);
 
 		int[] mTL = new int[FRAMES];
 		copy(AH_AS1USTATES, mTL, 0);
@@ -159,7 +159,7 @@ public class AlignmentScorerTest {
 
 	@Test
 	public void testMergeOh() {
-		AlignmentScorer m = AlignmentScorer.merge(spkOh);
+		ModelTrainer m = ModelTrainer.merge(spkOh);
 
 		int[] mTL = new int[FRAMES];
 		fillInterpolate(3, mTL, 0, PLEN);
@@ -194,7 +194,7 @@ public class AlignmentScorerTest {
 		// Proposal 1: different speakers
 		// Starting point: existing speaker says 'ah' at frame 0 (spkAh)
 		// *New* speaker learns 'ah' at frame PLEN
-		AlignmentScorer ah2AS = new AlignmentScorer(data);
+		ModelTrainer ah2AS = new ModelTrainer(data);
 		ah2AS.learn(sg, AH_SGNODES, PLEN);
 		double differentSpeakers = merge(spkAh, ah2AS);
 
@@ -221,7 +221,7 @@ public class AlignmentScorerTest {
 		spkAh.fillVoids(0, 1, 2); // TODO: broken fill with silences! 0,1,2 is 'a' in the AlignmentScorer's QStatePool!
 		spkAh.finishLearning();
 		spkAh.score();
-		double standalone = AlignmentScorer.sum(spkAh.getLikelihoods());
+		double standalone = ModelTrainer.sum(spkAh.getLikelihoods());
 
 		// the computation must yield the exact same result
 		assertEquals(merged, standalone, 0);

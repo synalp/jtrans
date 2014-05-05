@@ -17,7 +17,7 @@ import java.util.List;
  */
 public abstract class AutoAligner {
 
-	protected List<AlignmentScorer> scorers;
+	protected List<ModelTrainer> trainers;
 	protected final List<FloatData> data;
 	protected final File audio;
 	protected final ProgressDisplay progress;
@@ -57,12 +57,12 @@ public abstract class AutoAligner {
 	}
 
 
-	public void setScorers(int speakers) {
-		scorers = new ArrayList<>(speakers);
+	public void initTrainers(int speakers) {
+		trainers = new ArrayList<>(speakers);
 		float[][] dataArray = S4mfccBuffer.to2DArray(data);
 
 		for (int i = 0; i < speakers; i++) {
-			scorers.add(new AlignmentScorer(dataArray));
+			trainers.add(new ModelTrainer(dataArray));
 		}
 	}
 
@@ -137,7 +137,7 @@ public abstract class AutoAligner {
 		concatTimelines.add(timeline);
 
 		if (computeLikelihoods) {
-			assert scorers != null;
+			assert trainers != null;
 			if (progress != null) {
 				progress.setIndeterminateProgress("Computing likelihood...");
 			}
@@ -145,7 +145,7 @@ public abstract class AutoAligner {
 			graph.setWordAlignments(timeline, startFrame);
 
 			for (Word w: graph.getWords()) {
-				scorers.get(w.getSpeaker())
+				trainers.get(w.getSpeaker())
 						.learn(w, graph, timeline, startFrame);
 			}
 		}
@@ -155,10 +155,10 @@ public abstract class AutoAligner {
 				progress.setIndeterminateProgress("Metropolis-Hastings...");
 			}
 
-			assert scorers != null;
+			assert trainers != null;
 
 			final TransitionRefinery refinery = new TransitionRefinery(
-					graph, timeline, scorers);
+					graph, timeline, trainers);
 
 			while (!refinery.hasPlateaued()) {
 				timeline = refinery.step();
@@ -204,9 +204,9 @@ public abstract class AutoAligner {
 
 
 	public void printScores() {
-		AlignmentScorer scorer = AlignmentScorer.merge(scorers);
-		scorer.score();
-		double sum = AlignmentScorer.sum(scorer.getLikelihoods());
+		ModelTrainer trainer = ModelTrainer.merge(trainers);
+		trainer.score();
+		double sum = ModelTrainer.sum(trainer.getLikelihoods());
 		System.out.println("Overall likelihood " + sum);
 	}
 
