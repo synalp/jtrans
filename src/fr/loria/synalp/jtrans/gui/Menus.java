@@ -17,9 +17,11 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Mixer;
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
+import java.util.List;
 
 import edu.cmu.sphinx.result.Result;
 
+import fr.loria.synalp.jtrans.elements.Word;
 import fr.loria.synalp.jtrans.project.Anchor;
 import fr.loria.synalp.jtrans.gui.trackview.ProjectTable;
 import fr.loria.synalp.jtrans.markup.in.MarkupLoader;
@@ -193,9 +195,56 @@ public class Menus {
 		JMenu actionsm = new JMenu("Edit");
 		JMenuItem regexp = new JMenuItem("Regexps");
 		JMenuItem gototime = new JMenuItem("Go to time [sec]");
+		JMenuItem findWord = new JMenuItem("Find word...");
+		JMenuItem findNext = new JMenuItem("Find next");
+		JMenuItem findPrev = new JMenuItem("Find previous");
+		JMenuItem findNextAnon = new JMenuItem("Find next anonymous word");
+		JMenuItem findPrevAnon = new JMenuItem("Find previous anonymous word");
 		menubar.add(actionsm);
 		actionsm.add(regexp);
 		actionsm.add(gototime);
+		actionsm.addSeparator();
+		actionsm.add(findWord);
+		actionsm.add(findNext);
+		actionsm.add(findPrev);
+		actionsm.addSeparator();
+		actionsm.add(findNextAnon);
+		actionsm.add(findPrevAnon);
+
+		findWord.addActionListener(new AbstractAction() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				aligneur.cwf.prompt();
+			}
+		});
+
+		findNext.addActionListener(new AbstractAction() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				aligneur.cwf.next();
+			}
+		});
+
+		findPrev.addActionListener(new AbstractAction() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				aligneur.cwf.previous();
+			}
+		});
+
+		findNextAnon.addActionListener(new AbstractAction() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				aligneur.anonWordFinder.next();
+			}
+		});
+
+		findPrevAnon.addActionListener(new AbstractAction() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				aligneur.anonWordFinder.previous();
+			}
+		});
 
 		// //////////////////////////////////////////////////////////////
 		JMenu viewMenu = new JMenu("View");

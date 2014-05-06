@@ -691,4 +691,111 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		});
 	}
 
+
+
+
+	public abstract class WordFinder {
+		int cSpk = 0;
+		int cWord = 0;
+		boolean found = false;
+
+		public void next(int delta) {
+			assert delta == 1 || delta == -1;
+
+			if (found) {
+				cWord += delta;
+				found = false;
+			}
+
+			for (;;) {
+				for (; cSpk < project.speakerCount(); cSpk++) {
+					List<Word> words = project.getWords(cSpk);
+					for (; cWord < words.size(); cWord += delta) {
+						Word w = words.get(cWord);
+						if (matches(w)) {
+							found = true;
+							table.highlightWord(cSpk, w);
+							return;
+						}
+					}
+				}
+
+				int rc = JOptionPane.showConfirmDialog(jf,
+						String.format("No more %s.\nSearch from %s?",
+								getGoal(),
+								delta > 0 ? "beginning" : "end"),
+						getGoal(),
+						JOptionPane.YES_NO_OPTION
+				);
+
+				if (rc != JOptionPane.YES_OPTION) {
+					return;
+				}
+
+				reset();
+			}
+		}
+
+		public void next() {
+			next(1);
+		}
+
+		public void previous() {
+			next(-1);
+		}
+
+		public void reset() {
+			cSpk = 0;
+			cWord = 0;
+		}
+
+		public abstract boolean matches(Word word);
+		protected abstract String getGoal();
+	}
+
+
+	public class ContentWordFinder extends WordFinder {
+		private String content;
+
+		@Override
+		public boolean matches(Word word) {
+			if (null == content) {
+				return false;
+			}
+			assert content.toLowerCase().equals(content);
+			return word.toString().toLowerCase().equals(content);
+		}
+
+		public void prompt() {
+			String value = JOptionPane.showInputDialog(jf,
+					"Word to find",
+					content);
+			if (value == null) {
+				return;
+			}
+			content = value.toLowerCase();
+			reset();
+			next();
+		}
+
+		protected String getGoal() {
+			return "Words matching \"" + content + "\"";
+		}
+	}
+
+
+	public ContentWordFinder cwf = new ContentWordFinder();
+
+	public WordFinder anonWordFinder = new WordFinder() {
+		@Override
+		public boolean matches(Word word) {
+			return word.shouldBeAnonymized();
+		}
+
+		public String getGoal() {
+			return "Anonymous Words";
+		}
+
+	};
+
 }
