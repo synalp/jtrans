@@ -4,8 +4,11 @@ import edu.cmu.sphinx.linguist.acoustic.HMMState;
 import edu.cmu.sphinx.util.LogMath;
 import fr.loria.synalp.jtrans.elements.Word;
 import fr.loria.synalp.jtrans.facade.FastLinearAligner;
+import fr.loria.synalp.jtrans.facade.JTransCLI;
 import fr.loria.synalp.jtrans.speechreco.s4.HMMModels;
 
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.List;
 import static java.lang.System.arraycopy;
@@ -405,6 +408,22 @@ public class ModelTrainer {
 		merger.finishLearning();
 
 		return merger;
+	}
+
+
+	public void dump() {
+		try {
+			PrintWriter w = new PrintWriter(JTransCLI.logID + ".models.txt");
+			for (int i = 0; i < pool.size(); i++) {
+				for (int j = 0; j < 39; j++) {
+					w.printf("%3d %2d %8s %10f %10f\n", i, j,
+							pool.getPhone(i), avg[i][j], var[i][j]);
+				}
+			}
+			w.close();
+		} catch (IOException ex) {
+			throw new Error(ex);
+		}
 	}
 
 

@@ -211,6 +211,13 @@ public abstract class AutoAligner {
 	}
 
 
+	public void dumpMergedTrainer() {
+		ModelTrainer trainer = ModelTrainer.merge(trainers);
+		trainer.score();
+		trainer.dump();
+	}
+
+
 	public StatePath getConcatenatedPath() {
 		// TODO: should throw an error on overlaps
 		StatePath[] paths = new StatePath[concatGraphs.size()];
