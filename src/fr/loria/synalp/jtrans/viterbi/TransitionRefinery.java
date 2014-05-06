@@ -173,7 +173,11 @@ public class TransitionRefinery {
 			assert trans < timeline.length - 1;
 
 			// Shift transition
-			timeline[trans+1] = timeline[trans];
+			if (random.nextBoolean()) {
+				timeline[trans+1] = timeline[trans];
+			} else {
+				timeline[trans] = timeline[trans+1];
+			}
 		}
 
 		double newCLhd = computeCumulativeLikelihood();
