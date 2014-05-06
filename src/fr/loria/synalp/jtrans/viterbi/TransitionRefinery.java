@@ -200,7 +200,9 @@ public class TransitionRefinery {
 		}
 
 		if (!accept) {
+			int[] swap = timeline;
 			timeline = backup;
+			backup = swap;
 		} else {
 			cLhd = newCLhd;
 		}
