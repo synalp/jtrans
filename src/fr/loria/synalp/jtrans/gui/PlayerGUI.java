@@ -57,7 +57,7 @@ public class PlayerGUI extends JPanel {
 			timePlayStartedMs=System.currentTimeMillis();
 			timeIntervalPlayed=0;
 		}
-		playstop.setText("Stop");
+		playstop.setText("Pause");
 		playstop.setSelected(true);
 		repaint();
 	}
