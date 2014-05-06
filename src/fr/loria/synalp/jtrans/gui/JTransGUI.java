@@ -376,6 +376,12 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 
 					// Only update UI if the word wasn't already highlighted
 					Word w = wordList.get(newHl);
+
+					if (w.getSegment().getStartFrame() > curfr) {
+						table.highlightWord(i, null);
+						continue;
+					}
+
 					if (hl[i] != newHl) {
 						table.highlightWord(i, w);
 					}

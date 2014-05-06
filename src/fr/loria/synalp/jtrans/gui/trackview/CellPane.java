@@ -17,7 +17,6 @@ import java.util.Map;
  * (and should) be reused for an entire MultiTrackTable instance.
  */
 public class CellPane extends JTextPane {
-	private static final Color KARAOKE_CELL_BG = new Color(0xF085B0);
 
 	private static final AttributeSet ALIGNED_STYLE =
 			new SimpleAttributeSet() {{
@@ -45,11 +44,10 @@ public class CellPane extends JTextPane {
 
 	private static final AttributeSet HIGHLIGHTED_STYLE =
 			new SimpleAttributeSet() {{
-				addAttribute(StyleConstants.Background, Color.WHITE);
+				addAttribute(StyleConstants.Background, new Color(0xF085B0));
 			}};
 
 
-	private final Color normalBG;
 	private TextCell cell;
 	private Element highlighted;
 
@@ -63,7 +61,6 @@ public class CellPane extends JTextPane {
 			}});
 		}
 
-
 		{
 			put(Comment.Type.FREEFORM,      Color.YELLOW);
 			put(Comment.Type.NOISE,         Color.CYAN);
@@ -76,8 +73,6 @@ public class CellPane extends JTextPane {
 
 
 	public CellPane() {
-		normalBG = getBackground();
-
 		setEditable(false);
 		setBorder(BorderFactory.createCompoundBorder(
 				getBorder(),
@@ -102,8 +97,6 @@ public class CellPane extends JTextPane {
 
 		for (int i = 0; i < cell.elts.size(); i++)
 			setDefaultStyle(i, cell.elts.get(i));
-
-		setBackground(normalBG);
 	}
 
 
@@ -140,8 +133,6 @@ public class CellPane extends JTextPane {
 
 
 	public void highlight(Element el) {
-		setBackground(KARAOKE_CELL_BG);
-
 		if (highlighted != null) {
 			setDefaultStyle(cell.elts.indexOf(highlighted), highlighted);
 		}

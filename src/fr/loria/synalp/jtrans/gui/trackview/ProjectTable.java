@@ -244,8 +244,10 @@ public class ProjectTable
 	public void highlightWord(int trackIdx, Word word) {
 		model.highlightElement(trackIdx, word);
 
-		scrollRectToVisible(getCellRect(
-				model.getHighlightedRow(trackIdx), trackIdx, true));
+		if (word != null) {
+			scrollRectToVisible(getCellRect(
+					model.getHighlightedRow(trackIdx), trackIdx, true));
+		}
 	}
 
 
