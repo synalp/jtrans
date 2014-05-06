@@ -19,6 +19,7 @@ import java.util.Random;
 public class TransitionRefinery {
 
 	private int[] timeline;
+	private int[] backup;
 	private double cLhd;
 
 	private Random random;
@@ -64,6 +65,7 @@ public class TransitionRefinery {
 			List<ModelTrainer> trainers)
 	{
 		timeline = new int[baseline.length];
+		backup = new int[baseline.length];
 		System.arraycopy(baseline, 0, timeline, 0, timeline.length);
 
 		random = new Random();
@@ -160,34 +162,21 @@ public class TransitionRefinery {
 	 * Refines a random transition in the timeline.
 	 */
 	private Accept metropolisHastings() {
-		int trans = -1;
-		while (trans < 0) {
-			// don't use last 2 values (see nextTransition())
-			trans = nextTransition(random.nextInt(timeline.length-2), timeline);
-		}
-		assert trans < timeline.length - 1;
+		System.arraycopy(timeline, 0, backup, 0, timeline.length);
 
-		// Shift transition
-		int backup = timeline[trans+1];
-		timeline[trans+1] = timeline[trans];
+		for (int i = 0; i < 10; i++) {
+			int trans = -1;
+			while (trans < 0) {
+				// don't use last 2 values (see nextTransition())
+				trans = nextTransition(random.nextInt(timeline.length - 2), timeline);
+			}
+			assert trans < timeline.length - 1;
+
+			// Shift transition
+			timeline[trans+1] = timeline[trans];
+		}
 
 		double newCLhd = computeCumulativeLikelihood();
-
-		/*
-		System.out.println("============= TRANSITION CHANGED AT FRAME " + trans + "=============");
-		System.out.println("=====CUMULATIVE: old: " + cLhd + " new: " + newCLhd);
-		for (int i = 0; i < timeline.length; i++) {
-			double diff = newLhd[i] - lhd[i];
-			if (diff != 0) {
-				System.out.println(
-						"[FRAME " + i + "]" +
-								"\tnew " + newLhd[i] +
-								"\told " + lhd[i] +
-								"\tdiff " + diff
-				);
-			}
-		}
-		*/
 
 		boolean accept = newCLhd > cLhd;
 		final Accept status;
@@ -207,9 +196,8 @@ public class TransitionRefinery {
 		}
 
 		if (!accept) {
-			timeline[trans+1] = backup;
+			timeline = backup;
 		} else {
-			//lhd = newLhd;
 			cLhd = newCLhd;
 		}
 

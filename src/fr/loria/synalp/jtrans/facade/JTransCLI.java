@@ -19,7 +19,7 @@ import java.util.logging.LogManager;
 
 public class JTransCLI {
 
-	public static String logID = ""; //"JTrans_" + System.currentTimeMillis();
+	public static String logID = "_" + System.currentTimeMillis();
 	public MarkupLoader loader;
 	public File inputFile;
 	public File audioFile;
