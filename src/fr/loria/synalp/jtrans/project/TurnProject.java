@@ -44,6 +44,11 @@ public class TurnProject extends Project {
 			// TODO skip empty?
 			return new Phrase(cTurn.start, cTurn.end, cTurn.elts.get(spkID));
 		}
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
 	}
 
 	public class Turn {
