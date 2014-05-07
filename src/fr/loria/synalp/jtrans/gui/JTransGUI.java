@@ -710,7 +710,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 			for (;;) {
 				for (; cSpk < project.speakerCount(); cSpk++) {
 					List<Word> words = project.getWords(cSpk);
-					for (; cWord < words.size(); cWord += delta) {
+					for (; cWord >= 0 && cWord < words.size(); cWord += delta) {
 						Word w = words.get(cWord);
 						if (matches(w)) {
 							found = true;
@@ -732,7 +732,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 					return;
 				}
 
-				reset();
+				reset(delta);
 			}
 		}
 
@@ -744,9 +744,16 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 			next(-1);
 		}
 
-		public void reset() {
+		public void reset(int delta) {
 			cSpk = 0;
-			cWord = 0;
+
+			if (delta > 0) {
+				// search from beginning
+				cWord = 0;
+			} else {
+				// search from end
+				cWord = project.getWords(cSpk).size()-1;
+			}
 		}
 
 		public abstract boolean matches(Word word);
@@ -774,7 +781,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 				return;
 			}
 			content = value.toLowerCase();
-			reset();
+			reset(1);
 			next();
 		}
 
