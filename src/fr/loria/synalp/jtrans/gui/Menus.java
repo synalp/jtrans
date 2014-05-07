@@ -211,6 +211,12 @@ public class Menus {
 		actionsm.add(findNextAnon);
 		actionsm.add(findPrevAnon);
 
+		findWord.setAccelerator(KeyStroke.getKeyStroke('F', modifier));
+		findNext.setAccelerator(KeyStroke.getKeyStroke("F3"));
+		findPrev.setAccelerator(KeyStroke.getKeyStroke("shift F3"));
+		findNextAnon.setAccelerator(KeyStroke.getKeyStroke("alt F3"));
+		findPrevAnon.setAccelerator(KeyStroke.getKeyStroke("shift alt F3"));
+
 		findWord.addActionListener(new AbstractAction() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
