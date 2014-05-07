@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry excluding="fr/loria/synalp/jtrans/test/s4/" kind="src" path="src"/>
+	<classpathentry kind="src" path="src/fr/loria/synalp/jtrans/test/s4"/>
+	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="lib/gson-2.2.4.jar"/>
+	<classpathentry kind="lib" path="lib/java-cup-0.11a.jar"/>
+	<classpathentry kind="lib" path="lib/jlayer-1.0.1-1.jar"/>
+	<classpathentry kind="lib" path="lib/jorbis-0.0.17-2.jar"/>
+	<classpathentry kind="lib" path="lib/juniversalchardet-1.0.3.jar"/>
+	<classpathentry kind="lib" path="lib/mp3spi-1.9.5-1.jar"/>
+	<classpathentry kind="lib" path="lib/tritonus-share-0.3.7-2.jar"/>
+	<classpathentry kind="lib" path="lib/utils4j-0.7.0.jar"/>
+	<classpathentry kind="lib" path="lib/vorbisspi-1.0.3-1.jar"/>
+	<classpathentry kind="lib" path="lib/weka-stable-3.6.10.jar"/>
+	<classpathentry kind="lib" path="lib/junit-4.11.jar"/>
+	<classpathentry kind="lib" path="lib/sphinx4-1.0beta6.jar"/>
+	<classpathentry kind="lib" path="lib/hamcrest-core-1.3.jar"/>
+	<classpathentry kind="lib" path="lib/jopt-simple-4.6.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

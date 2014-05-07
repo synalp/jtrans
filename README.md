@@ -3,6 +3,8 @@
 ## Purpose
 
 JTrans aims to bring text-to-speech alignment in a user-friendly package.
+It is the only software we are aware of that can align *long*
+audio files (tested on up to 2 hours of speech).
 
 It is being developed by SYNALP, a research team at LORIA, to assist in the
 semi-automatic alignment of large annotated text/speech corpora.
