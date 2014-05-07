@@ -72,6 +72,10 @@ public class TransitionRefinery {
 		this.graph = graph;
 		this.trainers = trainers;
 
+		for (int i = 0; i < 10000000; i++) {
+			shift();
+		}
+
 		cLhd = computeCumulativeLikelihood();
 	}
 
@@ -109,6 +113,23 @@ public class TransitionRefinery {
 			offset++;
 		}
 		return offset >= upper? -1: offset;
+	}
+
+
+	protected void shift() {
+		int trans = -1;
+		while (trans < 0) {
+			// don't use last 2 values (see nextTransition())
+			trans = nextTransition(random.nextInt(timeline.length - 2), timeline);
+		}
+		assert trans < timeline.length - 1;
+
+		// Shift transition
+		if (random.nextBoolean()) {
+			timeline[trans+1] = timeline[trans];
+		} else {
+			timeline[trans] = timeline[trans+1];
+		}
 	}
 
 
@@ -164,20 +185,8 @@ public class TransitionRefinery {
 	private Accept metropolisHastings() {
 		System.arraycopy(timeline, 0, backup, 0, timeline.length);
 
-		for (int i = 0; i < 10; i++) {
-			int trans = -1;
-			while (trans < 0) {
-				// don't use last 2 values (see nextTransition())
-				trans = nextTransition(random.nextInt(timeline.length - 2), timeline);
-			}
-			assert trans < timeline.length - 1;
-
-			// Shift transition
-			if (random.nextBoolean()) {
-				timeline[trans+1] = timeline[trans];
-			} else {
-				timeline[trans] = timeline[trans+1];
-			}
+		for (int i = 0; i < 5000; i++) {
+			shift();
 		}
 
 		double newCLhd = computeCumulativeLikelihood();
