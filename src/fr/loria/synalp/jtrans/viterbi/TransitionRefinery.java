@@ -9,6 +9,7 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -72,9 +73,11 @@ public class TransitionRefinery {
 		this.graph = graph;
 		this.trainers = trainers;
 
+/*
 		for (int i = 0; i < 10000000; i++) {
 			shift();
 		}
+*/
 
 		cLhd = computeCumulativeLikelihood();
 	}
@@ -106,10 +109,10 @@ public class TransitionRefinery {
 	 */
 	public static int nextTransition(int offset, int[] timeline) {
 		final int upper = timeline.length - 2;
-		while (offset < upper &&
-				!(timeline[offset+1] != timeline[offset] &&
-						timeline[offset+1] == timeline[offset+2]))
-		{
+		while (offset < upper) {
+			if (timeline[offset] != timeline[offset+1]) {
+				return offset;
+			}
 			offset++;
 		}
 		return offset >= upper? -1: offset;
@@ -117,19 +120,53 @@ public class TransitionRefinery {
 
 
 	protected void shift() {
-		int trans = -1;
-		while (trans < 0) {
-			// don't use last 2 values (see nextTransition())
-			trans = nextTransition(random.nextInt(timeline.length - 2), timeline);
-		}
-		assert trans < timeline.length - 1;
+		// first frame in the region surrounding the transition
+		int winL = -1;
 
-		// Shift transition
-		if (random.nextBoolean()) {
-			timeline[trans+1] = timeline[trans];
-		} else {
-			timeline[trans] = timeline[trans+1];
+		// last frame in the region surrounding the transition
+		int winR = -1;
+
+		// frames to the left of the transition in the middle of the region
+		int oldLeftFrames = 0;
+
+		while (winR < 0) {
+			// don't use last 2 values (see nextTransition())
+			winL = nextTransition(random.nextInt(timeline.length - 2), timeline);
+			if (winL < 0) continue;
+			// the region starts to the right of the "initial" transition
+			winL++;
+
+			int winC = nextTransition(winL, timeline);
+			if (winC < 0) continue;
+
+			oldLeftFrames = 1 + winC - winL;
+
+			winR = nextTransition(winC + 1, timeline);
+			assert winC != winR;
 		}
+
+		int left  = timeline[winL];
+		int right = timeline[winR];
+		assert left != right;
+
+		int windowLength = 1 + winR-winL;
+
+		if (windowLength <= 2) {
+			// can't shift anything without erasing a state
+			return;
+		}
+
+		int leftFrames = oldLeftFrames;
+		while (leftFrames == oldLeftFrames) {
+			// don't erase first nor last state in the region
+			leftFrames = 1 + random.nextInt(windowLength - 1);
+		}
+
+		assert leftFrames >= 1;
+		assert leftFrames <= windowLength-1;
+
+		Arrays.fill(timeline, winL, winL+leftFrames, left);
+		Arrays.fill(timeline, winL+leftFrames, winR+1, right);
 	}
 
 
@@ -185,7 +222,7 @@ public class TransitionRefinery {
 	private Accept metropolisHastings() {
 		System.arraycopy(timeline, 0, backup, 0, timeline.length);
 
-		for (int i = 0; i < 5000; i++) {
+		for (int i = 0; i < 100; i++) {
 			shift();
 		}
 
