@@ -112,26 +112,7 @@ public abstract class AutoAligner {
 
 		graph.setProgressDisplay(progress);
 
-		// Cache wrapper class for getTimeline()
-		class TimelineFactory implements Cache.ObjectFactory {
-			public int[] make() {
-				try {
-					return getTimeline(graph, text, startFrame, endFrame);
-				} catch (IOException ex) {
-					ex.printStackTrace();
-					return null;
-				} catch (InterruptedException ex) {
-					ex.printStackTrace();
-					return null;
-				}
-			}
-		}
-
-		int[] timeline = (int[])Cache.cachedObject(
-				getTimelineCacheDirectoryName(),
-				"timeline",
-				new TimelineFactory(),
-				audio, text, graph.getNodeCount(), startFrame, endFrame);
+		int[] timeline = getCachedTimeline(graph, text, startFrame, endFrame);
 
 		concatGraphs.add(graph);
 		concatTimelines.add(timeline);
@@ -171,6 +152,35 @@ public abstract class AutoAligner {
 		}
 
 		graph.setWordAlignments(timeline, startFrame);
+	}
+
+
+	public int[] getCachedTimeline(
+			final StateGraph graph,
+			final String text,
+			final int startFrame,
+			final int endFrame)
+	{
+		// Cache wrapper class for getTimeline()
+		class TimelineFactory implements Cache.ObjectFactory {
+			public int[] make() {
+				try {
+					return getTimeline(graph, text, startFrame, endFrame);
+				} catch (IOException ex) {
+					ex.printStackTrace();
+					return null;
+				} catch (InterruptedException ex) {
+					ex.printStackTrace();
+					return null;
+				}
+			}
+		}
+
+		return (int[])Cache.cachedObject(
+				getTimelineCacheDirectoryName(),
+				"timeline",
+				new TimelineFactory(),
+				audio, text, graph.getNodeCount(), startFrame, endFrame);
 	}
 
 

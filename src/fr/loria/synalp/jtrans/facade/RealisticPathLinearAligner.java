@@ -1,7 +1,6 @@
 package fr.loria.synalp.jtrans.facade;
 
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
-import fr.loria.synalp.jtrans.viterbi.StateGraph;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,41 +19,28 @@ import java.util.List;
  *
  * @see FastLinearAligner
  */
-public class RealisticPathLinearAligner extends AutoAligner {
-
-	private ViterbiAligner pathfinder;
-
+public class RealisticPathLinearAligner extends CheatingAligner {
 
 	public RealisticPathLinearAligner(File audio, ProgressDisplay progress)
 			throws IOException
 	{
 		super(audio, progress);
-		pathfinder = new ViterbiAligner(audio, progress);
 	}
 
 
 	@Override
-	protected int[] getTimeline(
-			StateGraph graph,
-			String text,
-			int startFrame,
-			int endFrame)
-			throws IOException, InterruptedException
-	{
-		final int length = boundCheckLength(startFrame, endFrame);
+	protected int[] getTimeline(int[] baseline) {
+		List<Integer> values = new ArrayList<>();
 
-		int[] refTL = pathfinder.getTimeline(graph, text, startFrame, endFrame);
-
-		List<Integer> values = new ArrayList<Integer>();
-
-		for (int i = 0; i < refTL.length; i++) {
-			int node = refTL[i];
-			if (i == 0 || refTL[i-1] != node) {
+		for (int i = 0; i < baseline.length; i++) {
+			int node = baseline[i];
+			if (i == 0 || baseline[i-1] != node) {
 				values.add(node);
 			}
 		}
 
-		return FastLinearAligner.fillInterpolate(values, new int[length], 0, length);
+		return FastLinearAligner.fillInterpolate(
+				values, new int[baseline.length], 0, baseline.length);
 	}
 
 }
