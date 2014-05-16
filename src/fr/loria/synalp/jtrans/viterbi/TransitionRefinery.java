@@ -80,7 +80,7 @@ public class TransitionRefinery {
 	}
 
 
-	private double computeCumulativeLikelihood(int[] timeline) {
+	private ModelTrainer train(int[] timeline) {
 		// TODO: too much boilerplate -- do these steps really need to be separated?
 
 		for (ModelTrainer s: trainers) {
@@ -94,7 +94,12 @@ public class TransitionRefinery {
 		ModelTrainer merged = ModelTrainer.merge(trainers);
 		merged.score();
 
-		return ModelTrainer.sum(merged.getLikelihoods());
+		return merged;
+	}
+
+
+	private double computeCumulativeLikelihood(int[] timeline) {
+		return ModelTrainer.sum(train(timeline).getLikelihoods());
 	}
 
 
