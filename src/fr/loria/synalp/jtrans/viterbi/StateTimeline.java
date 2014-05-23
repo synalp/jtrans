@@ -8,36 +8,77 @@ import java.util.List;
 
 public class StateTimeline {
 
-	List<HMMState> states;
-	List<Word> words;
-	List<Word> uniqueWords;
+	// TODO: easier offset management
 
 
-	public StateTimeline() {
-		states = new ArrayList<>();
-		words = new ArrayList<>();
-		uniqueWords = new ArrayList<>();
-	}
+	protected static class Segment {
+		int length;
+		final HMMState state;
+		final Word word;
 
+		public Segment(HMMState state, Word word) {
+			length = 1;
+			this.state = state;
+			this.word = word;
+		}
 
-	public StateTimeline(StateTimeline other) {
-		states = new ArrayList<>(other.states);
-		words = new ArrayList<>(other.words);
-		uniqueWords = new ArrayList<>(other.uniqueWords);
-	}
-
-
-	public void newFrame(HMMState state, Word word) {
-		states.add(state);
-		words.add(word);
-		if (uniqueWords.isEmpty() || uniqueWords.get(uniqueWords.size()-1) != word) {
-			uniqueWords.add(word);
+		public String getUnit() {
+			return state.getHMM().getBaseUnit().getName();
 		}
 	}
 
 
+	List<Segment> segments;
+	List<Word> uniqueWords;
+	int frames;
+
+
+	public StateTimeline() {
+		segments = new ArrayList<>();
+		uniqueWords = new ArrayList<>();
+		frames = 0;
+	}
+
+
+	public StateTimeline(StateTimeline other) {
+		segments = new ArrayList<>(other.segments);
+		uniqueWords = new ArrayList<>(other.uniqueWords);
+		frames = other.frames;
+	}
+
+
+	private Segment getLastSegment() {
+		if (!segments.isEmpty()) {
+			return segments.get(segments.size()-1);
+		} else {
+			return null;
+		}
+	}
+
+
+	/**
+	 *
+	 * @param state
+	 * @param word unique reference!
+	 */
+	public void newFrame(HMMState state, Word word) {
+		Segment lastSegment = getLastSegment();
+		if (null != lastSegment && lastSegment.state == state && lastSegment.word == word) {
+			lastSegment.length++;
+		} else {
+			segments.add(new Segment(state, word));
+		}
+
+		if (uniqueWords.isEmpty() || uniqueWords.get(uniqueWords.size()-1) != word) {
+			uniqueWords.add(word);
+		}
+
+		frames++;
+	}
+
+
 	public int getLength() {
-		return states.size();
+		return frames;
 	}
 
 
@@ -47,7 +88,19 @@ public class StateTimeline {
 
 
 	public HMMState getStateAtFrame(int frame) {
-		return states.get(frame);
+		return getSegmentAtFrame(frame).state;
+	}
+
+
+	public Segment getSegmentAtFrame(int frame) {
+		int total = 0;
+		for (Segment seg: segments) {
+			if (frame >= total && frame < total+seg.length) {
+				return seg;
+			}
+			total += seg.length;
+		}
+		return null;
 	}
 
 
@@ -61,28 +114,33 @@ public class StateTimeline {
 		Word pWord = null;        // previous word
 		Word.Phone phone = null;  // current phone
 		String pUnit = null;
+		int segStart = offset; // absolute frame number
 
-		for (int f = 0; f < getLength(); f++) {
-			int now = offset+f; // absolute frame number
+		for (Segment seg: segments) {
+			int segEnd = segStart + seg.length - 1;
+			assert segStart <= segEnd;
 
-			Word word = words.get(f);
+			Word word = seg.word;
 			if (word != pWord) {
-				word.setSegment(now, now);
+				word.setSegment(segStart, segEnd);
 				pWord = word;
 			} else if (null != word) {
-				word.getSegment().setEndFrame(now);
+				word.getSegment().setEndFrame(segEnd);
 			}
 
-			String unit = states.get(f).getHMM().getBaseUnit().getName();
-			if (f == 0 || pUnit == null || !unit.equals(pUnit)) {
+			String unit = seg.getUnit();
+			if (pUnit == null || !unit.equals(pUnit)) {
 				if (null != word) {
-					phone = new Word.Phone(unit, new Word.Segment(now, now));
+					phone = new Word.Phone(
+							unit, new Word.Segment(segStart, segEnd));
 					word.addPhone(phone);
 				}
 				pUnit = unit;
 			} else if (null != phone) {
-				phone.getSegment().setEndFrame(now);
+				phone.getSegment().setEndFrame(segEnd);
 			}
+
+			segStart += seg.length;
 		}
 	}
 
