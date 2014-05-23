@@ -135,8 +135,13 @@ public class StateSet extends StatePool {
 
 
 	public boolean isSilent(int id) {
-		assert id < 0 || id > 2 || getPhone(get(id)).equals(SILENCE_PHONE);
+		assert id < 0 || id > 2 || isSilenceState(get(id));
 		return id >= 0 && id <= 2;
+	}
+
+
+	public static boolean isSilenceState(HMMState state) {
+		return getPhone(state).equals(SILENCE_PHONE);
 	}
 
 }

@@ -12,6 +12,7 @@ import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.List;
 import static java.lang.System.arraycopy;
+import static fr.loria.synalp.jtrans.viterbi.StateSet.isSilenceState;
 
 /**
  * Learns Gaussians for every unique state and computes alignment likelihoods.
@@ -25,9 +26,6 @@ import static java.lang.System.arraycopy;
  * sub-alignment.
  */
 public class ModelTrainer {
-
-	private static int logIDCounter = 0;
-	private final int logID;
 
 	/** Number of values in FloatData. */
 	public static final int FRAME_DATA_LENGTH = 39;
@@ -61,9 +59,6 @@ public class ModelTrainer {
 	StatePool pool = new StateSet();
 
 
-	private static ModelTrainer kludgeReferenceScorer;
-	private static boolean kludgeModelsUsed = false;
-
 	private enum SystemState {
 		UNINITIALIZED,
 		LEARNING,
@@ -79,7 +74,6 @@ public class ModelTrainer {
 		this.nFrames = data.length;
 		this.data = data;
 
-		logID = logIDCounter++;
 		longTimeline = new int[nFrames];
 
 		nMatchF     = new int[MAX_UNIQUE_STATES];
@@ -117,7 +111,7 @@ public class ModelTrainer {
 	}
 
 
-	public void learn(Word word, StateGraph graph, int[] timeline, int frameOffset) {
+	public void learn(Word word, StateTimeline timeline, int frameOffset) {
 		if (system != SystemState.LEARNING) {
 			throw new IllegalStateException("not ready to learn");
 		}
@@ -132,7 +126,7 @@ public class ModelTrainer {
 
 		for (int absf = sf; absf <= ef; absf++) {
 			int relf = absf - frameOffset;
-			learnNode(graph, timeline[relf], absf);
+			learnState(timeline.getStateAtFrame(relf), absf);
 		}
 	}
 
@@ -149,16 +143,15 @@ public class ModelTrainer {
 
 		for (int f = 0; f < timeline.length; f++) {
 			int absf = f + frameOffset;
-			learnNode(graph, timeline[f], absf);
+			learnState(graph.getStateAt(timeline[f]), absf);
 		}
 	}
 
 
-	private void learnNode(StateGraph graph, int node, int absf) {
+	private void learnState(HMMState state, int absf) {
 		assert longTimeline[absf] < 0 : "longTimeline already filled here";
 
-		if (!graph.isSilentAt(node)) {
-			HMMState state = graph.getStateAt(node);
+		if (!isSilenceState(state)) {
 			int myState = pool.indexOf(state);
 			if (myState < 0) {
 				myState = pool.add(state);
@@ -252,35 +245,6 @@ public class ModelTrainer {
 			}
 		}
 
-/*
-		if (kludgeModelsUsed) {
-			throw new Error("Silence models already used");
-		}
-		else if (kludgeReferenceScorer == null) {
-			// First pass
-			System.out.println("Providing silence models");
-			kludgeReferenceScorer = this;
-		}
-		else {
-			// Second pass
-			System.out.println("Consuming silence models");
-			assert this != kludgeReferenceScorer;
-			assert pool.states.equals(kludgeReferenceScorer.pool.states);
-
-//			for (int i = 0; i < kludgeReferenceScorer.nStates; i++) {
-			for (int i = 0; i < 3; i++) {
-				assert kludgeReferenceScorer.pool.states.get(i) == null;
-
-				// copy stuff used by score()
-				arraycopy(kludgeReferenceScorer.avg[i], 0, avg[i], 0, avg[i].length);
-				arraycopy(kludgeReferenceScorer.var[i], 0, var[i], 0, var[i].length);
-				detVar[i] = kludgeReferenceScorer.detVar[i];
-			}
-
-			kludgeModelsUsed = true;
-		}
-*/
-
 		system = SystemState.LEARNING_COMPLETE;
 	}
 
@@ -316,26 +280,6 @@ public class ModelTrainer {
 			// -log(1 / sqrt(2 pi detVar)) = -(log(2 pi)/2 + log(detVar)/2)
 			likelihood[f] = -.5 * (dot + logTwoPi + lm.linearToLog(detVar[s]));
 		}
-
-/*
-		try {
-			final String plotName = JTransCLI.logID + "_perframe_" +
-					(kludgeModelsUsed? "clear": "gold") + ".txt";
-			PrintWriter perFrame;
-			perFrame = new PrintWriter(new BufferedWriter(new FileWriter(plotName)));
-			System.err.println("Plot: " + plotName);
-
-			for (int f = 0; f < likelihood.length; f++) {
-				perFrame.printf("%6d %6.6f %4d %s\n",
-						f, likelihood[f], longTimeline[f], pool.getPhone(longTimeline[f]));
-			}
-
-			perFrame.flush();
-			perFrame.close();
-		} catch (IOException ex) {
-			throw new RuntimeException(ex);
-		}
-*/
 
 		system = SystemState.SCORE_READY;
 

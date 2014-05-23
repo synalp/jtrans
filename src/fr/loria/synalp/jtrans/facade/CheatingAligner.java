@@ -2,6 +2,7 @@ package fr.loria.synalp.jtrans.facade;
 
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
 import fr.loria.synalp.jtrans.viterbi.StateGraph;
+import fr.loria.synalp.jtrans.viterbi.StateTimeline;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,7 +30,7 @@ public abstract class CheatingAligner extends AutoAligner {
 
 
 	@Override
-	protected int[] getTimeline(
+	protected StateTimeline getTimeline(
 			StateGraph graph,
 			String text,
 			int startFrame,
@@ -41,6 +42,6 @@ public abstract class CheatingAligner extends AutoAligner {
 	}
 
 
-	protected abstract int[] getTimeline(int[] baseline);
+	protected abstract StateTimeline getTimeline(StateTimeline baseline);
 
 }

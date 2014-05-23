@@ -24,7 +24,7 @@ public abstract class AutoAligner {
 	private Runnable refinementIterationHook;
 
 	List<StateGraph> concatGraphs = new ArrayList<>();
-	List<int[]> concatTimelines = new ArrayList<>();
+	List<StateTimeline> concatTimelines = new ArrayList<>();
 
 
 	/**
@@ -112,7 +112,7 @@ public abstract class AutoAligner {
 
 		graph.setProgressDisplay(progress);
 
-		int[] timeline = getCachedTimeline(graph, text, startFrame, endFrame);
+		StateTimeline timeline = getCachedTimeline(graph, text, startFrame, endFrame);
 
 		concatGraphs.add(graph);
 		concatTimelines.add(timeline);
@@ -123,11 +123,10 @@ public abstract class AutoAligner {
 				progress.setIndeterminateProgress("Computing likelihood...");
 			}
 
-			graph.setWordAlignments(timeline, startFrame);
+			timeline.setWordAlignments(startFrame);
 
 			for (Word w: graph.getWords()) {
-				trainers.get(w.getSpeaker())
-						.learn(w, graph, timeline, startFrame);
+				trainers.get(w.getSpeaker()).learn(w, timeline, startFrame);
 			}
 		}
 
@@ -138,24 +137,24 @@ public abstract class AutoAligner {
 
 			assert trainers != null;
 
-			final TransitionRefinery refinery = new TransitionRefinery(
-					graph, timeline, trainers);
+			final TransitionRefinery refinery =
+					new TransitionRefinery(timeline, trainers);
 
 			while (!refinery.hasPlateaued()) {
 				timeline = refinery.step();
 
 				if (refinementIterationHook != null) {
-					graph.setWordAlignments(timeline, startFrame);
+					timeline.setWordAlignments(startFrame);
 					refinementIterationHook.run();
 				}
 			}
 		}
 
-		graph.setWordAlignments(timeline, startFrame);
+		timeline.setWordAlignments(startFrame);
 	}
 
 
-	public int[] getCachedTimeline(
+	public StateTimeline getCachedTimeline(
 			final StateGraph graph,
 			final String text,
 			final int startFrame,
@@ -163,7 +162,7 @@ public abstract class AutoAligner {
 	{
 		// Cache wrapper class for getTimeline()
 		class TimelineFactory implements Cache.ObjectFactory {
-			public int[] make() {
+			public StateTimeline make() {
 				try {
 					return getTimeline(graph, text, startFrame, endFrame);
 				} catch (IOException ex) {
@@ -176,11 +175,16 @@ public abstract class AutoAligner {
 			}
 		}
 
-		return (int[])Cache.cachedObject(
+		/*
+		return (StateTimeline)Cache.cachedObject(
 				getTimelineCacheDirectoryName(),
 				"timeline",
 				new TimelineFactory(),
 				audio, text, graph.getNodeCount(), startFrame, endFrame);
+		*/
+		System.out.println("Reimplement me! Cached timeline");
+
+		return new TimelineFactory().make();
 	}
 
 
@@ -191,7 +195,7 @@ public abstract class AutoAligner {
 	 *             The actual words are contained in the StateGraph!
 	 * @return a frame-by-frame timeline of HMM states
 	 */
-	protected abstract int[] getTimeline(
+	protected abstract StateTimeline getTimeline(
 			StateGraph graph,
 			String text,
 			int startFrame,
@@ -229,12 +233,15 @@ public abstract class AutoAligner {
 
 
 	public StatePath getConcatenatedPath() {
+		/*
 		// TODO: should throw an error on overlaps
 		StatePath[] paths = new StatePath[concatGraphs.size()];
 		for (int i = 0; i < concatGraphs.size(); i++) {
 			paths[i] = new StatePath(concatGraphs.get(i), concatTimelines.get(i));
 		}
 		return new StatePath(paths);
+		*/
+		throw new Error("Reimplement me!");
 	}
 
 }

@@ -817,7 +817,7 @@ public class StateGraph {
 	 * array of node IDs, with array indices being frame numbers relative to
 	 * the first frame given to StateGraph#viterbi.
 	 */
-	public int[] backtrack(SwapInflater swapReader) throws IOException {
+	public StateTimeline backtrack(SwapInflater swapReader) throws IOException {
 		InboundTransitionBridge in = new InboundTransitionBridge();
 
 		int leadNode = nNodes - 1;
@@ -834,7 +834,15 @@ public class StateGraph {
 			}
 		}
 
-		return timeline;
+		StateTimeline stl = new StateTimeline();
+		int wordIdx = -1;
+		for (int f = 0; f < timeline.length; f++) {
+			int nodeIdx = timeline[f];
+			wordIdx = getWordIdxAt(nodeIdx, wordIdx);
+			stl.newFrame(getStateAt(nodeIdx), wordIdx>=0? words.get(wordIdx): null);
+		}
+
+		return stl;
 	}
 
 

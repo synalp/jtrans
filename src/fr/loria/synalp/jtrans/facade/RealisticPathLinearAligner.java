@@ -1,6 +1,7 @@
 package fr.loria.synalp.jtrans.facade;
 
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
+import fr.loria.synalp.jtrans.viterbi.StateTimeline;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,9 +30,10 @@ public class RealisticPathLinearAligner extends CheatingAligner {
 
 
 	@Override
-	protected int[] getTimeline(int[] baseline) {
+	protected StateTimeline getTimeline(StateTimeline baseline) {
 		List<Integer> values = new ArrayList<>();
 
+		/*
 		for (int i = 0; i < baseline.length; i++) {
 			int node = baseline[i];
 			if (i == 0 || baseline[i-1] != node) {
@@ -41,6 +43,9 @@ public class RealisticPathLinearAligner extends CheatingAligner {
 
 		return FastLinearAligner.fillInterpolate(
 				values, new int[baseline.length], 0, baseline.length);
+		*/
+
+		throw new Error("Reimplement me!");
 	}
 
 }

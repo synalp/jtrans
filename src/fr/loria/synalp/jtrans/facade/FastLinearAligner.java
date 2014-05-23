@@ -2,6 +2,7 @@ package fr.loria.synalp.jtrans.facade;
 
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
 import fr.loria.synalp.jtrans.viterbi.StateGraph;
+import fr.loria.synalp.jtrans.viterbi.StateTimeline;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -27,14 +28,15 @@ public class FastLinearAligner extends AutoAligner {
 	}
 
 
-	protected int[] getTimeline(
+	protected StateTimeline getTimeline(
 			StateGraph graph,
 			String text,
 			int startFrame,
 			int endFrame)
 	{
 		final int length = boundCheckLength(startFrame, endFrame);
-		return fillInterpolate(graph.getNodeCount(), new int[length], 0, length);
+//		return fillInterpolate(graph.getNodeCount(), new int[length], 0, length);
+		throw new Error("Reimplement me!");
 	}
 
 

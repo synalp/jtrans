@@ -18,11 +18,10 @@ import java.util.Random;
  */
 public class TransitionRefinery {
 
-	private int[] timeline;
+	private StateTimeline timeline;
 	private double cLhd;
 
 	private Random random;
-	private StateGraph graph;
 	private List<ModelTrainer> trainers;
 	private LogMath log = HMMModels.getLogMath();
 
@@ -59,15 +58,12 @@ public class TransitionRefinery {
 	 * @param baseline Baseline alignment (as found e.g. with viterbi()).
 	 */
 	public TransitionRefinery(
-			StateGraph graph,
-			int[] baseline,
+			StateTimeline baseline,
 			List<ModelTrainer> trainers)
 	{
-		timeline = new int[baseline.length];
-		System.arraycopy(baseline, 0, timeline, 0, timeline.length);
+		timeline = new StateTimeline(baseline);
 
 		random = new Random();
-		this.graph = graph;
 		this.trainers = trainers;
 
 /*
@@ -80,15 +76,15 @@ public class TransitionRefinery {
 	}
 
 
-	private ModelTrainer train(int[] timeline) {
+	private ModelTrainer train(StateTimeline timeline) {
 		// TODO: too much boilerplate -- do these steps really need to be separated?
 
 		for (ModelTrainer s: trainers) {
 			s.init();
 		}
 
-		for (Word w: graph.getWords()) {
-			trainers.get(w.getSpeaker()).learn(w, graph, timeline, 0);
+		for (Word w: timeline.getUniqueWords()) {
+			trainers.get(w.getSpeaker()).learn(w, timeline, 0);
 		}
 
 		ModelTrainer merged = ModelTrainer.merge(trainers);
@@ -98,7 +94,7 @@ public class TransitionRefinery {
 	}
 
 
-	private double computeCumulativeLikelihood(int[] timeline) {
+	private double computeCumulativeLikelihood(StateTimeline timeline) {
 		return ModelTrainer.sum(train(timeline).getLikelihoods());
 	}
 
@@ -106,7 +102,7 @@ public class TransitionRefinery {
 	/**
 	 * Refines an HMM state timeline with the Metropolis-Hastings algorithm.
 	 */
-	public int[] step() throws IOException {
+	public StateTimeline step() throws IOException {
 		iterations++;
 
 		if (plot == null) {
@@ -153,6 +149,9 @@ public class TransitionRefinery {
 	 * Refines a random transition in the timeline.
 	 */
 	private Accept metropolisHastings() {
+		throw new Error("Reimplement me!");
+
+		/*
 		NodeTimeline ntl = new NodeTimeline(timeline);
 
 		for (int i = 0; i < 100; i++) {
@@ -186,6 +185,7 @@ public class TransitionRefinery {
 		System.out.println("Acceptance status: " + status);
 
 		return status;
+		*/
 	}
 
 }
