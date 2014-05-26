@@ -23,8 +23,11 @@ public abstract class AutoAligner {
 	protected final ProgressDisplay progress;
 	private Runnable refinementIterationHook;
 
-	List<StateGraph> concatGraphs = new ArrayList<>();
-	List<StateTimeline> concatTimelines = new ArrayList<>();
+	/**
+	 * Concatenation of timelines obtained via successive calls to
+	 * {@link #align}.
+	 */
+	private StateTimeline concatenated = new StateTimeline();
 
 
 	/**
@@ -93,11 +96,17 @@ public abstract class AutoAligner {
 	/**
 	 * Aligns words in a StateGraph.
 	 * @param endFrame last frame to analyze
+	 * @param concatenate Whether to concatenate the resulting timeline
+	 *                    internally (don't do that with overlapping speech!),
+	 *                    to prepare a call to getConcatenatedPath().
+	 *                    When concatenating, calls to align() must reflect the
+	 *                    chronological order of the pieces of text to align!
 	 */
 	public void align(
 			final StateGraph graph,
 			final int startFrame,
-			final int endFrame)
+			final int endFrame,
+			boolean concatenate)
 			throws IOException, InterruptedException
 	{
 		// Space-separated string of words (used as identifier for cache files)
@@ -112,10 +121,17 @@ public abstract class AutoAligner {
 
 		graph.setProgressDisplay(progress);
 
-		StateTimeline timeline = getCachedTimeline(graph, text, startFrame, endFrame);
+		StateTimeline timeline = getCachedTimeline(
+				graph, text, startFrame, endFrame);
 
-		concatGraphs.add(graph);
-		concatTimelines.add(timeline);
+		if (concatenate) {
+			/* Technically, we don't *need* to pad the concatenated timeline,
+			since we only need the state sequence (in getConcatenatedPath()),
+			which isn't affected by timing info. But it makes sense to pad it
+			anyway, just so it is chronologically correct if we ever need it. */
+			concatenated.pad(startFrame);
+			concatenated.concatenate(timeline);
+		}
 
 		if (computeLikelihoods) {
 			assert trainers != null;
@@ -232,16 +248,13 @@ public abstract class AutoAligner {
 	}
 
 
+	/**
+	 * Returns concatenation of timelines obtained via successive calls to
+	 * {@link #align}.
+	 */
 	public StatePath getConcatenatedPath() {
-		/*
 		// TODO: should throw an error on overlaps
-		StatePath[] paths = new StatePath[concatGraphs.size()];
-		for (int i = 0; i < concatGraphs.size(); i++) {
-			paths[i] = new StatePath(concatGraphs.get(i), concatTimelines.get(i));
-		}
-		return new StatePath(paths);
-		*/
-		throw new Error("Reimplement me!");
+		return new StatePath(concatenated);
 	}
 
 }

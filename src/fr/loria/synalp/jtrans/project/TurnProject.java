@@ -97,6 +97,16 @@ public class TurnProject extends Project {
 			}
 		}
 
+		/**
+		 * Returns the ID of the most important speaker in this turn.
+		 * <p/>
+		 * When aligning without overlapping speech, at most one speaker's
+		 * speech is kept in each turn. We have to arbitrarily select a single
+		 * priority speaker and ignore the speech of all other speakers.
+		 * <p/>
+		 * This method returns the ID of the speaker who utters the most words
+		 * in the turn. In case of a tie, returns the first tied speaker.
+		 */
 		public int prioritySpeaker() {
 			int maxWordCount = 0;
 			int maxSpeaker = -1;
@@ -212,7 +222,8 @@ public class TurnProject extends Project {
 		align(aligner,
 				turns.get(0).start,
 				turns.get(turns.size()-1).end,
-				words);
+				words,
+				true); // priority, concatenate
 
 		if (overlaps) {
 			for (Turn turn: turns) {
@@ -229,7 +240,8 @@ public class TurnProject extends Project {
 					align(aligner,
 							new Anchor(minMax[0]),
 							new Anchor(minMax[1]),
-							turn.getWords(i));
+							turn.getWords(i),
+							false); // non-priority, don't concatenate
 				}
 			}
 		}
@@ -246,7 +258,10 @@ public class TurnProject extends Project {
 	/**
 	 * Aligns all turns.
 	 * <p/>
-	 * Any turns with incomplete timing information are chained together.
+	 * Contiguous turns that lack timing information are "chained" together
+	 * and aligned together as if they were one single, long turn.
+	 * <p/>
+	 * Turns with complete timing information are aligned independently.
 	 *
 	 * @see TurnProject#alignTurnChain
 	 */
@@ -274,19 +289,25 @@ public class TurnProject extends Project {
 			}
 
 			else if (null == turn.end) {
-				// Start a chain
+				// chainStart < 0, no valid timing information
+				// Start a new chain
 				chainStart = t;
 			}
 
 			else {
-				// Independent turn (timing information)
+				// chainStart < 0, valid timing information
+				// Independent turn (i.e. has complete timing information)
+				// Don't start a chain
+
+				// priority speaker ID
 				int pSpk = overlaps? -1: turn.prioritySpeaker();
 
 				for (int i = 0; i < speakerCount(); i++) {
 					if (!overlaps && i != pSpk) {
 						continue;
 					}
-					align(aligner, turn.start, turn.end, turn.getWords(i));
+					align(aligner, turn.start, turn.end, turn.getWords(i),
+							i == pSpk); // only concatenate if priority
 				}
 			}
 		}

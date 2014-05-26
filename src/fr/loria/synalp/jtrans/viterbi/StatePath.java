@@ -1,5 +1,9 @@
 package fr.loria.synalp.jtrans.viterbi;
 
+import edu.cmu.sphinx.util.LogMath;
+import fr.loria.synalp.jtrans.elements.Word;
+import fr.loria.synalp.jtrans.speechreco.s4.HMMModels;
+
 import java.util.*;
 
 
@@ -9,26 +13,6 @@ import java.util.*;
  * the graph.
  */
 public class StatePath extends StateGraph {
-
-	/**
-	 * Maps node indices from the original StateGraph objects to node indices
-	 * in this StatePath.
-	 */
-	private Map<StateGraph, int[]> nodeTranslations;
-
-
-	/**
-	 * Creates a new translation array for the given graph.
-	 * @return ready-to-fill translation array
-	 */
-	private int[] newTranslation(StateGraph graph) {
-		assert !nodeTranslations.containsKey(graph);
-		int[] nt = new int[graph.nNodes];
-		Arrays.fill(nt, -1);
-		nodeTranslations.put(graph, nt);
-		return nt;
-	}
-
 
 	/**
 	 * Converts a linear StateGraph to a StatePath.
@@ -53,12 +37,6 @@ public class StatePath extends StateGraph {
 
 		assert graph.isLinear();
 		assert isLinear();
-
-		nodeTranslations = new HashMap<>(1);
-		int[] nt = newTranslation(graph);
-		for (int i = 0; i < graph.nNodes; i++) {
-			nt[i] = i;
-		}
 
 		check();
 	}
@@ -98,22 +76,7 @@ public class StatePath extends StateGraph {
 		//----------------------------------------------------------------------
 		// Allocate
 
-		words = new ArrayList<>(nWords);
-		wordBoundaries = new int[nWords];
-
-		nodeStates = new int  [nNodes];
-		outCount   = new byte [nNodes];
-		// Only 2 transitions will ever be possible for any given node
-		// in a path (except for the first node which only has itself)
-		outNode    = new int  [nNodes][2];
-		outProb    = new float[nNodes][2];
-
-		for (int i = 0; i < outProb.length; i++) {
-			Arrays.fill(outProb[i], UNINITIALIZED_LOG_PROBABILITY);
-		}
-
-		nodeTranslations = new HashMap<>(1);
-		int[] translations = newTranslation(graph);
+		allocArrays(nNodes, nWords);
 
 		//----------------------------------------------------------------------
 		// Fill
@@ -129,7 +92,6 @@ public class StatePath extends StateGraph {
 				continue;
 			}
 
-			translations[ocn]  = tcn;
 			nodeStates[tcn]    = graph.nodeStates[ocn];
 			// All nodes have 2 outbound transitions, except for the last node
 			// which only has 1 (this is corrected after the loop)
@@ -174,18 +136,8 @@ public class StatePath extends StateGraph {
 		}
 
 		// Allocate
-		words = new ArrayList<>(nWords);
-		wordBoundaries = new int[nWords];
-		nodeStates = new int  [nNodes];
-		outCount   = new byte [nNodes];
-		outNode    = new int  [nNodes][MAX_TRANSITIONS];
-		outProb    = new float[nNodes][MAX_TRANSITIONS];
-		nodeTranslations = new HashMap<>();
+		allocArrays(nNodes, nWords);
 		pool = new StateSet();
-
-		for (int i = 0; i < nNodes; i++) {
-			Arrays.fill(outProb[i], UNINITIALIZED_LOG_PROBABILITY);
-		}
 
 		// Concatenate
 		int n = 0;
@@ -196,6 +148,72 @@ public class StatePath extends StateGraph {
 		correctLastNodeTransitions();
 
 		check();
+	}
+
+
+	public StatePath(StateTimeline timeline) {
+		LogMath lm = HMMModels.getLogMath();
+
+		int nonPaddingSegmentCount = 0;
+		for (StateTimeline.Segment seg: timeline.segments) {
+			if (!seg.isPadding()) {
+				nonPaddingSegmentCount++;
+			}
+		}
+
+		allocArrays(nonPaddingSegmentCount, timeline.getUniqueWordCount());
+		pool = new StateSet();
+
+		int n = 0;
+		int w = 0;
+		Word pWord = null;
+
+		for (StateTimeline.Segment seg: timeline.segments) {
+			if (seg.isPadding()) {
+				continue;
+			}
+
+			int stateIdx = pool.add(seg.state);
+			nodeStates[n] = stateIdx;
+			outCount[n] = 2;
+			outNode[n][0] = n;
+			outNode[n][1] = n+1;
+
+			outProb[n] = getSuccessorProbabilities(seg.state, lm);
+			assert 2 == outProb[n].length;
+
+			if (null != seg.word && pWord != seg.word) {
+				words.add(seg.word);
+				wordBoundaries[w++] = n;
+				pWord = seg.word;
+			}
+
+			n++;
+		}
+
+		correctLastNodeTransitions();
+
+		check();
+	}
+
+
+	private void allocArrays(int nNodes, int nWords) {
+		this.nNodes = nNodes;
+		this.nWords = nWords;
+
+		words = new ArrayList<>(nWords);
+		wordBoundaries = new int[nWords];
+
+		nodeStates = new int  [nNodes];
+		outCount   = new byte [nNodes];
+		// Only 2 transitions will ever be possible for any given node
+		// in a path (except for the first node which only has itself)
+		outNode    = new int  [nNodes][2];
+		outProb    = new float[nNodes][2];
+
+		for (int i = 0; i < nNodes; i++) {
+			Arrays.fill(outProb[i], UNINITIALIZED_LOG_PROBABILITY);
+		}
 	}
 
 
@@ -232,10 +250,8 @@ public class StatePath extends StateGraph {
 
 		// Make translations for the path's node indices
 		int[] poolTrans = pool.addAll(path.pool);
-		int[] nodeTrans = newTranslation(path);
 		for (int pathN = 0; pathN < path.nNodes; pathN++) {
 			assert pathN == path.nNodes-1 || path.outCount[pathN] == 2;
-			nodeTrans[pathN] = n;
 			nodeStates[n] = poolTrans[path.nodeStates[pathN]];
 			outCount[n] = 2;
 			outNode[n][0] = n;
@@ -250,19 +266,6 @@ public class StatePath extends StateGraph {
 		outProb[n-1][1] = UNINITIALIZED_LOG_PROBABILITY; // non-loop
 		fillUniformNonLoopTransitionProbabilities(n-1);
 
-		// Make translations for node indices in all "parent" graphs of the
-		// path (which, in turn, adds new "parent" graphs to this)
-		for (Map.Entry<StateGraph, int[]> e: path.nodeTranslations.entrySet()) {
-			int[] newNT = newTranslation(e.getKey());
-			int[] oldNT = e.getValue();
-
-			for (int i = 0; i < oldNT.length; i++) {
-				newNT[i] = oldNT[i] < 0
-						? -1
-						: nodeTrans[oldNT[i]];
-			}
-		}
-
 		return n;
 	}
 
@@ -271,33 +274,6 @@ public class StatePath extends StateGraph {
 	public boolean isLinear() {
 		assert super.isLinear(): "StatePath should always be linear!";
 		return true;
-	}
-
-
-	/**
-	 * Returns the index of the node (in this graph) corresponding to the node
-	 * referenced by graphNodeIdx (in the original graph).
-	 */
-	public int translateNode(StateGraph graph, int graphNodeIdx) {
-		if (nodeTranslations == null) {
-			throw new IllegalStateException("node translations don't exist " +
-					"- were they cleared prematurely?");
-		}
-
-		assert graphNodeIdx >= 0;
-		assert graphNodeIdx < graph.nNodes;
-
-		return nodeTranslations.get(graph)[graphNodeIdx];
-	}
-
-
-	/**
-	 * Drops references to the original StateGraph objects to give the JVM a
-	 * chance to garbage-collect them. Caution: you won't be able to "translate"
-	 * nodes after calling this method.
-	 */
-	public void dropTranslations() {
-		nodeTranslations = null;
 	}
 
 }

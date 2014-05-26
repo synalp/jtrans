@@ -149,17 +149,13 @@ public class TransitionRefinery {
 	 * Refines a random transition in the timeline.
 	 */
 	private Accept metropolisHastings() {
-		throw new Error("Reimplement me!");
-
-		/*
-		NodeTimeline ntl = new NodeTimeline(timeline);
+		StateTimeline proposal = new StateTimeline(timeline);
 
 		for (int i = 0; i < 100; i++) {
-			ntl.wiggle(random, 1);
+			proposal.wiggle(random, 1);
 		}
-		int[] newTimeline = ntl.toArray();
 
-		double newCLhd = computeCumulativeLikelihood(newTimeline);
+		double newCLhd = computeCumulativeLikelihood(proposal);
 		boolean accept = newCLhd > cLhd;
 		final Accept status;
 
@@ -179,13 +175,12 @@ public class TransitionRefinery {
 
 		if (accept) {
 			cLhd = newCLhd;
-			timeline = newTimeline;
+			timeline = proposal;
 		}
 
 		System.out.println("Acceptance status: " + status);
 
 		return status;
-		*/
 	}
 
 }

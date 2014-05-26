@@ -149,7 +149,8 @@ public abstract class Project {
 			AutoAligner aligner,
 			Anchor start,
 			Anchor end,
-			List<Word> words)
+			List<Word> words,
+			boolean concatenate)
 			throws IOException, InterruptedException
 	{
 		if (words.isEmpty()) {
@@ -201,7 +202,7 @@ public abstract class Project {
 		}
 
 		StateGraph graph = new StateGraph(new StateSet(), words);
-		aligner.align(graph, iFrame, fFrame);
+		aligner.align(graph, iFrame, fFrame, concatenate);
 	}
 
 

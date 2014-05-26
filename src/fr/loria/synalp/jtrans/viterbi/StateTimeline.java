@@ -17,14 +17,28 @@ public class StateTimeline {
 		final HMMState state;
 		final Word word;
 
-		public Segment(HMMState state, Word word) {
-			length = 1;
+		public Segment(HMMState state, Word word, int length) {
+			this.length = length;
 			this.state = state;
 			this.word = word;
 		}
 
+		public Segment(HMMState state, Word word) {
+			this(state, word, 1);
+		}
+
+		public Segment(Segment other) {
+			length = other.length;
+			state = other.state;
+			word = other.word;
+		}
+
 		public String getUnit() {
 			return state.getHMM().getBaseUnit().getName();
+		}
+
+		public boolean isPadding() {
+			return null == state || null == word;
 		}
 	}
 
@@ -41,46 +55,105 @@ public class StateTimeline {
 	}
 
 
+	/**
+	 * Deep-copies segments, shallow-copies unique words.
+	 */
 	public StateTimeline(StateTimeline other) {
-		segments = new ArrayList<>(other.segments);
+		segments = new ArrayList<>(other.segments.size());
+		for (Segment seg: other.segments) {
+			segments.add(new Segment(seg));
+		}
+
 		uniqueWords = new ArrayList<>(other.uniqueWords);
 		frames = other.frames;
 		assert verify();
 	}
 
 
-	private Segment getLastSegment() {
-		if (!segments.isEmpty()) {
-			return segments.get(segments.size()-1);
-		} else {
-			return null;
+	/**
+	 * Pads the end of this timeline with a padding segment so that the
+	 * timeline reaches a length of {@code tillFrame} frames.
+	 * @throws IllegalStateException
+	 * @return padding segment length
+	 */
+	public int pad(int tillFrame) {
+		if (tillFrame == frames) {
+			return 0;
 		}
+
+		if (tillFrame < frames) {
+			throw new IllegalStateException(String.format(
+					"current frame count (%d) " +
+					"exceeds requested padding frame number (%d)",
+					frames, tillFrame));
+		}
+
+		int delta = tillFrame - frames;
+		segments.add(new Segment(null, null, delta));
+		frames += delta;
+
+		assert verify();
+
+		return delta;
 	}
 
 
 	/**
-	 *
-	 * @param state
+	 * Appends another timeline to the end of this timeline.
+	 * <p/>Use {@link #pad} before invoking this method for the concatenation
+	 * to be chronologically correct.
+	 */
+	public void concatenate(StateTimeline other) {
+		for (Segment seg: other.segments) {
+			segments.add(new Segment(seg));
+		}
+
+		frames += other.frames;
+		uniqueWords.addAll(other.uniqueWords);
+
+		assert verify();
+	}
+
+
+	/**
+	 * Extends this timeline by a single frame at the end.
+	 * <p/>Extends the last segment by 1 frame if the same state/word combo is
+	 * prolonged, otherwise creates a new segment.
 	 * @param word unique reference!
 	 */
 	public void newFrame(HMMState state, Word word) {
-		Segment lastSegment = getLastSegment();
-		if (null != lastSegment && lastSegment.state == state && lastSegment.word == word) {
-			lastSegment.length++;
+		Segment tail = segments.isEmpty()?
+				null: segments.get(segments.size()-1);
+		if (null != tail && tail.state == state && tail.word == word) {
+			tail.length++;
 		} else {
 			segments.add(new Segment(state, word));
 		}
 
-		if (uniqueWords.isEmpty() || uniqueWords.get(uniqueWords.size()-1) != word) {
+		Word lastUWord = uniqueWords.isEmpty()?
+				null: uniqueWords.get(uniqueWords.size()-1);
+		if (null != word && lastUWord != word) {
 			uniqueWords.add(word);
 		}
 
 		frames++;
+
+		assert verify();
 	}
 
 
 	public int getLength() {
 		return frames;
+	}
+
+
+	public int getSegmentCount() {
+		return segments.size();
+	}
+
+
+	public int getUniqueWordCount() {
+		return uniqueWords.size();
 	}
 
 
@@ -145,7 +218,6 @@ public class StateTimeline {
 			segStart += seg.length;
 		}
 	}
-
 
 
 	/**

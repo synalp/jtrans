@@ -377,30 +377,44 @@ public class StateGraph {
 			int stateId = pool.getId(phone, i);
 			nodeStates[j] = stateId;
 			HMMState state = pool.get(stateId);
-			assert state.isEmitting();
 
-			HMMStateArc[] succ = state.getSuccessors();
-			assert succ.length == 2: "HMMState must have two successors";
-			assert linProbEq(1,
-					lm.logToLinear(succ[0].getLogProbability()) +
-					lm.logToLinear(succ[1].getLogProbability()))
-					: "linear probabilities must sum to 1";
+			float[] p = getSuccessorProbabilities(state, lm);
 
-			HMMStateArc loop = succ[0].getHMMState() == state
-					? succ[0]
-					: succ[1];
-			assert loop.getHMMState() == state: "can't find loop arc";
-			HMMStateArc nonLoop = succ[loop==succ[0]? 1: 0];
-
-			addOutboundTransition(j, j, loop.getLogProbability());
-
+			addOutboundTransition(j, j, p[0]);
 			if (i < 2) {
-				addOutboundTransition(j+1, j, nonLoop.getLogProbability());
+				addOutboundTransition(j+1, j, p[1]);
 			}
 		}
 
 		insertionPoint += 3;
 		return insertionPoint - 1;
+	}
+
+
+	/**
+	 * Returns the log probabilities of looping on the same state (array item 0)
+	 * and of moving forward to the next state (array item 1).
+	 */
+	public static float[] getSuccessorProbabilities(HMMState state, LogMath lm) {
+		assert state.isEmitting();
+
+		HMMStateArc[] succ = state.getSuccessors();
+		assert 2 == succ.length: "HMMState must have two successors";
+		assert linProbEq(1,
+				lm.logToLinear(succ[0].getLogProbability()) +
+				lm.logToLinear(succ[1].getLogProbability()))
+				: "linear probabilities must sum to 1";
+
+		HMMStateArc loop = succ[0].getHMMState() == state
+				? succ[0]
+				: succ[1];
+		assert loop.getHMMState() == state: "can't find loop arc";
+		HMMStateArc nonLoop = succ[loop==succ[0]? 1: 0];
+
+		return new float[] {
+				loop.getLogProbability(),
+				nonLoop.getLogProbability()
+		};
 	}
 
 
@@ -874,6 +888,7 @@ public class StateGraph {
 	}
 
 
+	// TODO: remove this - only remaining use in unit tests
 	public void setWordAlignments(
 			int[] timeline,
 			int offset)

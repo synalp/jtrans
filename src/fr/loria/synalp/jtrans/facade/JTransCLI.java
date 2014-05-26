@@ -472,7 +472,11 @@ public class JTransCLI {
 			System.out.println("Aligning...");
 			if (null != forcedPath) {
 				System.out.println("WARNING: Aligning with forced reference path!");
-				aligner.align(forcedPath, 0, aligner.getFrameCount() - 1);
+				aligner.align(
+						forcedPath,
+						0,
+						aligner.getFrameCount()-1,
+						false); // not using the concatenated path here
 			} else {
 				project.align(aligner);
 			}
