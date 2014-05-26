@@ -639,6 +639,83 @@ public class StateGraph {
 
 
 	/**
+	 * Constructs a linear (flat) StateGraph that walks through all the nodes
+	 * in a timeline sequentially.
+	 * <p/>StateGraph linearity is defined by {@link #isLinear}.
+	 */
+	public StateGraph(StateTimeline timeline) {
+		LogMath lm = HMMModels.getLogMath();
+
+		nWords = timeline.getUniqueWordCount();
+		nNodes = 0;
+		for (StateTimeline.Segment seg: timeline.segments) {
+			if (!seg.isPadding()) {
+				nNodes++;
+			}
+		}
+
+		words = new ArrayList<>(nWords);
+		wordBoundaries = new int[nWords];
+
+		nodeStates = new int  [nNodes];
+		outCount   = new byte [nNodes];
+		// Only 2 transitions will ever be possible for any given node
+		// in a path (except for the first node which only has itself)
+		outNode    = new int  [nNodes][2];
+		outProb    = new float[nNodes][2];
+
+		for (int i = 0; i < nNodes; i++) {
+			Arrays.fill(outProb[i], UNINITIALIZED_LOG_PROBABILITY);
+		}
+
+		pool = new StateSet();
+
+		//----------------------------------------------------------------------
+		// Build state graph
+
+		int n = 0;
+		int w = 0;
+		Word pWord = null;
+
+		for (StateTimeline.Segment seg: timeline.segments) {
+			if (seg.isPadding()) {
+				continue;
+			}
+
+			int stateIdx = pool.add(seg.state);
+			nodeStates[n] = stateIdx;
+			outCount[n] = 2;
+			outNode[n][0] = n;
+			outNode[n][1] = n+1;
+
+			outProb[n] = getSuccessorProbabilities(seg.state, lm);
+			assert 2 == outProb[n].length;
+
+			if (null != seg.word && pWord != seg.word) {
+				words.add(seg.word);
+				wordBoundaries[w++] = n;
+				pWord = seg.word;
+			}
+
+			n++;
+		}
+
+		correctLastNodeTransitions();
+
+		//----------------------------------------------------------------------
+		// Check graph consistency
+
+		checkTransitions();
+
+		// must be flat!
+		if (!isLinear()) {
+			throw new IllegalStateException("building StateGraph from " +
+					"timeline should've yielded a linear graph!");
+		}
+	}
+
+
+	/**
 	 * Constructs a state graph for easy testing from whitespace-separated
 	 * words. Rules will be looked up in the standard grammar. Uses an
 	 * independent state pool.

@@ -252,9 +252,9 @@ public abstract class AutoAligner {
 	 * Returns concatenation of timelines obtained via successive calls to
 	 * {@link #align}.
 	 */
-	public StatePath getConcatenatedPath() {
+	public StateTimeline getConcatenatedTimeline() {
 		// TODO: should throw an error on overlaps
-		return new StatePath(concatenated);
+		return new StateTimeline(concatenated);
 	}
 
 }

@@ -7,7 +7,8 @@ import fr.loria.synalp.jtrans.markup.out.MarkupSaverPool;
 import fr.loria.synalp.jtrans.project.Project;
 import fr.loria.synalp.jtrans.project.TurnProject;
 import fr.loria.synalp.jtrans.utils.*;
-import fr.loria.synalp.jtrans.viterbi.StatePath;
+import fr.loria.synalp.jtrans.viterbi.StateGraph;
+import fr.loria.synalp.jtrans.viterbi.StateTimeline;
 import joptsimple.*;
 
 import javax.sound.sampled.AudioFileFormat;
@@ -398,7 +399,7 @@ public class JTransCLI {
 		final Project project;
 		final Project reference;
 		final JTransCLI cli;
-		final StatePath forcedPath;
+		final StateTimeline referenceTimeline;
 
 		loadLoggingProperties();
 
@@ -439,12 +440,12 @@ public class JTransCLI {
 			AutoAligner refAl = project.getAligner(
 					ViterbiAligner.class, progress, true); // KLUDGE!!! true is needed for kludgeReferenceScorer
 			((TurnProject)project).align(refAl, false);
-			forcedPath = refAl.getConcatenatedPath();
+			referenceTimeline = refAl.getConcatenatedTimeline();
 			refAl.printScores(); // KLUDGE!!! learn models (and, incidentally, compute likelihoods) - needed for kludgeReferenceScorer
 			project.clearAlignment();
 			((TurnProject) project).clearAnchorTimes();
 		} else {
-			forcedPath = null;
+			referenceTimeline = null;
 		}
 
 		if (cli.runAnchorDiffTest) {
@@ -470,10 +471,12 @@ public class JTransCLI {
 			assert aligner != null;
 
 			System.out.println("Aligning...");
-			if (null != forcedPath) {
+			if (null != referenceTimeline) {
 				System.out.println("WARNING: Aligning with forced reference path!");
+				StateGraph path = new StateGraph(referenceTimeline);
+				assert path.isLinear();
 				aligner.align(
-						forcedPath,
+						path,
 						0,
 						aligner.getFrameCount()-1,
 						false); // not using the concatenated path here
