@@ -33,11 +33,6 @@ public class ModelTrainer {
 	/** Keep variance values from getting too close to zero. */
 	public static final double MIN_VARIANCE = .001;
 
-	private enum SystemState {
-		UNINITIALIZED,
-		LEARNING,
-		SCORE_READY
-	}
 
 	private final float[][] data;
 	private final LogMath lm = HMMModels.getLogMath();
@@ -46,8 +41,7 @@ public class ModelTrainer {
 	private final Map<HMMState, Model> modelMap = new HashMap<>();
 	private final HMMState[] compoundTimeline;
 	private final double[] likelihood;   // must be zeroed before use
-
-	private SystemState system = SystemState.UNINITIALIZED;
+	private boolean sealed = false;
 
 
 	static class Model {
@@ -138,7 +132,7 @@ public class ModelTrainer {
 		for (Model m: modelMap.values()) {
 			m.clear();
 		}
-		system = SystemState.LEARNING;
+		sealed = false;
 	}
 
 
@@ -154,8 +148,8 @@ public class ModelTrainer {
 
 
 	public void learn(Word word, StateTimeline timeline, int frameOffset) {
-		if (system != SystemState.LEARNING) {
-			throw new IllegalStateException("not ready to learn");
+		if (sealed) {
+			throw new IllegalStateException("can't learn if sealed");
 		}
 
 		Word.Segment seg = word.getSegment();
@@ -227,8 +221,8 @@ public class ModelTrainer {
 
 
 	public int seal() {
-		if (system != SystemState.LEARNING) {
-			throw new IllegalStateException("not ready to finish learning");
+		if (sealed) {
+			throw new IllegalStateException("can't seal if already sealed");
 		}
 
 //		fillVoids();
@@ -255,15 +249,15 @@ public class ModelTrainer {
 			}
 		}
 
-		system = SystemState.SCORE_READY;
+		sealed = true;
 
 		return effectiveFrames;
 	}
 
 
 	public double[] getLikelihoods() {
-		if (system != SystemState.SCORE_READY) {
-			throw new IllegalStateException("score not ready");
+		if (!sealed) {
+			throw new IllegalStateException("can't get likelihoods unless sealed");
 		}
 
 		return likelihood;

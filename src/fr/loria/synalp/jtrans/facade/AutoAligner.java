@@ -7,7 +7,6 @@ import fr.loria.synalp.jtrans.utils.ProgressDisplay;
 import fr.loria.synalp.jtrans.viterbi.*;
 
 import java.io.*;
-import java.util.ArrayList;
 import java.util.List;
 
 
@@ -17,7 +16,7 @@ import java.util.List;
  */
 public abstract class AutoAligner {
 
-	protected List<ModelTrainer> trainers;
+	protected SpeakerDepModelTrainer trainer;
 	protected final List<FloatData> data;
 	protected final File audio;
 	protected final ProgressDisplay progress;
@@ -61,12 +60,8 @@ public abstract class AutoAligner {
 
 
 	public void initTrainers(int speakers) {
-		trainers = new ArrayList<>(speakers);
-		float[][] dataArray = S4mfccBuffer.to2DArray(data);
-
-		for (int i = 0; i < speakers; i++) {
-			trainers.add(new ModelTrainer(dataArray));
-		}
+		trainer = new SpeakerDepModelTrainer(
+				speakers, S4mfccBuffer.to2DArray(data));
 	}
 
 
@@ -134,7 +129,7 @@ public abstract class AutoAligner {
 		}
 
 		if (computeLikelihoods) {
-			assert trainers != null;
+			assert trainer != null;
 			if (progress != null) {
 				progress.setIndeterminateProgress("Computing likelihood...");
 			}
@@ -142,7 +137,7 @@ public abstract class AutoAligner {
 			timeline.setWordAlignments(startFrame);
 
 			for (Word w: graph.getWords()) {
-				trainers.get(w.getSpeaker()).learn(w, timeline, startFrame);
+				trainer.learn(w, timeline, startFrame);
 			}
 		}
 
@@ -151,10 +146,10 @@ public abstract class AutoAligner {
 				progress.setIndeterminateProgress("Metropolis-Hastings...");
 			}
 
-			assert trainers != null;
+			assert trainer != null;
 
 			final TransitionRefinery refinery =
-					new TransitionRefinery(timeline, trainers);
+					new TransitionRefinery(timeline, trainer);
 
 			while (!refinery.hasPlateaued()) {
 				timeline = refinery.step();
@@ -233,20 +228,9 @@ public abstract class AutoAligner {
 	}
 
 
-	public void printScores() {
-		double sum = 0;
-		for (ModelTrainer mt: trainers) {
-			// TODO: fill voids with silences
-			mt.seal();
-			sum += ModelTrainer.sum(mt.getLikelihoods());
-		}
-		System.out.println("Overall likelihood " + sum);
-	}
-
-
 	/*
 	public void dumpMergedTrainer() {
-		ModelTrainer trainer = ModelTrainer.merge(trainers);
+		ModelTrainer trainer = ModelTrainer.merge(trainer);
 		trainer.score();
 		trainer.dump();
 	}

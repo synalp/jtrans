@@ -9,7 +9,6 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.List;
 import java.util.Random;
 
 /**
@@ -22,7 +21,7 @@ public class TransitionRefinery {
 	private double cLhd;
 
 	private Random random;
-	private List<ModelTrainer> trainers;
+	private SpeakerDepModelTrainer trainer;
 	private LogMath log = HMMModels.getLogMath();
 
 	int rejectionStreak = 0;
@@ -59,12 +58,12 @@ public class TransitionRefinery {
 	 */
 	public TransitionRefinery(
 			StateTimeline baseline,
-			List<ModelTrainer> trainers)
+			SpeakerDepModelTrainer trainer)
 	{
 		timeline = new StateTimeline(baseline);
 
 		random = new Random();
-		this.trainers = trainers;
+		this.trainer = trainer;
 
 /*
 		for (int i = 0; i < 10000000; i++) {
@@ -77,21 +76,15 @@ public class TransitionRefinery {
 
 
 	private double train(StateTimeline timeline) {
-		for (ModelTrainer s: trainers) {
-			s.clear();
-		}
+		trainer.clear();
 
 		for (Word w: timeline.getUniqueWords()) {
-			trainers.get(w.getSpeaker()).learn(w, timeline, 0);
+			trainer.learn(w, timeline, 0);
 		}
 
-		// TODO: factor out duplicated code (AutoAligner.printScores())
-		double sum = 0;
-		for (ModelTrainer mt: trainers) {
-			mt.seal();
-			sum += ModelTrainer.sum(mt.getLikelihoods());
-		}
-		return sum;
+		trainer.seal();
+
+		return trainer.getCumulativeLikelihood();
 	}
 
 

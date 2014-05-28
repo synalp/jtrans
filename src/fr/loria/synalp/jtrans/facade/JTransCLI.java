@@ -441,7 +441,7 @@ public class JTransCLI {
 					ViterbiAligner.class, progress, true); // KLUDGE!!! true is needed for kludgeReferenceScorer
 			((TurnProject)project).align(refAl, false);
 			referenceTimeline = refAl.getConcatenatedTimeline();
-			refAl.printScores(); // KLUDGE!!! learn models (and, incidentally, compute likelihoods) - needed for kludgeReferenceScorer
+			refAl.trainer.seal();
 			project.clearAlignment();
 			((TurnProject) project).clearAnchorTimes();
 		} else {
@@ -485,7 +485,9 @@ public class JTransCLI {
 			}
 			System.out.println("Alignment done.");
 			if (cli.computeLikelihoods) {
-				aligner.printScores();
+				aligner.trainer.seal();
+				System.out.println("Overall likelihood: " +
+						aligner.trainer.getCumulativeLikelihood());
 			}
 		}
 
