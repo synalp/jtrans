@@ -234,18 +234,23 @@ public abstract class AutoAligner {
 
 
 	public void printScores() {
-		ModelTrainer trainer = ModelTrainer.merge(trainers);
-		trainer.score();
-		double sum = ModelTrainer.sum(trainer.getLikelihoods());
+		double sum = 0;
+		for (ModelTrainer mt: trainers) {
+			// TODO: fill voids with silences
+			mt.seal();
+			sum += ModelTrainer.sum(mt.getLikelihoods());
+		}
 		System.out.println("Overall likelihood " + sum);
 	}
 
 
+	/*
 	public void dumpMergedTrainer() {
 		ModelTrainer trainer = ModelTrainer.merge(trainers);
 		trainer.score();
 		trainer.dump();
 	}
+	*/
 
 
 	/**

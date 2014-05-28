@@ -72,30 +72,26 @@ public class TransitionRefinery {
 		}
 */
 
-		cLhd = computeCumulativeLikelihood(baseline);
+		cLhd = train(baseline);
 	}
 
 
-	private ModelTrainer train(StateTimeline timeline) {
-		// TODO: too much boilerplate -- do these steps really need to be separated?
-
+	private double train(StateTimeline timeline) {
 		for (ModelTrainer s: trainers) {
-			s.init();
+			s.clear();
 		}
 
 		for (Word w: timeline.getUniqueWords()) {
 			trainers.get(w.getSpeaker()).learn(w, timeline, 0);
 		}
 
-		ModelTrainer merged = ModelTrainer.merge(trainers);
-		merged.score();
-
-		return merged;
-	}
-
-
-	private double computeCumulativeLikelihood(StateTimeline timeline) {
-		return ModelTrainer.sum(train(timeline).getLikelihoods());
+		// TODO: factor out duplicated code (AutoAligner.printScores())
+		double sum = 0;
+		for (ModelTrainer mt: trainers) {
+			mt.seal();
+			sum += ModelTrainer.sum(mt.getLikelihoods());
+		}
+		return sum;
 	}
 
 
@@ -155,7 +151,7 @@ public class TransitionRefinery {
 			proposal.wiggle(random, 1);
 		}
 
-		double newCLhd = computeCumulativeLikelihood(proposal);
+		double newCLhd = train(proposal);
 		boolean accept = newCLhd > cLhd;
 		final Accept status;
 
