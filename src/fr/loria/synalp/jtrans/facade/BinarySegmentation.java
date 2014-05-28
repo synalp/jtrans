@@ -9,7 +9,7 @@ import java.util.ListIterator;
  */
 public class BinarySegmentation {
 
-	protected List<Segment> sequence = new ArrayList<>();
+	protected List<Segment> sequence;
 
 
 	public static class Segment {
@@ -19,6 +19,10 @@ public class BinarySegmentation {
 		public Segment(float off, float len) {
 			this.off = off;
 			this.len = len;
+		}
+
+		public Segment(Segment other) {
+			this(other.off, other.len);
 		}
 
 		public boolean contains(float sec) {
@@ -62,6 +66,19 @@ public class BinarySegmentation {
 	}
 
 
+	public BinarySegmentation() {
+		sequence = new ArrayList<>();
+	}
+
+
+	public BinarySegmentation(BinarySegmentation other) {
+		sequence = new ArrayList<>(other.sequence.size());
+		for (Segment seg: other.sequence) {
+			sequence.add(new Segment(seg));
+		}
+	}
+
+
 	public void union(float off, float len) {
 		float a1 = off;
 		float a2 = off+len;
@@ -100,6 +117,64 @@ public class BinarySegmentation {
 	}
 
 
+	public void union(BinarySegmentation other) {
+		for (Segment seg: other.sequence) {
+			union(seg.off, seg.len);
+		}
+	}
+
+
+	/**
+	 * Negates all segments.
+	 * @param extent Process any negative space (beyond the last segment) until
+	 *               this extent. This value must equal or exceed that given by
+	 *               {@link #extent()}.
+	 */
+	public void negate(float extent) {
+		assert extent >= extent();
+
+		float negSpaceStart = 0;
+
+		boolean removeFirst = !sequence.isEmpty() && sequence.get(0).off == 0;
+
+		for (Segment seg: sequence) {
+			float nextNegSpaceStart = seg.getEnd();
+
+			float negSpaceLen = seg.getStart() - negSpaceStart;
+			assert negSpaceLen >= 0;
+
+			seg.off = negSpaceStart;
+			seg.len = negSpaceLen;
+
+			negSpaceStart = nextNegSpaceStart;
+		}
+
+		if (removeFirst) {
+			sequence.remove(0);
+		}
+
+		float padding = extent - negSpaceStart;
+		assert padding >= 0;
+
+		if (padding > 0) {
+			union(negSpaceStart, padding);
+		}
+	}
+
+
+	public void intersect(BinarySegmentation other) {
+		float extent = Math.max(extent(), other.extent());
+
+		// a && b == !(!a || !b)
+		this.negate(extent);
+		other.negate(extent);
+		this.union(other);
+		this.negate(extent);
+
+		other.negate(extent); // restore other
+	}
+
+
 	public int size() {
 		return sequence.size();
 	}
@@ -107,6 +182,24 @@ public class BinarySegmentation {
 
 	public Segment get(int idx) {
 		return sequence.get(idx);
+	}
+
+
+	/**
+	 * Returns the time at which the last segment ends.
+	 */
+	public float extent() {
+		return sequence.isEmpty()
+				? 0
+				: sequence.get(sequence.size()-1).getEnd();
+	}
+
+
+	@Override
+	public boolean equals(Object o) {
+		return this == o ||
+				(o instanceof BinarySegmentation &&
+				sequence.equals(((BinarySegmentation)o).sequence));
 	}
 
 }
