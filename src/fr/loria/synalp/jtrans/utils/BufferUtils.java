@@ -13,4 +13,15 @@ public class BufferUtils {
 			return buf;
 	}
 
+	/**
+	 * Returns a buffer whose capacity is at least minLength.
+	 * Reuses buf if it is large enough, or creates a new buffer otherwise.
+	 */
+	public static int[] grow(int[] buf, int minLength) {
+		if (buf == null || buf.length < minLength) {
+			return new int[minLength];
+		} else
+			return buf;
+	}
+
 }

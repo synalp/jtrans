@@ -6,6 +6,7 @@ import java.util.ListIterator;
 
 /**
  * Sorted sequence of time segments.
+ * TODO: ints instead of floats?
  */
 public class BinarySegmentation {
 
@@ -43,6 +44,10 @@ public class BinarySegmentation {
 
 		public float getEnd() {
 			return off+len;
+		}
+
+		public float length() {
+			return len;
 		}
 
 		@Override

@@ -1,6 +1,9 @@
 package fr.loria.synalp.jtrans.viterbi;
 
 import fr.loria.synalp.jtrans.elements.Word;
+import fr.loria.synalp.jtrans.facade.BinarySegmentation;
+import fr.loria.synalp.jtrans.utils.BufferUtils;
+import static fr.loria.synalp.jtrans.facade.FastLinearAligner.fillInterpolate;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,14 +14,31 @@ import java.util.List;
  */
 public class SpeakerDepModelTrainer {
 
+	protected final int frames;
+
+	/** Speaker-dependent trainers for non-silence models */
 	protected List<ModelTrainer> trainers;
 
-	public SpeakerDepModelTrainer(int speakers, float[][] dataArray) {
+	/**
+	 * Speaker-independent trainer for silence models.
+	 * Uses numbers among 0, 1, and 2 as silence state identifiers.
+	 */
+	protected ModelTrainer silenceTrainer;
+
+
+	public static boolean LEARN_SILENCES = true;
+
+
+	public SpeakerDepModelTrainer(int speakers, float[][] data) {
+		frames = data.length;
+
 		trainers = new ArrayList<>(speakers);
 
 		for (int i = 0; i < speakers; i++) {
-			trainers.add(new ModelTrainer(dataArray));
+			trainers.add(new ModelTrainer(data));
 		}
+
+		silenceTrainer = new ModelTrainer(data);
 	}
 
 
@@ -31,6 +51,7 @@ public class SpeakerDepModelTrainer {
 		for (ModelTrainer mt: trainers) {
 			mt.clear();
 		}
+		silenceTrainer.clear();
 	}
 
 
@@ -38,14 +59,47 @@ public class SpeakerDepModelTrainer {
 		for (ModelTrainer mt: trainers) {
 			mt.seal();
 		}
+
+		if (LEARN_SILENCES) {
+			BinarySegmentation silenceStencil = new BinarySegmentation();
+			silenceStencil.union(0, frames); // fill entire segmentation
+
+			for (ModelTrainer mt : trainers) {
+				silenceStencil.intersect(mt.getNullStencil());
+			}
+
+			// Mini-timeline for silences
+			int[] buf = new int[256];
+
+			for (int i = 0; i < silenceStencil.size(); i++) {
+				int off = (int) silenceStencil.get(i).getStart();
+				int len = (int) silenceStencil.get(i).length();
+				buf = BufferUtils.grow(buf, len);
+
+				// Spread 3 silence "states" across the length
+				fillInterpolate(3, buf, 0, len);
+
+				for (int j = 0; j < len; j++) {
+					// In silenceTrainer, silence "states" are identified by a
+					// number among 0, 1, and 2, so just use the value in buf.
+					silenceTrainer.learnStateAtFrame(buf[j], off + j);
+				}
+			}
+
+			silenceTrainer.seal();
+		}
 	}
 
 
 	public double getCumulativeLikelihood() {
-		double sum = 0;
+		double sum = LEARN_SILENCES
+				? ModelTrainer.sum(silenceTrainer.getLikelihoods())
+				: 0;
+
 		for (ModelTrainer mt: trainers) {
 			sum += ModelTrainer.sum(mt.getLikelihoods());
 		}
+
 		return sum;
 	}
 

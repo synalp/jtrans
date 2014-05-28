@@ -3,6 +3,7 @@ package fr.loria.synalp.jtrans.viterbi;
 import edu.cmu.sphinx.linguist.acoustic.HMMState;
 import edu.cmu.sphinx.util.LogMath;
 import fr.loria.synalp.jtrans.elements.Word;
+import fr.loria.synalp.jtrans.facade.BinarySegmentation;
 import fr.loria.synalp.jtrans.facade.JTransCLI;
 import fr.loria.synalp.jtrans.speechreco.s4.HMMModels;
 
@@ -16,14 +17,18 @@ import static fr.loria.synalp.jtrans.viterbi.StateSet.isSilenceState;
 
 /**
  * Learns Gaussians for every unique state and computes alignment likelihoods.
- *
+ * <p/>
  * To obtain accurate figures, use a single instance of this class across an
  * entire transcription. This way, the Gaussians that have been learned are
  * valid on the entire transcription.
- *
+ * <p/>
  * If a transcription must be aligned using a sequence of small alignments, use
  * repeated calls to learn() instead of creating a new instance for each
  * sub-alignment.
+ * <p/>
+ * In this class, "states" can be any Object; they don't actually need to be
+ * HMMStates from Sphinx. State objects just serve as identifiers. You can use
+ * unique Strings or Integers as state identifiers if you like.
  */
 public class ModelTrainer {
 
@@ -38,8 +43,8 @@ public class ModelTrainer {
 	private final LogMath lm = HMMModels.getLogMath();
 
 	private final int nFrames;
-	private final Map<HMMState, Model> modelMap = new HashMap<>();
-	private final HMMState[] compoundTimeline;
+	private final Map<Object, Model> modelMap = new HashMap<>();
+	private final Object[] compoundTimeline;
 	private final double[] likelihood;   // must be zeroed before use
 	private boolean sealed = false;
 
@@ -112,7 +117,7 @@ public class ModelTrainer {
 		this.data = data;
 		nFrames = data.length;
 		likelihood = new double[nFrames];
-		compoundTimeline = new HMMState[nFrames];
+		compoundTimeline = new Object[nFrames];
 		clear();
 	}
 
@@ -136,7 +141,7 @@ public class ModelTrainer {
 	}
 
 
-	Model getModel(HMMState state) {
+	Model getModel(Object state) {
 		Model m = modelMap.get(state);
 		if (null == m) {
 			m = new Model();
@@ -152,80 +157,33 @@ public class ModelTrainer {
 			throw new IllegalStateException("can't learn if sealed");
 		}
 
-		Word.Segment seg = word.getSegment();
-		if (seg == null) {
+		int sf = word.getFirstNonSilenceFrame();
+		int ef = word.getLastNonSilenceFrame();
+		if (sf < 0 || ef < 0) {
 			System.out.println("NULL SEG!!!");
 			return;
 		}
-		int sf = seg.getStartFrame();
-		int ef = seg.getEndFrame();
 
-		for (int absf = sf; absf <= ef; absf++) {
-			int relf = absf - frameOffset;
-
-			HMMState state = timeline.getStateAtFrame(relf);
-			if (!isSilenceState(state)) {
-				assert null == compoundTimeline[absf]
-						: "frame " + absf + " already processed";
-				getModel(state).learnFrame(data[absf]);
-				compoundTimeline[absf] = state;
-			}
+		for (int f = sf; f <= ef; f++) {
+			Object state = timeline.getStateAtFrame(f - frameOffset);
+			assert !isSilenceState((HMMState)state);
+			assert null == compoundTimeline[f]
+					: "frame " + f + " already processed";
+			learnStateAtFrame(state, f);
 		}
 	}
 
 
-	/**
-	 * @param stretch0 inclusive
-	 * @param stretch1 exclusive
-	 */
-	/*
-	private void fillVoid(int stretch0, int stretch1, List<Integer> silStates) {
-		assert stretch0 < stretch1;
-		FastLinearAligner.fillInterpolate(
-				silStates, longTimeline, stretch0, stretch1 - stretch0);
-		for (int i = stretch0; i < stretch1; i++) {
-			learnFrame(i);
-		}
+	public void learnStateAtFrame(Object state, int f) {
+		getModel(state).learnFrame(data[f]);
+		compoundTimeline[f] = state;
 	}
-	*/
-
-
-	/**
-	 * Fill unfilled stretches with silences
-	 * @param sil0 state ID of SIL #0
-	 * @param sil1 state ID of SIL #1
-	 * @param sil2 state ID of SIL #2
-	 */
-	/*
-	public void fillVoids(int sil0, int sil1, int sil2) {
-		int stretch0 = -1;
-
-		List<Integer> silStates = Arrays.asList(sil0, sil1, sil2);
-
-		for (int f = 0; f < nFrames; f++) {
-			if (longTimeline[f] < 0 && stretch0 < 0) {
-				// start new stretch
-				stretch0 = f;
-			} else if (longTimeline[f] >= 0 && stretch0 >= 0) {
-				// fill stretch
-				fillVoid(stretch0, f, silStates);
-				stretch0 = -1;
-			}
-		}
-
-		if (stretch0 >= 0) {
-			fillVoid(stretch0, nFrames, silStates);
-		}
-	}
-	*/
 
 
 	public int seal() {
 		if (sealed) {
 			throw new IllegalStateException("can't seal if already sealed");
 		}
-
-//		fillVoids();
 
 		// avg, var, detVar
 		for (Model m: modelMap.values()) {
@@ -238,7 +196,7 @@ public class ModelTrainer {
 
 		// likelihood for each frame
 		for (int f = 0; f < nFrames; f++) {
-			HMMState state = compoundTimeline[f];
+			Object state = compoundTimeline[f];
 
 			if (null == state) {
 				likelihood[f] = 0;
@@ -255,6 +213,24 @@ public class ModelTrainer {
 	}
 
 
+	/**
+	 * Returns time stretches where this trainer has not been used.
+	 */
+	public BinarySegmentation getNullStencil() {
+		// TODO: not efficient
+
+		BinarySegmentation bseg = new BinarySegmentation();
+
+		for (int f = 0; f < compoundTimeline.length; f++) {
+			if (null == compoundTimeline[f]) {
+				bseg.union(f, 1);
+			}
+		}
+
+		return bseg;
+	}
+
+
 	public double[] getLikelihoods() {
 		if (!sealed) {
 			throw new IllegalStateException("can't get likelihoods unless sealed");
@@ -267,12 +243,12 @@ public class ModelTrainer {
 	public void dump() {
 		try {
 			PrintWriter w = new PrintWriter(JTransCLI.logID + ".models.txt");
-			for (Map.Entry<HMMState, Model> e: modelMap.entrySet()) {
+			for (Map.Entry<Object, Model> e: modelMap.entrySet()) {
 				for (int j = 0; j < 39; j++) {
-					HMMState state = e.getKey();
+					Object state = e.getKey();
 					Model model = e.getValue();
 					w.printf("%2d %8s %10f %10f\n", j,
-							StatePool.getPhone(state),
+							state,
 							model.avg[j],
 							model.var[j]);
 				}
