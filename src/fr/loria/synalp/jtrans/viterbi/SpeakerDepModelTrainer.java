@@ -42,8 +42,8 @@ public class SpeakerDepModelTrainer {
 	}
 
 
-	public void learn(Word w, StateTimeline timeline, int startFrame) {
-		trainers.get(w.getSpeaker()).learn(w, timeline, startFrame);
+	public void learn(Word w, Alignment alignment, int startFrame) {
+		trainers.get(w.getSpeaker()).learn(w, alignment, startFrame);
 	}
 
 

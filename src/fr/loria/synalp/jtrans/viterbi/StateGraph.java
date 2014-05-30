@@ -633,16 +633,16 @@ public class StateGraph {
 
 
 	/**
-	 * Constructs a linear (flat) StateGraph that walks through all the nodes
-	 * in a timeline sequentially.
+	 * Constructs a linear (flat) StateGraph that walks through all the states
+	 * in an alignment sequentially.
 	 * <p/>StateGraph linearity is defined by {@link #isLinear}.
 	 */
-	public StateGraph(StateTimeline timeline) {
+	public StateGraph(Alignment alignment) {
 		LogMath lm = HMMModels.getLogMath();
 
-		nWords = timeline.getUniqueWordCount();
+		nWords = alignment.getUniqueWordCount();
 		nNodes = 0;
-		for (StateTimeline.Segment seg: timeline.segments) {
+		for (Alignment.Segment seg: alignment.segments) {
 			if (!seg.isPadding()) {
 				nNodes++;
 			}
@@ -671,7 +671,7 @@ public class StateGraph {
 		int w = 0;
 		Word pWord = null;
 
-		for (StateTimeline.Segment seg: timeline.segments) {
+		for (Alignment.Segment seg: alignment.segments) {
 			if (seg.isPadding()) {
 				continue;
 			}
@@ -901,7 +901,7 @@ public class StateGraph {
 	 * array of node IDs, with array indices being frame numbers relative to
 	 * the first frame given to StateGraph#viterbi.
 	 */
-	public StateTimeline backtrack(SwapInflater swapReader) throws IOException {
+	public Alignment backtrack(SwapInflater swapReader) throws IOException {
 		InboundTransitionBridge in = new InboundTransitionBridge();
 
 		int leadNode = nNodes - 1;
@@ -918,15 +918,16 @@ public class StateGraph {
 			}
 		}
 
-		StateTimeline stl = new StateTimeline();
+		Alignment al = new Alignment();
 		int wordIdx = -1;
 		for (int f = 0; f < timeline.length; f++) {
 			int nodeIdx = timeline[f];
 			wordIdx = getWordIdxAt(nodeIdx, wordIdx);
-			stl.newFrame(getStateAt(nodeIdx), wordIdx>=0? words.get(wordIdx): null);
+			al.newFrame(getStateAt(nodeIdx),
+					wordIdx >= 0 ? words.get(wordIdx) : null);
 		}
 
-		return stl;
+		return al;
 	}
 
 

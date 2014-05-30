@@ -1,8 +1,8 @@
 package fr.loria.synalp.jtrans.facade;
 
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
+import fr.loria.synalp.jtrans.viterbi.Alignment;
 import fr.loria.synalp.jtrans.viterbi.StateGraph;
-import fr.loria.synalp.jtrans.viterbi.StateTimeline;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -28,7 +28,7 @@ public class FastLinearAligner extends AutoAligner {
 	}
 
 
-	protected StateTimeline getTimeline(
+	protected Alignment getTimeline(
 			StateGraph graph,
 			String text,
 			int startFrame,

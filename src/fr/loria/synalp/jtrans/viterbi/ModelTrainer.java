@@ -152,7 +152,7 @@ public class ModelTrainer {
 
 
 
-	public void learn(Word word, StateTimeline timeline, int frameOffset) {
+	public void learn(Word word, Alignment alignment, int frameOffset) {
 		if (sealed) {
 			throw new IllegalStateException("can't learn if sealed");
 		}
@@ -165,7 +165,7 @@ public class ModelTrainer {
 		}
 
 		for (int f = sf; f <= ef; f++) {
-			Object state = timeline.getStateAtFrame(f - frameOffset);
+			Object state = alignment.getStateAtFrame(f - frameOffset);
 			assert !isSilenceState((HMMState)state);
 			assert null == compoundTimeline[f]
 					: "frame " + f + " already processed";

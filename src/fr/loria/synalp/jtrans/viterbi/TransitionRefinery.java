@@ -17,7 +17,7 @@ import java.util.Random;
  */
 public class TransitionRefinery {
 
-	private StateTimeline timeline;
+	private Alignment timeline;
 	private double cLhd;
 
 	private Random random;
@@ -57,10 +57,10 @@ public class TransitionRefinery {
 	 * @param baseline Baseline alignment (as found e.g. with viterbi()).
 	 */
 	public TransitionRefinery(
-			StateTimeline baseline,
+			Alignment baseline,
 			SpeakerDepModelTrainer trainer)
 	{
-		timeline = new StateTimeline(baseline);
+		timeline = new Alignment(baseline);
 
 		random = new Random();
 		this.trainer = trainer;
@@ -75,7 +75,7 @@ public class TransitionRefinery {
 	}
 
 
-	private double train(StateTimeline timeline) {
+	private double train(Alignment timeline) {
 		trainer.clear();
 
 		for (Word w: timeline.getUniqueWords()) {
@@ -91,7 +91,7 @@ public class TransitionRefinery {
 	/**
 	 * Refines an HMM state timeline with the Metropolis-Hastings algorithm.
 	 */
-	public StateTimeline step() throws IOException {
+	public Alignment step() throws IOException {
 		iterations++;
 
 		if (plot == null) {
@@ -138,7 +138,7 @@ public class TransitionRefinery {
 	 * Refines a random transition in the timeline.
 	 */
 	private Accept metropolisHastings() {
-		StateTimeline proposal = new StateTimeline(timeline);
+		Alignment proposal = new Alignment(timeline);
 
 		for (int i = 0; i < 100; i++) {
 			proposal.wiggle(random, 1);

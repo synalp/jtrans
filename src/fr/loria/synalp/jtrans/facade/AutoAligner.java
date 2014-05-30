@@ -26,7 +26,7 @@ public abstract class AutoAligner {
 	 * Concatenation of timelines obtained via successive calls to
 	 * {@link #align}.
 	 */
-	private StateTimeline concatenated = new StateTimeline();
+	private Alignment concatenated = new Alignment();
 
 
 	/**
@@ -116,7 +116,7 @@ public abstract class AutoAligner {
 
 		graph.setProgressDisplay(progress);
 
-		StateTimeline timeline = getCachedTimeline(
+		Alignment timeline = getCachedTimeline(
 				graph, text, startFrame, endFrame);
 
 		if (concatenate) {
@@ -165,7 +165,7 @@ public abstract class AutoAligner {
 	}
 
 
-	public StateTimeline getCachedTimeline(
+	public Alignment getCachedTimeline(
 			final StateGraph graph,
 			final String text,
 			final int startFrame,
@@ -173,7 +173,7 @@ public abstract class AutoAligner {
 	{
 		// Cache wrapper class for getTimeline()
 		class TimelineFactory implements Cache.ObjectFactory {
-			public StateTimeline make() {
+			public Alignment make() {
 				try {
 					return getTimeline(graph, text, startFrame, endFrame);
 				} catch (IOException ex) {
@@ -206,7 +206,7 @@ public abstract class AutoAligner {
 	 *             The actual words are contained in the StateGraph!
 	 * @return a frame-by-frame timeline of HMM states
 	 */
-	protected abstract StateTimeline getTimeline(
+	protected abstract Alignment getTimeline(
 			StateGraph graph,
 			String text,
 			int startFrame,
@@ -241,9 +241,9 @@ public abstract class AutoAligner {
 	 * Returns concatenation of timelines obtained via successive calls to
 	 * {@link #align}.
 	 */
-	public StateTimeline getConcatenatedTimeline() {
+	public Alignment getConcatenatedTimeline() {
 		// TODO: should throw an error on overlaps
-		return new StateTimeline(concatenated);
+		return new Alignment(concatenated);
 	}
 
 }

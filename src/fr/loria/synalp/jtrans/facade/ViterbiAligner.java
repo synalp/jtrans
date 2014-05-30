@@ -1,8 +1,8 @@
 package fr.loria.synalp.jtrans.facade;
 
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
+import fr.loria.synalp.jtrans.viterbi.Alignment;
 import fr.loria.synalp.jtrans.viterbi.StateGraph;
-import fr.loria.synalp.jtrans.viterbi.StateTimeline;
 import fr.loria.synalp.jtrans.viterbi.SwapDeflater;
 import fr.loria.synalp.jtrans.viterbi.SwapInflater;
 
@@ -45,7 +45,7 @@ public class ViterbiAligner extends AutoAligner {
 	}
 
 
-	protected StateTimeline getTimeline(
+	protected Alignment getTimeline(
 			StateGraph graph,
 			String text,
 			int startFrame,
@@ -101,7 +101,7 @@ public class ViterbiAligner extends AutoAligner {
 		graph.viterbi(data, swapWriter, startFrame, endFrame);
 
 		swapReader.init(swapWriter.getIndex(), inFactory);
-		StateTimeline timeline = graph.backtrack(swapReader);
+		Alignment timeline = graph.backtrack(swapReader);
 		assert timeline.getLength() == length;
 
 		return timeline;

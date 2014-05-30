@@ -14,7 +14,7 @@ public class S4AlignOrder implements Serializable {
 	
 	boolean isBlocViterbi;
 	int mot1, mot2=-1, tr1, tr2=-1;
-	public Alignment alignWords, alignPhones, alignStates;
+	public OldAlignment alignWords, alignPhones, alignStates;
 	// contient l'alignement des mots
 	
 	public S4AlignOrder(int firstWord, int firstFrame, int lastMot, int lastFrame) {

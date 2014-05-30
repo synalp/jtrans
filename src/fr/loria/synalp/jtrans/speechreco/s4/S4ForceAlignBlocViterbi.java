@@ -244,7 +244,7 @@ public class S4ForceAlignBlocViterbi extends Thread {
 	}
 
 	// je suppose que l'alignement est complet (a été jusqu'au bout)
-	public static Alignment segmentePhonesEnMots(Alignment alignPhone) {
+	public static OldAlignment segmentePhonesEnMots(OldAlignment alignPhone) {
 		// on a une liste de phonemes et non pas une liste de mots !
 		// il faut retrouver les mots a partir des phonemes...
 		System.out.println("liste phones:");
@@ -258,7 +258,7 @@ public class S4ForceAlignBlocViterbi extends Thread {
 		for (int i=0;i<phones.size();i++) ends.add(alignPhone.getSegmentEndFrame(i));
 		for (int i=0;i<phones.size();i++) starts.add(alignPhone.getSegmentDebFrame(i));
 		
-		Alignment alignMots = new Alignment();
+		OldAlignment alignMots = new OldAlignment();
 		int isinmot = -1;
 		int prevwi=-1;
 		int firstSegOfWord = -1;
@@ -383,10 +383,10 @@ public class S4ForceAlignBlocViterbi extends Thread {
 						lastFrameAcceptable=-1;
 					}
 
-					Alignment align=null, alignPhones=null, alignStates=null;
+					OldAlignment align=null, alignPhones=null, alignStates=null;
 					if (order.isBlocViterbi&&lastFrameAcceptable>0) {
 						// on a trouve le milieu du bloc: on s'arrete a ce milieu
-						Alignment[] als = Alignment.backtrack(searchManager.getActiveList().getBestToken());
+						OldAlignment[] als = OldAlignment.backtrack(searchManager.getActiveList().getBestToken());
 						if (als!=null) {
 							// en fait, ici on a 1 mot = 1 phone, donc les aligns en mots et phones doivent etre les memes
 							alignPhones = als[0];
@@ -419,7 +419,7 @@ public class S4ForceAlignBlocViterbi extends Thread {
 							System.err.println("ERROR: meme pas de best token !");
 							align=null;
 						} else {
-							Alignment[] bestaligns = Alignment.backtrack(besttok);
+							OldAlignment[] bestaligns = OldAlignment.backtrack(besttok);
 							if (bestaligns!=null) {
 								alignPhones = bestaligns[0];
 								align = segmentePhonesEnMots(alignPhones);
@@ -487,7 +487,7 @@ public class S4ForceAlignBlocViterbi extends Thread {
 		}
 	}
 
-	private void removePrefixes(Alignment al) {
+	private void removePrefixes(OldAlignment al) {
 		if (al==null) return;
 		System.out.println("remove prefixes "+al.getNbSegments());
 		for (int i=0;i<al.getNbSegments();i++) {
@@ -557,7 +557,7 @@ public class S4ForceAlignBlocViterbi extends Thread {
 			synchronized (order) {
 				order.wait();
 			}
-			Alignment fullalign = order.alignWords;
+			OldAlignment fullalign = order.alignWords;
 //			fullalign.savePho(FileUtils.noExt(wordsfile)+".pho");
 		}
 		aligner.input2process.put(S4AlignOrder.terminationOrder);

@@ -86,7 +86,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 	SimpleBreadthFirstSearchManager searchManager=null;
 	AcousticModel mods=null;
 	Microphone mikeSource=null;
-	public Alignment resWords=null, resPhones=null, resStates=null;
+	public OldAlignment resWords=null, resPhones=null, resStates=null;
 	private RecoListener listener=null;
 	ArrayList<String> voc = new ArrayList<String>();
 
@@ -294,7 +294,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 			System.err.println("ERROR: meme pas de best token !");
 			resPhones=resStates=resWords=null;
 		} else {
-			Alignment[] bestaligns = Alignment.backtrack(besttok);
+			OldAlignment[] bestaligns = OldAlignment.backtrack(besttok);
 			if (bestaligns!=null) {
 				resPhones = bestaligns[0];
 				resWords = S4ForceAlignBlocViterbi.segmentePhonesEnMots(gram.resPhones);
@@ -390,7 +390,7 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 			System.err.println("ERROR: meme pas de best token !");
 			resPhones=resStates=resWords=null;
 		} else {
-			Alignment[] bestaligns = Alignment.backtrack(besttok);
+			OldAlignment[] bestaligns = OldAlignment.backtrack(besttok);
 			if (bestaligns!=null) {
 				resPhones = bestaligns[0];
 				resWords = S4ForceAlignBlocViterbi.segmentePhonesEnMots(gram.resPhones);

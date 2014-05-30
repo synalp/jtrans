@@ -7,7 +7,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class StateTimeline {
+/**
+ * Timeline of HMM states.
+ */
+public class Alignment {
 
 	// TODO: easier offset management
 
@@ -48,7 +51,7 @@ public class StateTimeline {
 	int frames;
 
 
-	public StateTimeline() {
+	public Alignment() {
 		segments = new ArrayList<>();
 		uniqueWords = new ArrayList<>();
 		frames = 0;
@@ -58,7 +61,7 @@ public class StateTimeline {
 	/**
 	 * Deep-copies segments, shallow-copies unique words.
 	 */
-	public StateTimeline(StateTimeline other) {
+	public Alignment(Alignment other) {
 		segments = new ArrayList<>(other.segments.size());
 		for (Segment seg: other.segments) {
 			segments.add(new Segment(seg));
@@ -103,7 +106,7 @@ public class StateTimeline {
 	 * <p/>Use {@link #pad} before invoking this method for the concatenation
 	 * to be chronologically correct.
 	 */
-	public void concatenate(StateTimeline other) {
+	public void concatenate(Alignment other) {
 		for (Segment seg: other.segments) {
 			segments.add(new Segment(seg));
 		}
