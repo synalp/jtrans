@@ -517,8 +517,6 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	public boolean friendlyLoadMarkup(MarkupLoader loader, File markupFile, File forcedAudioFile) {
 		setIndeterminateProgress("Parsing " + loader.getFormat() + "...");
 
-		Project previousProject = project;
-
 		try {
 			setProject(loader.parse(markupFile));
 		} catch (Exception ex) {
@@ -575,30 +573,6 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 						JOptionPane.QUESTION_MESSAGE);
 				if (rc == JOptionPane.YES_OPTION)
 					setAudioSource(possibleAudio);
-			}
-
-			// Try to recycle the previous project's audio file
-			if (project.audioFile == null &&
-					previousProject != null &&
-					previousProject.audioFile != null)
-			{
-				String[] choices =
-						"Keep this audio source;Use empty audio source".split(";");
-
-				int rc = JOptionPane.showOptionDialog(jf,
-						"The project you have just loaded has no audio file attached to it.\n\n" +
-						"However, this audio file was loaded up until now:\n" +
-						previousProject.audioFile.getName() + "\n\n" +
-						"Would you like to keep it as the new project's audio source?",
-						"No audio source",
-						JOptionPane.YES_NO_OPTION,
-						JOptionPane.QUESTION_MESSAGE,
-						null,
-						choices,
-						choices[0]);
-
-				if (rc == 0)
-					setAudioSource(previousProject.audioFile);
 			}
 		}
 
