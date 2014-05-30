@@ -26,7 +26,7 @@ public abstract class AutoAligner {
 	 * Concatenation of timelines obtained via successive calls to
 	 * {@link #align}.
 	 */
-	private Alignment concatenated = new Alignment();
+	private Alignment concatenated = new Alignment(0);
 
 
 	/**
@@ -116,7 +116,7 @@ public abstract class AutoAligner {
 
 		graph.setProgressDisplay(progress);
 
-		Alignment timeline = getCachedTimeline(
+		Alignment alignment = getCachedTimeline(
 				graph, text, startFrame, endFrame);
 
 		if (concatenate) {
@@ -125,7 +125,7 @@ public abstract class AutoAligner {
 			which isn't affected by timing info. But it makes sense to pad it
 			anyway, just so it is chronologically correct if we ever need it. */
 			concatenated.pad(startFrame);
-			concatenated.concatenate(timeline);
+			concatenated.concatenate(alignment);
 		}
 
 		if (computeLikelihoods) {
@@ -134,10 +134,10 @@ public abstract class AutoAligner {
 				progress.setIndeterminateProgress("Computing likelihood...");
 			}
 
-			timeline.setWordAlignments(startFrame);
+			alignment.commitToWords();
 
 			for (Word w: graph.getWords()) {
-				trainer.learn(w, timeline, startFrame);
+				trainer.learn(w, alignment);
 			}
 		}
 
@@ -149,19 +149,19 @@ public abstract class AutoAligner {
 			assert trainer != null;
 
 			final TransitionRefinery refinery =
-					new TransitionRefinery(timeline, trainer);
+					new TransitionRefinery(alignment, trainer);
 
 			while (!refinery.hasPlateaued()) {
-				timeline = refinery.step();
+				alignment = refinery.step();
 
 				if (refinementIterationHook != null) {
-					timeline.setWordAlignments(startFrame);
+					alignment.commitToWords();
 					refinementIterationHook.run();
 				}
 			}
 		}
 
-		timeline.setWordAlignments(startFrame);
+		alignment.commitToWords();
 	}
 
 

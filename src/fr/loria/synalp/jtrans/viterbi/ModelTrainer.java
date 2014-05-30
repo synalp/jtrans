@@ -131,6 +131,11 @@ public class ModelTrainer {
 	}
 
 
+	/**
+	 * Clears all models, making this trainer available for learning again.
+	 * This way, you can reuse this trainer instead of wasting time
+	 * re-allocating memory for a new one.
+	 */
 	public void clear() {
 		Arrays.fill(likelihood, 0);
 		Arrays.fill(compoundTimeline, null);
@@ -151,8 +156,10 @@ public class ModelTrainer {
 	}
 
 
-
-	public void learn(Word word, Alignment alignment, int frameOffset) {
+	/**
+	 * Trains models for all the states in an aligned word.
+	 */
+	public void learn(Word word, Alignment alignment) {
 		if (sealed) {
 			throw new IllegalStateException("can't learn if sealed");
 		}
@@ -165,7 +172,7 @@ public class ModelTrainer {
 		}
 
 		for (int f = sf; f <= ef; f++) {
-			Object state = alignment.getStateAtFrame(f - frameOffset);
+			Object state = alignment.getStateAtFrame(f);
 			assert !isSilenceState((HMMState)state);
 			assert null == compoundTimeline[f]
 					: "frame " + f + " already processed";
@@ -174,12 +181,21 @@ public class ModelTrainer {
 	}
 
 
+	/**
+	 * Trains a state model for the data in a given frame.
+	 * @param state unique state identifier
+	 * @param f frame number
+	 */
 	public void learnStateAtFrame(Object state, int f) {
 		getModel(state).learnFrame(data[f]);
 		compoundTimeline[f] = state;
 	}
 
 
+	/**
+	 * Finalizes gaussians for all models and computes per-frame likelihoods.
+	 * @return effective number of frames on which the models were trained
+	 */
 	public int seal() {
 		if (sealed) {
 			throw new IllegalStateException("can't seal if already sealed");
@@ -231,6 +247,9 @@ public class ModelTrainer {
 	}
 
 
+	/**
+	 * Returns per-frame likelihoods computed by {@link #seal()}.
+	 */
 	public double[] getLikelihoods() {
 		if (!sealed) {
 			throw new IllegalStateException("can't get likelihoods unless sealed");

@@ -101,7 +101,7 @@ public class ViterbiAligner extends AutoAligner {
 		graph.viterbi(data, swapWriter, startFrame, endFrame);
 
 		swapReader.init(swapWriter.getIndex(), inFactory);
-		Alignment timeline = graph.backtrack(swapReader);
+		Alignment timeline = graph.backtrack(swapReader, startFrame);
 		assert timeline.getLength() == length;
 
 		return timeline;

@@ -901,7 +901,7 @@ public class StateGraph {
 	 * array of node IDs, with array indices being frame numbers relative to
 	 * the first frame given to StateGraph#viterbi.
 	 */
-	public Alignment backtrack(SwapInflater swapReader) throws IOException {
+	public Alignment backtrack(SwapInflater swapReader, int frameOffset) throws IOException {
 		InboundTransitionBridge in = new InboundTransitionBridge();
 
 		int leadNode = nNodes - 1;
@@ -918,7 +918,7 @@ public class StateGraph {
 			}
 		}
 
-		Alignment al = new Alignment();
+		Alignment al = new Alignment(frameOffset);
 		int wordIdx = -1;
 		for (int f = 0; f < timeline.length; f++) {
 			int nodeIdx = timeline[f];
@@ -928,76 +928,6 @@ public class StateGraph {
 		}
 
 		return al;
-	}
-
-
-	private void prettyPrintTimeline(int[] timeline) {
-		System.out.println("Note: only initial states are shown below");
-		System.out.println("    TIME   STATE#     UNIT");
-		for (int f = 0; f < timeline.length; f++) {
-			if (f == 0 || timeline[f-1]/3 != timeline[f]/3) {
-				System.out.println(String.format("%8.2f %8d %8s",
-						TimeConverter.frame2sec(f),
-						timeline[f],
-						getPhoneAt(timeline[f])));
-			}
-		}
-
-		System.out.println("\n    TIME         WORD       BOUNDARY");
-		int pw = -1;
-		int w = -1;
-		for (int f = 0; f < timeline.length; f++) {
-			w = getWordIdxAt(timeline[f], w);
-			if (w != pw) {
-				System.out.println(String.format("%8.2f %16s %8d",
-						TimeConverter.frame2sec(f),
-						words.get(w),
-						wordBoundaries[w]));
-				pw = w;
-			}
-		}
-	}
-
-
-	// TODO: remove this - only remaining use in unit tests
-	public void setWordAlignments(
-			int[] timeline,
-			int offset)
-	{
-		for (Word w: words) {
-			w.clearAlignment();
-		}
-
-		int cw = -1;              // current word idx
-		int pn = -1;              // previous node idx
-		Word word = null;         // current word
-		Word.Phone phone = null;  // current phone
-
-		for (int f = 0; f < timeline.length; f++) {
-			int cn = timeline[f]; // current node idx
-			int now = offset+f; // absolute frame number
-
-			int pw = cw; // previous word idx
-			cw = getWordIdxAt(cn, cw);
-
-			if (cw != pw) {
-				word = words.get(cw);
-				word.setSegment(now, now);
-			} else if (null != word) {
-				word.getSegment().setEndFrame(now);
-			}
-
-			if (f == 0 || pn/3 != cn/3) {
-				if (null != word) {
-					phone = new Word.Phone(
-							getPhoneAt(cn), new Word.Segment(now, now));
-					word.addPhone(phone);
-				}
-				pn = cn;
-			} else if (null != phone) {
-				phone.getSegment().setEndFrame(now);
-			}
-		}
 	}
 
 

@@ -12,9 +12,6 @@ import java.util.Random;
  */
 public class Alignment {
 
-	// TODO: easier offset management
-
-
 	protected static class Segment {
 		int length;
 		final HMMState state;
@@ -49,12 +46,19 @@ public class Alignment {
 	List<Segment> segments;
 	List<Word> uniqueWords;
 	int frames;
+	final int frameOffset;
 
 
-	public Alignment() {
+	/**
+	 * Constructs an empty alignment.
+	 * @param frameOffset the first segment will be appended at this frame
+	 *                    number
+	 */
+	public Alignment(int frameOffset) {
 		segments = new ArrayList<>();
 		uniqueWords = new ArrayList<>();
 		frames = 0;
+		this.frameOffset = frameOffset;
 	}
 
 
@@ -69,29 +73,33 @@ public class Alignment {
 
 		uniqueWords = new ArrayList<>(other.uniqueWords);
 		frames = other.frames;
+		frameOffset = other.frameOffset;
+
 		assert verify();
 	}
 
 
 	/**
-	 * Pads the end of this timeline with a padding segment so that the
-	 * timeline reaches a length of {@code tillFrame} frames.
+	 * Pads the end of this alignment ith a padding segment so that
+	 * {@code length + offset} reaches {@code tillFrame}.
 	 * @throws IllegalStateException
 	 * @return padding segment length
 	 */
 	public int pad(int tillFrame) {
-		if (tillFrame == frames) {
+		int curLastFrame = frameOffset + frames;
+
+		if (tillFrame == curLastFrame) {
 			return 0;
 		}
 
-		if (tillFrame < frames) {
+		if (tillFrame < curLastFrame) {
 			throw new IllegalStateException(String.format(
-					"current frame count (%d) " +
+					"current frame position (%d) " +
 					"exceeds requested padding frame number (%d)",
-					frames, tillFrame));
+					curLastFrame, tillFrame));
 		}
 
-		int delta = tillFrame - frames;
+		int delta = tillFrame - curLastFrame;
 		segments.add(new Segment(null, null, delta));
 		frames += delta;
 
@@ -170,8 +178,8 @@ public class Alignment {
 	}
 
 
-	public Segment getSegmentAtFrame(int frame) {
-		int total = 0;
+	protected Segment getSegmentAtFrame(int frame) {
+		int total = frameOffset;
 		for (Segment seg: segments) {
 			if (frame >= total && frame < total+seg.length) {
 				return seg;
@@ -182,7 +190,10 @@ public class Alignment {
 	}
 
 
-	public void setWordAlignments(int offset) {
+	/**
+	 * Commits word and phone alignments to Word objects.
+	 */
+	public void commitToWords() {
 		for (Word w: uniqueWords) {
 			if (w != null) {
 				w.clearAlignment();
@@ -192,7 +203,7 @@ public class Alignment {
 		Word pWord = null;        // previous word
 		Word.Phone phone = null;  // current phone
 		String pUnit = null;
-		int segStart = offset; // absolute frame number
+		int segStart = frameOffset; // absolute frame number
 
 		for (Segment seg: segments) {
 			int segEnd = segStart + seg.length - 1;

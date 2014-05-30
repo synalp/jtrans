@@ -79,7 +79,7 @@ public class TransitionRefinery {
 		trainer.clear();
 
 		for (Word w: timeline.getUniqueWords()) {
-			trainer.learn(w, timeline, 0);
+			trainer.learn(w, timeline);
 		}
 
 		trainer.seal();

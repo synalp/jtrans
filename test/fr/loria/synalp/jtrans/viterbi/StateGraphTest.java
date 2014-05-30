@@ -272,7 +272,7 @@ public class StateGraphTest {
 		// spice things up with some offset
 		final int F = 1000;
 
-		sg.setWordAlignments(timeline, F);
+		sg.alignmentFromNodeTimeline(timeline, F).commitToWords();
 
 		assertEquals(F+3, tu.getSegment().getStartFrame());
 		assertEquals(F+8, tu.getSegment().getEndFrame());
@@ -358,7 +358,7 @@ public class StateGraphTest {
 				20,
 		};
 
-		sg.setWordAlignments(timeline, 0);
+		sg.alignmentFromNodeTimeline(timeline, 0).commitToWords();
 
 		assertTrue(ah.isAligned());
 		assertTrue(meh.isAligned());
