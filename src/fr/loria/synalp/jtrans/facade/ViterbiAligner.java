@@ -45,7 +45,35 @@ public class ViterbiAligner extends AutoAligner {
 	}
 
 
-	protected Alignment getTimeline(
+	@Override
+	public Alignment getAlignment(
+			final StateGraph graph,
+			final String text,
+			final int startFrame,
+			final int endFrame)
+	{
+		Cache.ObjectFactory factory = new Cache.ObjectFactory() {
+			public int[] make() {
+				try {
+					return getRawTimeline(graph, text, startFrame, endFrame);
+				} catch (IOException|InterruptedException ex) {
+					ex.printStackTrace();
+					return null;
+				}
+			}
+		};
+
+		int[] tl = (int[])Cache.cachedObject(
+				"viterbi",
+				"timeline",
+				factory,
+				audio, text, graph.getNodeCount(), startFrame, endFrame);
+
+		return graph.alignmentFromNodeTimeline(tl, startFrame);
+	}
+
+
+	protected int[] getRawTimeline(
 			StateGraph graph,
 			String text,
 			int startFrame,
@@ -101,8 +129,8 @@ public class ViterbiAligner extends AutoAligner {
 		graph.viterbi(data, swapWriter, startFrame, endFrame);
 
 		swapReader.init(swapWriter.getIndex(), inFactory);
-		Alignment timeline = graph.backtrack(swapReader, startFrame);
-		assert timeline.getLength() == length;
+		int[] timeline = graph.backtrack(swapReader);
+		assert timeline.length == length;
 
 		return timeline;
 	}

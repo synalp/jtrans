@@ -28,7 +28,7 @@ public class FastLinearAligner extends AutoAligner {
 	}
 
 
-	protected Alignment getTimeline(
+	protected Alignment getAlignment(
 			StateGraph graph,
 			String text,
 			int startFrame,

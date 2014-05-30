@@ -30,7 +30,7 @@ public class RealisticPathLinearAligner extends CheatingAligner {
 
 
 	@Override
-	protected Alignment getTimeline(Alignment baseline) {
+	protected Alignment tweak(Alignment baseline) {
 		List<Integer> values = new ArrayList<>();
 
 		/*

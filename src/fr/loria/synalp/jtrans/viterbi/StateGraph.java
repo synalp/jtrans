@@ -901,7 +901,7 @@ public class StateGraph {
 	 * array of node IDs, with array indices being frame numbers relative to
 	 * the first frame given to StateGraph#viterbi.
 	 */
-	public Alignment backtrack(SwapInflater swapReader, int frameOffset) throws IOException {
+	public int[] backtrack(SwapInflater swapReader) throws IOException {
 		InboundTransitionBridge in = new InboundTransitionBridge();
 
 		int leadNode = nNodes - 1;
@@ -918,8 +918,18 @@ public class StateGraph {
 			}
 		}
 
+		return timeline;
+	}
+
+
+	/**
+	 * Creates an Alignment object from a raw node timeline obtained with
+	 * {@link #backtrack(SwapInflater)}.
+	 */
+	public Alignment alignmentFromNodeTimeline(int[] timeline, int frameOffset) {
 		Alignment al = new Alignment(frameOffset);
 		int wordIdx = -1;
+
 		for (int f = 0; f < timeline.length; f++) {
 			int nodeIdx = timeline[f];
 			wordIdx = getWordIdxAt(nodeIdx, wordIdx);

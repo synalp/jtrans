@@ -30,18 +30,18 @@ public abstract class CheatingAligner extends AutoAligner {
 
 
 	@Override
-	protected Alignment getTimeline(
+	protected Alignment getAlignment(
 			StateGraph graph,
 			String text,
 			int startFrame,
 			int endFrame)
 			throws IOException, InterruptedException
 	{
-		return getTimeline(pathfinder.getCachedTimeline(
+		return tweak(pathfinder.getAlignment(
 				graph, text, startFrame, endFrame));
 	}
 
 
-	protected abstract Alignment getTimeline(Alignment baseline);
+	protected abstract Alignment tweak(Alignment baseline);
 
 }

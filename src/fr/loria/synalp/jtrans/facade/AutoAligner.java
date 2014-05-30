@@ -116,8 +116,7 @@ public abstract class AutoAligner {
 
 		graph.setProgressDisplay(progress);
 
-		Alignment alignment = getCachedTimeline(
-				graph, text, startFrame, endFrame);
+		Alignment alignment = getAlignment(graph, text, startFrame, endFrame);
 
 		if (concatenate) {
 			/* Technically, we don't *need* to pad the concatenated timeline,
@@ -165,40 +164,6 @@ public abstract class AutoAligner {
 	}
 
 
-	public Alignment getCachedTimeline(
-			final StateGraph graph,
-			final String text,
-			final int startFrame,
-			final int endFrame)
-	{
-		// Cache wrapper class for getTimeline()
-		class TimelineFactory implements Cache.ObjectFactory {
-			public Alignment make() {
-				try {
-					return getTimeline(graph, text, startFrame, endFrame);
-				} catch (IOException ex) {
-					ex.printStackTrace();
-					return null;
-				} catch (InterruptedException ex) {
-					ex.printStackTrace();
-					return null;
-				}
-			}
-		}
-
-		/*
-		return (StateTimeline)Cache.cachedObject(
-				getTimelineCacheDirectoryName(),
-				"timeline",
-				new TimelineFactory(),
-				audio, text, graph.getNodeCount(), startFrame, endFrame);
-		*/
-		System.out.println("Reimplement me! Cached timeline");
-
-		return new TimelineFactory().make();
-	}
-
-
 	/**
 	 * Aligns a StateGraph and produces an HMM state timeline.
 	 * @param text space-separated words. Don't use this for anything serious!
@@ -206,35 +171,12 @@ public abstract class AutoAligner {
 	 *             The actual words are contained in the StateGraph!
 	 * @return a frame-by-frame timeline of HMM states
 	 */
-	protected abstract Alignment getTimeline(
+	protected abstract Alignment getAlignment(
 			StateGraph graph,
 			String text,
 			int startFrame,
 			int endFrame)
 			throws IOException, InterruptedException;
-
-
-	/**
-	 * Returns a name for the directory containing cached timelines produced
-	 * by/for this aligner. Different alignment algorithms should not share the
-	 * same cache!
-	 */
-	protected String getTimelineCacheDirectoryName() {
-		final String suffix = "Aligner";
-		String name = getClass().getSimpleName();
-		assert name.endsWith(suffix);
-		name = name.substring(0, name.length() - suffix.length());
-		return "timeline_" + name.toLowerCase();
-	}
-
-
-	/*
-	public void dumpMergedTrainer() {
-		ModelTrainer trainer = ModelTrainer.merge(trainer);
-		trainer.score();
-		trainer.dump();
-	}
-	*/
 
 
 	/**
