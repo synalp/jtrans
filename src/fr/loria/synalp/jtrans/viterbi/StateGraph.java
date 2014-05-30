@@ -48,7 +48,7 @@ public class StateGraph {
 	public final static float LIN_PROB_CMP_EPSILON = .0001f;
 
 	/** Pool of unique HMM states. */
-	protected StateSet pool;
+	protected StatePool pool;
 
 
 	/**
@@ -200,11 +200,6 @@ public class StateGraph {
 
 	public HMMState getStateAt(int nodeIdx) {
 		return pool.get(nodeStates[nodeIdx]);
-	}
-
-
-	public boolean isSilentAt(int nodeIdx) {
-		return pool.isSilent(nodeStates[nodeIdx]);
 	}
 
 
@@ -521,13 +516,12 @@ public class StateGraph {
 	 * @param interWordSilences insert optional silences between each word
 	 */
 	public StateGraph(
-			StateSet pool,
 			String[][] rules,
 			List<Word> words,
 			boolean interWordSilences)
 	{
 		this.words = words;
-		this.pool = pool;
+		this.pool = new StatePool();
 
 		nWords  = words.size();
 		int nPhones = countPhones(rules, interWordSilences);
@@ -607,8 +601,8 @@ public class StateGraph {
 	 * Constructs a state graph from an array of words.
 	 * Rules will be looked up in the standard grammar.
 	 */
-	public StateGraph(StateSet pool, List<Word> words) {
-		this(pool, getRules(words), words, true);
+	public StateGraph(List<Word> words) {
+		this(getRules(words), words, true);
 	}
 
 
@@ -668,7 +662,7 @@ public class StateGraph {
 			Arrays.fill(outProb[i], UNINITIALIZED_LOG_PROBABILITY);
 		}
 
-		pool = new StateSet();
+		pool = new StatePool();
 
 		//----------------------------------------------------------------------
 		// Build state graph
@@ -717,15 +711,14 @@ public class StateGraph {
 
 	/**
 	 * Constructs a state graph for easy testing from whitespace-separated
-	 * words. Rules will be looked up in the standard grammar. Uses an
-	 * independent state pool.
+	 * words. Rules will be looked up in the standard grammar.
 	 */
 	public static StateGraph quick(String text) {
 		List<Word> words = new ArrayList<>();
 		for (String str: trimSplit(text)) {
 			words.add(new Word(str));
 		}
-		return new StateGraph(new StateSet(), words);
+		return new StateGraph(words);
 	}
 
 

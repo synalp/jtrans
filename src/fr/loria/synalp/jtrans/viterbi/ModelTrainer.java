@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import static fr.loria.synalp.jtrans.viterbi.StateSet.isSilenceState;
+import static fr.loria.synalp.jtrans.viterbi.StatePool.isSilenceState;
 
 /**
  * Learns Gaussians for every unique state and computes alignment likelihoods.

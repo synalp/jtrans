@@ -5,7 +5,7 @@ import fr.loria.synalp.jtrans.facade.*;
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
 import fr.loria.synalp.jtrans.utils.TimeConverter;
 import fr.loria.synalp.jtrans.viterbi.StateGraph;
-import fr.loria.synalp.jtrans.viterbi.StateSet;
+import fr.loria.synalp.jtrans.viterbi.StatePool;
 
 import javax.sound.sampled.*;
 import java.io.*;
@@ -201,7 +201,7 @@ public abstract class Project {
 			return;
 		}
 
-		StateGraph graph = new StateGraph(new StateSet(), words);
+		StateGraph graph = new StateGraph(words);
 		aligner.align(graph, iFrame, fFrame, concatenate);
 	}
 
