@@ -32,11 +32,6 @@ public class StatePool {
 	public void clear() {
 		phoneUStates.clear();
 		uniqueStates.clear();
-
-		addPhone(SILENCE_PHONE);
-		assert 0 == getId(SILENCE_PHONE, 0);
-		assert 1 == getId(SILENCE_PHONE, 1);
-		assert 2 == getId(SILENCE_PHONE, 2);
 	}
 
 
@@ -103,9 +98,6 @@ public class StatePool {
 	}
 
 
-	/**
-	 * The silence phone is guaranteed to occupy IDs 0 through 2 inclusive.
-	 */
 	public int getId(String phone, int stateNo) {
 		if (stateNo < 0 || stateNo > 2) {
 			throw new IllegalArgumentException("illegal state number " +
