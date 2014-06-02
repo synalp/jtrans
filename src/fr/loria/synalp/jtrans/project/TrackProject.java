@@ -46,7 +46,10 @@ public class TrackProject extends Project {
 					align(aligner,
 							phrase.getInitialAnchor(),
 							phrase.getFinalAnchor(),
-							phrase.getWords());
+							phrase.getWords(),
+							false); // never concatenate.
+					// If we did concatenate, we'd have to start over a new
+					// concatenated timeline on the next for iteration anyway.
 				}
 			}
 		}

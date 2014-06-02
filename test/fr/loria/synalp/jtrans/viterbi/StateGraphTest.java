@@ -34,7 +34,6 @@ public class StateGraphTest {
 		}
 
 		return new StateGraph(
-				new StateSet(),
 				rules,
 				phrase,
 				interWordSilences);
@@ -240,7 +239,6 @@ public class StateGraphTest {
 		savoir = new Word("savoir");
 
 		StateGraph sg = new StateGraph(
-				new StateSet(),
 				rules,
 				Arrays.asList(tu, peux, pas, savoir),
 				true);
@@ -274,7 +272,7 @@ public class StateGraphTest {
 		// spice things up with some offset
 		final int F = 1000;
 
-		sg.setWordAlignments(timeline, F);
+		sg.alignmentFromNodeTimeline(timeline, F).commitToWords();
 
 		assertEquals(F+3, tu.getSegment().getStartFrame());
 		assertEquals(F+8, tu.getSegment().getEndFrame());
@@ -318,7 +316,6 @@ public class StateGraphTest {
 		Word meh = new Word("meh");
 
 		StateGraph sg = new StateGraph(
-				new StateSet(),
 				multiTrimSplit("a", "m ( e | i )"),
 				Arrays.asList(ah, meh),
 				true);
@@ -361,7 +358,7 @@ public class StateGraphTest {
 				20,
 		};
 
-		sg.setWordAlignments(timeline, 0);
+		sg.alignmentFromNodeTimeline(timeline, 0).commitToWords();
 
 		assertTrue(ah.isAligned());
 		assertTrue(meh.isAligned());
@@ -463,7 +460,6 @@ public class StateGraphTest {
 		Word dropped = new Word("dropped");
 
 		StateGraph sg = new StateGraph(
-				new StateSet(),
 				rules,
 				Arrays.asList(bogus, dropped, bogus),
 				true);

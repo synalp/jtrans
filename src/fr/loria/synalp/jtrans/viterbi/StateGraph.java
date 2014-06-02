@@ -48,7 +48,7 @@ public class StateGraph {
 	public final static float LIN_PROB_CMP_EPSILON = .0001f;
 
 	/** Pool of unique HMM states. */
-	protected StateSet pool;
+	protected StatePool pool;
 
 
 	/**
@@ -200,11 +200,6 @@ public class StateGraph {
 
 	public HMMState getStateAt(int nodeIdx) {
 		return pool.get(nodeStates[nodeIdx]);
-	}
-
-
-	public boolean isSilentAt(int nodeIdx) {
-		return pool.isSilent(nodeStates[nodeIdx]);
 	}
 
 
@@ -377,30 +372,44 @@ public class StateGraph {
 			int stateId = pool.getId(phone, i);
 			nodeStates[j] = stateId;
 			HMMState state = pool.get(stateId);
-			assert state.isEmitting();
 
-			HMMStateArc[] succ = state.getSuccessors();
-			assert succ.length == 2: "HMMState must have two successors";
-			assert linProbEq(1,
-					lm.logToLinear(succ[0].getLogProbability()) +
-					lm.logToLinear(succ[1].getLogProbability()))
-					: "linear probabilities must sum to 1";
+			float[] p = getSuccessorProbabilities(state, lm);
 
-			HMMStateArc loop = succ[0].getHMMState() == state
-					? succ[0]
-					: succ[1];
-			assert loop.getHMMState() == state: "can't find loop arc";
-			HMMStateArc nonLoop = succ[loop==succ[0]? 1: 0];
-
-			addOutboundTransition(j, j, loop.getLogProbability());
-
+			addOutboundTransition(j, j, p[0]);
 			if (i < 2) {
-				addOutboundTransition(j+1, j, nonLoop.getLogProbability());
+				addOutboundTransition(j+1, j, p[1]);
 			}
 		}
 
 		insertionPoint += 3;
 		return insertionPoint - 1;
+	}
+
+
+	/**
+	 * Returns the log probabilities of looping on the same state (array item 0)
+	 * and of moving forward to the next state (array item 1).
+	 */
+	public static float[] getSuccessorProbabilities(HMMState state, LogMath lm) {
+		assert state.isEmitting();
+
+		HMMStateArc[] succ = state.getSuccessors();
+		assert 2 == succ.length: "HMMState must have two successors";
+		assert linProbEq(1,
+				lm.logToLinear(succ[0].getLogProbability()) +
+				lm.logToLinear(succ[1].getLogProbability()))
+				: "linear probabilities must sum to 1";
+
+		HMMStateArc loop = succ[0].getHMMState() == state
+				? succ[0]
+				: succ[1];
+		assert loop.getHMMState() == state: "can't find loop arc";
+		HMMStateArc nonLoop = succ[loop==succ[0]? 1: 0];
+
+		return new float[] {
+				loop.getLogProbability(),
+				nonLoop.getLogProbability()
+		};
 	}
 
 
@@ -507,13 +516,12 @@ public class StateGraph {
 	 * @param interWordSilences insert optional silences between each word
 	 */
 	public StateGraph(
-			StateSet pool,
 			String[][] rules,
 			List<Word> words,
 			boolean interWordSilences)
 	{
 		this.words = words;
-		this.pool = pool;
+		this.pool = new StatePool();
 
 		nWords  = words.size();
 		int nPhones = countPhones(rules, interWordSilences);
@@ -593,8 +601,8 @@ public class StateGraph {
 	 * Constructs a state graph from an array of words.
 	 * Rules will be looked up in the standard grammar.
 	 */
-	public StateGraph(StateSet pool, List<Word> words) {
-		this(pool, getRules(words), words, true);
+	public StateGraph(List<Word> words) {
+		this(getRules(words), words, true);
 	}
 
 
@@ -625,16 +633,92 @@ public class StateGraph {
 
 
 	/**
+	 * Constructs a linear (flat) StateGraph that walks through all the states
+	 * in an alignment sequentially.
+	 * <p/>StateGraph linearity is defined by {@link #isLinear}.
+	 */
+	public StateGraph(Alignment alignment) {
+		LogMath lm = HMMModels.getLogMath();
+
+		nWords = alignment.getUniqueWordCount();
+		nNodes = 0;
+		for (Alignment.Segment seg: alignment.segments) {
+			if (!seg.isPadding()) {
+				nNodes++;
+			}
+		}
+
+		words = new ArrayList<>(nWords);
+		wordBoundaries = new int[nWords];
+
+		nodeStates = new int  [nNodes];
+		outCount   = new byte [nNodes];
+		// Only 2 transitions will ever be possible for any given node
+		// in a path (except for the first node which only has itself)
+		outNode    = new int  [nNodes][2];
+		outProb    = new float[nNodes][2];
+
+		for (int i = 0; i < nNodes; i++) {
+			Arrays.fill(outProb[i], UNINITIALIZED_LOG_PROBABILITY);
+		}
+
+		pool = new StatePool();
+
+		//----------------------------------------------------------------------
+		// Build state graph
+
+		int n = 0;
+		int w = 0;
+		Word pWord = null;
+
+		for (Alignment.Segment seg: alignment.segments) {
+			if (seg.isPadding()) {
+				continue;
+			}
+
+			int stateIdx = pool.add(seg.state);
+			nodeStates[n] = stateIdx;
+			outCount[n] = 2;
+			outNode[n][0] = n;
+			outNode[n][1] = n+1;
+
+			outProb[n] = getSuccessorProbabilities(seg.state, lm);
+			assert 2 == outProb[n].length;
+
+			if (null != seg.word && pWord != seg.word) {
+				words.add(seg.word);
+				wordBoundaries[w++] = n;
+				pWord = seg.word;
+			}
+
+			n++;
+		}
+
+		correctLastNodeTransitions();
+
+		//----------------------------------------------------------------------
+		// Check graph consistency
+
+		checkTransitions();
+
+		// must be flat!
+		if (!isLinear()) {
+			throw new IllegalStateException("building StateGraph from " +
+					"timeline should've yielded a linear graph!");
+		}
+	}
+
+
+	/**
 	 * Constructs a state graph for easy testing from whitespace-separated
-	 * words. Rules will be looked up in the standard grammar. Uses an
-	 * independent state pool.
+	 * words. Rules will be looked up in the standard grammar.
 	 */
 	public static StateGraph quick(String text) {
 		List<Word> words = new ArrayList<>();
 		for (String str: trimSplit(text)) {
 			words.add(new Word(str));
 		}
-		return new StateGraph(new StateSet(), words);
+		return new StateGraph(words);
 	}
 
 
@@ -838,72 +922,22 @@ public class StateGraph {
 	}
 
 
-	private void prettyPrintTimeline(int[] timeline) {
-		System.out.println("Note: only initial states are shown below");
-		System.out.println("    TIME   STATE#     UNIT");
-		for (int f = 0; f < timeline.length; f++) {
-			if (f == 0 || timeline[f-1]/3 != timeline[f]/3) {
-				System.out.println(String.format("%8.2f %8d %8s",
-						TimeConverter.frame2sec(f),
-						timeline[f],
-						getPhoneAt(timeline[f])));
-			}
-		}
-
-		System.out.println("\n    TIME         WORD       BOUNDARY");
-		int pw = -1;
-		int w = -1;
-		for (int f = 0; f < timeline.length; f++) {
-			w = getWordIdxAt(timeline[f], w);
-			if (w != pw) {
-				System.out.println(String.format("%8.2f %16s %8d",
-						TimeConverter.frame2sec(f),
-						words.get(w),
-						wordBoundaries[w]));
-				pw = w;
-			}
-		}
-	}
-
-
-	public void setWordAlignments(
-			int[] timeline,
-			int offset)
-	{
-		for (Word w: words) {
-			w.clearAlignment();
-		}
-
-		int cw = -1;              // current word idx
-		int pn = -1;              // previous node idx
-		Word word = null;         // current word
-		Word.Phone phone = null;  // current phone
+	/**
+	 * Creates an Alignment object from a raw node timeline obtained with
+	 * {@link #backtrack(SwapInflater)}.
+	 */
+	public Alignment alignmentFromNodeTimeline(int[] timeline, int frameOffset) {
+		Alignment al = new Alignment(frameOffset);
+		int wordIdx = -1;
 
 		for (int f = 0; f < timeline.length; f++) {
-			int cn = timeline[f]; // current node idx
-			int now = offset+f; // absolute frame number
-
-			int pw = cw; // previous word idx
-			cw = getWordIdxAt(cn, cw);
-
-			if (cw != pw) {
-				word = words.get(cw);
-				word.setSegment(now, now);
-			} else if (null != word) {
-				word.getSegment().setEndFrame(now);
-			}
-
-			if (f == 0 || pn/3 != cn/3) {
-				if (null != word) {
-					phone = new Word.Phone(
-							getPhoneAt(cn), new Word.Segment(now, now));
-					word.addPhone(phone);
-				}
-				pn = cn;
-			} else if (null != phone) {
-				phone.getSegment().setEndFrame(now);
-			}
+			int nodeIdx = timeline[f];
+			wordIdx = getWordIdxAt(nodeIdx, wordIdx);
+			al.newFrame(getStateAt(nodeIdx),
+					wordIdx >= 0 ? words.get(wordIdx) : null);
 		}
+
+		return al;
 	}
 
 

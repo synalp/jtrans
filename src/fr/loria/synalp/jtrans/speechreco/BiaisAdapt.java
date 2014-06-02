@@ -22,7 +22,7 @@ import edu.cmu.sphinx.linguist.acoustic.tiedstate.Senone;
 import edu.cmu.sphinx.linguist.acoustic.tiedstate.SenoneHMM;
 import edu.cmu.sphinx.linguist.acoustic.tiedstate.SenoneHMMState;
 import fr.loria.synalp.jtrans.gui.JTransGUI;
-import fr.loria.synalp.jtrans.speechreco.s4.Alignment;
+import fr.loria.synalp.jtrans.speechreco.s4.OldAlignment;
 import fr.loria.synalp.jtrans.speechreco.s4.HMMModels;
 
 public class BiaisAdapt {
@@ -33,7 +33,7 @@ public class BiaisAdapt {
 		this.aligneur = aligneur;
 	}
 
-	public void adaptMAP(Alignment alignPhones) {
+	public void adaptMAP(OldAlignment alignPhones) {
 		// TODO: 1- equi-split phone segments into state segments
 		// 2- compute the "weights" of each Gaussian in the state by Mahalanobis
 		// 3- adapt based on the weight

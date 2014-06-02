@@ -9,7 +9,6 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.List;
 import java.util.Random;
 
 /**
@@ -18,12 +17,11 @@ import java.util.Random;
  */
 public class TransitionRefinery {
 
-	private int[] timeline;
+	private Alignment timeline;
 	private double cLhd;
 
 	private Random random;
-	private StateGraph graph;
-	private List<ModelTrainer> trainers;
+	private SpeakerDepModelTrainer trainer;
 	private LogMath log = HMMModels.getLogMath();
 
 	int rejectionStreak = 0;
@@ -59,61 +57,41 @@ public class TransitionRefinery {
 	 * @param baseline Baseline alignment (as found e.g. with viterbi()).
 	 */
 	public TransitionRefinery(
-			StateGraph graph,
-			int[] baseline,
-			List<ModelTrainer> trainers)
+			Alignment baseline,
+			SpeakerDepModelTrainer trainer)
 	{
-		timeline = new int[baseline.length];
-		System.arraycopy(baseline, 0, timeline, 0, timeline.length);
+		timeline = new Alignment(baseline);
 
 		random = new Random();
-		this.graph = graph;
-		this.trainers = trainers;
+		this.trainer = trainer;
 
-		cLhd = computeCumulativeLikelihood();
+/*
+		for (int i = 0; i < 10000000; i++) {
+			shift();
+		}
+*/
+
+		cLhd = train(baseline);
 	}
 
 
-	private double computeCumulativeLikelihood() {
-		// TODO: too much boilerplate -- do these steps really need to be separated?
+	private double train(Alignment timeline) {
+		trainer.clear();
 
-		for (ModelTrainer s: trainers) {
-			s.init();
+		for (Word w: timeline.getUniqueWords()) {
+			trainer.learn(w, timeline);
 		}
 
-		for (Word w: graph.getWords()) {
-			trainers.get(w.getSpeaker()).learn(w, graph, timeline, 0);
-		}
+		trainer.seal();
 
-		ModelTrainer merged = ModelTrainer.merge(trainers);
-		merged.score();
-
-		return ModelTrainer.sum(merged.getLikelihoods());
-	}
-
-
-	/**
-	 * Finds the next transition between two states.
-	 * @param offset start searching at this frame
-	 * @param timeline HMM state timeline
-	 * @return the number of the frame preceding the transition
-	 */
-	public static int nextTransition(int offset, int[] timeline) {
-		final int upper = timeline.length - 2;
-		while (offset < upper &&
-				!(timeline[offset+1] != timeline[offset] &&
-						timeline[offset+1] == timeline[offset+2]))
-		{
-			offset++;
-		}
-		return offset >= upper? -1: offset;
+		return trainer.getCumulativeLikelihood();
 	}
 
 
 	/**
 	 * Refines an HMM state timeline with the Metropolis-Hastings algorithm.
 	 */
-	public int[] step() throws IOException {
+	public Alignment step() throws IOException {
 		iterations++;
 
 		if (plot == null) {
@@ -160,35 +138,13 @@ public class TransitionRefinery {
 	 * Refines a random transition in the timeline.
 	 */
 	private Accept metropolisHastings() {
-		int trans = -1;
-		while (trans < 0) {
-			// don't use last 2 values (see nextTransition())
-			trans = nextTransition(random.nextInt(timeline.length-2), timeline);
+		Alignment proposal = new Alignment(timeline);
+
+		for (int i = 0; i < 100; i++) {
+			proposal.wiggle(random, 1);
 		}
-		assert trans < timeline.length - 1;
 
-		// Shift transition
-		int backup = timeline[trans+1];
-		timeline[trans+1] = timeline[trans];
-
-		double newCLhd = computeCumulativeLikelihood();
-
-		/*
-		System.out.println("============= TRANSITION CHANGED AT FRAME " + trans + "=============");
-		System.out.println("=====CUMULATIVE: old: " + cLhd + " new: " + newCLhd);
-		for (int i = 0; i < timeline.length; i++) {
-			double diff = newLhd[i] - lhd[i];
-			if (diff != 0) {
-				System.out.println(
-						"[FRAME " + i + "]" +
-								"\tnew " + newLhd[i] +
-								"\told " + lhd[i] +
-								"\tdiff " + diff
-				);
-			}
-		}
-		*/
-
+		double newCLhd = train(proposal);
 		boolean accept = newCLhd > cLhd;
 		final Accept status;
 
@@ -206,11 +162,9 @@ public class TransitionRefinery {
 					dice, ratio, newCLhd, cLhd, newCLhd - cLhd));
 		}
 
-		if (!accept) {
-			timeline[trans+1] = backup;
-		} else {
-			//lhd = newLhd;
+		if (accept) {
 			cLhd = newCLhd;
+			timeline = proposal;
 		}
 
 		System.out.println("Acceptance status: " + status);

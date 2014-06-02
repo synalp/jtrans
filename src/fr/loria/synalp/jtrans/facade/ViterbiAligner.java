@@ -1,6 +1,7 @@
 package fr.loria.synalp.jtrans.facade;
 
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
+import fr.loria.synalp.jtrans.viterbi.Alignment;
 import fr.loria.synalp.jtrans.viterbi.StateGraph;
 import fr.loria.synalp.jtrans.viterbi.SwapDeflater;
 import fr.loria.synalp.jtrans.viterbi.SwapInflater;
@@ -44,7 +45,35 @@ public class ViterbiAligner extends AutoAligner {
 	}
 
 
-	protected int[] getTimeline(
+	@Override
+	public Alignment getAlignment(
+			final StateGraph graph,
+			final String text,
+			final int startFrame,
+			final int endFrame)
+	{
+		Cache.ObjectFactory factory = new Cache.ObjectFactory() {
+			public int[] make() {
+				try {
+					return getRawTimeline(graph, text, startFrame, endFrame);
+				} catch (IOException|InterruptedException ex) {
+					ex.printStackTrace();
+					return null;
+				}
+			}
+		};
+
+		int[] tl = (int[])Cache.cachedObject(
+				"viterbi",
+				"timeline",
+				factory,
+				audio, text, graph.getNodeCount(), startFrame, endFrame);
+
+		return graph.alignmentFromNodeTimeline(tl, startFrame);
+	}
+
+
+	protected int[] getRawTimeline(
 			StateGraph graph,
 			String text,
 			int startFrame,

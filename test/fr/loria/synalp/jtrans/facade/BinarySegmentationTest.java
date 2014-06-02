@@ -63,6 +63,22 @@ public class BinarySegmentationTest {
 	}
 
 
+	/**
+	 * Creates a segmentation from an ASCII one-dimensional diagram of segments.
+	 * Each non-space character in the diagram represents a segment of length 1.
+	 * Example format: {@code "  XXX X   XX "}
+	 */
+	private static BinarySegmentation fromString(String diagram) {
+		BinarySegmentation binseg = new BinarySegmentation();
+		for (int i = 0; i < diagram.length(); i++) {
+			if (' ' != diagram.charAt(i)) {
+				binseg.union(i, 1);
+			}
+		}
+		return binseg;
+	}
+
+
 	@Test
 	public void testSeparateUnion() {
 		torture(
@@ -150,6 +166,73 @@ public class BinarySegmentationTest {
 				asList(S(0, 6)),
 				asList(S(1, 1), S(3, 1), S(0, 6))
 		);
+	}
+
+
+	@Test
+	public void testNegate() {
+		BinarySegmentation
+				bs   = fromString("   XXXX     XX      "),
+				exp  = fromString("XXX    XXXXX  XXXXXX"),
+				copy = new BinarySegmentation(bs);
+
+		bs.negate(20);
+		assertEquals(exp, bs);
+
+		// Fall back to original segmentation
+		bs.negate(20);
+		assertEquals(copy, bs);
+	}
+
+
+	@Test
+	public void testNegateStartAt0() {
+		BinarySegmentation
+				bs   = fromString("XXXX      "),
+				exp  = fromString("    XXXXXX"),
+				copy = new BinarySegmentation(bs);
+
+		bs.negate(10);
+		assertEquals(exp, bs);
+
+		// Fall back to original segmentation
+		bs.negate(10);
+		assertEquals(copy, bs);
+	}
+
+
+	@Test
+	public void testNegateEmpty() {
+		BinarySegmentation bs = new BinarySegmentation();
+
+		bs.negate(10);
+		assertEquals(fromString("XXXXXXXXXX"), bs);
+
+		bs.negate(10);
+		assertEquals(new BinarySegmentation(), bs);
+	}
+
+
+	@Test
+	public void testIntersect() {
+		BinarySegmentation
+				bs1 = fromString("   XXXX      XXX   "),
+				bs2 = fromString("X XXX    X   X   X "),
+				exp = fromString("   XX        X     ");
+
+		bs1.intersect(bs2);
+		assertEquals(exp, bs1);
+	}
+
+
+	@Test
+	public void testIntersectNothing() {
+		BinarySegmentation
+				empty = new BinarySegmentation(),
+				bs = fromString(" X X X X X X ");
+
+		bs.intersect(empty);
+		assertEquals(empty, bs);
 	}
 
 }

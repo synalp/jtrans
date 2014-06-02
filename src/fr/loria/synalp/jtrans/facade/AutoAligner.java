@@ -7,7 +7,6 @@ import fr.loria.synalp.jtrans.utils.ProgressDisplay;
 import fr.loria.synalp.jtrans.viterbi.*;
 
 import java.io.*;
-import java.util.ArrayList;
 import java.util.List;
 
 
@@ -17,14 +16,17 @@ import java.util.List;
  */
 public abstract class AutoAligner {
 
-	protected List<ModelTrainer> trainers;
+	protected SpeakerDepModelTrainer trainer;
 	protected final List<FloatData> data;
 	protected final File audio;
 	protected final ProgressDisplay progress;
 	private Runnable refinementIterationHook;
 
-	List<StateGraph> concatGraphs = new ArrayList<>();
-	List<int[]> concatTimelines = new ArrayList<>();
+	/**
+	 * Concatenation of timelines obtained via successive calls to
+	 * {@link #align}.
+	 */
+	private Alignment concatenated = new Alignment(0);
 
 
 	/**
@@ -58,12 +60,8 @@ public abstract class AutoAligner {
 
 
 	public void initTrainers(int speakers) {
-		trainers = new ArrayList<>(speakers);
-		float[][] dataArray = S4mfccBuffer.to2DArray(data);
-
-		for (int i = 0; i < speakers; i++) {
-			trainers.add(new ModelTrainer(dataArray));
-		}
+		trainer = new SpeakerDepModelTrainer(
+				speakers, S4mfccBuffer.to2DArray(data));
 	}
 
 
@@ -93,11 +91,17 @@ public abstract class AutoAligner {
 	/**
 	 * Aligns words in a StateGraph.
 	 * @param endFrame last frame to analyze
+	 * @param concatenate Whether to concatenate the resulting timeline
+	 *                    internally (don't do that with overlapping speech!),
+	 *                    to prepare a call to getConcatenatedPath().
+	 *                    When concatenating, calls to align() must reflect the
+	 *                    chronological order of the pieces of text to align!
 	 */
 	public void align(
 			final StateGraph graph,
 			final int startFrame,
-			final int endFrame)
+			final int endFrame,
+			boolean concatenate)
 			throws IOException, InterruptedException
 	{
 		// Space-separated string of words (used as identifier for cache files)
@@ -112,41 +116,27 @@ public abstract class AutoAligner {
 
 		graph.setProgressDisplay(progress);
 
-		// Cache wrapper class for getTimeline()
-		class TimelineFactory implements Cache.ObjectFactory {
-			public int[] make() {
-				try {
-					return getTimeline(graph, text, startFrame, endFrame);
-				} catch (IOException ex) {
-					ex.printStackTrace();
-					return null;
-				} catch (InterruptedException ex) {
-					ex.printStackTrace();
-					return null;
-				}
-			}
+		Alignment alignment = getAlignment(graph, text, startFrame, endFrame);
+
+		if (concatenate) {
+			/* Technically, we don't *need* to pad the concatenated timeline,
+			since we only need the state sequence (in getConcatenatedPath()),
+			which isn't affected by timing info. But it makes sense to pad it
+			anyway, just so it is chronologically correct if we ever need it. */
+			concatenated.pad(startFrame);
+			concatenated.concatenate(alignment);
 		}
 
-		int[] timeline = (int[])Cache.cachedObject(
-				getTimelineCacheDirectoryName(),
-				"timeline",
-				new TimelineFactory(),
-				audio, text, graph.getNodeCount(), startFrame, endFrame);
-
-		concatGraphs.add(graph);
-		concatTimelines.add(timeline);
-
 		if (computeLikelihoods) {
-			assert trainers != null;
+			assert trainer != null;
 			if (progress != null) {
 				progress.setIndeterminateProgress("Computing likelihood...");
 			}
 
-			graph.setWordAlignments(timeline, startFrame);
+			alignment.commitToWords();
 
 			for (Word w: graph.getWords()) {
-				trainers.get(w.getSpeaker())
-						.learn(w, graph, timeline, startFrame);
+				trainer.learn(w, alignment);
 			}
 		}
 
@@ -155,22 +145,22 @@ public abstract class AutoAligner {
 				progress.setIndeterminateProgress("Metropolis-Hastings...");
 			}
 
-			assert trainers != null;
+			assert trainer != null;
 
-			final TransitionRefinery refinery = new TransitionRefinery(
-					graph, timeline, trainers);
+			final TransitionRefinery refinery =
+					new TransitionRefinery(alignment, trainer);
 
 			while (!refinery.hasPlateaued()) {
-				timeline = refinery.step();
+				alignment = refinery.step();
 
 				if (refinementIterationHook != null) {
-					graph.setWordAlignments(timeline, startFrame);
+					alignment.commitToWords();
 					refinementIterationHook.run();
 				}
 			}
 		}
 
-		graph.setWordAlignments(timeline, startFrame);
+		alignment.commitToWords();
 	}
 
 
@@ -181,7 +171,7 @@ public abstract class AutoAligner {
 	 *             The actual words are contained in the StateGraph!
 	 * @return a frame-by-frame timeline of HMM states
 	 */
-	protected abstract int[] getTimeline(
+	protected abstract Alignment getAlignment(
 			StateGraph graph,
 			String text,
 			int startFrame,
@@ -190,41 +180,12 @@ public abstract class AutoAligner {
 
 
 	/**
-	 * Returns a name for the directory containing cached timelines produced
-	 * by/for this aligner. Different alignment algorithms should not share the
-	 * same cache!
+	 * Returns concatenation of timelines obtained via successive calls to
+	 * {@link #align}.
 	 */
-	protected String getTimelineCacheDirectoryName() {
-		final String suffix = "Aligner";
-		String name = getClass().getSimpleName();
-		assert name.endsWith(suffix);
-		name = name.substring(0, name.length() - suffix.length());
-		return "timeline_" + name.toLowerCase();
-	}
-
-
-	public void printScores() {
-		ModelTrainer trainer = ModelTrainer.merge(trainers);
-		trainer.score();
-		double sum = ModelTrainer.sum(trainer.getLikelihoods());
-		System.out.println("Overall likelihood " + sum);
-	}
-
-
-	public void dumpMergedTrainer() {
-		ModelTrainer trainer = ModelTrainer.merge(trainers);
-		trainer.score();
-		trainer.dump();
-	}
-
-
-	public StatePath getConcatenatedPath() {
+	public Alignment getConcatenatedTimeline() {
 		// TODO: should throw an error on overlaps
-		StatePath[] paths = new StatePath[concatGraphs.size()];
-		for (int i = 0; i < concatGraphs.size(); i++) {
-			paths[i] = new StatePath(concatGraphs.get(i), concatTimelines.get(i));
-		}
-		return new StatePath(paths);
+		return new Alignment(concatenated);
 	}
 
 }

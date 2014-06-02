@@ -23,8 +23,9 @@ import edu.cmu.sphinx.linguist.lextree.LexTreeLinguist.LexTreeHMMState;
  * (en frames).
  * 
  * @author cerisara
+ * @deprecated 
  */
-public class Alignment implements Serializable {
+public class OldAlignment implements Serializable {
 
 	private class Segment implements Serializable {
 		public int start, end;
@@ -62,7 +63,7 @@ public class Alignment implements Serializable {
  	 */
 	private int[] segEndFrames = null;
 
-	public Alignment() {
+	public OldAlignment() {
 		clear();
 	}
 
@@ -73,7 +74,7 @@ public class Alignment implements Serializable {
 	 * Segments in the other alignment should typically span longer than
 	 * segments in this alignment for this method to work properly.
 	 */
-	public int[] mapSegmentTimings(Alignment bigAlignment) {
+	public int[] mapSegmentTimings(OldAlignment bigAlignment) {
 		int[] seg2seg = new int[getNbSegments()];
 
 		int j = 0;
@@ -97,7 +98,7 @@ public class Alignment implements Serializable {
 	/**
 	 * Copy constructor - performs a SHALLOW copy of the segments!
 	 */
-	public Alignment(Alignment other) {
+	public OldAlignment(OldAlignment other) {
 		frameOffset = other.frameOffset;
 		firstSegmentModified = other.firstSegmentModified;
 		segments = new ArrayList<Segment>(other.segments);
@@ -157,7 +158,7 @@ public class Alignment implements Serializable {
 	 *
 	 * @return Index at which the first segment was inserted
 	 */
-	public int merge(Alignment al) {
+	public int merge(OldAlignment al) {
 		int nsegsConservesDuPremier=getNbSegments();
 		if (frameOffset < al.frameOffset) {
 			// il ne faut plus ajuster, car on l'a deja fait et on utilise les methodes de haut niveau pour acceder aux limites temporelles !
@@ -203,13 +204,13 @@ public class Alignment implements Serializable {
 	 * The smaller alignment may extend beyond the end of this alignment.
 	 * @return index of the first overwritten segment
 	 */
-	public int overwrite(Alignment small) {
+	public int overwrite(OldAlignment small) {
 		int fromFrame = small.getStartFrame();
 		int toFrame   = small.getSegmentEndFrame(small.getNbSegments()-1);
 
 		assert fromFrame >= getStartFrame();
 
-		Alignment after = new Alignment(this);
+		OldAlignment after = new OldAlignment(this);
 		cutAfterFrame(fromFrame);
 		int segmentsBefore = getNbSegments();
 		after.cutBeforeFrame(toFrame);
@@ -220,7 +221,7 @@ public class Alignment implements Serializable {
 	}
 
 	public void clearInterval(int startFrame, int endFrame) {
-		Alignment after = new Alignment(this);
+		OldAlignment after = new OldAlignment(this);
 		cutAfterFrame(startFrame);
 		after.cutBeforeFrame(endFrame);
 		merge(after);
@@ -384,7 +385,7 @@ public class Alignment implements Serializable {
 	/**
 	 * @return An array of three alignments (words, phonemes, states)
 	 */
-	public static Alignment[] backtrack(Token tok) {
+	public static OldAlignment[] backtrack(Token tok) {
 		try {
 			if (tok==null) {
 				System.out.println("ERROR: no best token !");
@@ -436,9 +437,9 @@ public class Alignment implements Serializable {
 			}
 
 			// creation alignement
-			Alignment alignMots = new Alignment();
-			Alignment alignPhones = new Alignment();
-			Alignment alignStates = new Alignment();
+			OldAlignment alignMots = new OldAlignment();
+			OldAlignment alignPhones = new OldAlignment();
+			OldAlignment alignStates = new OldAlignment();
 			for (int i=labs.size()-1;i>=0;i--) {
 				String[] phs = new String[labsphones.get(i).size()];
 				phs = labsphones.get(i).toArray(phs);
@@ -486,7 +487,7 @@ public class Alignment implements Serializable {
 
 			System.out.println("debug align after backtrack "+alignMots);
 
-			return new Alignment[] {alignMots,alignPhones,alignStates};
+			return new OldAlignment[] {alignMots,alignPhones,alignStates};
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;

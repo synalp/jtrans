@@ -1,12 +1,11 @@
 package fr.loria.synalp.jtrans.facade;
 
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
-import fr.loria.synalp.jtrans.viterbi.StateGraph;
+import fr.loria.synalp.jtrans.viterbi.Alignment;
+import static fr.loria.synalp.jtrans.facade.FastLinearAligner.interpolatedLengths;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 
 /**
@@ -20,41 +19,29 @@ import java.util.List;
  *
  * @see FastLinearAligner
  */
-public class RealisticPathLinearAligner extends AutoAligner {
-
-	private ViterbiAligner pathfinder;
-
+public class RealisticPathLinearAligner extends CheatingAligner {
 
 	public RealisticPathLinearAligner(File audio, ProgressDisplay progress)
 			throws IOException
 	{
 		super(audio, progress);
-		pathfinder = new ViterbiAligner(audio, progress);
 	}
 
 
 	@Override
-	protected int[] getTimeline(
-			StateGraph graph,
-			String text,
-			int startFrame,
-			int endFrame)
-			throws IOException, InterruptedException
-	{
-		final int length = boundCheckLength(startFrame, endFrame);
+	protected Alignment tweak(Alignment base) {
+		Alignment al = new Alignment(base.getFrameOffset());
 
-		int[] refTL = pathfinder.getTimeline(graph, text, startFrame, endFrame);
+		int[] lengths = interpolatedLengths(
+				base.getSegmentCount(), base.getLength());
+		assert lengths.length == base.getSegmentCount();
 
-		List<Integer> values = new ArrayList<Integer>();
-
-		for (int i = 0; i < refTL.length; i++) {
-			int node = refTL[i];
-			if (i == 0 || refTL[i-1] != node) {
-				values.add(node);
-			}
+		for (int i = 0; i < lengths.length; i++) {
+			Alignment.Segment seg = base.getSegment(i);
+			al.newSegment(seg.state, seg.word, lengths[i]);
 		}
 
-		return FastLinearAligner.fillInterpolate(values, new int[length], 0, length);
+		return al;
 	}
 
 }

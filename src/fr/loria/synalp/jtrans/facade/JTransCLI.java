@@ -7,7 +7,8 @@ import fr.loria.synalp.jtrans.markup.out.MarkupSaverPool;
 import fr.loria.synalp.jtrans.project.Project;
 import fr.loria.synalp.jtrans.project.TurnProject;
 import fr.loria.synalp.jtrans.utils.*;
-import fr.loria.synalp.jtrans.viterbi.StatePath;
+import fr.loria.synalp.jtrans.viterbi.Alignment;
+import fr.loria.synalp.jtrans.viterbi.StateGraph;
 import joptsimple.*;
 
 import javax.sound.sampled.AudioFileFormat;
@@ -19,7 +20,7 @@ import java.util.logging.LogManager;
 
 public class JTransCLI {
 
-	public static String logID = ""; //"JTrans_" + System.currentTimeMillis();
+	public static String logID = "_" + System.currentTimeMillis();
 	public MarkupLoader loader;
 	public File inputFile;
 	public File audioFile;
@@ -398,7 +399,7 @@ public class JTransCLI {
 		final Project project;
 		final Project reference;
 		final JTransCLI cli;
-		final StatePath forcedPath;
+		final Alignment referenceAlignment;
 
 		loadLoggingProperties();
 
@@ -436,15 +437,15 @@ public class JTransCLI {
 			command line switch and generalized to linear alignments
 			(eliminating the need for RealisticPathLinearAligner) */
 			System.out.println("Computing reference path...");
-			AutoAligner refAl = project.getAligner(
+			AutoAligner referenceAligner = project.getAligner(
 					ViterbiAligner.class, progress, true); // KLUDGE!!! true is needed for kludgeReferenceScorer
-			((TurnProject)project).align(refAl, false);
-			forcedPath = refAl.getConcatenatedPath();
-			refAl.printScores(); // KLUDGE!!! learn models (and, incidentally, compute likelihoods) - needed for kludgeReferenceScorer
+			((TurnProject)project).align(referenceAligner, false);
+			referenceAlignment = referenceAligner.getConcatenatedTimeline();
+			referenceAligner.trainer.seal();
 			project.clearAlignment();
 			((TurnProject) project).clearAnchorTimes();
 		} else {
-			forcedPath = null;
+			referenceAlignment = null;
 		}
 
 		if (cli.runAnchorDiffTest) {
@@ -470,15 +471,23 @@ public class JTransCLI {
 			assert aligner != null;
 
 			System.out.println("Aligning...");
-			if (null != forcedPath) {
+			if (null != referenceAlignment) {
 				System.out.println("WARNING: Aligning with forced reference path!");
-				aligner.align(forcedPath, 0, aligner.getFrameCount() - 1);
+				StateGraph path = new StateGraph(referenceAlignment);
+				assert path.isLinear();
+				aligner.align(
+						path,
+						0,
+						aligner.getFrameCount()-1,
+						false); // not using the concatenated path here
 			} else {
 				project.align(aligner);
 			}
 			System.out.println("Alignment done.");
 			if (cli.computeLikelihoods) {
-				aligner.printScores();
+				aligner.trainer.seal();
+				System.out.println("Overall likelihood: " +
+						aligner.trainer.getCumulativeLikelihood());
 			}
 		}
 

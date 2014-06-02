@@ -28,7 +28,7 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
-import fr.loria.synalp.jtrans.speechreco.s4.Alignment;
+import fr.loria.synalp.jtrans.speechreco.s4.OldAlignment;
 import fr.loria.synalp.jtrans.utils.FileUtils;
 
 import fr.loria.synalp.jtrans.utils.SuiteDeMots;
@@ -1378,10 +1378,10 @@ public class SpeechReco {
 		}
 	}
 
-	private Alignment getFullAlign(Result result) {
+	private OldAlignment getFullAlign(Result result) {
 		Token tok = result.getBestToken();
 
-		Alignment al = Alignment.backtrack(tok)[0];
+		OldAlignment al = OldAlignment.backtrack(tok)[0];
 		try {
 			PrintWriter f = FileUtils.writeFileUTF("debug.tok");
 //			al.save(f);
@@ -1581,7 +1581,7 @@ public class SpeechReco {
 	}
 	
 	
-	public Alignment fullalign=null;
+	public OldAlignment fullalign=null;
 	
 	private List<RecoWord> convertResult2RecoWords(Result result) {
 		ArrayList<RecoWord> curres = new ArrayList<RecoWord>();
@@ -1696,7 +1696,7 @@ public class SpeechReco {
 					// backtrack pour avoir les phones
 					ArrayList<String> phst = new ArrayList<String>();
 					while (tok!=null&&!tok.isWord()) {
-						String s = Alignment.getInfoOneFrame(tok);
+						String s = OldAlignment.getInfoOneFrame(tok);
 						String[] ss = s.split(":");
 						
 						if (ss[0].length()>0) {
