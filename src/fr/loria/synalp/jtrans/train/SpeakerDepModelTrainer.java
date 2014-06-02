@@ -1,6 +1,6 @@
 package fr.loria.synalp.jtrans.train;
 
-import fr.loria.synalp.jtrans.project.Word;
+import fr.loria.synalp.jtrans.project.Token;
 import fr.loria.synalp.jtrans.utils.BinarySegmentation;
 import fr.loria.synalp.jtrans.utils.BufferUtils;
 import fr.loria.synalp.jtrans.align.Alignment;
@@ -44,7 +44,7 @@ public class SpeakerDepModelTrainer {
 	}
 
 
-	public void learn(Word w, Alignment alignment) {
+	public void learn(Token w, Alignment alignment) {
 		trainers.get(w.getSpeaker()).learn(w, alignment);
 	}
 

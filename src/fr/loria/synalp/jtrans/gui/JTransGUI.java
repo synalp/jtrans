@@ -21,7 +21,7 @@ import javax.swing.Timer;
 
 import fr.loria.synalp.jtrans.JTrans;
 import fr.loria.synalp.jtrans.align.AutoAligner;
-import fr.loria.synalp.jtrans.project.Word;
+import fr.loria.synalp.jtrans.project.Token;
 import fr.loria.synalp.jtrans.gui.trackview.ProjectTable;
 import fr.loria.synalp.jtrans.markup.in.MarkupLoader;
 import fr.loria.synalp.jtrans.markup.in.ParsingException;
@@ -337,10 +337,10 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	}
 
 	public void newplaystarted() {
-		final List<List<Word>> words = new ArrayList<>();
+		final List<List<Token>> words = new ArrayList<>();
 		for (int i = 0; i < project.speakerCount(); i++) {
-			words.add(new ArrayList<Word>());
-			for (Word w: project.getWords(i)) {
+			words.add(new ArrayList<Token>());
+			for (Token w: project.getAlignableWords(i)) {
 				if (w.isAligned()) {
 					words.get(i).add(w);
 				}
@@ -359,7 +359,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 				curfr += playergui.getRelativeStartingSec()*100;
 
 				for (int i = 0; i < project.speakerCount(); i++) {
-					List<Word> wordList = words.get(i);
+					List<Token> wordList = words.get(i);
 					if (wordList.isEmpty()) {
 						continue;
 					}
@@ -376,7 +376,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 					}
 
 					// Only update UI if the word wasn't already highlighted
-					Word w = wordList.get(newHl);
+					Token w = wordList.get(newHl);
 
 					if (w.getSegment().getStartFrame() > curfr) {
 						table.highlightWord(i, null);
@@ -684,9 +684,9 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 
 			for (;;) {
 				for (; cSpk < project.speakerCount(); cSpk++) {
-					List<Word> words = project.getWords(cSpk);
+					List<Token> words = project.getAlignableWords(cSpk);
 					for (; cWord >= 0 && cWord < words.size(); cWord += delta) {
-						Word w = words.get(cWord);
+						Token w = words.get(cWord);
 						if (matches(w)) {
 							found = true;
 							table.highlightWord(cSpk, w);
@@ -727,11 +727,11 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 				cWord = 0;
 			} else {
 				// search from end
-				cWord = project.getWords(cSpk).size()-1;
+				cWord = project.getAlignableWords(cSpk).size()-1;
 			}
 		}
 
-		public abstract boolean matches(Word word);
+		public abstract boolean matches(Token word);
 		protected abstract String getGoal();
 	}
 
@@ -740,7 +740,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		private String content;
 
 		@Override
-		public boolean matches(Word word) {
+		public boolean matches(Token word) {
 			if (null == content) {
 				return false;
 			}
@@ -770,7 +770,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 
 	public WordFinder anonWordFinder = new WordFinder() {
 		@Override
-		public boolean matches(Word word) {
+		public boolean matches(Token word) {
 			return word.shouldBeAnonymized();
 		}
 

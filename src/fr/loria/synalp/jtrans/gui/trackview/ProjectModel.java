@@ -1,7 +1,7 @@
 package fr.loria.synalp.jtrans.gui.trackview;
 
-import fr.loria.synalp.jtrans.project.Element;
 import fr.loria.synalp.jtrans.project.Project;
+import fr.loria.synalp.jtrans.project.Token;
 import fr.loria.synalp.jtrans.utils.spantable.DefaultSpanModel;
 import fr.loria.synalp.jtrans.utils.spantable.SpanModel;
 import fr.loria.synalp.jtrans.utils.spantable.SpanTableModel;
@@ -27,17 +27,17 @@ public abstract class ProjectModel<ProjectT extends Project>
 		final int spkID;
 
 		// Highlight variables
-		Map<Element, Integer> elementRowMap = new HashMap<>();
-		Element highlightedElement;
+		Map<Token, Integer> tokenRowMap = new HashMap<>();
+		Token highlighted;
 		int highlightedRow = -1;
 
 		public Column(int spkID) {
 			this.spkID = spkID;
 		}
 
-		void highlightElement(Element el) {
+		void highlightElement(Token token) {
 			int oldHLRow = highlightedRow;
-			Integer tc = elementRowMap.get(el);
+			Integer tc = tokenRowMap.get(token);
 			int newHLRow = tc==null? -1: tc;
 
 			// if newHLRow>=0: don't un-highlight cell if null word
@@ -47,14 +47,14 @@ public abstract class ProjectModel<ProjectT extends Project>
 				highlightedRow = newHLRow;
 			}
 
-			highlightedElement = el;
+			highlighted = token;
 			if (newHLRow >= 0)
 				fireTableCellUpdated(newHLRow, spkID);
 		}
 	}
 
-	public void highlightElement(int spkID, Element word) {
-		columns.get(spkID).highlightElement(word);
+	public void highlightToken(int spkID, Token token) {
+		columns.get(spkID).highlightElement(token);
 	}
 
 	public int getHighlightedRow(int col) {
@@ -62,8 +62,8 @@ public abstract class ProjectModel<ProjectT extends Project>
 	}
 
 
-	public Element getHighlightedElement(int col) {
-		return columns.get(col).highlightedElement;
+	public Token getHighlightedToken(int col) {
+		return columns.get(col).highlighted;
 	}
 
 

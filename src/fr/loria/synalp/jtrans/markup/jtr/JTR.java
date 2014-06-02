@@ -2,7 +2,6 @@ package fr.loria.synalp.jtrans.markup.jtr;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import fr.loria.synalp.jtrans.project.Element;
 import fr.loria.synalp.jtrans.project.Project;
 
 import java.io.File;
@@ -40,7 +39,6 @@ public final class JTR {
 	public static Gson newGson() {
 		GsonBuilder gb = new GsonBuilder();
 		gb.registerTypeAdapter(Project.class, new InterfaceAdapter<Project>("$TYPE$"));
-		gb.registerTypeAdapter(Element.class, new InterfaceAdapter<Element>("$TYPE$"));
 		gb.registerTypeAdapter(File.class, new FileAdapter());
 		gb.setPrettyPrinting();
 		return gb.create();

@@ -1,6 +1,6 @@
 package fr.loria.synalp.jtrans.graph;
 
-import fr.loria.synalp.jtrans.project.Word;
+import fr.loria.synalp.jtrans.project.Token;
 import org.junit.Test;
 
 import java.util.*;
@@ -22,9 +22,9 @@ public class StateGraphTest {
 	{
 		final int n = wordRules.length;
 
-		List<Word> phrase = new ArrayList<>();
+		List<Token> phrase = new ArrayList<>();
 		for (int i = 0; i < n; i++) {
-			phrase.add(new Word("Bogus" + i));
+			phrase.add(new Token("Bogus" + i));
 		}
 
 		String[][] rules = new String[n][];
@@ -231,12 +231,12 @@ public class StateGraphTest {
 				"( ( p a s | p e [ SIL ] a [ SIL ] eh s ) [ z ] | p a [ z ] )",
 				"( s a v u a r | s a v w a r )");
 
-		Word tu, peux, pas, savoir;
+		Token tu, peux, pas, savoir;
 
-		tu = new Word("tu");
-		peux = new Word("peux");
-		pas = new Word("pas");
-		savoir = new Word("savoir");
+		tu = new Token("tu");
+		peux = new Token("peux");
+		pas = new Token("pas");
+		savoir = new Token("savoir");
 
 		StateGraph sg = new StateGraph(
 				rules,
@@ -272,7 +272,7 @@ public class StateGraphTest {
 		// spice things up with some offset
 		final int F = 1000;
 
-		sg.alignmentFromNodeTimeline(timeline, F).commitToWords();
+		sg.alignmentFromNodeTimeline(timeline, F).commitToTokens();
 
 		assertEquals(F+3, tu.getSegment().getStartFrame());
 		assertEquals(F+8, tu.getSegment().getEndFrame());
@@ -312,8 +312,8 @@ public class StateGraphTest {
 
 	@Test
 	public void testWordBreakdown2() {
-		Word ah = new Word("ah");
-		Word meh = new Word("meh");
+		Token ah = new Token("ah");
+		Token meh = new Token("meh");
 
 		StateGraph sg = new StateGraph(
 				multiTrimSplit("a", "m ( e | i )"),
@@ -358,7 +358,7 @@ public class StateGraphTest {
 				20,
 		};
 
-		sg.alignmentFromNodeTimeline(timeline, 0).commitToWords();
+		sg.alignmentFromNodeTimeline(timeline, 0).commitToTokens();
 
 		assertTrue(ah.isAligned());
 		assertTrue(meh.isAligned());
@@ -370,7 +370,7 @@ public class StateGraphTest {
 		assertEquals(timeline.length-1, meh.getSegment().getEndFrame());
 
 		{
-			List<Word.Phone> p = ah.getPhones();
+			List<Token.Phone> p = ah.getPhones();
 			assertEquals(2,    p.size());
 
 			/*
@@ -389,7 +389,7 @@ public class StateGraphTest {
 		}
 
 		{
-			List<Word.Phone> p = meh.getPhones();
+			List<Token.Phone> p = meh.getPhones();
 			assertEquals(3, p.size());
 
 			assertEquals("m",   p.get(0).toString());
@@ -456,8 +456,8 @@ public class StateGraphTest {
 		// Cancel second word
 		rules[1] = null;
 
-		Word bogus = new Word("aaaaa");
-		Word dropped = new Word("dropped");
+		Token bogus = new Token("aaaaa");
+		Token dropped = new Token("dropped");
 
 		StateGraph sg = new StateGraph(
 				rules,

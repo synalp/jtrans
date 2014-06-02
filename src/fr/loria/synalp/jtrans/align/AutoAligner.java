@@ -1,7 +1,7 @@
 package fr.loria.synalp.jtrans.align;
 
 import edu.cmu.sphinx.frontend.FloatData;
-import fr.loria.synalp.jtrans.project.Word;
+import fr.loria.synalp.jtrans.project.Token;
 import fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer;
 import fr.loria.synalp.jtrans.train.SpeakerDepModelTrainer;
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
@@ -115,7 +115,7 @@ public abstract class AutoAligner {
 
 		// build wordStrings and text
 		StringBuilder textBuilder = new StringBuilder();
-		for (Word w: graph.getWords()) {
+		for (Token w: graph.getWords()) {
 			textBuilder.append(w.toString()).append(" ");
 		}
 		text = textBuilder.toString();
@@ -139,9 +139,9 @@ public abstract class AutoAligner {
 				progress.setIndeterminateProgress("Computing likelihood...");
 			}
 
-			alignment.commitToWords();
+			alignment.commitToTokens();
 
-			for (Word w: graph.getWords()) {
+			for (Token w: graph.getWords()) {
 				trainer.learn(w, alignment);
 			}
 		}
@@ -160,13 +160,13 @@ public abstract class AutoAligner {
 				alignment = refinery.step();
 
 				if (refinementIterationHook != null) {
-					alignment.commitToWords();
+					alignment.commitToTokens();
 					refinementIterationHook.run();
 				}
 			}
 		}
 
-		alignment.commitToWords();
+		alignment.commitToTokens();
 	}
 
 

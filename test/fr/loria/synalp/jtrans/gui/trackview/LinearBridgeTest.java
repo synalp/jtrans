@@ -1,7 +1,6 @@
 package fr.loria.synalp.jtrans.gui.trackview;
 
-import fr.loria.synalp.jtrans.project.Element;
-import fr.loria.synalp.jtrans.project.Word;
+import fr.loria.synalp.jtrans.project.Token;
 import fr.loria.synalp.jtrans.project.*;
 import fr.loria.synalp.jtrans.gui.trackview.TrackModel.LinearBridge;
 import org.junit.Test;
@@ -14,9 +13,9 @@ import static java.util.Arrays.asList;
 public class LinearBridgeTest {
 
 	private Phrase phr(float start, float end, String... words) {
-		List<Element> wordList = new ArrayList<>();
+		List<Token> wordList = new ArrayList<>();
 		for (String w: words) {
-			wordList.add(new Word(w));
+			wordList.add(new Token(w));
 		}
 		return new Phrase(new Anchor(start), new Anchor(end), wordList);
 	}

@@ -56,23 +56,20 @@ public class TextGridSaverHelper {
 					lastFrame = phrase.getInitialAnchor().getFrame();
 				}
 
-				for (Element e: phrase) {
-					Word word = e instanceof Word ? (Word) e : null;
-					Comment comment = e instanceof Comment ? (Comment) e : null;
-
-					if (word != null && word.isAligned()) {
-						boolean censored = censorAnonWords && word.shouldBeAnonymized();
+				for (Token token: phrase) {
+					if (token.isAlignable() && token.isAligned()) {
+						boolean censored = censorAnonWords && token.shouldBeAnonymized();
 
 						praatInterval(
 								wordSB,
 								wordCount + 1,
-								word.getSegment().getStartFrame(),
-								word.getSegment().getEndFrame(),
-								censored? "*ANON*": word.toString());
+								token.getSegment().getStartFrame(),
+								token.getSegment().getEndFrame(),
+								censored? "*ANON*": token.toString());
 						wordCount++;
 
 						if (!censored) {
-							for (Word.Phone phone : word.getPhones()) {
+							for (Token.Phone phone: token.getPhones()) {
 								praatInterval(
 										phoneSB,
 										phoneCount + 1,
@@ -83,14 +80,14 @@ public class TextGridSaverHelper {
 							}
 						}
 
-						lastFrame = word.getSegment().getEndFrame();
-					} else if (comment != null || word != null) {
+						lastFrame = token.getSegment().getEndFrame();
+					} else if (null != token) {
 						praatInterval(
 								wordSB,
 								wordCount + 1,
 								lastFrame,
 								lastFrame,
-								e.toString());
+								token.toString());
 						wordCount++;
 					}
 				}

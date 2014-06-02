@@ -40,7 +40,7 @@ public class TurnProject extends Project {
 		public Phrase next() {
 			Turn cTurn = rowItr.next();
 			// TODO skip empty?
-			return new Phrase(cTurn.start, cTurn.end, cTurn.elts.get(spkID));
+			return new Phrase(cTurn.start, cTurn.end, cTurn.spkTokens.get(spkID));
 		}
 
 		@Override
@@ -52,28 +52,29 @@ public class TurnProject extends Project {
 	public class Turn {
 		public Anchor start;
 		public Anchor end;
-		public List<List<Element>> elts;
+		/** Tokens per speaker */
+		public List<List<Token>> spkTokens;
 
 		public Turn() {
-			elts = new ArrayList<>();
+			spkTokens = new ArrayList<>();
 			for (int i = 0; i < speakerCount(); i++) {
-				elts.add(new ArrayList<Element>());
+				spkTokens.add(new ArrayList<Token>());
 			}
 		}
 
-		public void add(int speaker, Element e) {
-			elts.get(speaker).add(e);
+		public void add(int speaker, Token e) {
+			spkTokens.get(speaker).add(e);
 		}
 
-		public void addAll(int speaker, List<Element> list) {
-			elts.get(speaker).addAll(list);
+		public void addAll(int speaker, List<Token> list) {
+			spkTokens.get(speaker).addAll(list);
 		}
 
-		public List<Word> getWords(int spkID) {
-			List<Word> words = new ArrayList<>();
-			for (Element e: elts.get(spkID)) {
-				if (e instanceof Word) {
-					words.add((Word)e);
+		public List<Token> getAlignableWords(int spkID) {
+			List<Token> words = new ArrayList<>();
+			for (Token token: spkTokens.get(spkID)) {
+				if (token.isAlignable()) {
+					words.add(token);
 				}
 			}
 			return words;
@@ -84,9 +85,9 @@ public class TurnProject extends Project {
 			float latest = Float.MIN_VALUE;
 
 			for (int i = 0; i < speakerCount(); i++) {
-				for (Word w: getWords(i)) {
+				for (Token w: getAlignableWords(i)) {
 					if (w.isAligned()) {
-						Word.Segment seg = w.getSegment();
+						Token.Segment seg = w.getSegment();
 						earliest = Math.min(earliest, seg.getStartSecond());
 						latest   = Math.max(latest  , seg.getEndSecond());
 					}
@@ -114,8 +115,8 @@ public class TurnProject extends Project {
 			int maxWordCount = 0;
 			int maxSpeaker = -1;
 
-			for (int spk = 0; spk < elts.size(); spk++) {
-				int wordCount = getWords(spk).size();
+			for (int spk = 0; spk < spkTokens.size(); spk++) {
+				int wordCount = getAlignableWords(spk).size();
 				if (wordCount > maxWordCount) {
 					maxWordCount = wordCount;
 					maxSpeaker = spk;
@@ -127,15 +128,15 @@ public class TurnProject extends Project {
 
 		public void clearAlignment() {
 			for (int i = 0; i < speakerCount(); i++) {
-				for (Word w: getWords(i)) {
+				for (Token w: getAlignableWords(i)) {
 					w.clearAlignment();
 				}
 			}
 		}
 
 		public boolean isEmpty() {
-			for (List<Element> elList: elts) {
-				if (!elList.isEmpty()) {
+			for (List<Token> tokens: spkTokens) {
+				if (!tokens.isEmpty()) {
 					return false;
 				}
 			}
@@ -145,12 +146,12 @@ public class TurnProject extends Project {
 
 
 	@Override
-	public List<Word> getWords(int speaker) {
-		List<Word> words = new ArrayList<>();
-		for (Turn r: turns) {
-			for (Element e: r.elts.get(speaker)) {
-				if (e instanceof Word) {
-					words.add((Word)e);
+	public List<Token> getAlignableWords(int speaker) {
+		List<Token> words = new ArrayList<>();
+		for (Turn turn: turns) {
+			for (Token token: turn.spkTokens.get(speaker)) {
+				if (token.isAlignable()) {
+					words.add(token);
 				}
 			}
 		}
@@ -159,16 +160,16 @@ public class TurnProject extends Project {
 
 
 	public Turn newTurn() {
-		Turn r = new Turn();
-		turns.add(r);
-		return r;
+		Turn t = new Turn();
+		turns.add(t);
+		return t;
 	}
 
 
 	public int newSpeaker(String name) {
-		for (Turn r: turns) {
-			assert r.elts.size() == speakerNames.size();
-			r.elts.add(new ArrayList<Element>());
+		for (Turn t: turns) {
+			assert t.spkTokens.size() == speakerNames.size();
+			t.spkTokens.add(new ArrayList<Token>());
 		}
 
 		int id = speakerNames.size();
@@ -211,14 +212,14 @@ public class TurnProject extends Project {
 		}
 
 		// Big interleaved sequence
-		List<Word> words = new ArrayList<>();
+		List<Token> words = new ArrayList<>();
 		for (Turn turn: turns) {
 			assert null == turn.start || turn == turns.get(0);
 			assert null == turn.end   || turn == turns.get(turns.size()-1);
 
 			int pSpk = turn.prioritySpeaker();
 			if (pSpk >= 0) {
-				words.addAll(turn.getWords(pSpk));
+				words.addAll(turn.getAlignableWords(pSpk));
 			}
 		}
 
@@ -236,14 +237,14 @@ public class TurnProject extends Project {
 					continue;
 				}
 
-				for (int i = 0; i < turn.elts.size(); i++) {
+				for (int i = 0; i < turn.spkTokens.size(); i++) {
 					if (i == pSpk) {
 						continue;
 					}
 					align(aligner,
 							new Anchor(minMax[0]),
 							new Anchor(minMax[1]),
-							turn.getWords(i),
+							turn.getAlignableWords(i),
 							false); // non-priority, don't concatenate
 				}
 			}
@@ -309,7 +310,7 @@ public class TurnProject extends Project {
 					if (!overlaps && i != pSpk) {
 						continue;
 					}
-					align(aligner, turn.start, turn.end, turn.getWords(i),
+					align(aligner, turn.start, turn.end, turn.getAlignableWords(i),
 							i == pSpk); // only concatenate if priority
 				}
 			}

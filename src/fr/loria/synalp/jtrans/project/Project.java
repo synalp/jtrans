@@ -43,16 +43,16 @@ public abstract class Project {
 		return speakerNames.get(speaker);
 	}
 
-	public abstract List<Word> getWords(int speaker);
+	public abstract List<Token> getAlignableWords(int speaker);
 
 	public abstract Iterator<Phrase> phraseIterator(int speaker);
 
 
-	public Set<Word> getAllWords() {
-		Set<Word> set = new HashSet<>();
+	public Set<Token> getAllAlignableWords() {
+		Set<Token> set = new HashSet<>();
 
 		for (int i = 0; i < speakerCount(); i++) {
-			set.addAll(getWords(i));
+			set.addAll(getAlignableWords(i));
 		}
 
 		return set;
@@ -62,7 +62,7 @@ public abstract class Project {
 	public void anonymizeWord(String w) {
 		w = w.toLowerCase();
 
-		for (Word word: getAllWords()) {
+		for (Token word: getAllAlignableWords()) {
 			if (word.toString().toLowerCase().equals(w)) {
 				word.setAnonymize(true);
 			}
@@ -77,7 +77,7 @@ public abstract class Project {
 
 		BinarySegmentation sequence = new BinarySegmentation();
 
-		for (Word word: getAllWords()) {
+		for (Token word: getAllAlignableWords()) {
 			if (!word.shouldBeAnonymized()) {
 				continue;
 			}
@@ -86,7 +86,7 @@ public abstract class Project {
 				System.err.println("WARNING: Can't anonymize unaligned word!!!");
 			}
 
-			Word.Segment seg = word.getSegment();
+			Token.Segment seg = word.getSegment();
 			sequence.union(seg.getStartSecond(), seg.getLengthSeconds());
 		}
 
@@ -97,7 +97,7 @@ public abstract class Project {
 
 
 	public void clearAlignment() {
-		for (Word w: getAllWords()) {
+		for (Token w: getAllAlignableWords()) {
 			w.clearAlignment();
 		}
 	}
@@ -124,7 +124,7 @@ public abstract class Project {
 			// Set word speakers. This is necessary for scoring a set of words
 			// belonging to various speakers with speaker-dependent Gaussians.
 			for (int i = 0; i < speakerCount(); i++) {
-				for (Word w: getWords(i)) {
+				for (Token w: getAlignableWords(i)) {
 					w.setSpeaker(i);
 				}
 			}
@@ -147,7 +147,7 @@ public abstract class Project {
 			AutoAligner aligner,
 			Anchor start,
 			Anchor end,
-			List<Word> words,
+			List<Token> words,
 			boolean concatenate)
 			throws IOException, InterruptedException
 	{
@@ -239,11 +239,11 @@ public abstract class Project {
 							+ i + " ran out of phrases");
 				}
 
-				Phrase as1 = itr1.next();
-				Phrase as2 = itr2.next();
+				Phrase p1 = itr1.next();
+				Phrase p2 = itr2.next();
 
-				diffs.add(as2.getInitialAnchor().getFrame() - as1.getFinalAnchor().getFrame());
-				diffs.add(as2.getFinalAnchor().getFrame() - as1.getFinalAnchor().getFrame());
+				diffs.add(p2.getInitialAnchor().getFrame() - p1.getFinalAnchor().getFrame());
+				diffs.add(p2.getFinalAnchor().getFrame() - p1.getFinalAnchor().getFrame());
 			}
 
 			if (itr2.hasNext()) {

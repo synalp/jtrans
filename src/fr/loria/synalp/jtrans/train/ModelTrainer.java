@@ -3,7 +3,7 @@ package fr.loria.synalp.jtrans.train;
 import edu.cmu.sphinx.linguist.acoustic.HMMState;
 import edu.cmu.sphinx.util.LogMath;
 import fr.loria.synalp.jtrans.JTrans;
-import fr.loria.synalp.jtrans.project.Word;
+import fr.loria.synalp.jtrans.project.Token;
 import fr.loria.synalp.jtrans.utils.BinarySegmentation;
 import fr.loria.synalp.jtrans.speechreco.s4.HMMModels;
 import fr.loria.synalp.jtrans.align.Alignment;
@@ -160,12 +160,13 @@ public class ModelTrainer {
 	/**
 	 * Trains models for all non-silent states in an aligned word.
 	 */
-	public void learn(Word word, Alignment alignment) {
+	public void learn(Token word, Alignment alignment) {
 		if (sealed) {
 			throw new IllegalStateException("can't learn if sealed");
 		}
 
-		Word.Segment seg = word.getSegment();
+		assert word.isAlignable();
+		Token.Segment seg = word.getSegment();
 		if (null == seg) {
 			System.out.println("Unaligned word: " + word);
 			return;

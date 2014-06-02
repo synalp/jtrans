@@ -92,7 +92,7 @@ public class ProjectTable
 
 			ProjectModel model = (ProjectModel)table.getModel();
 			if (model.getHighlightedRow(column) == row) {
-				textComp.highlight((Word)model.getHighlightedElement(column));
+				textComp.highlight(model.getHighlightedToken(column));
 			}
 
 			return textComp;
@@ -135,17 +135,13 @@ public class ProjectTable
 				pane.setSize(getColumnModel().getColumn(col).getWidth(), getRowHeight(row));
 
 				TextCell textCell = (TextCell)cell;
-				Element el = textCell.getElementAtCaret(pane.viewToModel(p));
-
-				Word word = null;
-				if (el instanceof Word)
-					word = (Word)el;
+				Token token = textCell.getElementAtCaret(pane.viewToModel(p));
 
 				if (isPopupTrigger) {
 //					popup = wordPopupMenu(textCell.anchor, col, word);
 					JOptionPane.showMessageDialog(null, "Reimplement me");
-				} else if (word != null) {
-					selectWord(textCell.spkID, word);
+				} else if (token.isAlignable()) {
+					selectWord(textCell.spkID, token);
 				}
 			}
 
@@ -236,10 +232,10 @@ public class ProjectTable
 	}
 
 
-	public void highlightWord(int trackIdx, Word word) {
-		model.highlightElement(trackIdx, word);
+	public void highlightWord(int trackIdx, Token token) {
+		model.highlightToken(trackIdx, token);
 
-		if (word != null) {
+		if (token != null) {
 			scrollRectToVisible(getCellRect(
 					model.getHighlightedRow(trackIdx), trackIdx, true));
 		}
@@ -433,13 +429,13 @@ public class ProjectTable
 	 * Highlights a word and sets the playback position to the beginning of the
 	 * word.
 	 */
-	public void selectWord(int spkID, Word word) {
+	public void selectWord(int spkID, Token word) {
 		PlayerGUI player = gui.ctrlbox.getPlayerGUI();
 		boolean replay = player.isPlaying();
 		player.stopPlaying();
 
 		if (word.isAligned()) {
-			model.highlightElement(spkID, word);
+			model.highlightToken(spkID, word);
 			gui.setCurPosInSec(word.getSegment().getStartSecond());
 			gui.sigpan.setSpeaker(spkID);
 		} else {

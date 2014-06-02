@@ -1,21 +1,39 @@
 package fr.loria.synalp.jtrans.project;
 
-import fr.loria.synalp.jtrans.utils.TimeConverter;
-import fr.loria.synalp.jtrans.graph.StatePool;
+import static fr.loria.synalp.jtrans.utils.TimeConverter.frame2sec;
+import static fr.loria.synalp.jtrans.graph.StatePool.SILENCE_PHONE;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Text element that must be aligned with the recording.
- */
-public class Word implements Element {
+public class Token {
 
-	private final String word;
+	private final String text;
+	private final Type type;
 	private int speaker = -1;
 	private Segment segment;
-	private List<Phone> phones = new ArrayList<Phone>();
+	private final List<Phone> phones;
 	private boolean anonymize;
+
+
+	public static enum Type {
+		/** Alignable token */
+		WORD,
+		COMMENT,
+		NOISE,
+		PUNCTUATION,
+		OVERLAP_START_MARK,
+		OVERLAP_END_MARK,
+		SPEAKER_MARK,
+	}
+
+	public Type getType() {
+		return type;
+	}
+
+	public boolean isAlignable() {
+		return type == Type.WORD;
+	}
 
 
 	public static class Segment {
@@ -37,11 +55,11 @@ public class Word implements Element {
 		}
 
 		public float getStartSecond() {
-			return TimeConverter.frame2sec(start);
+			return frame2sec(start);
 		}
 
 		public float getEndSecond() {
-			return TimeConverter.frame2sec(end);
+			return frame2sec(end);
 		}
 
 		public int getStartFrame() {
@@ -57,7 +75,7 @@ public class Word implements Element {
 		}
 
 		public float getLengthSeconds() {
-			return TimeConverter.frame2sec(getLengthFrames());
+			return frame2sec(getLengthFrames());
 		}
 	}
 
@@ -80,29 +98,47 @@ public class Word implements Element {
 		}
 
 		public boolean isSilence() {
-			return phone.equals(StatePool.SILENCE_PHONE);
+			return phone.equals(SILENCE_PHONE);
 		}
 	}
 
 
-	public Word(String word) {
-		this.word = word;
+	/**
+	 * Constructs an alignable token (i.e. a "word").
+	 */
+	public Token(String text) {
+		this(text, Type.WORD);
+	}
+
+
+	public Token(String text, Type type) {
+		this.text = text;
+		this.type = type;
+
+		if (type == Type.WORD) {
+			phones = new ArrayList<>();
+		} else {
+			phones = null;
+		}
 	}
 
 
 	public String toString() {
-		return word;
+		return isAlignable()? text: "["+text+"]";
 	}
 
 
 	public void clearAlignment() {
-		segment = null;
-		phones.clear();
+		if (isAlignable()) {
+			segment = null;
+			phones.clear();
+		}
+		assert !isAligned();
 	}
 
 
 	public boolean isAligned() {
-		return segment != null;
+		return isAlignable() && segment != null;
 	}
 
 
@@ -112,16 +148,13 @@ public class Word implements Element {
 
 
 	public void setSegment(int start, int end) {
+		assert isAlignable();
 		segment = new Segment(start, end);
 	}
 
 
-	public void addPhone(String phone, int start, int end) {
-		phones.add(new Phone(phone, new Segment(start, end)));
-	}
-
-
 	public void addPhone(Phone phone) {
+		assert isAlignable();
 		phones.add(phone);
 	}
 

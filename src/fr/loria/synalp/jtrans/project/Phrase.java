@@ -8,15 +8,15 @@ import java.util.List;
  * Piece of text sandwiched between two anchors.
  */
 public class Phrase
-		extends AbstractList<Element>
+		extends AbstractList<Token>
 		implements Comparable<Phrase>
 {
-	private final List<Element> elements;
+	private final List<Token> tokens;
 	private final Anchor initialAnchor;
 	private final Anchor finalAnchor;
 
-	public Phrase(Anchor initialAnchor, Anchor finalAnchor, List<Element> elements) {
-		this.elements = elements;
+	public Phrase(Anchor initialAnchor, Anchor finalAnchor, List<Token> tokens) {
+		this.tokens = tokens;
 		this.initialAnchor = initialAnchor;
 		this.finalAnchor = finalAnchor;
 	}
@@ -29,31 +29,16 @@ public class Phrase
 		return finalAnchor;
 	}
 
-	public List<Word> getWords() {
-		List<Word> words = new ArrayList<Word>();
+	public List<Token> getAlignableWords() {
+		List<Token> words = new ArrayList<>();
 
-		for (Element el: elements) {
-			if (el instanceof Word) {
-				words.add((Word)el);
+		for (Token token: tokens) {
+			if (token.isAlignable()) {
+				words.add(token);
 			}
 		}
 
 		return words;
-	}
-
-
-	public String getSpaceSeparatedWords() {
-		StringBuilder sb = new StringBuilder();
-		String prefix = "";
-
-		for (Element el: elements) {
-			if (el instanceof Word) {
-				sb.append(prefix).append(el.toString());
-				prefix = " ";
-			}
-		}
-
-		return sb.toString();
 	}
 
 
@@ -62,8 +47,8 @@ public class Phrase
 		StringBuilder sb = new StringBuilder();
 		String prefix = "";
 
-		for (Element el: elements) {
-			sb.append(prefix).append(el);
+		for (Token token: tokens) {
+			sb.append(prefix).append(token);
 			prefix = " ";
 		}
 
@@ -72,8 +57,8 @@ public class Phrase
 
 
 	public boolean isFullyAligned() {
-		for (Element el: elements) {
-			if (el instanceof Word && !((Word) el).isAligned()) {
+		for (Token token: tokens) {
+			if (token.isAlignable() && !token.isAligned()) {
 				return false;
 			}
 		}
@@ -83,13 +68,14 @@ public class Phrase
 
 
 	@Override
-	public Element get(int index) {
-		return elements.get(index);
+	public Token get(int index) {
+		return tokens.get(index);
 	}
+
 
 	@Override
 	public int size() {
-		return elements.size();
+		return tokens.size();
 	}
 
 

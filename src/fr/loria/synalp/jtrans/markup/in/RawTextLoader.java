@@ -30,34 +30,34 @@ public class RawTextLoader implements MarkupLoader {
 			Pattern.compile("\\*([^\\*\\s]+)\\*");
 
 
-	public static final Map<Comment.Type, String> DEFAULT_PATTERNS =
-			new HashMap<Comment.Type, String>()
+	public static final Map<Token.Type, String> DEFAULT_PATTERNS =
+			new HashMap<Token.Type, String>()
 	{{
-		put(Comment.Type.FREEFORM,     "(\\{[^\\}]*\\}|\\[[^\\]]*\\]|\\+)");
-		put(Comment.Type.NOISE,        "XXX");
-		put(Comment.Type.OVERLAP_START_MARK, "<");
-		put(Comment.Type.OVERLAP_END_MARK,   ">");
-		put(Comment.Type.PUNCTUATION,  "(\\?|\\:|\\;|\\,|\\.|\\!)");
-		put(Comment.Type.SPEAKER_MARK, "(^|\\n)(\\s)*L\\d+\\s");
+		put(Token.Type.COMMENT,            "(\\{[^\\}]*\\}|\\[[^\\]]*\\]|\\+)");
+		put(Token.Type.NOISE,              "XXX");
+		put(Token.Type.OVERLAP_START_MARK, "<");
+		put(Token.Type.OVERLAP_END_MARK,   ">");
+		put(Token.Type.PUNCTUATION,        "(\\?|\\:|\\;|\\,|\\.|\\!)");
+		put(Token.Type.SPEAKER_MARK,       "(^|\\n)(\\s)*L\\d+\\s");
 	}};
 
 
-	private Map<Comment.Type, String> commentPatterns;
+	private Map<Token.Type, String> commentPatterns;
 
 
 	/**
-	 * Creates elements from a string according to the regular expressions
+	 * Creates tokens from a string according to the regular expressions
 	 * defined in commentPatterns.
 	 */
-	public static List<Element> parseString(
+	public static List<Token> tokenize(
 			String normedText,
-			Map<Comment.Type, String> commentPatterns)
+			Map<Token.Type, String> commentPatterns)
 	{
 		class NonTextSegment implements Comparable<NonTextSegment> {
 			public int start, end;
-			public Comment.Type type;
+			public Token.Type type;
 
-			public NonTextSegment(int start, int end, Comment.Type type) {
+			public NonTextSegment(int start, int end, Token.Type type) {
 				this.start = start;
 				this.end = end;
 				this.type = type;
@@ -70,11 +70,11 @@ public class RawTextLoader implements MarkupLoader {
 			}
 		}
 
-		List<Element> elList = new ArrayList<Element>();
+		List<Token> elList = new ArrayList<>();
 		ArrayList<NonTextSegment> nonText = new ArrayList<NonTextSegment>();
 
 
-		for (Map.Entry<Comment.Type, String> entry: commentPatterns.entrySet()) {
+		for (Map.Entry<Token.Type, String> entry: commentPatterns.entrySet()) {
 			Pattern pat = Pattern.compile(entry.getValue());
 			Matcher mat = pat.matcher(normedText);
 			while (mat.find())
@@ -104,7 +104,7 @@ public class RawTextLoader implements MarkupLoader {
 
 			// Create the actual element
 			String sub = normedText.substring(start, end).trim();
-			elList.add(new Comment(sub, seg.type));
+			elList.add(new Token(sub, seg.type));
 
 			prevEnd = end;
 		}
@@ -118,17 +118,17 @@ public class RawTextLoader implements MarkupLoader {
 	}
 
 
-	private static List<Word> parseWords(String text) {
-		List<Word> list = new ArrayList<>();
+	private static List<Token> parseWords(String text) {
+		List<Token> list = new ArrayList<>();
 		for (String w: text.trim().split("\\s+")) {
-			Word word;
+			Token word;
 
 			Matcher m = ANONYMOUS_WORD_PATTERN.matcher(w);
 			if (m.matches()) {
-				word = new Word(m.group(1));
+				word = new Token(m.group(1));
 				word.setAnonymize(true);
 			} else {
-				word = new Word(w);
+				word = new Token(w);
 			}
 
 			list.add(word);
@@ -137,7 +137,7 @@ public class RawTextLoader implements MarkupLoader {
 	}
 
 
-	public RawTextLoader(Map<Comment.Type, String> commentPatterns) {
+	public RawTextLoader(Map<Token.Type, String> commentPatterns) {
 		this.commentPatterns = commentPatterns;
 	}
 
@@ -166,14 +166,13 @@ public class RawTextLoader implements MarkupLoader {
 				break;
 			line = normalizeText(line).trim();
 
-			for (Element el: parseString(line, commentPatterns)) {
-				Comment.Type ctype = el instanceof Comment?
-						((Comment) el).getType(): null;
+			for (Token token: tokenize(line, commentPatterns)) {
+				Token.Type type = token.getType();
 
-				if (ctype == Comment.Type.SPEAKER_MARK) {
+				if (type == Token.Type.SPEAKER_MARK) {
 					turn = project.newTurn();
 
-					String spkName = el.toString().trim();
+					String spkName = token.toString().trim();
 					if (!spkIDMap.containsKey(spkName)) {
 						spkID = project.newSpeaker(spkName);
 						spkIDMap.put(spkName, spkID);
@@ -182,7 +181,7 @@ public class RawTextLoader implements MarkupLoader {
 					}
 				}
 
-				else if (ctype == Comment.Type.OVERLAP_START_MARK) {
+				else if (type == Token.Type.OVERLAP_START_MARK) {
 					if (ongoingOverlap) {
 						throw new ParsingException(lineNo, line,
 								"An overlap is already ongoing");
@@ -192,7 +191,7 @@ public class RawTextLoader implements MarkupLoader {
 					ongoingOverlap = true;
 				}
 
-				else if (ctype == Comment.Type.OVERLAP_END_MARK) {
+				else if (type == Token.Type.OVERLAP_END_MARK) {
 					if (!ongoingOverlap) {
 						throw new ParsingException(lineNo, line,
 								"Trying to end non-existant overlap");
@@ -203,7 +202,7 @@ public class RawTextLoader implements MarkupLoader {
 				}
 
 				else {
-					turn.add(spkID, el);
+					turn.add(spkID, token);
 				}
 			}
 		}

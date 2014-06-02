@@ -1,7 +1,7 @@
 package fr.loria.synalp.jtrans.align;
 
 import edu.cmu.sphinx.linguist.acoustic.HMMState;
-import fr.loria.synalp.jtrans.project.Word;
+import fr.loria.synalp.jtrans.project.Token;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -16,15 +16,16 @@ public class Alignment implements Iterable<Alignment.Segment> {
 	public static class Segment {
 		int length;
 		public final HMMState state;
-		public final Word word;
+		public final Token word;
 
-		public Segment(HMMState state, Word word, int length) {
+		public Segment(HMMState state, Token word, int length) {
 			this.length = length;
 			this.state = state;
 			this.word = word;
+			assert null == word || word.isAlignable();
 		}
 
-		public Segment(HMMState state, Word word) {
+		public Segment(HMMState state, Token word) {
 			this(state, word, 1);
 		}
 
@@ -45,7 +46,7 @@ public class Alignment implements Iterable<Alignment.Segment> {
 
 
 	List<Segment> segments;
-	List<Word> uniqueWords;
+	List<Token> uniqueWords;
 	int frames;
 	final int frameOffset;
 
@@ -133,7 +134,7 @@ public class Alignment implements Iterable<Alignment.Segment> {
 	 * prolonged, otherwise creates a new segment.
 	 * @param word unique reference!
 	 */
-	public void newFrame(HMMState state, Word word) {
+	public void newFrame(HMMState state, Token word) {
 		Segment tail = segments.isEmpty()?
 				null: segments.get(segments.size()-1);
 
@@ -153,11 +154,11 @@ public class Alignment implements Iterable<Alignment.Segment> {
 	 * Appends a new segment to the end of this timeline.
 	 * @param state Must be different from the state in the last segment.
 	 *              To extend the last segment with the same state, use
-	 *              {@link #newFrame(HMMState, Word)} instead
+	 *              {@link #newFrame(HMMState, Token)} instead
 	 * @param word
 	 * @param length length of the new segment, in frames
 	 */
-	public void newSegment(HMMState state, Word word, int length) {
+	public void newSegment(HMMState state, Token word, int length) {
 		assert segments.isEmpty() ||
 				state != segments.get(segments.size()-1).state
 				: "same state across two segments";
@@ -173,8 +174,8 @@ public class Alignment implements Iterable<Alignment.Segment> {
 	 * Appends a word to the list of unique words if the word isn't already the
 	 * last word in the list.
 	 */
-	private void newWord(Word word) {
-		Word lastUWord = uniqueWords.isEmpty()?
+	private void newWord(Token word) {
+		Token lastUWord = uniqueWords.isEmpty()?
 				null: uniqueWords.get(uniqueWords.size()-1);
 		if (null != word && lastUWord != word) {
 			uniqueWords.add(word);
@@ -202,7 +203,7 @@ public class Alignment implements Iterable<Alignment.Segment> {
 	}
 
 
-	public List<Word> getUniqueWords() {
+	public List<Token> getUniqueWords() {
 		return uniqueWords;
 	}
 
@@ -232,17 +233,17 @@ public class Alignment implements Iterable<Alignment.Segment> {
 
 
 	/**
-	 * Commits word and phone alignments to Word objects.
+	 * Commits word and phone alignments to tokens.
 	 */
-	public void commitToWords() {
-		for (Word w: uniqueWords) {
+	public void commitToTokens() {
+		for (Token w: uniqueWords) {
 			if (w != null) {
 				w.clearAlignment();
 			}
 		}
 
-		Word pWord = null;        // previous word
-		Word.Phone phone = null;  // current phone
+		Token pWord = null;        // previous word
+		Token.Phone phone = null;  // current phone
 		String pUnit = null;
 		int segStart = frameOffset; // absolute frame number
 
@@ -250,7 +251,7 @@ public class Alignment implements Iterable<Alignment.Segment> {
 			int segEnd = segStart + seg.length - 1;
 			assert segStart <= segEnd;
 
-			Word word = seg.word;
+			Token word = seg.word;
 			if (word != pWord) {
 				word.setSegment(segStart, segEnd);
 				pWord = word;
@@ -261,8 +262,8 @@ public class Alignment implements Iterable<Alignment.Segment> {
 			String unit = seg.getUnit();
 			if (pUnit == null || !unit.equals(pUnit)) {
 				if (null != word) {
-					phone = new Word.Phone(
-							unit, new Word.Segment(segStart, segEnd));
+					phone = new Token.Phone(
+							unit, new Token.Segment(segStart, segEnd));
 					word.addPhone(phone);
 				}
 				pUnit = unit;

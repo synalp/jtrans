@@ -1,10 +1,9 @@
 package fr.loria.synalp.jtrans.markup.in;
 
-import fr.loria.synalp.jtrans.project.Comment;
 import fr.loria.synalp.jtrans.project.Anchor;
+import fr.loria.synalp.jtrans.project.Token;
 import fr.loria.synalp.jtrans.project.TurnProject;
 import org.w3c.dom.*;
-import org.w3c.dom.Element;
 import org.xml.sax.*;
 
 import javax.xml.parsers.*;
@@ -109,7 +108,7 @@ public class TRSLoader implements MarkupLoader {
 
 				// Speech text
 				if (name.equals("#text")) {
-					pTurn.addAll(spkID, RawTextLoader.parseString(
+					pTurn.addAll(spkID, RawTextLoader.tokenize(
 							RawTextLoader.normalizeText(child.getTextContent().trim()),
 							RawTextLoader.DEFAULT_PATTERNS));
 				}
@@ -148,9 +147,9 @@ public class TRSLoader implements MarkupLoader {
 				}
 
 				else {
-					fr.loria.synalp.jtrans.project.Element el = transformNode(child);
-					if (null != el) {
-						pTurn.add(spkID, el);
+					Token token = transformNode(child);
+					if (null != token) {
+						pTurn.add(spkID, token);
 					}
 				}
 
@@ -165,18 +164,18 @@ public class TRSLoader implements MarkupLoader {
 	}
 
 
-	public static fr.loria.synalp.jtrans.project.Element transformNode(Node n) {
+	public static Token transformNode(Node n) {
 		String name = n.getNodeName();
 
 		switch (name) {
 			case "Comment":
-				return new Comment(
+				return new Token(
 						((Element) n).getAttribute("desc"),
-						Comment.Type.FREEFORM);
+						Token.Type.COMMENT);
 			case "Event":
-				return new Comment(
+				return new Token(
 						((Element) n).getAttribute("desc"),
-						Comment.Type.NOISE);
+						Token.Type.NOISE);
 			default:
 				System.out.println("TRS WARNING: Ignoring inknown tag " + name);
 				break;

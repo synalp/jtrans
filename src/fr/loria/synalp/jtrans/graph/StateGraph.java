@@ -4,7 +4,7 @@ import edu.cmu.sphinx.frontend.*;
 import edu.cmu.sphinx.linguist.acoustic.*;
 import edu.cmu.sphinx.util.LogMath;
 import fr.loria.synalp.jtrans.align.Alignment;
-import fr.loria.synalp.jtrans.project.Word;
+import fr.loria.synalp.jtrans.project.Token;
 import fr.loria.synalp.jtrans.speechreco.grammaire.Grammatiseur;
 import fr.loria.synalp.jtrans.speechreco.s4.*;
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
@@ -88,8 +88,8 @@ public class StateGraph {
 	/** Insertion point for new nodes in the nodeStates array. */
 	private int insertionPoint;
 
-	/** Alignable words at the basis of this grammar */
-	protected List<Word> words;
+	/** Alignable tokens at the basis of this grammar */
+	protected List<Token> words;
 
 	/**
 	 * Indices of the initial node of each word (i.e. that points to the first
@@ -133,23 +133,25 @@ public class StateGraph {
 	}
 
 
-	public List<Word> getWords() {
+	public List<Token> getWords() {
 		return words;
 	}
 
 
 	/**
-	 * Creates grammar rules from a list of words using the standard
+	 * Creates grammar rules from a list of alignable tokens using the standard
 	 * grammatizer.
-	 * @param words array of whitespace-trimmed words
+	 * @param words list of alignable tokens
 	 * @return a 2D array of rule tokens (1st dimension corresponds to word
 	 * indices). If a word can't be processed, its rule is set to null.
 	 */
-	public static String[][] getRules(List<Word> words) {
+	public static String[][] getRules(List<Token> words) {
 		String[][] rules = new String[words.size()][];
 		Grammatiseur gram = Grammatiseur.getGrammatiseur();
 
 		for (int i = 0; i < words.size(); i++) {
+			assert words.get(i).isAlignable(): "word must be alignable";
+
 			String rule = gram.getGrammar(words.get(i).toString());
 
 			if (rule == null || rule.isEmpty()) {
@@ -510,16 +512,16 @@ public class StateGraph {
 
 
 	/**
-	 * Constructs a state graph from words, and the rules associated with each
-	 * of them.
-	 * @param words an array of words
+	 * Constructs a state graph from a list of alignable tokens and the rules
+	 * associated with each of them.
+	 * @param words list of alignable tokens
 	 * @param rules a 2D array of rule tokens. The first dimension maps to the
 	 *              index of the word corresponding to the rule.
 	 * @param interWordSilences insert optional silences between each word
 	 */
 	public StateGraph(
 			String[][] rules,
-			List<Word> words,
+			List<Token> words,
 			boolean interWordSilences)
 	{
 		this.words = words;
@@ -592,18 +594,10 @@ public class StateGraph {
 
 
 	/**
-	 * Empty constructor.
-	 * Subclasses are responsible for initializing everything!
-	 */
-	protected StateGraph() {
-	}
-
-
-	/**
-	 * Constructs a state graph from an array of words.
+	 * Constructs a state graph from a list of alignable tokens.
 	 * Rules will be looked up in the standard grammar.
 	 */
-	public StateGraph(List<Word> words) {
+	public StateGraph(List<Token> words) {
 		this(getRules(words), words, true);
 	}
 
@@ -671,7 +665,7 @@ public class StateGraph {
 
 		int n = 0;
 		int w = 0;
-		Word pWord = null;
+		Token pWord = null;
 
 		for (Alignment.Segment seg: alignment) {
 			if (seg.isPadding()) {
@@ -716,9 +710,9 @@ public class StateGraph {
 	 * words. Rules will be looked up in the standard grammar.
 	 */
 	public static StateGraph quick(String text) {
-		List<Word> words = new ArrayList<>();
+		List<Token> words = new ArrayList<>();
 		for (String str: trimSplit(text)) {
-			words.add(new Word(str));
+			words.add(new Token(str));
 		}
 		return new StateGraph(words);
 	}

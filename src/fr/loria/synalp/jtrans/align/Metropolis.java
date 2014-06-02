@@ -2,7 +2,7 @@ package fr.loria.synalp.jtrans.align;
 
 import edu.cmu.sphinx.util.LogMath;
 import fr.loria.synalp.jtrans.JTrans;
-import fr.loria.synalp.jtrans.project.Word;
+import fr.loria.synalp.jtrans.project.Token;
 import fr.loria.synalp.jtrans.speechreco.s4.HMMModels;
 import fr.loria.synalp.jtrans.train.SpeakerDepModelTrainer;
 
@@ -79,7 +79,7 @@ public class Metropolis {
 	private double train(Alignment timeline) {
 		trainer.clear();
 
-		for (Word w: timeline.getUniqueWords()) {
+		for (Token w: timeline.getUniqueWords()) {
 			trainer.learn(w, timeline);
 		}
 

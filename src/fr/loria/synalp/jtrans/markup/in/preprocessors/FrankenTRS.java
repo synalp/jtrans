@@ -1,11 +1,10 @@
 package fr.loria.synalp.jtrans.markup.in.preprocessors;
 
-import fr.loria.synalp.jtrans.project.Comment;
-import fr.loria.synalp.jtrans.project.Element;
 import fr.loria.synalp.jtrans.markup.in.MarkupLoader;
 import fr.loria.synalp.jtrans.markup.in.ParsingException;
 import fr.loria.synalp.jtrans.markup.in.RawTextLoader;
 import fr.loria.synalp.jtrans.markup.in.TRSLoader;
+import fr.loria.synalp.jtrans.project.Token;
 import fr.loria.synalp.jtrans.project.TurnProject;
 import fr.loria.synalp.jtrans.utils.FileUtils;
 import org.w3c.dom.Document;
@@ -16,6 +15,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -90,20 +90,19 @@ public class FrankenTRS implements MarkupLoader {
 						}
 
 						text = RawTextLoader.normalizeText(text);
-						for (Element el: RawTextLoader.parseString(text, RawTextLoader.DEFAULT_PATTERNS)) {
-							Comment c = el instanceof Comment? (Comment)el: null;
-							if (c != null && c.getType() == Comment.Type.OVERLAP_START_MARK) {
+						List<Token> tokenList = RawTextLoader.tokenize(text, RawTextLoader.DEFAULT_PATTERNS);
+						for (Token token: tokenList)
+							if (token.getType() == Token.Type.OVERLAP_START_MARK) {
 								pTurn = project.newTurn();
 								overlapOngoing = true;
-								addToTurn(pTurn, spkID, el);
-							} else if (c != null && c.getType() == Comment.Type.OVERLAP_END_MARK) {
-								addToTurn(pTurn, spkID, el);
+								addToTurn(pTurn, spkID, token);
+							} else if (token.getType() == Token.Type.OVERLAP_END_MARK) {
+								addToTurn(pTurn, spkID, token);
 								pTurn = project.newTurn();
 								overlapOngoing = false;
 							} else {
-								addToTurn(pTurn, spkID, el);
+								addToTurn(pTurn, spkID, token);
 							}
-						}
 					}
 					break;
 				}
@@ -121,7 +120,7 @@ public class FrankenTRS implements MarkupLoader {
 	}
 
 
-	private static void addToTurn(TurnProject.Turn turn, int spkID, Element el)
+	private static void addToTurn(TurnProject.Turn turn, int spkID, Token el)
 			throws ParsingException
 	{
 		if (el == null) {

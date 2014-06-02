@@ -1,6 +1,6 @@
 package fr.loria.synalp.jtrans.gui.trackview;
 
-import fr.loria.synalp.jtrans.project.Element;
+import fr.loria.synalp.jtrans.project.Token;
 import fr.loria.synalp.jtrans.project.TurnProject;
 import fr.loria.synalp.jtrans.utils.spantable.Span;
 
@@ -41,10 +41,10 @@ public class TurnModel extends ProjectModel<TurnProject> {
 			}
 
 			for (int spk = 0; spk < project.speakerCount(); spk++) {
-				if (!turn.elts.get(spk).isEmpty()) {
-					cells[spk][row] = new TextCell(spk, turn.elts.get(spk));
-					for (Element el: turn.elts.get(spk)) {
-						columns.get(spk).elementRowMap.put(el, row);
+				if (!turn.spkTokens.get(spk).isEmpty()) {
+					cells[spk][row] = new TextCell(spk, turn.spkTokens.get(spk));
+					for (Token token: turn.spkTokens.get(spk)) {
+						columns.get(spk).tokenRowMap.put(token, row);
 					}
 				}
 			}
@@ -61,10 +61,12 @@ public class TurnModel extends ProjectModel<TurnProject> {
 		nonEmptyRowCount = row;
 	}
 
+
 	@Override
 	public int getRowCount() {
 		return nonEmptyRowCount;
 	}
+
 
 	@Override
 	public Object getValueAt(int rowIndex, int columnIndex) {

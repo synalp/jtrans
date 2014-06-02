@@ -1,8 +1,8 @@
 package fr.loria.synalp.jtrans.gui.trackview;
 
-import fr.loria.synalp.jtrans.project.Element;
 import fr.loria.synalp.jtrans.project.Phrase;
 import fr.loria.synalp.jtrans.project.Project;
+import fr.loria.synalp.jtrans.project.Token;
 import fr.loria.synalp.jtrans.project.TrackProject;
 import fr.loria.synalp.jtrans.utils.spantable.Span;
 
@@ -104,9 +104,9 @@ public class TrackModel extends ProjectModel<TrackProject> {
 
 				TrackColumn col = (TrackColumn)columns.get(i);
 
-				for (Element el: phrases[i]) {
+				for (Token token: phrases[i]) {
 					// row+1 because a row must be left for the anchor
-					col.elementRowMap.put(el, row+1);
+					col.tokenRowMap.put(token, row+1);
 				}
 
 				col.addRowSpan(row);

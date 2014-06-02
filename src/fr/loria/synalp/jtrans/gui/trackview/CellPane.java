@@ -1,8 +1,6 @@
 package fr.loria.synalp.jtrans.gui.trackview;
 
-import fr.loria.synalp.jtrans.project.Comment;
-import fr.loria.synalp.jtrans.project.Element;
-import fr.loria.synalp.jtrans.project.Word;
+import fr.loria.synalp.jtrans.project.Token;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -50,25 +48,25 @@ public class CellPane extends JTextPane {
 
 
 	private TextCell cell;
-	private Element highlighted;
+	private Token highlighted;
 
 
-	private static final Map<Comment.Type, AttributeSet> styleCache =
-			new HashMap<Comment.Type, AttributeSet>()
+	private static final Map<Token.Type, AttributeSet> styleCache =
+			new HashMap<Token.Type, AttributeSet>()
 	{
-		private void put(Comment.Type type, final Color color) {
+		private void put(Token.Type type, final Color color) {
 			put(type, new SimpleAttributeSet() {{
 				addAttribute(StyleConstants.Background, color);
 			}});
 		}
 
 		{
-			put(Comment.Type.FREEFORM,      Color.YELLOW);
-			put(Comment.Type.NOISE,         Color.CYAN);
-			put(Comment.Type.PUNCTUATION,   Color.ORANGE);
-			put(Comment.Type.OVERLAP_START_MARK, Color.PINK);
-			put(Comment.Type.OVERLAP_END_MARK,   Color.PINK);
-			put(Comment.Type.SPEAKER_MARK,  Color.GREEN.brighter());
+			put(Token.Type.COMMENT,            Color.YELLOW);
+			put(Token.Type.NOISE,              Color.CYAN);
+			put(Token.Type.PUNCTUATION,        Color.ORANGE);
+			put(Token.Type.OVERLAP_START_MARK, Color.PINK);
+			put(Token.Type.OVERLAP_END_MARK,   Color.PINK);
+			put(Token.Type.SPEAKER_MARK,       Color.GREEN.brighter());
 		}
 	};
 
@@ -96,26 +94,26 @@ public class CellPane extends JTextPane {
 			ex.printStackTrace();
 		}
 
-		for (int i = 0; i < cell.elts.size(); i++)
-			setDefaultStyle(i, cell.elts.get(i));
+		for (int i = 0; i < cell.tokens.size(); i++)
+			setDefaultStyle(i, cell.tokens.get(i));
 	}
 
 
-	private void setDefaultStyle(int i, Element el) {
-		AttributeSet style = null;
+	private void setDefaultStyle(int i, Token token) {
+		AttributeSet style;
 
-		if (el instanceof Word) {
-			Word w = (Word)el;
-			if (w.shouldBeAnonymized()) {
-				style = w.isAligned()? ALIGNED_ANONYMOUS_STYLE: UNALIGNED_ANONYMOUS_STYLE;
+		if (token.isAlignable()) {
+			boolean aligned = token.isAligned();
+			if (token.shouldBeAnonymized()) {
+				style = aligned? ALIGNED_ANONYMOUS_STYLE: UNALIGNED_ANONYMOUS_STYLE;
 			} else {
-				style = w.isAligned()? ALIGNED_STYLE: UNALIGNED_STYLE;
+				style = aligned? ALIGNED_STYLE: UNALIGNED_STYLE;
 			}
-		} else if (el instanceof Comment) {
-			style = styleCache.get(((Comment) el).getType());
+		} else {
+			style = styleCache.get(token.getType());
 			if (style == null) {
 				System.err.println("WARNING: missing style for comment type "
-						+ ((Comment) el).getType());
+						+ token.getType());
 			}
 		}
 
@@ -126,22 +124,22 @@ public class CellPane extends JTextPane {
 
 	private void setStyle(int i, AttributeSet style, boolean replace) {
 		getStyledDocument().setCharacterAttributes(
-				cell.elStart[i],
-				cell.elEnd[i] - cell.elStart[i],
+				cell.tokStart[i],
+				cell.tokEnd[i] - cell.tokStart[i],
 				style,
 				replace);
 	}
 
 
-	public void highlight(Element el) {
+	public void highlight(Token token) {
 		if (highlighted != null) {
-			setDefaultStyle(cell.elts.indexOf(highlighted), highlighted);
+			setDefaultStyle(cell.tokens.indexOf(highlighted), highlighted);
 		}
 
-		if (el != null) {
-			setStyle(cell.elts.indexOf(el), HIGHLIGHTED_STYLE, false);
+		if (token != null) {
+			setStyle(cell.tokens.indexOf(token), HIGHLIGHTED_STYLE, false);
 		}
 
-		highlighted = el;
+		highlighted = token;
 	}
 }

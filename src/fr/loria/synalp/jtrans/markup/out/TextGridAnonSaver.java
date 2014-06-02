@@ -1,7 +1,6 @@
 package fr.loria.synalp.jtrans.markup.out;
 
-import fr.loria.synalp.jtrans.project.Element;
-import fr.loria.synalp.jtrans.project.Word;
+import fr.loria.synalp.jtrans.project.Token;
 import fr.loria.synalp.jtrans.project.Phrase;
 import fr.loria.synalp.jtrans.project.Project;
 
@@ -29,15 +28,13 @@ public class TextGridAnonSaver implements MarkupSaver {
 			while (itr.hasNext()) {
 				Phrase phrase = itr.next();
 
-				for (Element e: phrase) {
-					Word word = e instanceof Word ? (Word) e : null;
-
-					if (word != null && word.isAligned() && word.shouldBeAnonymized()) {
+				for (Token token: phrase) {
+					if (token.isAligned() && token.shouldBeAnonymized()) {
 						praatInterval(
 								anonSB,
 								anonCount + 1,
-								word.getSegment().getStartFrame(),
-								word.getSegment().getEndFrame(),
+								token.getSegment().getStartFrame(),
+								token.getSegment().getEndFrame(),
 								"buzz");
 						anonCount++;
 					}

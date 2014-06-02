@@ -1,6 +1,6 @@
 package fr.loria.synalp.jtrans.gui.signalViewers.spectroPanel;
 
-import fr.loria.synalp.jtrans.project.Word;
+import fr.loria.synalp.jtrans.project.Token;
 
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
@@ -8,7 +8,7 @@ import java.awt.*;
 import java.util.List;
 
 public class TimelineWords extends JPanel {
-	private List<Word> words;
+	private List<Token> words;
 	private int firstFrame;
 	private float zoom=1f;
 	private FontMetrics metrics;
@@ -18,7 +18,7 @@ public class TimelineWords extends JPanel {
 		metrics = getFontMetrics(getFont());
 	}
 
-	public void setWords(List<Word> words) {
+	public void setWords(List<Token> words) {
 		this.words = words;
 	}
 
@@ -36,7 +36,7 @@ public class TimelineWords extends JPanel {
 		return (int)((float)(frame-firstFrame) * zoom);
 	}
 
-	private void drawSegment(Graphics g, String str, Word.Segment seg, int y, int tickHeight) {
+	private void drawSegment(Graphics g, String str, Token.Segment seg, int y, int tickHeight) {
 		int x1 = transformX(seg.getStartFrame());
 		int x2 = transformX(seg.getEndFrame());
 		int segW = SwingUtilities.computeStringWidth(metrics, str);
@@ -66,7 +66,7 @@ public class TimelineWords extends JPanel {
 
 		final int lastFrame = firstFrame + (int)(w/zoom);
 
-		for (Word word: words) {
+		for (Token word: words) {
 			if (!word.isAligned() ||
 					word.getSegment().getEndFrame() < firstFrame)
 			{
@@ -76,7 +76,7 @@ public class TimelineWords extends JPanel {
 			}
 
 			drawSegment(g, word.toString(), word.getSegment(), h-5, h);
-			for (Word.Phone p: word.getPhones()) {
+			for (Token.Phone p: word.getPhones()) {
 				drawSegment(g, p.toString(), p.getSegment(), h/2-5, 3);
 			}
 		}

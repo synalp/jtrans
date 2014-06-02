@@ -30,7 +30,7 @@ public class TextGridLoader implements MarkupLoader {
 				track.add(new Phrase(
 						new Anchor(interval.xmin),
 						new Anchor(interval.xmax),
-						RawTextLoader.parseString(
+						RawTextLoader.tokenize(
 								RawTextLoader.normalizeText(interval.text),
 								RawTextLoader.DEFAULT_PATTERNS)));
 			}
