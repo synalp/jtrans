@@ -27,6 +27,8 @@ public class ProjectTable
 	public static final Font DEFAULT_FONT =
 			new Font(Font.SANS_SERIF, Font.PLAIN, 13);
 
+	public static final int MIN_ROW_HEIGHT = 16;
+
 	private Project project;
 	private JTransGUI gui; // used in UI callbacks
 	private ProjectModel model;
@@ -192,36 +194,34 @@ public class ProjectTable
 	 */
 	@Override
 	public void doLayout() {
-		System.out.println("Do Layout");
-
 		TableColumnModel tcm = getColumnModel();
+		final int intercellWidth = getIntercellSpacing().width;
+		final int intercellHeight = getIntercellSpacing().height;
 
 		for (int row = 0; row < getRowCount(); row++) {
-			int newRowHeight = 1;
-			int col = 0;
+			int newRowHeight = MIN_ROW_HEIGHT;
+
 			for (int i = 0; i < project.speakerCount(); i++) {
-				TableColumn tableCol = tcm.getColumn(col);
+				TableColumn tableCol = tcm.getColumn(i);
 				Component cell = prepareRenderer(tableCol.getCellRenderer(),
-						row, col);
+						row, i);
 
-				int prefHeight = cell.getPreferredSize().height;
-				if (prefHeight < 16) {
-					prefHeight = 16;
-				}
+				cell.setSize(tableCol.getWidth() - intercellWidth,
+						MIN_ROW_HEIGHT);
 
-				cell.setSize(
-						tableCol.getWidth() - getIntercellSpacing().width,
-						prefHeight);
+				int h = intercellHeight +
+						Math.max(MIN_ROW_HEIGHT, cell.getPreferredSize().height);
 
-				int h = prefHeight + getIntercellSpacing().height;
-				if (h > newRowHeight)
+				if (h > newRowHeight) {
 					newRowHeight = h;
-
-				col++;
+				}
 			}
-			if (getRowHeight(row) != newRowHeight)
+
+			if (getRowHeight(row) != newRowHeight) {
 				setRowHeight(row, newRowHeight);
+			}
 		}
+
 		super.doLayout();
 	}
 
