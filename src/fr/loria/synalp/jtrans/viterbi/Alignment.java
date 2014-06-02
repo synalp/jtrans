@@ -12,10 +12,10 @@ import java.util.Random;
  */
 public class Alignment {
 
-	protected static class Segment {
+	public static class Segment {
 		int length;
-		final HMMState state;
-		final Word word;
+		public final HMMState state;
+		public final Word word;
 
 		public Segment(HMMState state, Word word, int length) {
 			this.length = length;
@@ -135,21 +135,54 @@ public class Alignment {
 	public void newFrame(HMMState state, Word word) {
 		Segment tail = segments.isEmpty()?
 				null: segments.get(segments.size()-1);
+
 		if (null != tail && tail.state == state && tail.word == word) {
 			tail.length++;
 		} else {
 			segments.add(new Segment(state, word));
 		}
 
+		frames++;
+		newWord(word);
+		assert verify();
+	}
+
+
+	/**
+	 * Appends a new segment to the end of this timeline.
+	 * @param state Must be different from the state in the last segment.
+	 *              To extend the last segment with the same state, use
+	 *              {@link #newFrame(HMMState, Word)} instead
+	 * @param word
+	 * @param length length of the new segment, in frames
+	 */
+	public void newSegment(HMMState state, Word word, int length) {
+		assert segments.isEmpty() ||
+				state != segments.get(segments.size()-1).state
+				: "same state across two segments";
+
+		segments.add(new Segment(state, word, length));
+		frames += length;
+		newWord(word);
+		assert verify();
+	}
+
+
+	/**
+	 * Appends a word to the list of unique words if the word isn't already the
+	 * last word in the list.
+	 */
+	private void newWord(Word word) {
 		Word lastUWord = uniqueWords.isEmpty()?
 				null: uniqueWords.get(uniqueWords.size()-1);
 		if (null != word && lastUWord != word) {
 			uniqueWords.add(word);
 		}
+	}
 
-		frames++;
 
-		assert verify();
+	public int getFrameOffset() {
+		return frameOffset;
 	}
 
 
@@ -178,7 +211,9 @@ public class Alignment {
 	}
 
 
-	protected Segment getSegmentAtFrame(int frame) {
+	public Segment getSegmentAtFrame(int frame) {
+		// TODO: start lookup at index (-> speed up)
+
 		int total = frameOffset;
 		for (Segment seg: segments) {
 			if (frame >= total && frame < total+seg.length) {
@@ -187,6 +222,11 @@ public class Alignment {
 			total += seg.length;
 		}
 		return null;
+	}
+
+
+	public Segment getSegment(int idx) {
+		return segments.get(idx);
 	}
 
 

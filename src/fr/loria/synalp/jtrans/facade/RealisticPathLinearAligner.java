@@ -2,11 +2,10 @@ package fr.loria.synalp.jtrans.facade;
 
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
 import fr.loria.synalp.jtrans.viterbi.Alignment;
+import static fr.loria.synalp.jtrans.facade.FastLinearAligner.interpolatedLengths;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 
 /**
@@ -30,22 +29,19 @@ public class RealisticPathLinearAligner extends CheatingAligner {
 
 
 	@Override
-	protected Alignment tweak(Alignment baseline) {
-		List<Integer> values = new ArrayList<>();
+	protected Alignment tweak(Alignment base) {
+		Alignment al = new Alignment(base.getFrameOffset());
 
-		/*
-		for (int i = 0; i < baseline.length; i++) {
-			int node = baseline[i];
-			if (i == 0 || baseline[i-1] != node) {
-				values.add(node);
-			}
+		int[] lengths = interpolatedLengths(
+				base.getSegmentCount(), base.getLength());
+		assert lengths.length == base.getSegmentCount();
+
+		for (int i = 0; i < lengths.length; i++) {
+			Alignment.Segment seg = base.getSegment(i);
+			al.newSegment(seg.state, seg.word, lengths[i]);
 		}
 
-		return FastLinearAligner.fillInterpolate(
-				values, new int[baseline.length], 0, baseline.length);
-		*/
-
-		throw new Error("Reimplement me!");
+		return al;
 	}
 
 }

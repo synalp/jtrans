@@ -5,8 +5,7 @@ import fr.loria.synalp.jtrans.viterbi.Alignment;
 import fr.loria.synalp.jtrans.viterbi.StateGraph;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 
 
 /**
@@ -35,55 +34,50 @@ public class FastLinearAligner extends AutoAligner {
 			int endFrame)
 	{
 		final int length = boundCheckLength(startFrame, endFrame);
-//		return fillInterpolate(graph.getNodeCount(), new int[length], 0, length);
-		throw new Error("Reimplement me!");
+		int[] nodes = new int[length];
+		fillInterpolate(graph.getNodeCount(), nodes, 0, length);
+		return graph.alignmentFromNodeTimeline(nodes, startFrame);
 	}
 
 
-	public static int[] fillInterpolate(
-			List<Integer> values,
+	public static void fillInterpolate(
+			int valueCount,
 			int[] buf,
 			int offset,
 			int length)
 	{
-		int rangeLength = values.size();
+		assert offset+length <= buf.length;
+		int[] valueLengths = interpolatedLengths(valueCount, length);
+		for (int i = 0; i < valueLengths.length; i++) {
+			Arrays.fill(buf, offset, offset+valueLengths[i], i);
+			offset += valueLengths[i];
+		}
+	}
 
-		assert rangeLength > 0;
-		assert length > 0;
-		assert offset + length <= buf.length;
 
-		if (rangeLength > buf.length) {
-			System.err.println("Warning: not enough slots for range; clipping");
-			rangeLength = buf.length;
+	public static int[] interpolatedLengths(int valueCount, int acrossLength) {
+		assert valueCount > 0;
+		assert acrossLength > 0;
+
+		if (valueCount > acrossLength) {
+			System.err.println("Warning: not enough slots for all values! clipping!");
+			valueCount = acrossLength;
 		}
 
-		int v = 0;
-		float nextR = 1 / (float)rangeLength;
+		int n = 0;
+		float threshold = 1 / (float)valueCount;
+		int[] lengths = new int[valueCount];
 
-		for (int i = 0; i < length; i++) {
-			float r = i / (float)length;
-			if (r >= nextR) {
-				v++;
-				nextR = (v+1) / (float)rangeLength;
+		for (int t = 0; t < acrossLength; t++) {
+			float frac = t / (float)acrossLength;
+			if (frac >= threshold) {
+				n++;
+				threshold = (n+1) / (float)valueCount;
 			}
-			buf[i+offset] = values.get(v);
+			lengths[n]++;
 		}
 
-		return buf;
-	}
-
-
-	public static int[] fillInterpolate(
-			int rangeLength,
-			int[] buf,
-			int offset,
-			int length)
-	{
-		List<Integer> values = new ArrayList<Integer>();
-		for (int i = 0; i < rangeLength; i++) {
-			values.add(i);
-		}
-		return fillInterpolate(values, buf, offset, length);
+		return lengths;
 	}
 
 }
