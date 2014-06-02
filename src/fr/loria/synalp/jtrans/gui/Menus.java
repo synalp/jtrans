@@ -191,7 +191,6 @@ public class Menus {
 
 		// //////////////////////////////////////////////////////////////
 		JMenu actionsm = new JMenu("Edit");
-		JMenuItem regexp = new JMenuItem("Regexps");
 		JMenuItem gototime = new JMenuItem("Go to time [sec]");
 		JMenuItem findWord = new JMenuItem("Find word...");
 		JMenuItem findNext = new JMenuItem("Find next");
@@ -199,7 +198,6 @@ public class Menus {
 		JMenuItem findNextAnon = new JMenuItem("Find next anonymous word");
 		JMenuItem findPrevAnon = new JMenuItem("Find previous anonymous word");
 		menubar.add(actionsm);
-		actionsm.add(regexp);
 		actionsm.add(gototime);
 		actionsm.addSeparator();
 		actionsm.add(findWord);
