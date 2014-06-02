@@ -132,7 +132,7 @@ public class TRSInlineSpeakers extends TRSPreprocessor {
 		}
 
 		// Add who tags
-		new TCOFWhoifier().preprocess(doc);
+		new TCOF().preprocess(doc);
 	}
 
 }

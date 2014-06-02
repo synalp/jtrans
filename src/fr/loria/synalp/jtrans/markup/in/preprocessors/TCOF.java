@@ -47,10 +47,10 @@ import java.util.ListIterator;
  * </Turn>
  * }</pre>
  */
-public class TCOFWhoifier extends TRSPreprocessor {
+public class TCOF extends TRSPreprocessor {
 
 	public static void main(String[] args) throws Exception {
-		new TCOFWhoifier().transform(args);
+		new TCOF().transform(args);
 	}
 
 
