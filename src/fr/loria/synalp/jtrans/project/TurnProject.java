@@ -274,16 +274,21 @@ public class TurnProject extends Project {
 	{
 		clearAlignment();
 
+		if (turns.isEmpty()) {
+			return;
+		}
+
 		// Index of the first turn in the current chain of turns lacking
 		// timing information
 		int chainStart = -1;
 
-		for (int t = 0; t < turns.size(); t++) {
+		// Don't process last turn!
+		for (int t = 0; t < turns.size()-1; t++) {
 			Turn turn = turns.get(t);
 
 			if (chainStart >= 0) {
 				assert null == turn.start;
-				if (null != turn.end || t == turns.size()-1) {
+				if (null != turn.end) {
 					// Stop chaining
 					alignTurnChain(aligner,
 							turns.subList(chainStart, t + 1), overlaps);
@@ -316,7 +321,13 @@ public class TurnProject extends Project {
 			}
 		}
 
-		assert chainStart < 0;
+		// Last turn
+		if (chainStart < 0) {
+			chainStart = turns.size()-1;
+		}
+		alignTurnChain(aligner,
+				turns.subList(chainStart, turns.size()), overlaps);
+		chainStart = -1;
 	}
 
 
