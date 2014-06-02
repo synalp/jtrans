@@ -1,4 +1,4 @@
-package fr.loria.synalp.jtrans.elements;
+package fr.loria.synalp.jtrans.project;
 
 /**
  * Text element that must be skipped during the alignment.

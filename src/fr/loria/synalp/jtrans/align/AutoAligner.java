@@ -1,10 +1,11 @@
-package fr.loria.synalp.jtrans.facade;
+package fr.loria.synalp.jtrans.align;
 
 import edu.cmu.sphinx.frontend.FloatData;
-import fr.loria.synalp.jtrans.elements.Word;
+import fr.loria.synalp.jtrans.project.Word;
 import fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer;
+import fr.loria.synalp.jtrans.train.SpeakerDepModelTrainer;
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
-import fr.loria.synalp.jtrans.viterbi.*;
+import fr.loria.synalp.jtrans.graph.*;
 
 import java.io.*;
 import java.util.List;
@@ -62,6 +63,11 @@ public abstract class AutoAligner {
 	public void initTrainers(int speakers) {
 		trainer = new SpeakerDepModelTrainer(
 				speakers, S4mfccBuffer.to2DArray(data));
+	}
+
+
+	public SpeakerDepModelTrainer getTrainer() {
+		return trainer;
 	}
 
 
@@ -147,8 +153,8 @@ public abstract class AutoAligner {
 
 			assert trainer != null;
 
-			final TransitionRefinery refinery =
-					new TransitionRefinery(alignment, trainer);
+			final Metropolis refinery =
+					new Metropolis(alignment, trainer);
 
 			while (!refinery.hasPlateaued()) {
 				alignment = refinery.step();

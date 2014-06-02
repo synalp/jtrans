@@ -1,6 +1,6 @@
 package fr.loria.synalp.jtrans.gui.signalViewers.spectroPanel;
 
-import fr.loria.synalp.jtrans.elements.Word;
+import fr.loria.synalp.jtrans.project.Word;
 
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;

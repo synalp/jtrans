@@ -1,4 +1,4 @@
-package fr.loria.synalp.jtrans.facade;
+package fr.loria.synalp.jtrans.align;
 
 import org.junit.Test;
 import static org.junit.Assert.*;

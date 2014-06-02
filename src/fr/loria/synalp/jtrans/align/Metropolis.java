@@ -1,9 +1,10 @@
-package fr.loria.synalp.jtrans.viterbi;
+package fr.loria.synalp.jtrans.align;
 
 import edu.cmu.sphinx.util.LogMath;
-import fr.loria.synalp.jtrans.elements.Word;
-import fr.loria.synalp.jtrans.facade.JTransCLI;
+import fr.loria.synalp.jtrans.JTrans;
+import fr.loria.synalp.jtrans.project.Word;
 import fr.loria.synalp.jtrans.speechreco.s4.HMMModels;
+import fr.loria.synalp.jtrans.train.SpeakerDepModelTrainer;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -15,7 +16,7 @@ import java.util.Random;
  * Refines an HMM state timeline by shifting transitions with the
  * Metropolis-Hastings algorithm.
  */
-public class TransitionRefinery {
+public class Metropolis {
 
 	private Alignment timeline;
 	private double cLhd;
@@ -56,7 +57,7 @@ public class TransitionRefinery {
 	/**
 	 * @param baseline Baseline alignment (as found e.g. with viterbi()).
 	 */
-	public TransitionRefinery(
+	public Metropolis(
 			Alignment baseline,
 			SpeakerDepModelTrainer trainer)
 	{
@@ -95,7 +96,7 @@ public class TransitionRefinery {
 		iterations++;
 
 		if (plot == null) {
-			final String plotName = JTransCLI.logID + "_likelihood.txt";
+			final String plotName = JTrans.logID + "_likelihood.txt";
 			plot = new PrintWriter(new BufferedWriter(new FileWriter(plotName)));
 			System.err.println("Plot: " + plotName);
 		}

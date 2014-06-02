@@ -1,8 +1,6 @@
 package fr.loria.synalp.jtrans.project;
 
-import fr.loria.synalp.jtrans.elements.Element;
-import fr.loria.synalp.jtrans.elements.Word;
-import fr.loria.synalp.jtrans.facade.AutoAligner;
+import fr.loria.synalp.jtrans.align.AutoAligner;
 
 import java.io.IOException;
 import java.util.ArrayList;

@@ -17,11 +17,9 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Mixer;
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
-import java.util.List;
 
 import edu.cmu.sphinx.result.Result;
 
-import fr.loria.synalp.jtrans.elements.Word;
 import fr.loria.synalp.jtrans.project.Anchor;
 import fr.loria.synalp.jtrans.gui.trackview.ProjectTable;
 import fr.loria.synalp.jtrans.markup.in.MarkupLoader;

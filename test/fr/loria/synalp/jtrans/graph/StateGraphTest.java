@@ -1,6 +1,6 @@
-package fr.loria.synalp.jtrans.viterbi;
+package fr.loria.synalp.jtrans.graph;
 
-import fr.loria.synalp.jtrans.elements.Word;
+import fr.loria.synalp.jtrans.project.Word;
 import org.junit.Test;
 
 import java.util.*;

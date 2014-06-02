@@ -1,16 +1,13 @@
 package fr.loria.synalp.jtrans.markup.in.preprocessors;
 
-import fr.loria.synalp.jtrans.elements.*;
 import fr.loria.synalp.jtrans.markup.in.ParsingException;
-import fr.loria.synalp.jtrans.project.Anchor;
+import fr.loria.synalp.jtrans.project.Comment;
 import fr.loria.synalp.jtrans.project.TurnProject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -216,7 +213,7 @@ public class TCOFWhoifier extends TRSPreprocessor {
 			for (int spkID = 0; spkID < p.speakerCount(); spkID++) {
 
 				for (int elID = 0; elID < turn.elts.get(spkID).size(); elID++) {
-					fr.loria.synalp.jtrans.elements.Element el = turn.elts.get(spkID).get(elID);
+					fr.loria.synalp.jtrans.project.Element el = turn.elts.get(spkID).get(elID);
 
 					if (el instanceof Comment) {
 						Comment comment = (Comment) el;
@@ -238,7 +235,7 @@ public class TCOFWhoifier extends TRSPreprocessor {
 	 * @return new ID of the current turn
 	 */
 	private int breakUpOverlapEnd(TurnProject p, int turnID, int spkID, int elID) {
-		ListIterator<fr.loria.synalp.jtrans.elements.Element> elItr =
+		ListIterator<fr.loria.synalp.jtrans.project.Element> elItr =
 				p.turns.get(turnID).elts.get(spkID).listIterator(elID + 1);
 
 		TurnProject.Turn newTurn = p.new Turn();

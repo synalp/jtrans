@@ -1,7 +1,8 @@
 package fr.loria.synalp.jtrans.gui.trackview;
 
-import fr.loria.synalp.jtrans.elements.*;
-import fr.loria.synalp.jtrans.elements.Element;
+import fr.loria.synalp.jtrans.project.Comment;
+import fr.loria.synalp.jtrans.project.Element;
+import fr.loria.synalp.jtrans.project.Word;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;

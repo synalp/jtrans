@@ -1,8 +1,6 @@
 package fr.loria.synalp.jtrans.markup.out;
 
-import fr.loria.synalp.jtrans.elements.*;
-import fr.loria.synalp.jtrans.project.Phrase;
-import fr.loria.synalp.jtrans.project.Project;
+import fr.loria.synalp.jtrans.project.*;
 
 import java.io.*;
 import java.util.Iterator;

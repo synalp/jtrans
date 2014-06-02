@@ -41,7 +41,7 @@ pris connaissance de la licence CeCILL-C, et que vous en avez accept� les
 termes.
 */
 
-package fr.loria.synalp.jtrans.elements;
+package fr.loria.synalp.jtrans.project;
 
 public interface Element {
 }

@@ -1,11 +1,9 @@
 package fr.loria.synalp.jtrans.project;
 
-import fr.loria.synalp.jtrans.elements.Word;
-import fr.loria.synalp.jtrans.facade.*;
-import fr.loria.synalp.jtrans.utils.ProgressDisplay;
-import fr.loria.synalp.jtrans.utils.TimeConverter;
-import fr.loria.synalp.jtrans.viterbi.StateGraph;
-import fr.loria.synalp.jtrans.viterbi.StatePool;
+import fr.loria.synalp.jtrans.align.AutoAligner;
+import fr.loria.synalp.jtrans.align.ViterbiAligner;
+import fr.loria.synalp.jtrans.utils.*;
+import fr.loria.synalp.jtrans.graph.StateGraph;
 
 import javax.sound.sampled.*;
 import java.io.*;

@@ -1,8 +1,5 @@
 package fr.loria.synalp.jtrans.project;
 
-import fr.loria.synalp.jtrans.elements.Element;
-import fr.loria.synalp.jtrans.elements.Word;
-
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;

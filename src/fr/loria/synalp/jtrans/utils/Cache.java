@@ -1,4 +1,4 @@
-package fr.loria.synalp.jtrans.facade;
+package fr.loria.synalp.jtrans.utils;
 
 import static fr.loria.synalp.jtrans.utils.Paths.CACHE_DIR;
 

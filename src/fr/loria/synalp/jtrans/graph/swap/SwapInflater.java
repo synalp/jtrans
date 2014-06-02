@@ -1,6 +1,7 @@
-package fr.loria.synalp.jtrans.viterbi;
+package fr.loria.synalp.jtrans.graph.swap;
 
 import fr.loria.synalp.jtrans.utils.BufferUtils;
+import fr.loria.synalp.jtrans.graph.StateGraph;
 
 import java.io.*;
 import java.util.zip.InflaterInputStream;
@@ -11,7 +12,7 @@ import java.util.zip.InflaterInputStream;
  * A single instance may be reused for several different graphs to avoid wasting
  * time re-allocating buffers.
  *
- * @see StateGraph
+ * @see fr.loria.synalp.jtrans.graph.StateGraph
  */
 public class SwapInflater {
 

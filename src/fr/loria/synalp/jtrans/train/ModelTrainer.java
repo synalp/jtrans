@@ -1,11 +1,12 @@
-package fr.loria.synalp.jtrans.viterbi;
+package fr.loria.synalp.jtrans.train;
 
 import edu.cmu.sphinx.linguist.acoustic.HMMState;
 import edu.cmu.sphinx.util.LogMath;
-import fr.loria.synalp.jtrans.elements.Word;
-import fr.loria.synalp.jtrans.facade.BinarySegmentation;
-import fr.loria.synalp.jtrans.facade.JTransCLI;
+import fr.loria.synalp.jtrans.JTrans;
+import fr.loria.synalp.jtrans.project.Word;
+import fr.loria.synalp.jtrans.utils.BinarySegmentation;
 import fr.loria.synalp.jtrans.speechreco.s4.HMMModels;
+import fr.loria.synalp.jtrans.align.Alignment;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -13,7 +14,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import static fr.loria.synalp.jtrans.viterbi.StatePool.isSilenceState;
+import static fr.loria.synalp.jtrans.graph.StatePool.isSilenceState;
 
 /**
  * Learns Gaussians for every unique state and computes alignment likelihoods.
@@ -266,7 +267,7 @@ public class ModelTrainer {
 
 	public void dump() {
 		try {
-			PrintWriter w = new PrintWriter(JTransCLI.logID + ".models.txt");
+			PrintWriter w = new PrintWriter(JTrans.logID + ".models.txt");
 			for (Map.Entry<Object, Model> e: modelMap.entrySet()) {
 				for (int j = 0; j < 39; j++) {
 					Object state = e.getKey();

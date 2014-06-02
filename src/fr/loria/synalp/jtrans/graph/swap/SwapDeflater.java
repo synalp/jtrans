@@ -1,4 +1,4 @@
-package fr.loria.synalp.jtrans.viterbi;
+package fr.loria.synalp.jtrans.graph.swap;
 
 import fr.loria.synalp.jtrans.utils.BufferUtils;
 
@@ -12,7 +12,7 @@ import java.util.zip.Deflater;
  * A single instance may be reused for several different graphs to avoid wasting
  * time re-allocating buffers.
  *
- * @see StateGraph
+ * @see fr.loria.synalp.jtrans.graph.StateGraph
  */
 public class SwapDeflater {
 

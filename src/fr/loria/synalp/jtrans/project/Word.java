@@ -1,7 +1,7 @@
-package fr.loria.synalp.jtrans.elements;
+package fr.loria.synalp.jtrans.project;
 
 import fr.loria.synalp.jtrans.utils.TimeConverter;
-import fr.loria.synalp.jtrans.viterbi.StatePool;
+import fr.loria.synalp.jtrans.graph.StatePool;
 
 import java.util.ArrayList;
 import java.util.List;

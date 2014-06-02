@@ -1,6 +1,4 @@
-package fr.loria.synalp.jtrans.facade;
-
-import fr.loria.synalp.jtrans.facade.BinarySegmentation.Segment;
+package fr.loria.synalp.jtrans.utils;
 
 import javax.sound.sampled.AudioInputStream;
 import java.io.IOException;
@@ -64,13 +62,13 @@ public class AnonymizingAudioInputStream extends AudioInputStream {
 
 		// Fade out of silence
 		if (pSeqIdx >= 0 && pSeqIdx < sequence.size()) {
-			Segment pSeg = sequence.get(pSeqIdx);
+			BinarySegmentation.Segment pSeg = sequence.get(pSeqIdx);
 			assert pSeg.isBehind(sec);
 			minDist = Math.min(minDist, sec - pSeg.getEnd());
 		}
 
 		if (seqIdx < sequence.size()) {
-			Segment seg = sequence.get(seqIdx);
+			BinarySegmentation.Segment seg = sequence.get(seqIdx);
 			if (seg.contains(sec)) {
 				// Anonymize
 				return 0;

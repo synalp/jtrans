@@ -1,7 +1,7 @@
 package fr.loria.synalp.jtrans.gui.trackview;
 
-import fr.loria.synalp.jtrans.elements.Element;
-import fr.loria.synalp.jtrans.elements.Word;
+import fr.loria.synalp.jtrans.project.Element;
+import fr.loria.synalp.jtrans.project.Word;
 import fr.loria.synalp.jtrans.project.*;
 import fr.loria.synalp.jtrans.gui.trackview.TrackModel.LinearBridge;
 import org.junit.Test;

@@ -1,4 +1,4 @@
-package fr.loria.synalp.jtrans.viterbi;
+package fr.loria.synalp.jtrans.graph.swap;
 
 import java.io.*;
 import java.util.ArrayList;

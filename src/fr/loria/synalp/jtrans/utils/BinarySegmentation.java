@@ -1,4 +1,4 @@
-package fr.loria.synalp.jtrans.facade;
+package fr.loria.synalp.jtrans.utils;
 
 import java.util.ArrayList;
 import java.util.List;

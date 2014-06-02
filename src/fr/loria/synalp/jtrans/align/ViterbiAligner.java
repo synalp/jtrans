@@ -1,10 +1,10 @@
-package fr.loria.synalp.jtrans.facade;
+package fr.loria.synalp.jtrans.align;
 
+import fr.loria.synalp.jtrans.utils.Cache;
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
-import fr.loria.synalp.jtrans.viterbi.Alignment;
-import fr.loria.synalp.jtrans.viterbi.StateGraph;
-import fr.loria.synalp.jtrans.viterbi.SwapDeflater;
-import fr.loria.synalp.jtrans.viterbi.SwapInflater;
+import fr.loria.synalp.jtrans.graph.StateGraph;
+import fr.loria.synalp.jtrans.graph.swap.SwapDeflater;
+import fr.loria.synalp.jtrans.graph.swap.SwapInflater;
 
 import java.io.*;
 

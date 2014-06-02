@@ -19,8 +19,9 @@ import javax.sound.sampled.*;
 import javax.swing.*;
 import javax.swing.Timer;
 
-import fr.loria.synalp.jtrans.elements.Word;
-import fr.loria.synalp.jtrans.facade.*;
+import fr.loria.synalp.jtrans.JTrans;
+import fr.loria.synalp.jtrans.align.AutoAligner;
+import fr.loria.synalp.jtrans.project.Word;
 import fr.loria.synalp.jtrans.gui.trackview.ProjectTable;
 import fr.loria.synalp.jtrans.markup.in.MarkupLoader;
 import fr.loria.synalp.jtrans.markup.in.ParsingException;
@@ -252,7 +253,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		createJFrame();
 	}
 
-	public JTransGUI(JTransCLI cli) {
+	public JTransGUI(JTrans cli) {
 		this();
 
 		if (cli.loader != null) {
@@ -559,7 +560,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		} else if (project.audioFile == null) {
 			// Try to detect audio file from the project's file name
 			File possibleAudio = FileUtils.detectHomonymousFile(
-					markupFile, JTransCLI.AUDIO_EXTENSIONS);
+					markupFile, JTrans.AUDIO_EXTENSIONS);
 
 			if (possibleAudio != null) {
 				int rc = JOptionPane.showConfirmDialog(jf,

@@ -1,11 +1,11 @@
-package fr.loria.synalp.jtrans.facade;
+package fr.loria.synalp.jtrans.utils;
 
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import fr.loria.synalp.jtrans.facade.BinarySegmentation.Segment;
+import fr.loria.synalp.jtrans.utils.BinarySegmentation.Segment;
 
 import static org.junit.Assert.*;
 import static java.util.Arrays.asList;

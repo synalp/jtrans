@@ -1,13 +1,15 @@
-package fr.loria.synalp.jtrans.viterbi;
+package fr.loria.synalp.jtrans.graph;
 
 import edu.cmu.sphinx.frontend.*;
 import edu.cmu.sphinx.linguist.acoustic.*;
 import edu.cmu.sphinx.util.LogMath;
-import fr.loria.synalp.jtrans.elements.Word;
+import fr.loria.synalp.jtrans.align.Alignment;
+import fr.loria.synalp.jtrans.project.Word;
 import fr.loria.synalp.jtrans.speechreco.grammaire.Grammatiseur;
 import fr.loria.synalp.jtrans.speechreco.s4.*;
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
-import fr.loria.synalp.jtrans.utils.TimeConverter;
+import fr.loria.synalp.jtrans.graph.swap.SwapDeflater;
+import fr.loria.synalp.jtrans.graph.swap.SwapInflater;
 
 import java.io.*;
 import java.util.*;
@@ -642,7 +644,7 @@ public class StateGraph {
 
 		nWords = alignment.getUniqueWordCount();
 		nNodes = 0;
-		for (Alignment.Segment seg: alignment.segments) {
+		for (Alignment.Segment seg: alignment) {
 			if (!seg.isPadding()) {
 				nNodes++;
 			}
@@ -671,7 +673,7 @@ public class StateGraph {
 		int w = 0;
 		Word pWord = null;
 
-		for (Alignment.Segment seg: alignment.segments) {
+		for (Alignment.Segment seg: alignment) {
 			if (seg.isPadding()) {
 				continue;
 			}
@@ -799,7 +801,7 @@ public class StateGraph {
 	 * backtrack().
 	 *
 	 * @see StateGraph#backtrack second part of the pathfinding process
-	 * @see SwapInflater
+	 * @see fr.loria.synalp.jtrans.graph.swap.SwapInflater
 	 * @param data all frames in the audio source
 	 * @param swapWriter object that commits likelihoods to a swap file
 	 *                   or buffer

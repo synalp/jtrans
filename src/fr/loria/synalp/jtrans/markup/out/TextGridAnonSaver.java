@@ -1,7 +1,7 @@
 package fr.loria.synalp.jtrans.markup.out;
 
-import fr.loria.synalp.jtrans.elements.Element;
-import fr.loria.synalp.jtrans.elements.Word;
+import fr.loria.synalp.jtrans.project.Element;
+import fr.loria.synalp.jtrans.project.Word;
 import fr.loria.synalp.jtrans.project.Phrase;
 import fr.loria.synalp.jtrans.project.Project;
 

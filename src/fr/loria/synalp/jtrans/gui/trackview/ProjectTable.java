@@ -1,16 +1,11 @@
 package fr.loria.synalp.jtrans.gui.trackview;
 
-import fr.loria.synalp.jtrans.elements.*;
 import fr.loria.synalp.jtrans.gui.*;
-import fr.loria.synalp.jtrans.project.Anchor;
-import fr.loria.synalp.jtrans.project.Project;
-import fr.loria.synalp.jtrans.project.TrackProject;
-import fr.loria.synalp.jtrans.project.TurnProject;
+import fr.loria.synalp.jtrans.project.*;
 import fr.loria.synalp.jtrans.utils.*;
 import fr.loria.synalp.jtrans.utils.spantable.SpanTable;
 
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.*;

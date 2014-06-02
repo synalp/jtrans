@@ -1,7 +1,7 @@
 package fr.loria.synalp.jtrans.markup.in.preprocessors;
 
-import fr.loria.synalp.jtrans.elements.Comment;
-import fr.loria.synalp.jtrans.elements.Element;
+import fr.loria.synalp.jtrans.project.Comment;
+import fr.loria.synalp.jtrans.project.Element;
 import fr.loria.synalp.jtrans.markup.in.MarkupLoader;
 import fr.loria.synalp.jtrans.markup.in.ParsingException;
 import fr.loria.synalp.jtrans.markup.in.RawTextLoader;

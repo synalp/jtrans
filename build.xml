@@ -79,7 +79,7 @@
 		<jar destfile="${jarfile}" basedir="${build}">
 			<manifest>
 				<attribute name="Class-Path" value="${manifest.classpath}"/>
-				<attribute name="Main-Class" value="fr.loria.synalp.jtrans.facade.JTransCLI"/>
+				<attribute name="Main-Class" value="fr.loria.synalp.jtrans.JTrans"/>
 				<attribute name="Implementation-Title" value="JTrans"/>
 				<attribute name="Implementation-Version" value="${version}"/>
 				<attribute name="Implementation-Vendor" value="Christophe Cerisara"/>

@@ -1,4 +1,4 @@
-package fr.loria.synalp.jtrans.viterbi;
+package fr.loria.synalp.jtrans.graph;
 
 import edu.cmu.sphinx.linguist.acoustic.*;
 import fr.loria.synalp.jtrans.speechreco.s4.HMMModels;

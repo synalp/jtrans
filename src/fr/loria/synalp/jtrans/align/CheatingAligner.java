@@ -1,8 +1,7 @@
-package fr.loria.synalp.jtrans.facade;
+package fr.loria.synalp.jtrans.align;
 
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
-import fr.loria.synalp.jtrans.viterbi.Alignment;
-import fr.loria.synalp.jtrans.viterbi.StateGraph;
+import fr.loria.synalp.jtrans.graph.StateGraph;
 
 import java.io.File;
 import java.io.IOException;

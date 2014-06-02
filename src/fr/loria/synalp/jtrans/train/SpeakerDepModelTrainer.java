@@ -1,9 +1,11 @@
-package fr.loria.synalp.jtrans.viterbi;
+package fr.loria.synalp.jtrans.train;
 
-import fr.loria.synalp.jtrans.elements.Word;
-import fr.loria.synalp.jtrans.facade.BinarySegmentation;
+import fr.loria.synalp.jtrans.project.Word;
+import fr.loria.synalp.jtrans.utils.BinarySegmentation;
 import fr.loria.synalp.jtrans.utils.BufferUtils;
-import static fr.loria.synalp.jtrans.facade.FastLinearAligner.fillInterpolate;
+import fr.loria.synalp.jtrans.align.Alignment;
+
+import static fr.loria.synalp.jtrans.align.FastLinearAligner.fillInterpolate;
 
 import java.util.ArrayList;
 import java.util.List;

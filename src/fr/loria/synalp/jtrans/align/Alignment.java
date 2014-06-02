@@ -1,16 +1,17 @@
-package fr.loria.synalp.jtrans.viterbi;
+package fr.loria.synalp.jtrans.align;
 
 import edu.cmu.sphinx.linguist.acoustic.HMMState;
-import fr.loria.synalp.jtrans.elements.Word;
+import fr.loria.synalp.jtrans.project.Word;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
 /**
  * Timeline of HMM states.
  */
-public class Alignment {
+public class Alignment implements Iterable<Alignment.Segment> {
 
 	public static class Segment {
 		int length;
@@ -358,6 +359,12 @@ public class Alignment {
 		}
 
 		modifyTransition(lhsSeg, newLength);
+	}
+
+
+	@Override
+	public Iterator<Segment> iterator() {
+		return segments.iterator();
 	}
 
 }

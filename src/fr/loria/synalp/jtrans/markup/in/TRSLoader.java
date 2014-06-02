@@ -1,6 +1,6 @@
 package fr.loria.synalp.jtrans.markup.in;
 
-import fr.loria.synalp.jtrans.elements.Comment;
+import fr.loria.synalp.jtrans.project.Comment;
 import fr.loria.synalp.jtrans.project.Anchor;
 import fr.loria.synalp.jtrans.project.TurnProject;
 import org.w3c.dom.*;
@@ -148,7 +148,7 @@ public class TRSLoader implements MarkupLoader {
 				}
 
 				else {
-					fr.loria.synalp.jtrans.elements.Element el = transformNode(child);
+					fr.loria.synalp.jtrans.project.Element el = transformNode(child);
 					if (null != el) {
 						pTurn.add(spkID, el);
 					}
@@ -165,7 +165,7 @@ public class TRSLoader implements MarkupLoader {
 	}
 
 
-	public static fr.loria.synalp.jtrans.elements.Element transformNode(Node n) {
+	public static fr.loria.synalp.jtrans.project.Element transformNode(Node n) {
 		String name = n.getNodeName();
 
 		switch (name) {

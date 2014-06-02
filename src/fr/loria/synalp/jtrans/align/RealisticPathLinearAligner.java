@@ -1,8 +1,8 @@
-package fr.loria.synalp.jtrans.facade;
+package fr.loria.synalp.jtrans.align;
 
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
-import fr.loria.synalp.jtrans.viterbi.Alignment;
-import static fr.loria.synalp.jtrans.facade.FastLinearAligner.interpolatedLengths;
+
+import static fr.loria.synalp.jtrans.align.FastLinearAligner.interpolatedLengths;
 
 import java.io.File;
 import java.io.IOException;

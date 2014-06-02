@@ -2,7 +2,7 @@ package fr.loria.synalp.jtrans.markup.jtr;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import fr.loria.synalp.jtrans.elements.Element;
+import fr.loria.synalp.jtrans.project.Element;
 import fr.loria.synalp.jtrans.project.Project;
 
 import java.io.File;

@@ -1,5 +1,10 @@
-package fr.loria.synalp.jtrans.facade;
+package fr.loria.synalp.jtrans;
 
+import fr.loria.synalp.jtrans.align.AutoAligner;
+import fr.loria.synalp.jtrans.align.FastLinearAligner;
+import fr.loria.synalp.jtrans.align.RealisticPathLinearAligner;
+import fr.loria.synalp.jtrans.align.ViterbiAligner;
+import fr.loria.synalp.jtrans.utils.Cache;
 import fr.loria.synalp.jtrans.gui.JTransGUI;
 import fr.loria.synalp.jtrans.markup.in.*;
 import fr.loria.synalp.jtrans.markup.out.MarkupSaver;
@@ -7,8 +12,8 @@ import fr.loria.synalp.jtrans.markup.out.MarkupSaverPool;
 import fr.loria.synalp.jtrans.project.Project;
 import fr.loria.synalp.jtrans.project.TurnProject;
 import fr.loria.synalp.jtrans.utils.*;
-import fr.loria.synalp.jtrans.viterbi.Alignment;
-import fr.loria.synalp.jtrans.viterbi.StateGraph;
+import fr.loria.synalp.jtrans.align.Alignment;
+import fr.loria.synalp.jtrans.graph.StateGraph;
 import joptsimple.*;
 
 import javax.sound.sampled.AudioFileFormat;
@@ -18,7 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.LogManager;
 
-public class JTransCLI {
+public class JTrans {
 
 	public static String logID = "_" + System.currentTimeMillis();
 	public MarkupLoader loader;
@@ -75,7 +80,7 @@ public class JTransCLI {
 	}
 
 
-	public JTransCLI(String[] args) throws ReflectiveOperationException {
+	public JTrans(String[] args) throws ReflectiveOperationException {
 		OptionParser parser = new OptionParser() {
 			{
 				accepts("h", "help screen").forHelp();
@@ -295,7 +300,7 @@ public class JTransCLI {
 
 	public static void loadLoggingProperties() throws IOException {
 		LogManager.getLogManager().readConfiguration(
-				JTransCLI.class.getResourceAsStream("/logging.properties"));
+				JTrans.class.getResourceAsStream("/logging.properties"));
 	}
 
 
@@ -398,12 +403,12 @@ public class JTransCLI {
 		ProgressDisplay progress = null;
 		final Project project;
 		final Project reference;
-		final JTransCLI cli;
+		final JTrans cli;
 		final Alignment referenceAlignment;
 
 		loadLoggingProperties();
 
-		cli = new JTransCLI(args);
+		cli = new JTrans(args);
 
 		if (ResourceInstaller.shouldReinstallResources()) {
 			ResourceInstaller.installResources();
@@ -441,7 +446,7 @@ public class JTransCLI {
 					ViterbiAligner.class, progress, true); // KLUDGE!!! true is needed for kludgeReferenceScorer
 			((TurnProject)project).align(referenceAligner, false);
 			referenceAlignment = referenceAligner.getConcatenatedTimeline();
-			referenceAligner.trainer.seal();
+			referenceAligner.getTrainer().seal();
 			project.clearAlignment();
 			((TurnProject) project).clearAnchorTimes();
 		} else {
@@ -485,9 +490,9 @@ public class JTransCLI {
 			}
 			System.out.println("Alignment done.");
 			if (cli.computeLikelihoods) {
-				aligner.trainer.seal();
+				aligner.getTrainer().seal();
 				System.out.println("Overall likelihood: " +
-						aligner.trainer.getCumulativeLikelihood());
+						aligner.getTrainer().getCumulativeLikelihood());
 			}
 		}
 

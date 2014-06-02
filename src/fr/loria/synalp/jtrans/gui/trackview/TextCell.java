@@ -1,6 +1,6 @@
 package fr.loria.synalp.jtrans.gui.trackview;
 
-import fr.loria.synalp.jtrans.elements.Element;
+import fr.loria.synalp.jtrans.project.Element;
 
 import java.util.List;
 
