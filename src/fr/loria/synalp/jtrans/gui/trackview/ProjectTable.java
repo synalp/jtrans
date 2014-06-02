@@ -206,12 +206,12 @@ public class ProjectTable
 				Component cell = prepareRenderer(tableCol.getCellRenderer(),
 						row, i);
 
-				cell.setSize(tableCol.getWidth() - intercellWidth,
-						MIN_ROW_HEIGHT);
+				int w = tableCol.getWidth() - intercellWidth;
+				int prefH = cell.getPreferredSize().height;
+				cell.setSize(w, prefH);
+				prefH = cell.getPreferredSize().height;
 
-				int h = intercellHeight +
-						Math.max(MIN_ROW_HEIGHT, cell.getPreferredSize().height);
-
+				int h = intercellHeight + Math.max(MIN_ROW_HEIGHT, prefH);
 				if (h > newRowHeight) {
 					newRowHeight = h;
 				}
