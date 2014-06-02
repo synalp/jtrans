@@ -157,26 +157,24 @@ public class ModelTrainer {
 
 
 	/**
-	 * Trains models for all the states in an aligned word.
+	 * Trains models for all non-silent states in an aligned word.
 	 */
 	public void learn(Word word, Alignment alignment) {
 		if (sealed) {
 			throw new IllegalStateException("can't learn if sealed");
 		}
 
-		int sf = word.getFirstNonSilenceFrame();
-		int ef = word.getLastNonSilenceFrame();
-		if (sf < 0 || ef < 0) {
-			System.out.println("NULL SEG!!!");
+		Word.Segment seg = word.getSegment();
+		if (null == seg) {
+			System.out.println("Unaligned word: " + word);
 			return;
 		}
 
-		for (int f = sf; f <= ef; f++) {
-			Object state = alignment.getStateAtFrame(f);
-			assert !isSilenceState((HMMState)state);
-			assert null == compoundTimeline[f]
-					: "frame " + f + " already processed";
-			learnStateAtFrame(state, f);
+		for (int f = seg.getStartFrame(); f <= seg.getEndFrame(); f++) {
+			HMMState state = alignment.getStateAtFrame(f);
+			if (!isSilenceState(state)) {
+				learnStateAtFrame(state, f);
+			}
 		}
 	}
 
@@ -187,6 +185,13 @@ public class ModelTrainer {
 	 * @param f frame number
 	 */
 	public void learnStateAtFrame(Object state, int f) {
+		if (sealed) {
+			throw new IllegalStateException("can't learn if sealed");
+		}
+
+		assert null == compoundTimeline[f]
+				: "frame " + f + " already processed";
+
 		getModel(state).learnFrame(data[f]);
 		compoundTimeline[f] = state;
 	}
