@@ -86,7 +86,7 @@ public class TRSLoader implements MarkupLoader {
 			// Map IDs of speakers active in this turn to tracks
 			String speakerAttr = turn.getAttribute("speaker");
 			if (speakerAttr.isEmpty()) {
-				System.out.println("TRS WARNING: skipping turn without any speakers");
+				System.err.println("TRS WARNING: skipping turn without any speakers");
 				continue;
 			}
 
@@ -177,7 +177,7 @@ public class TRSLoader implements MarkupLoader {
 						((Element) n).getAttribute("desc"),
 						Token.Type.NOISE);
 			default:
-				System.out.println("TRS WARNING: Ignoring inknown tag " + name);
+				System.err.println("TRS WARNING: Ignoring inknown tag " + name);
 				break;
 		}
 
