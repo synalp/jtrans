@@ -76,9 +76,16 @@ public class TCOFWhoifier extends TRSPreprocessor {
 			// Sync tags and whitespace #text are not significant by themselves.
 			boolean emptyTurn = reportOverlap == null && reportScrapped == null;
 
+			if (!turn.hasAttribute("speaker")) {
+				System.err.println("TRS WARNING: skipping Turn without speaker attribute!");
+				continue;
+			}
+
 			String singleSpeaker = turn.getAttribute("speaker");
-			if (singleSpeaker.isEmpty() || 1 != singleSpeaker.split(" ").length)
-				throw new ParsingException("speaker count != 1. If >0, already whoified");
+			if (singleSpeaker.isEmpty() || 1 != singleSpeaker.split(" ").length) {
+				throw new ParsingException("speaker count != 1. If >0, already whoified. "
+						+ " (\"" + singleSpeaker + "\")");
+			}
 
 			assert reportOverlap == null || reportScrapped == null;
 
