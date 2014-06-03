@@ -49,9 +49,17 @@ public class TrackProject extends Project {
 		}
 	}
 
-	public void addTrack(String name, List<Phrase> t) {
+	public void addTrack(String name, List<Phrase> newTrack) {
+		final int speakerID = tracks.size();
+
 		speakerNames.add(name);
-		tracks.add(t);
+		tracks.add(newTrack);
 		assert tracks.size() == speakerNames.size();
+
+		for (Phrase phrase: newTrack) {
+			for (Token token: phrase) {
+				token.setSpeaker(speakerID);
+			}
+		}
 	}
 }

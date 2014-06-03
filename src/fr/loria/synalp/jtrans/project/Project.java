@@ -119,12 +119,10 @@ public abstract class Project {
 			aa.setComputeLikelihoods(true);
 			aa.initTrainers(speakerCount());
 
-			// Set word speakers. This is necessary for scoring a set of words
+			// A valid speaker ID on tokens is necessary for scoring a set of words
 			// belonging to various speakers with speaker-dependent Gaussians.
-			for (int i = 0; i < speakerCount(); i++) {
-				for (Token token: getTokens(i)) {
-					token.setSpeaker(i);
-				}
+			for (Token token: getAllTokens()) {
+				assert token.getSpeaker() >= 0;
 			}
 		}
 

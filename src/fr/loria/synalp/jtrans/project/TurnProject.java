@@ -71,11 +71,15 @@ public class TurnProject extends Project {
 			}
 		}
 
-		public void add(int speaker, Token e) {
-			spkTokens.get(speaker).add(e);
+		public void add(int speaker, Token token) {
+			token.setSpeaker(speaker);
+			spkTokens.get(speaker).add(token);
 		}
 
 		public void addAll(int speaker, List<Token> list) {
+			for (Token token: list) {
+				token.setSpeaker(speaker);
+			}
 			spkTokens.get(speaker).addAll(list);
 		}
 
