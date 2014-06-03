@@ -337,10 +337,11 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	}
 
 	public void newplaystarted() {
+		// Copy all alignable words - TODO: this isn't necessary anymore
 		final List<List<Token>> words = new ArrayList<>();
 		for (int i = 0; i < project.speakerCount(); i++) {
 			words.add(new ArrayList<Token>());
-			for (Token w: project.getAlignableWords(i)) {
+			for (Token w: project.getTokens(i)) {
 				if (w.isAligned()) {
 					words.get(i).add(w);
 				}
@@ -684,12 +685,12 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 
 			for (;;) {
 				for (; cSpk < project.speakerCount(); cSpk++) {
-					List<Token> words = project.getAlignableWords(cSpk);
+					List<Token> words = project.getTokens(cSpk);
 					for (; cWord >= 0 && cWord < words.size(); cWord += delta) {
-						Token w = words.get(cWord);
-						if (matches(w)) {
+						Token t = words.get(cWord);
+						if (t.getType() == Token.Type.WORD && matches(t)) {
 							found = true;
-							table.highlightWord(cSpk, w);
+							table.highlightWord(cSpk, t);
 							return;
 						}
 					}
@@ -727,7 +728,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 				cWord = 0;
 			} else {
 				// search from end
-				cWord = project.getAlignableWords(cSpk).size()-1;
+				cWord = project.getTokens(cSpk).size()-1;
 			}
 		}
 

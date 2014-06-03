@@ -48,7 +48,7 @@ public class SpectroControl extends JPanel {
 	}
 
 	public void refreshWords() {
-		words.setWords(gui.project.getAlignableWords(spkID));
+		words.setTokens(gui.project.getTokens(spkID));
 		words.setFirstFrame(TimeConverter.second2frame(startSeconds));
 		words.repaint();
 	}

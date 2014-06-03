@@ -43,28 +43,26 @@ public abstract class Project {
 		return speakerNames.get(speaker);
 	}
 
-	public abstract List<Token> getAlignableWords(int speaker);
+	public abstract List<Token> getTokens(int speaker);
 
 	public abstract Iterator<Phrase> phraseIterator(int speaker);
 
-
-	public Set<Token> getAllAlignableWords() {
+	public Set<Token> getAllTokens() {
 		Set<Token> set = new HashSet<>();
 
 		for (int i = 0; i < speakerCount(); i++) {
-			set.addAll(getAlignableWords(i));
+			set.addAll(getTokens(i));
 		}
 
 		return set;
 	}
 
-
 	public void anonymizeWord(String w) {
 		w = w.toLowerCase();
 
-		for (Token word: getAllAlignableWords()) {
-			if (word.toString().toLowerCase().equals(w)) {
-				word.setAnonymize(true);
+		for (Token token: getAllTokens()) {
+			if (token.toString().toLowerCase().equals(w)) {
+				token.setAnonymize(true);
 			}
 		}
 	}
@@ -77,16 +75,16 @@ public abstract class Project {
 
 		BinarySegmentation sequence = new BinarySegmentation();
 
-		for (Token word: getAllAlignableWords()) {
-			if (!word.shouldBeAnonymized()) {
+		for (Token token: getAllTokens()) {
+			if (!token.shouldBeAnonymized()) {
 				continue;
 			}
 
-			if (!word.isAligned()) {
+			if (!token.isAligned()) {
 				System.err.println("WARNING: Can't anonymize unaligned word!!!");
 			}
 
-			Token.Segment seg = word.getSegment();
+			Token.Segment seg = token.getSegment();
 			sequence.union(seg.getStartSecond(), seg.getLengthSeconds());
 		}
 
@@ -97,8 +95,8 @@ public abstract class Project {
 
 
 	public void clearAlignment() {
-		for (Token w: getAllAlignableWords()) {
-			w.clearAlignment();
+		for (Token token: getAllTokens()) {
+			token.clearAlignment();
 		}
 	}
 
@@ -124,8 +122,8 @@ public abstract class Project {
 			// Set word speakers. This is necessary for scoring a set of words
 			// belonging to various speakers with speaker-dependent Gaussians.
 			for (int i = 0; i < speakerCount(); i++) {
-				for (Token w: getAlignableWords(i)) {
-					w.setSpeaker(i);
+				for (Token token: getTokens(i)) {
+					token.setSpeaker(i);
 				}
 			}
 		}

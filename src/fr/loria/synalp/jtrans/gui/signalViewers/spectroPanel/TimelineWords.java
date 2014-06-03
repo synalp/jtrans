@@ -18,7 +18,7 @@ public class TimelineWords extends JPanel {
 		metrics = getFontMetrics(getFont());
 	}
 
-	public void setWords(List<Token> words) {
+	public void setTokens(List<Token> words) {
 		this.words = words;
 	}
 

@@ -165,7 +165,10 @@ public class ModelTrainer {
 			throw new IllegalStateException("can't learn if sealed");
 		}
 
-		assert word.isAlignable();
+		if (!word.isAlignable()) {
+			return;
+		}
+
 		Token.Segment seg = word.getSegment();
 		if (null == seg) {
 			System.out.println("Unaligned word: " + word);

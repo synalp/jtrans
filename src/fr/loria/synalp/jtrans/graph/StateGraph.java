@@ -88,15 +88,19 @@ public class StateGraph {
 	/** Insertion point for new nodes in the nodeStates array. */
 	private int insertionPoint;
 
-	/** Alignable tokens at the basis of this grammar */
+	/** Tokens at the basis of this grammar */
 	protected List<Token> words;
 
 	/**
 	 * Indices of the initial node of each word (i.e. that points to the first
 	 * HMM state of the first phone of the word).
+	 * <p/>
 	 * All potential pronunciations for a given word are inserted contiguously
 	 * in the nodes array. The order in which the nodes are inserted
 	 * reflects the order of the words.
+	 * <p/>
+	 * Tokens that do belong to any nodes (e.g. words without a valid rule,
+	 * comment tokens) are assigned an index of -1 in this array.
 	 */
 	protected int[] wordBoundaries;
 
@@ -139,23 +143,31 @@ public class StateGraph {
 
 
 	/**
-	 * Creates grammar rules from a list of alignable tokens using the standard
+	 * Creates grammar rules from a list of tokens using the standard
 	 * grammatizer.
-	 * @param words list of alignable tokens
+	 * <p/>
+	 * Non-alignable tokens, and tokens for which a phonetization
+	 * cannot be found, will be ignored (they will yield a null rule).
+	 * @param tokens list of tokens
 	 * @return a 2D array of rule tokens (1st dimension corresponds to word
 	 * indices). If a word can't be processed, its rule is set to null.
 	 */
-	public static String[][] getRules(List<Token> words) {
-		String[][] rules = new String[words.size()][];
+	public static String[][] getRules(List<Token> tokens) {
+		String[][] rules = new String[tokens.size()][];
 		Grammatiseur gram = Grammatiseur.getGrammatiseur();
 
-		for (int i = 0; i < words.size(); i++) {
-			assert words.get(i).isAlignable(): "word must be alignable";
+		for (int i = 0; i < tokens.size(); i++) {
+			Token token = tokens.get(i);
 
-			String rule = gram.getGrammar(words.get(i).toString());
+			if (!token.isAlignable()) {
+				assert null == rules[i];
+				continue;
+			}
+
+			String rule = gram.getGrammar(token.toString());
 
 			if (rule == null || rule.isEmpty()) {
-				rules[i] = null;
+				assert null == rules[i];
 				continue;
 			}
 
@@ -512,9 +524,9 @@ public class StateGraph {
 
 
 	/**
-	 * Constructs a state graph from a list of alignable tokens and the rules
+	 * Constructs a state graph from a list of tokens and the rules
 	 * associated with each of them.
-	 * @param words list of alignable tokens
+	 * @param words list of tokens
 	 * @param rules a 2D array of rule tokens. The first dimension maps to the
 	 *              index of the word corresponding to the rule.
 	 * @param interWordSilences insert optional silences between each word
@@ -554,7 +566,10 @@ public class StateGraph {
 
 		for (int i = 0; i < nWords; i++) {
 			if (null == rules[i]) {
-				System.err.println("Skipping word without a rule: " + words.get(i));
+				if (words.get(i).isAlignable()) {
+					System.err.println("Skipping alignable word " +
+							"without a rule: " + words.get(i));
+				}
 				wordBoundaries[i] = -1;
 				continue;
 			}
@@ -594,11 +609,11 @@ public class StateGraph {
 
 
 	/**
-	 * Constructs a state graph from a list of alignable tokens.
+	 * Constructs a state graph from a list of tokens.
 	 * Rules will be looked up in the standard grammar.
 	 */
-	public StateGraph(List<Token> words) {
-		this(getRules(words), words, true);
+	public StateGraph(List<Token> tokens) {
+		this(getRules(tokens), tokens, true);
 	}
 
 

@@ -1,7 +1,6 @@
 package fr.loria.synalp.jtrans.project;
 
 import java.util.AbstractList;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -15,30 +14,21 @@ public class Phrase
 	private final Anchor initialAnchor;
 	private final Anchor finalAnchor;
 
+
 	public Phrase(Anchor initialAnchor, Anchor finalAnchor, List<Token> tokens) {
 		this.tokens = tokens;
 		this.initialAnchor = initialAnchor;
 		this.finalAnchor = finalAnchor;
 	}
 
+
 	public Anchor getInitialAnchor() {
 		return initialAnchor;
 	}
 
+
 	public Anchor getFinalAnchor() {
 		return finalAnchor;
-	}
-
-	public List<Token> getAlignableWords() {
-		List<Token> words = new ArrayList<>();
-
-		for (Token token: tokens) {
-			if (token.isAlignable()) {
-				words.add(token);
-			}
-		}
-
-		return words;
 	}
 
 

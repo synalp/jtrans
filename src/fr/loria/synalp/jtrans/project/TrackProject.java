@@ -11,10 +11,10 @@ public class TrackProject extends Project {
 	public List<List<Phrase>> tracks = new ArrayList<>();
 
 	@Override
-	public List<Token> getAlignableWords(int speaker) {
+	public List<Token> getTokens(int speaker) {
 		ArrayList<Token> res = new ArrayList<>();
 		for (Phrase phrase: tracks.get(speaker)) {
-			res.addAll(phrase.getAlignableWords());
+			res.addAll(phrase);
 		}
 		return res;
 	}
@@ -40,7 +40,7 @@ public class TrackProject extends Project {
 					align(aligner,
 							phrase.getInitialAnchor(),
 							phrase.getFinalAnchor(),
-							phrase.getAlignableWords(),
+							phrase,
 							false); // never concatenate.
 					// If we did concatenate, we'd have to start over a new
 					// concatenated timeline on the next for iteration anyway.
