@@ -385,8 +385,9 @@ public class Menus {
 						+ inferred + " anchor(s).";
 
 				if (inferred == 0) {
-					message = "Couldn't infer timing information.\n\n" +
-							"Please align the file once inferring anchor times.";
+					message = "Couldn't infer timing information.\n" +
+							"Please align the file once before " +
+							"inferring anchor times.";
 				}
 
 				JOptionPane.showMessageDialog(
