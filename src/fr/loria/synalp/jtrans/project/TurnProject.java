@@ -325,8 +325,23 @@ public class TurnProject extends Project {
 	}
 
 
+	/**
+	 * Clears all anchors except for the first and the last.
+	 * <p/>
+	 * The first and the last anchors are kept to ease the anchorless alignment
+	 * process with partial transcriptions that do not cover the entire audio
+	 * source.
+	 */
 	public void clearAnchorTimes() {
-		for (Turn turn: turns) {
+		if (turns.size() <= 1) {
+			return;
+		}
+
+		turns.get(0).end = null;
+		turns.get(turns.size()-1).start = null;
+
+		for (int i = 1; i < turns.size()-1; i++) {
+			Turn turn = turns.get(i);
 			turn.start = null;
 			turn.end = null;
 		}
