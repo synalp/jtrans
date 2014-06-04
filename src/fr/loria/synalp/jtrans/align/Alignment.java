@@ -82,53 +82,6 @@ public class Alignment implements Iterable<Alignment.Segment> {
 
 
 	/**
-	 * Pads the end of this alignment ith a padding segment so that
-	 * {@code length + offset} reaches {@code tillFrame}.
-	 * @throws IllegalStateException
-	 * @return padding segment length
-	 */
-	public int pad(int tillFrame) {
-		int curLastFrame = frameOffset + frames;
-
-		if (tillFrame == curLastFrame) {
-			return 0;
-		}
-
-		if (tillFrame < curLastFrame) {
-			throw new IllegalStateException(String.format(
-					"current frame position (%d) " +
-					"exceeds requested padding frame number (%d)",
-					curLastFrame, tillFrame));
-		}
-
-		int delta = tillFrame - curLastFrame;
-		segments.add(new Segment(null, null, delta));
-		frames += delta;
-
-		assert verify();
-
-		return delta;
-	}
-
-
-	/**
-	 * Appends another timeline to the end of this timeline.
-	 * <p/>Use {@link #pad} before invoking this method for the concatenation
-	 * to be chronologically correct.
-	 */
-	public void concatenate(Alignment other) {
-		for (Segment seg: other.segments) {
-			segments.add(new Segment(seg));
-		}
-
-		frames += other.frames;
-		uniqueWords.addAll(other.uniqueWords);
-
-		assert verify();
-	}
-
-
-	/**
 	 * Extends this timeline by a single frame at the end.
 	 * <p/>Extends the last segment by 1 frame if the same state/word combo is
 	 * prolonged, otherwise creates a new segment.
@@ -272,6 +225,13 @@ public class Alignment implements Iterable<Alignment.Segment> {
 			}
 
 			segStart += seg.length;
+		}
+	}
+
+
+	public void clearTokenAlignments() {
+		for (Token token: uniqueWords) {
+			token.clearAlignment();
 		}
 	}
 

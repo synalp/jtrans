@@ -9,7 +9,7 @@ import fr.loria.synalp.jtrans.markup.out.MarkupSaverPool;
 import fr.loria.synalp.jtrans.project.Project;
 import fr.loria.synalp.jtrans.project.TurnProject;
 import fr.loria.synalp.jtrans.utils.*;
-import fr.loria.synalp.jtrans.graph.StateGraph;
+
 import joptsimple.*;
 
 import javax.sound.sampled.AudioFileFormat;
@@ -28,6 +28,7 @@ public class JTrans {
 	public File outputDir;
 	public List<String> outputFormats;
 	public List<String> anonymizedWords;
+	public boolean forceReferencePath = false;
 	public boolean clearTimes = false;
 	public boolean align = true;
 	public boolean runAnchorDiffTest = false;
@@ -92,7 +93,7 @@ public class JTrans {
 				acceptsAll(
 						Arrays.asList("A", "detect-audio"),
 						"Automatically detect audio file in the same " +
-						"directory as the markup file.");
+								"directory as the markup file.");
 
 				accepts("outdir", "output directory")
 						.withRequiredArg().ofType(File.class)
@@ -119,7 +120,7 @@ public class JTrans {
 				acceptsAll(
 						Arrays.asList("C", "clear-times"),
 						"Clear manual anchor times before aligning. " +
-						"Will align with linear bridge.");
+						"Only for turn-based projects!");
 
 				acceptsAll(
 						Arrays.asList("N", "no-align"),
@@ -137,7 +138,7 @@ public class JTrans {
 
 				accepts("volatile-cache",
 						"Mark cache files for deletion once they have been " +
-						"used. Saves disk space when aligning large batches.");
+								"used. Saves disk space when aligning large batches.");
 
 				acceptsAll(
 						Arrays.asList("L", "likelihood"),
@@ -153,20 +154,20 @@ public class JTrans {
 						"and ignore overlaps. Don't use unless you know what " +
 						"you are doing!");
 
-				acceptsAll(
-						Arrays.asList("fastlin"),
+				accepts("linear",
 						"Use dumb linear alignment instead of Viterbi. " +
+						"It is recommended to use a reference path. (-r) " +
 						"Don't use unless you know what you are doing!");
-
-				acceptsAll(
-						Arrays.asList("reallin"),
-						"Use \"realistic\" linear alignment (walking same path " +
-						"as Viterbi), instead of Viterbi. Don't use unless " +
-						"you know what you are doing!");
 
 				accepts("z",
 						"Anonymize word")
 						.withRequiredArg().describedAs("word");
+
+				acceptsAll(
+						Arrays.asList("r", "refpath"),
+						"Force reference state path yielded by Viterbi with " +
+						"anchors instead of letting the aligner work out " +
+						"its own path in the graph.");
 			}
 		};
 
@@ -205,6 +206,10 @@ public class JTrans {
 			computeLikelihoods = true;
 		}
 
+		if (optset.has("r")) {
+			forceReferencePath = true;
+		}
+
 		if (optset.has("metropolis-hastings")) {
 			refine = true;
 		}
@@ -214,17 +219,14 @@ public class JTrans {
 			System.out.println("Will ignore overlaps.");
 		}
 
-		if (optset.has("fastlin") && optset.has("reallin")) {
-			System.err.println("Can't use more than one aligner at once!");
-			System.exit(1);
-		} else if (optset.has("fastlin")) {
-			Project.ALIGNER = FastLinearAligner.class;
-			System.out.println("Will use fast linear alignment. " +
+		if (optset.has("linear")) {
+			Project.ALIGNER = LinearAligner.class;
+			System.out.println("Will use linear alignment. " +
 					"WARNING: massive loss of accuracy!");
-		} else if (optset.has("reallin")) {
-			Project.ALIGNER = RealisticPathLinearAligner.class;
-			System.out.printf("Will use \"realistic\" linear alignment. " +
-					"WARNING: massive loss of accuracy!");
+			if (!optset.has("r")) {
+				System.out.println("WARNING: it is stronly recommended to use " +
+						"a reference aligner (-r) with the linear alignment.");
+			}
 		}
 
 		inputFile = (File)optset.valueOf("f");
@@ -398,9 +400,9 @@ public class JTrans {
 	public static void main(String args[]) throws Exception {
 		ProgressDisplay progress = null;
 		final Project project;
-		final Project reference;
+		final Project referenceTiming;
 		final JTrans cli;
-		final Alignment referenceAlignment;
+		final Aligner referenceAligner;
 
 		loadLoggingProperties();
 
@@ -433,26 +435,22 @@ public class JTrans {
 			System.out.println("Audio loaded.");
 		}
 
-		if (cli.clearTimes) {
-			/* TODO: forced state graph: should be made accessible through a
-			command line switch and generalized to linear alignments
-			(eliminating the need for RealisticPathLinearAligner) */
-			System.out.println("Computing reference path...");
-			Aligner referenceAligner = project.getAligner(
-					ViterbiAligner.class, progress, true); // KLUDGE!!! true is needed for kludgeReferenceScorer
-			((TurnProject)project).align(referenceAligner, false);
-			referenceAlignment = referenceAligner.getConcatenatedTimeline();
-			referenceAligner.getTrainer().seal();
-			project.clearAlignment();
-			((TurnProject) project).clearAnchorTimes();
+		if (cli.forceReferencePath) {
+			referenceAligner = project.getAligner(
+					ViterbiAligner.class, progress, false);
 		} else {
-			referenceAlignment = null;
+			referenceAligner = null;
+		}
+
+		if (cli.clearTimes) {
+			assert project instanceof TurnProject;
+			((TurnProject) project).clearAnchorTimes();
 		}
 
 		if (cli.runAnchorDiffTest) {
-			reference = cli.loader.parse(cli.inputFile);
+			referenceTiming = cli.loader.parse(cli.inputFile);
 		} else {
-			reference = null;
+			referenceTiming = null;
 		}
 
 		Aligner aligner = null;
@@ -463,27 +461,17 @@ public class JTrans {
 
 		if (cli.runAnchorDiffTest && cli.refine) {
 			assert aligner != null;
-			assert reference != null;
+			assert referenceTiming != null;
 			aligner.setRefinementIterationHook(
-					cli.new AnchorDiffRIH((TurnProject)project, (TurnProject)reference));
+					cli.new AnchorDiffRIH((TurnProject)project, (TurnProject)referenceTiming));
 		}
 
 		if (cli.align) {
 			assert aligner != null;
 
 			System.out.println("Aligning...");
-			if (null != referenceAlignment) {
-				System.out.println("WARNING: Aligning with forced reference path!");
-				StateGraph path = new StateGraph(referenceAlignment);
-				assert path.isLinear();
-				aligner.align(
-						path,
-						0,
-						aligner.getFrameCount()-1,
-						false); // not using the concatenated path here
-			} else {
-				project.align(aligner);
-			}
+			project.align(aligner, referenceAligner);
+
 			System.out.println("Alignment done.");
 			if (cli.computeLikelihoods) {
 				aligner.getTrainer().seal();
@@ -493,9 +481,9 @@ public class JTrans {
 		}
 
 		if (cli.runAnchorDiffTest) {
-			assert reference != null;
+			assert referenceTiming != null;
 			((TurnProject)project).inferAnchors();
-			List<Integer> diffs = reference.anchorFrameDiffs(project);
+			List<Integer> diffs = referenceTiming.anchorFrameDiffs(project);
 			printAnchorDiffStats(diffs);
 		}
 

@@ -5,12 +5,12 @@ import static org.junit.Assert.*;
 
 import java.util.Arrays;
 
-public class FastLinearAlignerTest {
+public class LinearAlignerTest {
 
 	@Test
 	public void testFillInterpolate1() {
 		int[] buf = new int[9];
-		FastLinearAligner.fillInterpolate(5, buf, 0, buf.length);
+		LinearAligner.fillInterpolate(5, buf, 0, buf.length);
 		assertArrayEquals(new int[]{0, 0, 1, 1, 2, 2, 3, 3, 4}, buf);
 	}
 
@@ -18,7 +18,7 @@ public class FastLinearAlignerTest {
 	@Test
 	public void testFillInterpolate2() {
 		int[] buf = new int[9];
-		FastLinearAligner.fillInterpolate(9, buf, 0, buf.length);
+		LinearAligner.fillInterpolate(9, buf, 0, buf.length);
 		assertArrayEquals(new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8}, buf);
 	}
 
@@ -26,7 +26,7 @@ public class FastLinearAlignerTest {
 	@Test
 	public void testFillInterpolate3() {
 		int[] buf = new int[12];
-		FastLinearAligner.fillInterpolate(4, buf, 0, buf.length);
+		LinearAligner.fillInterpolate(4, buf, 0, buf.length);
 		assertArrayEquals(new int[]{0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3}, buf);
 	}
 
@@ -35,7 +35,7 @@ public class FastLinearAlignerTest {
 	public void testOffsetAndLength() {
 		int[] buf = new int[12];
 		Arrays.fill(buf, -1);
-		FastLinearAligner.fillInterpolate(4, buf, 4, 4);
+		LinearAligner.fillInterpolate(4, buf, 4, 4);
 		assertArrayEquals(new int[]{
 				-1, -1, -1, -1,
 				0, 1, 2, 3,

@@ -139,71 +139,14 @@ public abstract class Project {
 	}
 
 
-	protected static void align(
-			Aligner aligner,
-			Anchor start,
-			Anchor end,
-			List<Token> words,
-			boolean concatenate)
-			throws IOException, InterruptedException
-	{
-		if (words.isEmpty()) {
-			return;
-		}
-
-		int frameCount = aligner.getFrameCount();
-
-		int iFrame = start == null? 0: start.getFrame();
-		int fFrame = end   == null? frameCount: end.getFrame()-1;  // see explanation below.
-
-		/* Why did we subtract 1 frame from the final anchor's time?
-		Assume that we have 2 contiguous phrases. The same anchor
-		serves as the FINAL anchor in the first phrase, and as the INITIAL
-		anchor in the second phrase.
-		Conceptually, anchors are like points in time, but we work with frames.
-		So, anchors technically cover an entire frame. Thus, to avoid that two
-		contiguous phrases overlap on 1 frame (i.e. that of the anchor
-		they have in common), we subtract 1 frame from the final anchor. */
-
-		if (iFrame >= frameCount) {
-			throw new IllegalArgumentException(String.format(
-					"Initial frame (%d) beyond frame count (%d)! " +
-							"(in phrase: %s)",
-					iFrame, frameCount, words));
-		}
-
-		if (fFrame >= frameCount) {
-			System.err.println("WARNING: shaving frames off final anchor! " +
-					"fFrame = " + fFrame + ", frameCount = " + frameCount);
-			fFrame = frameCount - 1;
-		}
-
-		if (iFrame - fFrame > 1) {
-			// initial frame after final frame
-			throw new IllegalArgumentException(String.format(
-					"Initial frame (%d, %s) after final frame (%d, %s)! " +
-							"(in phrase: %s)",
-					iFrame, start, fFrame, end, words));
-		} else if (iFrame > fFrame) {
-			// iFrame may legally be ahead of fFrame by 1 at most if the anchors
-			// are too close together (because we have removed 1 frame from the
-			// final frame, see above)
-			System.err.println(String.format("WARNING: skipping anchors too " +
-							"close together: frame %d (initial) vs %d (final) " +
-							"(in phrase: %s)",
-					iFrame, fFrame, words));
-			return;
-		}
-
-		StateGraph graph = new StateGraph(words);
-		aligner.align(graph, iFrame, fFrame, concatenate);
-	}
-
-
 	/**
 	 * Aligns each speaker independently.
+	 * @param reference Use {@link StateGraph} yielded by this aligner as the
+	 *                  base graph for the actual alignment. If {@code null},
+	 *                  a full StateGraph containing all possible pronunciations
+	 *                  will be used.
 	 */
-	public abstract void align(Aligner aligner)
+	public abstract void align(Aligner aligner, Aligner reference)
 			throws IOException, InterruptedException;
 
 

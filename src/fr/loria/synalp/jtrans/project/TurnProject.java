@@ -201,7 +201,8 @@ public class TurnProject extends Project {
 	protected static void alignTurnChain(
 			Aligner aligner,
 			List<Turn> turns,
-			boolean overlaps)
+			boolean overlaps,
+			Aligner reference)
 			throws IOException, InterruptedException
 	{
 		// Big interleaved sequence
@@ -217,11 +218,11 @@ public class TurnProject extends Project {
 			}
 		}
 
-		align(aligner,
+		aligner.align(
 				turns.get(0).start,
 				turns.get(turns.size()-1).end,
 				words,
-				true); // priority, concatenate
+				reference);
 
 		if (overlaps) {
 			for (Turn turn: turns) {
@@ -235,21 +236,22 @@ public class TurnProject extends Project {
 					if (i == pSpk) {
 						continue;
 					}
-					align(aligner,
+					aligner.align(
 							new Anchor(minMax[0]),
 							new Anchor(minMax[1]),
 							turn.spkTokens.get(i),
-							false); // non-priority, don't concatenate
+							reference);
 				}
 			}
 		}
 	}
 
 
-	public void align(Aligner aligner)
+	@Override
+	public void align(Aligner aligner, Aligner reference)
 			throws IOException, InterruptedException
 	{
-		align(aligner, ALIGN_OVERLAPS);
+		align(aligner, ALIGN_OVERLAPS, reference);
 	}
 
 
@@ -263,7 +265,7 @@ public class TurnProject extends Project {
 	 *
 	 * @see TurnProject#alignTurnChain
 	 */
-	public void align(Aligner aligner, boolean overlaps)
+	public void align(Aligner aligner, boolean overlaps, Aligner reference)
 			throws IOException, InterruptedException
 	{
 		clearAlignment();
@@ -285,7 +287,9 @@ public class TurnProject extends Project {
 				if (null != turn.end) {
 					// Stop chaining
 					alignTurnChain(aligner,
-							turns.subList(chainStart, t + 1), overlaps);
+							turns.subList(chainStart, t + 1),
+							overlaps,
+							reference);
 					chainStart = -1;
 				}
 				// Otherwise, keep chaining
@@ -309,8 +313,10 @@ public class TurnProject extends Project {
 					if (!overlaps && i != pSpk) {
 						continue;
 					}
-					align(aligner, turn.start, turn.end, turn.spkTokens.get(i),
-							i == pSpk); // only concatenate if priority
+					aligner.align(
+							turn.start, turn.end,
+							turn.spkTokens.get(i),
+							reference);
 				}
 			}
 		}
@@ -320,7 +326,9 @@ public class TurnProject extends Project {
 			chainStart = turns.size()-1;
 		}
 		alignTurnChain(aligner,
-				turns.subList(chainStart, turns.size()), overlaps);
+				turns.subList(chainStart, turns.size()),
+				overlaps,
+				reference);
 		chainStart = -1;
 	}
 

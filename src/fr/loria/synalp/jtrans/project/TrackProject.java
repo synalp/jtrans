@@ -25,7 +25,7 @@ public class TrackProject extends Project {
 	}
 
 	@Override
-	public void align(Aligner aligner)
+	public void align(Aligner aligner, Aligner reference)
 			throws IOException, InterruptedException
 	{
 		clearAlignment();
@@ -37,13 +37,11 @@ public class TrackProject extends Project {
 				Phrase phrase = itr.next();
 
 				if (!phrase.isFullyAligned()) {
-					align(aligner,
+					aligner.align(
 							phrase.getInitialAnchor(),
 							phrase.getFinalAnchor(),
 							phrase,
-							false); // never concatenate.
-					// If we did concatenate, we'd have to start over a new
-					// concatenated timeline on the next for iteration anyway.
+							reference);
 				}
 			}
 		}

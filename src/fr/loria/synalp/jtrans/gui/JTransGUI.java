@@ -605,7 +605,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 				}
 
 				try {
-					project.align(aligner);
+					project.align(aligner, null);
 				} catch (Exception ex) {
 					errorMessage("An error occured during the alignment!", ex);
 				}

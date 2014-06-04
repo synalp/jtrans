@@ -9,19 +9,20 @@ import java.util.Arrays;
 
 /**
  * Aligns HMM states linearly, that is, every HMM state will last roughly the
- * same amount of time. All states in the graph will be used; does not attempt
- * to walk a realistic path in the graph.
- *
- * Very fast, but wildly inaccurate; for testing purposes only.
- *
- * @see RealisticPathLinearAligner
+ * same amount of time. Very fast, but wildly inaccurate; for testing purposes
+ * only.
+ * <p/>
+ * All states in the graph will be used; does not attempt to walk a realistic
+ * path in the graph. That is, if a word has several pronunciations that are
+ * adjacent in the graph, this aligner will align all of them in a sequence.
+ * <p/>
+ * To walk a realistic path in the graph (i.e. that uses a single pronunciation
+ * for each word), you can use the path yielded by a Viterbi reference aligner
+ * ('-r' switch on the command line).
  */
-public class FastLinearAligner extends Aligner {
+public class LinearAligner extends Aligner {
 
-	public FastLinearAligner(
-			File audio,
-			ProgressDisplay progress)
-	{
+	public LinearAligner(File audio, ProgressDisplay progress) {
 		super(audio, progress);
 	}
 

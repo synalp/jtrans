@@ -5,7 +5,7 @@ import fr.loria.synalp.jtrans.utils.BinarySegmentation;
 import fr.loria.synalp.jtrans.utils.BufferUtils;
 import fr.loria.synalp.jtrans.align.Alignment;
 
-import static fr.loria.synalp.jtrans.align.FastLinearAligner.fillInterpolate;
+import static fr.loria.synalp.jtrans.align.LinearAligner.fillInterpolate;
 
 import java.util.ArrayList;
 import java.util.List;

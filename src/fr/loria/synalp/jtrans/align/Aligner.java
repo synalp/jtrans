@@ -1,6 +1,7 @@
 package fr.loria.synalp.jtrans.align;
 
 import edu.cmu.sphinx.frontend.FloatData;
+import fr.loria.synalp.jtrans.project.Anchor;
 import fr.loria.synalp.jtrans.project.Token;
 import fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer;
 import fr.loria.synalp.jtrans.train.SpeakerDepModelTrainer;
@@ -22,12 +23,6 @@ public abstract class Aligner {
 	protected final File audio;
 	protected final ProgressDisplay progress;
 	private Runnable refinementIterationHook;
-
-	/**
-	 * Concatenation of timelines obtained via successive calls to
-	 * {@link #align}.
-	 */
-	private Alignment concatenated = new Alignment(0);
 
 
 	/**
@@ -96,18 +91,9 @@ public abstract class Aligner {
 
 	/**
 	 * Aligns words in a StateGraph.
-	 * @param endFrame last frame to analyze
-	 * @param concatenate Whether to concatenate the resulting timeline
-	 *                    internally (don't do that with overlapping speech!),
-	 *                    to prepare a call to getConcatenatedPath().
-	 *                    When concatenating, calls to align() must reflect the
-	 *                    chronological order of the pieces of text to align!
+	 * @param endFrame last frame to analyze (inclusive)
 	 */
-	public void align(
-			final StateGraph graph,
-			final int startFrame,
-			final int endFrame,
-			boolean concatenate)
+	protected Alignment align(StateGraph graph, int startFrame, int endFrame)
 			throws IOException, InterruptedException
 	{
 		// Space-separated string of words (used as identifier for cache files)
@@ -123,15 +109,6 @@ public abstract class Aligner {
 		graph.setProgressDisplay(progress);
 
 		Alignment alignment = getAlignment(graph, text, startFrame, endFrame);
-
-		if (concatenate) {
-			/* Technically, we don't *need* to pad the concatenated timeline,
-			since we only need the state sequence (in getConcatenatedPath()),
-			which isn't affected by timing info. But it makes sense to pad it
-			anyway, just so it is chronologically correct if we ever need it. */
-			concatenated.pad(startFrame);
-			concatenated.concatenate(alignment);
-		}
 
 		if (computeLikelihoods) {
 			assert trainer != null;
@@ -167,6 +144,83 @@ public abstract class Aligner {
 		}
 
 		alignment.commitToTokens();
+
+		return alignment;
+	}
+
+
+	/**
+	 * Aligns tokens between two anchors.
+	 * @param reference Use {@link StateGraph} yielded by this aligner as the
+	 *                  base graph for the actual alignment. If {@code null},
+	 *                  a full StateGraph containing all possible pronunciations
+	 *                  will be used.
+	 */
+	public void align(
+			Anchor start,
+			Anchor end,
+			List<Token> words,
+			Aligner reference)
+			throws IOException, InterruptedException
+	{
+		if (words.isEmpty()) {
+			return;
+		}
+
+		int frameCount = getFrameCount();
+
+		int iFrame = start == null? 0: start.getFrame();
+		int fFrame = end   == null? frameCount: end.getFrame()-1;  // see explanation below.
+
+		/* Why did we subtract 1 frame from the final anchor's time?
+		Assume that we have 2 contiguous phrases. The same anchor
+		serves as the FINAL anchor in the first phrase, and as the INITIAL
+		anchor in the second phrase.
+		Conceptually, anchors are like points in time, but we work with frames.
+		So, anchors technically cover an entire frame. Thus, to avoid that two
+		contiguous phrases overlap on 1 frame (i.e. that of the anchor
+		they have in common), we subtract 1 frame from the final anchor. */
+
+		if (iFrame >= frameCount) {
+			throw new IllegalArgumentException(String.format(
+					"Initial frame (%d) beyond frame count (%d)! " +
+							"(in phrase: %s)",
+					iFrame, frameCount, words));
+		}
+
+		if (fFrame >= frameCount) {
+			System.err.println("WARNING: shaving frames off final anchor! " +
+					"fFrame = " + fFrame + ", frameCount = " + frameCount);
+			fFrame = frameCount - 1;
+		}
+
+		if (iFrame - fFrame > 1) {
+			// initial frame after final frame
+			throw new IllegalArgumentException(String.format(
+					"Initial frame (%d, %s) after final frame (%d, %s)! " +
+							"(in phrase: %s)",
+					iFrame, start, fFrame, end, words));
+		} else if (iFrame > fFrame) {
+			// iFrame may legally be ahead of fFrame by 1 at most if the anchors
+			// are too close together (because we have removed 1 frame from the
+			// final frame, see above)
+			System.err.println(String.format("WARNING: skipping anchors too " +
+							"close together: frame %d (initial) vs %d (final) " +
+							"(in phrase: %s)",
+					iFrame, fFrame, words));
+			return;
+		}
+
+		StateGraph graph = new StateGraph(words);
+
+		if (null != reference) {
+			reference.setComputeLikelihoods(false);
+			Alignment al = reference.align(graph, iFrame, fFrame);
+			al.clearTokenAlignments();
+			graph = new StateGraph(al);
+		}
+
+		align(graph, iFrame, fFrame);
 	}
 
 
@@ -183,15 +237,5 @@ public abstract class Aligner {
 			int startFrame,
 			int endFrame)
 			throws IOException, InterruptedException;
-
-
-	/**
-	 * Returns concatenation of timelines obtained via successive calls to
-	 * {@link #align}.
-	 */
-	public Alignment getConcatenatedTimeline() {
-		// TODO: should throw an error on overlaps
-		return new Alignment(concatenated);
-	}
 
 }
