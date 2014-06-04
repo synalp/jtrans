@@ -50,29 +50,27 @@ public class JTrans {
 	}
 
 
-	private static void listMarkupLoaders() {
-		MarkupLoaderPool pool = MarkupLoaderPool.getInstance();
+	private static void listFormats() {
+		MarkupLoaderPool loaders = MarkupLoaderPool.getInstance();
 
 		StringBuilder vanilla = new StringBuilder("Vanilla markup loaders:");
-		StringBuilder preproc = new StringBuilder("Preprocessors:");
+		StringBuilder preproc = new StringBuilder("Specialized loaders:");
 
-		for (String name: pool.getNames()) {
+		for (String name: loaders.getNames()) {
 			StringBuilder appendTo =
-					pool.isVanillaLoader(name)? vanilla: preproc;
+					loaders.isVanillaLoader(name)? vanilla: preproc;
 			appendTo.append("\n    ").append(name).append(" (")
-					.append(pool.getDescription(name)).append(")");
+					.append(loaders.getDescription(name)).append(")");
 		}
 
-		System.out.println(vanilla);
-		System.out.println(preproc);
-	}
+		System.out.println(vanilla + "\n");
+		System.out.println(preproc + "\n");
 
-
-	private static void listMarkupSavers() {
-		MarkupSaverPool pool = MarkupSaverPool.getInstance();
+		MarkupSaverPool savers = MarkupSaverPool.getInstance();
 		System.out.println("Markup savers:");
-		for (String name: pool.getNames()) {
-			System.out.println(name + " (" + pool.getDescription(name) + ")");
+		for (String name: savers.getNames()) {
+			System.out.println("    " + name + " ("
+					+ savers.getDescription(name) + ")");
 		}
 	}
 
@@ -109,12 +107,8 @@ public class JTrans {
 						"format from filename extension.")
 						.withRequiredArg().describedAs("loader");
 
-				accepts("list-infmt",
-						"Displays a list of markup loaders to use with --infmt")
-						.forHelp();
-
-				accepts("list-outfmt",
-						"Displays a list of markup savers to use with --outfmt")
+				accepts("list-formats",
+						"Displays a list of markup loaders and savers")
 						.forHelp();
 
 				acceptsAll(
@@ -181,13 +175,8 @@ public class JTrans {
 			System.exit(0);
 		}
 
-		if (optset.has("list-infmt")) {
-			listMarkupLoaders();
-			System.exit(0);
-		}
-
-		if (optset.has("list-outfmt")) {
-			listMarkupSavers();
+		if (optset.has("list-formats")) {
+			listFormats();
 			System.exit(0);
 		}
 
