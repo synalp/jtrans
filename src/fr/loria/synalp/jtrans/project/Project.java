@@ -195,6 +195,94 @@ public abstract class Project {
 	}
 
 
+	public void printWordFrameDiffs(Project p) {
+		if (speakerCount() != p.speakerCount()) {
+			throw new IllegalArgumentException(
+					"projects have different track counts");
+		}
+
+		for (int i = 0; i < speakerCount(); i++) {
+			Iterator<Phrase> itr1 = phraseIterator(i);
+			Iterator<Phrase> itr2 = p.phraseIterator(i);
+
+			while (itr1.hasNext()) {
+				if (!itr2.hasNext()) {
+					throw new IllegalArgumentException("counterpart speaker "
+							+ i + " ran out of phrases");
+				}
+
+				Phrase ph1 = itr1.next();
+				Phrase ph2 = itr2.next();
+
+				if (ph1.size() != ph2.size()) {
+					throw new IllegalArgumentException(
+							"phrases have different lengths in speaker #" + i);
+				}
+
+				for (int w = 0; w < ph1.size(); w++) {
+					Token w1 = ph1.get(w);
+					Token w2 = ph2.get(w);
+
+					if (!w1.isAligned()) {
+						continue;
+					}
+
+					if (!w2.isAligned()) {
+						System.err.println("WARNING: counterpart word unaligned: " + w2);
+						continue;
+					}
+
+					int f1 = w1.getFirstNonSilenceFrame();
+					int f2 = w2.getFirstNonSilenceFrame();
+
+					int l1 = w1.getLastNonSilenceFrame();
+					int l2 = w2.getLastNonSilenceFrame();
+
+					if (f1 == -1) {
+						System.err.println("WARNING: fully silent word in reference: " + w1);
+						continue;
+					}
+
+					if (f2 == -1) {
+						System.err.println("WARNING: fully silent word in counterpart: " + w1);
+						continue;
+					}
+
+					if (!w1.toString().equals(w2.toString())) {
+						throw new IllegalArgumentException("word is different in counterpart ("
+								+ w1 + " vs " + w2 + ")");
+					}
+
+					assert f1 != -1 : w1;
+					assert f2 != -1 : w2;
+					assert l1 != -1 : w1;
+					assert l2 != -1 : w2;
+
+					// grep-friendly keyword,
+					// track number,
+					// word-anchor-counter,
+					// start sec 1,
+					// start sec 2,
+					// start diff,
+					// end diff,
+					// length diff,
+					// word
+					System.out.printf("worddiff %d %3d %6.2f %6.2f %4d %4d %4d %s\n",
+							i,
+							w,
+							TimeConverter.frame2sec(f1),
+							TimeConverter.frame2sec(f2),
+							f2 - f1,
+							l2 - l1,
+							l2 - f2 - (l1 - f1),
+							w1);
+
+				}
+			}
+		}
+	}
+
+
 	//==========================================================================
 	// LOAD/SAVE/EXPORT
 	//==========================================================================

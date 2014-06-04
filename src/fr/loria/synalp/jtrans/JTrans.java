@@ -32,6 +32,7 @@ public class JTrans {
 	public boolean clearTimes = false;
 	public boolean align = true;
 	public boolean runAnchorDiffTest = false;
+	public boolean runWordDiffTest = false;
 	public boolean computeLikelihoods = false;
 	public boolean refine = false;
 	public boolean quiet = false;
@@ -121,10 +122,13 @@ public class JTrans {
 						"Don't align after loading the project. Useful to " +
 								"convert between formats.");
 
-				accepts(
-						"anchor-diff-test",
+				accepts("anchordiff",
 						"Regenerate anchor times and gauge deviation wrt. " +
-								"reference times.");
+						"reference times.");
+
+				accepts("worddiff",
+						"Regenerate word times (without anchors) and gauge " +
+						"deviation wrt. reference times.");
 
 				acceptsAll(
 						Arrays.asList("B", "bypass-cache"),
@@ -223,10 +227,11 @@ public class JTrans {
 		outputDir = (File)optset.valueOf("outdir");
 		clearTimes = optset.has("C");
 		align = !optset.has("N");
-		runAnchorDiffTest = optset.has("anchor-diff-test");
+		runAnchorDiffTest = optset.has("anchordiff");
+		runWordDiffTest = optset.has("worddiff");
 		quiet = optset.has("q");
 
-		clearTimes |= runAnchorDiffTest;
+		clearTimes |= runAnchorDiffTest | runWordDiffTest;
 
 		if (!align && runAnchorDiffTest) {
 			System.err.println("Can't run the anchor diff test without aligning!");
@@ -403,6 +408,7 @@ public class JTrans {
 
 		if (!cli.computeLikelihoods &&
 				!cli.runAnchorDiffTest &&
+				!cli.runWordDiffTest &&
 				(cli.outputFormats == null || cli.outputFormats.isEmpty()))
 		{
 			CrossPlatformFixes.setNativeLookAndFeel();
@@ -474,6 +480,13 @@ public class JTrans {
 			((TurnProject)project).inferAnchors();
 			List<Integer> diffs = referenceTiming.anchorFrameDiffs(project);
 			printAnchorDiffStats(diffs);
+		}
+
+		if (cli.runWordDiffTest) {
+			Project refWordTiming = cli.loader.parse(cli.inputFile);
+			refWordTiming.setAudio(project.audioFile);
+			refWordTiming.align(refWordTiming.getStandardAligner(null, false), null);
+			refWordTiming.printWordFrameDiffs(project);
 		}
 
 		if (!cli.anonymizedWords.isEmpty()) {
