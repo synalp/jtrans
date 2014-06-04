@@ -15,7 +15,7 @@ import java.io.*;
  *
  * @see StateGraph#viterbi
  */
-public class ViterbiAligner extends AutoAligner {
+public class ViterbiAligner extends Aligner {
 
 	/**
 	 * Maximum number of bytes for a Viterbi backtrack stack to reside in

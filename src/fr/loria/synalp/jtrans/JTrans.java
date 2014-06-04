@@ -1,9 +1,6 @@
 package fr.loria.synalp.jtrans;
 
-import fr.loria.synalp.jtrans.align.AutoAligner;
-import fr.loria.synalp.jtrans.align.FastLinearAligner;
-import fr.loria.synalp.jtrans.align.RealisticPathLinearAligner;
-import fr.loria.synalp.jtrans.align.ViterbiAligner;
+import fr.loria.synalp.jtrans.align.*;
 import fr.loria.synalp.jtrans.utils.Cache;
 import fr.loria.synalp.jtrans.gui.JTransGUI;
 import fr.loria.synalp.jtrans.markup.in.*;
@@ -12,7 +9,6 @@ import fr.loria.synalp.jtrans.markup.out.MarkupSaverPool;
 import fr.loria.synalp.jtrans.project.Project;
 import fr.loria.synalp.jtrans.project.TurnProject;
 import fr.loria.synalp.jtrans.utils.*;
-import fr.loria.synalp.jtrans.align.Alignment;
 import fr.loria.synalp.jtrans.graph.StateGraph;
 import joptsimple.*;
 
@@ -442,7 +438,7 @@ public class JTrans {
 			command line switch and generalized to linear alignments
 			(eliminating the need for RealisticPathLinearAligner) */
 			System.out.println("Computing reference path...");
-			AutoAligner referenceAligner = project.getAligner(
+			Aligner referenceAligner = project.getAligner(
 					ViterbiAligner.class, progress, true); // KLUDGE!!! true is needed for kludgeReferenceScorer
 			((TurnProject)project).align(referenceAligner, false);
 			referenceAlignment = referenceAligner.getConcatenatedTimeline();
@@ -459,7 +455,7 @@ public class JTrans {
 			reference = null;
 		}
 
-		AutoAligner aligner = null;
+		Aligner aligner = null;
 		if (cli.align) {
 			aligner = project.getStandardAligner(progress, cli.computeLikelihoods);
 			aligner.setRefine(cli.refine);

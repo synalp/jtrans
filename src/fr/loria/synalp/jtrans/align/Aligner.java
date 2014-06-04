@@ -15,7 +15,7 @@ import java.util.List;
  * Base front-end for alignment algorithms.
  * Its main aim is to align a sequence of words to a chunk of audio data.
  */
-public abstract class AutoAligner {
+public abstract class Aligner {
 
 	protected SpeakerDepModelTrainer trainer;
 	protected final List<FloatData> data;
@@ -42,7 +42,7 @@ public abstract class AutoAligner {
 	private boolean refine = false;
 
 
-	public AutoAligner(File audio, ProgressDisplay progress) {
+	public Aligner(File audio, ProgressDisplay progress) {
 		this.progress = progress;
 		this.audio = audio;
 

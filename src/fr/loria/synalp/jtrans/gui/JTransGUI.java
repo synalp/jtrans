@@ -20,7 +20,7 @@ import javax.swing.*;
 import javax.swing.Timer;
 
 import fr.loria.synalp.jtrans.JTrans;
-import fr.loria.synalp.jtrans.align.AutoAligner;
+import fr.loria.synalp.jtrans.align.Aligner;
 import fr.loria.synalp.jtrans.project.Token;
 import fr.loria.synalp.jtrans.gui.trackview.ProjectTable;
 import fr.loria.synalp.jtrans.markup.in.MarkupLoader;
@@ -595,7 +595,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		new Thread() {
 			@Override
 			public void run() {
-				AutoAligner aligner;
+				Aligner aligner;
 
 				try {
 					aligner = project.getStandardAligner(JTransGUI.this, false);

@@ -15,7 +15,7 @@ import java.io.IOException;
  * For testing purposes only, e.g. to compare with likelihoods yielded by
  * ViterbiAligner.
  */
-public abstract class CheatingAligner extends AutoAligner {
+public abstract class CheatingAligner extends Aligner {
 
 	protected ViterbiAligner pathfinder;
 

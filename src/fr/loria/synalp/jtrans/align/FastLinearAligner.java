@@ -16,7 +16,7 @@ import java.util.Arrays;
  *
  * @see RealisticPathLinearAligner
  */
-public class FastLinearAligner extends AutoAligner {
+public class FastLinearAligner extends Aligner {
 
 	public FastLinearAligner(
 			File audio,

@@ -1,6 +1,6 @@
 package fr.loria.synalp.jtrans.project;
 
-import fr.loria.synalp.jtrans.align.AutoAligner;
+import fr.loria.synalp.jtrans.align.Aligner;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -199,7 +199,7 @@ public class TurnProject extends Project {
 	 * @throws InterruptedException
 	 */
 	protected static void alignTurnChain(
-			AutoAligner aligner,
+			Aligner aligner,
 			List<Turn> turns,
 			boolean overlaps)
 			throws IOException, InterruptedException
@@ -246,7 +246,7 @@ public class TurnProject extends Project {
 	}
 
 
-	public void align(AutoAligner aligner)
+	public void align(Aligner aligner)
 			throws IOException, InterruptedException
 	{
 		align(aligner, ALIGN_OVERLAPS);
@@ -263,7 +263,7 @@ public class TurnProject extends Project {
 	 *
 	 * @see TurnProject#alignTurnChain
 	 */
-	public void align(AutoAligner aligner, boolean overlaps)
+	public void align(Aligner aligner, boolean overlaps)
 			throws IOException, InterruptedException
 	{
 		clearAlignment();

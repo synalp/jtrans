@@ -1,6 +1,6 @@
 package fr.loria.synalp.jtrans.project;
 
-import fr.loria.synalp.jtrans.align.AutoAligner;
+import fr.loria.synalp.jtrans.align.Aligner;
 import fr.loria.synalp.jtrans.align.ViterbiAligner;
 import fr.loria.synalp.jtrans.utils.*;
 import fr.loria.synalp.jtrans.graph.StateGraph;
@@ -23,7 +23,7 @@ public abstract class Project {
 			new AudioFormat(16000, 16, 1, true, false);
 
 
-	public static Class<? extends AutoAligner> ALIGNER = ViterbiAligner.class;
+	public static Class<? extends Aligner> ALIGNER = ViterbiAligner.class;
 
 
 	public File audioFile;
@@ -101,8 +101,8 @@ public abstract class Project {
 	}
 
 
-	public AutoAligner getAligner(
-			Class<? extends AutoAligner> alignerClass,
+	public Aligner getAligner(
+			Class<? extends Aligner> alignerClass,
 			ProgressDisplay progress,
 			boolean computeLikelihoods)
 			throws IOException, ReflectiveOperationException
@@ -111,7 +111,7 @@ public abstract class Project {
 			progress.setIndeterminateProgress("Initializing aligner...");
 		}
 
-		AutoAligner aa = alignerClass
+		Aligner aa = alignerClass
 				.getConstructor(File.class, ProgressDisplay.class)
 				.newInstance(convertedAudioFile, progress);
 
@@ -130,7 +130,7 @@ public abstract class Project {
 	}
 
 
-	public AutoAligner getStandardAligner(
+	public Aligner getStandardAligner(
 			ProgressDisplay progress,
 			boolean computeLikelihoods)
 			throws IOException, ReflectiveOperationException
@@ -140,7 +140,7 @@ public abstract class Project {
 
 
 	protected static void align(
-			AutoAligner aligner,
+			Aligner aligner,
 			Anchor start,
 			Anchor end,
 			List<Token> words,
@@ -203,7 +203,7 @@ public abstract class Project {
 	/**
 	 * Aligns each speaker independently.
 	 */
-	public abstract void align(AutoAligner aligner)
+	public abstract void align(Aligner aligner)
 			throws IOException, InterruptedException;
 
 
