@@ -694,6 +694,8 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 							return;
 						}
 					}
+
+					reset(delta, false);
 				}
 
 				int rc = JOptionPane.showConfirmDialog(jf,
@@ -708,7 +710,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 					return;
 				}
 
-				reset(delta);
+				reset(delta, true);
 			}
 		}
 
@@ -720,8 +722,13 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 			next(-1);
 		}
 
-		public void reset(int delta) {
-			cSpk = 0;
+		/**
+		 * @param delta forward search if >0, backward search if <0
+		 */
+		public void reset(int delta, boolean resetCurrentSpeaker) {
+			if (resetCurrentSpeaker) {
+				cSpk = 0;
+			}
 
 			if (delta > 0) {
 				// search from beginning
@@ -757,7 +764,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 				return;
 			}
 			content = value.toLowerCase();
-			reset(1);
+			reset(1, true);
 			next();
 		}
 
@@ -767,7 +774,8 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	}
 
 
-	public ContentWordFinder cwf = new ContentWordFinder();
+	public ContentWordFinder contentWordFinder = new ContentWordFinder();
+
 
 	public WordFinder anonWordFinder = new WordFinder() {
 		@Override

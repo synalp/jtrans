@@ -216,21 +216,21 @@ public class Menus {
 		findWord.addActionListener(new AbstractAction() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				aligneur.cwf.prompt();
+				aligneur.contentWordFinder.prompt();
 			}
 		});
 
 		findNext.addActionListener(new AbstractAction() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				aligneur.cwf.next();
+				aligneur.contentWordFinder.next();
 			}
 		});
 
 		findPrev.addActionListener(new AbstractAction() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				aligneur.cwf.previous();
+				aligneur.contentWordFinder.previous();
 			}
 		});
 
