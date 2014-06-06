@@ -30,7 +30,7 @@ import fr.loria.synalp.jtrans.project.TrackProject;
 import fr.loria.synalp.jtrans.project.TurnProject;
 import fr.loria.synalp.jtrans.speechreco.SpeechReco;
 
-import fr.loria.synalp.jtrans.gui.signalViewers.spectroPanel.SpectroControl;
+import fr.loria.synalp.jtrans.gui.spectro.SpectroControl;
 import fr.loria.synalp.jtrans.speechreco.BiaisAdapt;
 import fr.loria.synalp.jtrans.utils.*;
 

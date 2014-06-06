@@ -44,6 +44,7 @@ termes.
 package fr.loria.synalp.jtrans.speechreco.s4;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -57,6 +58,10 @@ import edu.cmu.sphinx.frontend.transform.DiscreteCosineTransform;
 import edu.cmu.sphinx.frontend.transform.DiscreteFourierTransform;
 import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
 import edu.cmu.sphinx.frontend.window.RaisedCosineWindower;
+
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.UnsupportedAudioFileException;
 
 /**
  * 
@@ -169,11 +174,21 @@ public class S4mfccBuffer extends BaseDataProcessor {
 	/**
 	 * Returns all MFCC data in an audio file.
 	 */
-	public static List<FloatData> getAllData(File audio) {
+	public static List<FloatData> getAllData(File audio, boolean reco)
+			throws IOException, UnsupportedAudioFileException
+	{
+		return getAllData(AudioSystem.getAudioInputStream(audio), reco);
+	}
+
+
+	/**
+	 * Returns all MFCC data in an audio file.
+	 */
+	public static List<FloatData> getAllData(AudioInputStream audio, boolean withMFCC) {
 		AudioFileDataSource afds = new AudioFileDataSource(3200, null);
-		afds.setAudioFile(audio, null);
+		afds.setInputStream(audio, null);
 		S4mfccBuffer mfcc = new S4mfccBuffer();
-		mfcc.setSource(getFrontEnd(afds));
+		mfcc.setSource(getFrontEnd(withMFCC, afds));
 		return mfcc.getAllData();
 	}
 
@@ -193,23 +208,32 @@ public class S4mfccBuffer extends BaseDataProcessor {
 	}
 
 
-	public static FrontEnd getFrontEnd(DataProcessor... sourceList) {
+	private static FrontEnd getFrontEnd(boolean withMFCC, DataProcessor... sourceList) {
 		ArrayList<DataProcessor> frontEndList = new ArrayList<>();
 		for (DataProcessor source: sourceList) {
 			if (null != source) {
 				frontEndList.add(source);
 			}
 		}
+
 		frontEndList.add(new Dither(2,false,Double.MAX_VALUE,-Double.MAX_VALUE));
 		frontEndList.add(new DataBlocker(50));
 		frontEndList.add(new Preemphasizer(0.97));
 		frontEndList.add(new RaisedCosineWindower(0.46f,25.625f,10f));
 		frontEndList.add(new DiscreteFourierTransform(512, false));
-		frontEndList.add(new MelFrequencyFilterBank(133.33334, 6855.4976, 40));
-		frontEndList.add(new DiscreteCosineTransform(40,13));
-		frontEndList.add(new LiveCMN(12,100,160));
-		frontEndList.add(new DeltasFeatureExtractor(3));
+
+		if (withMFCC) {
+			frontEndList.add(new MelFrequencyFilterBank(133.33334, 6855.4976, 40));
+			frontEndList.add(new DiscreteCosineTransform(40, 13));
+			frontEndList.add(new LiveCMN(12, 100, 160));
+			frontEndList.add(new DeltasFeatureExtractor(3));
+		}
+
 		return new FrontEnd(frontEndList);
+	}
+
+	public static FrontEnd getFrontEnd(DataProcessor... sourceList) {
+		return getFrontEnd(true, sourceList);
 	}
 
 }

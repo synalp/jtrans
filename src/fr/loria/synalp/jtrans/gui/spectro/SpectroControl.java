@@ -1,12 +1,10 @@
-package fr.loria.synalp.jtrans.gui.signalViewers.spectroPanel;
+package fr.loria.synalp.jtrans.gui.spectro;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 
 import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;

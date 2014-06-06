@@ -1,4 +1,4 @@
-package fr.loria.synalp.jtrans.gui.signalViewers.spectroPanel;
+package fr.loria.synalp.jtrans.gui.spectro;
 
 import fr.loria.synalp.jtrans.project.Token;
 

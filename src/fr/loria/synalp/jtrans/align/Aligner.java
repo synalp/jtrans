@@ -8,6 +8,7 @@ import fr.loria.synalp.jtrans.train.SpeakerDepModelTrainer;
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
 import fr.loria.synalp.jtrans.graph.*;
 
+import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.*;
 import java.util.List;
 
@@ -19,7 +20,7 @@ import java.util.List;
 public abstract class Aligner {
 
 	protected SpeakerDepModelTrainer trainer;
-	protected final List<FloatData> data;
+	protected List<FloatData> data;
 	protected final File audio;
 	protected final ProgressDisplay progress;
 	private Runnable refinementIterationHook;
@@ -41,7 +42,12 @@ public abstract class Aligner {
 		this.progress = progress;
 		this.audio = audio;
 
-		data = S4mfccBuffer.getAllData(audio);
+		try {
+			data = S4mfccBuffer.getAllData(audio, true);
+		} catch (IOException | UnsupportedAudioFileException ex) {
+			ex.printStackTrace();
+			data = null;
+		}
 	}
 
 

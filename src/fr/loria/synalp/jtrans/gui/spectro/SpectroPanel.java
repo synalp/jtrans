@@ -1,5 +1,5 @@
 
-package fr.loria.synalp.jtrans.gui.signalViewers.spectroPanel;
+package fr.loria.synalp.jtrans.gui.spectro;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -11,16 +11,15 @@ import java.awt.image.BufferedImage;
 import java.awt.image.FilteredImageSource;
 import java.awt.image.ImageFilter;
 import java.awt.image.ReplicateScaleFilter;
-import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.swing.JFrame;
 import javax.swing.JPanel;
 
+import edu.cmu.sphinx.frontend.FloatData;
 import fr.loria.synalp.jtrans.gui.JTransGUI;
-import static fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer.getFrontEnd;
+import fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer;
 
 public class SpectroPanel extends JPanel {
 
@@ -33,7 +32,7 @@ public class SpectroPanel extends JPanel {
     protected float zoom = 1.0f;
 
     public JTransGUI aligneur;
-	MFCCbuffer buf;
+	List<FloatData> buf;
 	
     /**
      * Updates the offset factor used to calculate the greyscale values from the intensities.  This also calculates and
@@ -61,25 +60,23 @@ public class SpectroPanel extends JPanel {
 	}
 
 	public void setAudioInputStream(AudioInputStream audio) {
-		buf = new MFCCbuffer(getFrontEnd(new AudioStreamSource(audio)));
+		buf = S4mfccBuffer.getAllData(audio, false);
 	}
 
-    // relativement au debut de l'audio stream
-    private double[] getSpectrumAtFrame(int fr) {
-    	if (buf==null) return null;
-    	return buf.getMFCCAtFrame(fr);
-    }
-    
     /** Actually creates the Spectrogram image. */
     protected void computeSpectrogram(int frdeb, int frfin) {
+			if (null == buf) {
+				return;
+			}
+
             /* Run through all the spectra one at a time and convert
              * them to an log intensity value.
              */
             double maxIntensity = Double.MIN_VALUE;
-            ArrayList<double[]> intensitiesList = new ArrayList<double[]>();
+            ArrayList<double[]> intensitiesList = new ArrayList<>();
             
             for (int fr=frdeb;fr<frfin;fr++) {
-            	double[] spectrumData = getSpectrumAtFrame(fr);
+				float[] spectrumData = buf.get(fr).getValues();
             	if (spectrumData==null) break;
             	double[] intensities = new double[spectrumData.length];
             	for (int i = 0; i < intensities.length; i++) {
@@ -143,16 +140,6 @@ public class SpectroPanel extends JPanel {
             Dimension sz = getSize();
             repaint(0, 0, 0, sz.width - 1, sz.height - 1);
     }
-
-    public int getScaledWidth() {
-    	if (scaledSpectrogram==null) return -1;
-    	return scaledSpectrogram.getWidth(null);
-    }
-    
-//    public Dimension getPreferredSize() {
-//    	final Dimension dim = new Dimension(getScaledWidth(), 150);
-//    	return dim;
-//    }
     
     /**
      * Paint the component.  This will be called by AWT/Swing.
@@ -174,16 +161,4 @@ public class SpectroPanel extends JPanel {
         }
     }
 
-    public static void main(String[] args) throws Exception {
-    	SpectroPanel m = new SpectroPanel();
-    	File f = new File("C:/xx.wav");
-    	System.out.println("wav found "+f.exists());
-    	AudioInputStream ais = AudioSystem.getAudioInputStream(f);
-    	m.setAudioInputStream(ais);
-    	m.computeSpectrogram(0, 300);
-    	JFrame jf = new JFrame();
-    	jf.setSize(200,200);
-    	jf.getContentPane().add(m);
-    	jf.setVisible(true);
-    }
 }
