@@ -93,6 +93,10 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	private JProgressBar progressBar = new JProgressBar(0, 1000);
 	private JLabel infoLabel = new JLabel();
 
+	public WordFinder contentWordFinder = new WordFinder.ByContent(this);
+	public WordFinder anonWordFinder = new WordFinder.Anonymous(this);
+
+
 	public float getCurPosInSec() {
         return cursec;
     }
@@ -627,6 +631,8 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		setAudioSource(project.audioFile);
 		initPanel();
 		jf.setContentPane(this);
+		anonWordFinder.reset();
+		contentWordFinder.reset();
 	}
 
 
@@ -666,127 +672,5 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 			}
 		});
 	}
-
-
-
-
-	public abstract class WordFinder {
-		int cSpk = 0;
-		int cWord = 0;
-		boolean found = false;
-
-		public void next(int delta) {
-			assert delta == 1 || delta == -1;
-
-			if (found) {
-				cWord += delta;
-				found = false;
-			}
-
-			for (;;) {
-				for (; cSpk < project.speakerCount(); cSpk++) {
-					List<Token> words = project.getTokens(cSpk);
-					for (; cWord >= 0 && cWord < words.size(); cWord += delta) {
-						Token t = words.get(cWord);
-						if (t.getType() == Token.Type.WORD && matches(t)) {
-							found = true;
-							table.highlightWord(cSpk, t);
-							return;
-						}
-					}
-
-					reset(delta, false);
-				}
-
-				int rc = JOptionPane.showConfirmDialog(jf,
-						String.format("No more %s.\nSearch from %s?",
-								getGoal(),
-								delta > 0 ? "beginning" : "end"),
-						getGoal(),
-						JOptionPane.YES_NO_OPTION
-				);
-
-				if (rc != JOptionPane.YES_OPTION) {
-					return;
-				}
-
-				reset(delta, true);
-			}
-		}
-
-		public void next() {
-			next(1);
-		}
-
-		public void previous() {
-			next(-1);
-		}
-
-		/**
-		 * @param delta forward search if >0, backward search if <0
-		 */
-		public void reset(int delta, boolean resetCurrentSpeaker) {
-			if (resetCurrentSpeaker) {
-				cSpk = 0;
-			}
-
-			if (delta > 0) {
-				// search from beginning
-				cWord = 0;
-			} else {
-				// search from end
-				cWord = project.getTokens(cSpk).size()-1;
-			}
-		}
-
-		public abstract boolean matches(Token word);
-		protected abstract String getGoal();
-	}
-
-
-	public class ContentWordFinder extends WordFinder {
-		private String content;
-
-		@Override
-		public boolean matches(Token word) {
-			if (null == content) {
-				return false;
-			}
-			assert content.toLowerCase().equals(content);
-			return word.toString().toLowerCase().equals(content);
-		}
-
-		public void prompt() {
-			String value = JOptionPane.showInputDialog(jf,
-					"Word to find",
-					content);
-			if (value == null) {
-				return;
-			}
-			content = value.toLowerCase();
-			reset(1, true);
-			next();
-		}
-
-		protected String getGoal() {
-			return "Words matching \"" + content + "\"";
-		}
-	}
-
-
-	public ContentWordFinder contentWordFinder = new ContentWordFinder();
-
-
-	public WordFinder anonWordFinder = new WordFinder() {
-		@Override
-		public boolean matches(Token word) {
-			return word.shouldBeAnonymized();
-		}
-
-		public String getGoal() {
-			return "Anonymous Words";
-		}
-
-	};
 
 }
