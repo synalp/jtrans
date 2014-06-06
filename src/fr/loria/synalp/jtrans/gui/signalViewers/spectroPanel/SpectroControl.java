@@ -27,7 +27,7 @@ public class SpectroControl extends JPanel {
 	TimelineWords words = new TimelineWords();
 	JButton refresh = new JButton("refresh");
 	JSlider offset = new JSlider(0,200,80);
-	JSlider zoom = new JSlider(0,200,80);
+	JSlider zoom = new JSlider(1,200,80);
 	JLabel posdeb = new JLabel("0 sec");
 	JButton p1s = new JButton("+1sec");
 	JButton m1s = new JButton("-1sec");
