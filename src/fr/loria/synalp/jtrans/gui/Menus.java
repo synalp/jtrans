@@ -17,6 +17,7 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Mixer;
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
+import static javax.swing.KeyStroke.getKeyStroke;
 
 import edu.cmu.sphinx.result.Result;
 
@@ -101,11 +102,11 @@ public class Menus {
 		file.addSeparator();
 		file.add(quit);
 
-		open.setAccelerator(KeyStroke.getKeyStroke('O', modifier));
-		loadwav.setAccelerator(KeyStroke.getKeyStroke('O', modifier | InputEvent.SHIFT_MASK));
-		savejtr.setAccelerator(KeyStroke.getKeyStroke('S', modifier | InputEvent.SHIFT_MASK));
-		export.setAccelerator(KeyStroke.getKeyStroke('E', modifier));
-		quit.setAccelerator(KeyStroke.getKeyStroke('Q', modifier));
+		open.setAccelerator(getKeyStroke('O', modifier));
+		loadwav.setAccelerator(getKeyStroke('O', modifier | InputEvent.SHIFT_MASK));
+		savejtr.setAccelerator(getKeyStroke('S', modifier | InputEvent.SHIFT_MASK));
+		export.setAccelerator(getKeyStroke('E', modifier));
+		quit.setAccelerator(getKeyStroke('Q', modifier));
 
 		open.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
@@ -207,11 +208,11 @@ public class Menus {
 		actionsm.add(findNextAnon);
 		actionsm.add(findPrevAnon);
 
-		findWord.setAccelerator(KeyStroke.getKeyStroke('F', modifier));
-		findNext.setAccelerator(KeyStroke.getKeyStroke("F3"));
-		findPrev.setAccelerator(KeyStroke.getKeyStroke("shift F3"));
-		findNextAnon.setAccelerator(KeyStroke.getKeyStroke("alt F3"));
-		findPrevAnon.setAccelerator(KeyStroke.getKeyStroke("shift alt F3"));
+		findWord.setAccelerator(getKeyStroke('F', modifier));
+		findNext.setAccelerator(getKeyStroke("F3"));
+		findPrev.setAccelerator(getKeyStroke("shift F3"));
+		findNextAnon.setAccelerator(getKeyStroke("alt F3"));
+		findPrevAnon.setAccelerator(getKeyStroke("shift alt F3"));
 
 		findWord.addActionListener(new AbstractAction() {
 			@Override
@@ -321,7 +322,7 @@ public class Menus {
 		alignMenu.add(clearAnchors);
 		alignMenu.add(inferAnchors);
 
-		align.setAccelerator(KeyStroke.getKeyStroke('A', modifier | InputEvent.SHIFT_MASK));
+		align.setAccelerator(getKeyStroke('A', modifier | InputEvent.SHIFT_MASK));
 
 		align.addActionListener(new ActionListener() {
 			@Override
@@ -449,19 +450,6 @@ public class Menus {
 				if (s==null) return;
 				s=s.trim();
 				S4ForceAlignBlocViterbi.beamwidth=Integer.parseInt(s);
-			}
-		});
-
-		playfrom.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				String pos = JOptionPane.showInputDialog(
-						aligneur.jf,
-						"Start playing from second:",
-						"0.0");
-				if (pos == null)
-					return;
-				float nsec = Float.parseFloat(pos);
-				aligneur.startPlayingFrom(nsec);
 			}
 		});
 

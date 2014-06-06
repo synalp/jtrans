@@ -53,15 +53,6 @@ public class SpectroControl extends JPanel {
 		words.repaint();
 	}
 
-	public SpectroControl(){
-		initgui();
-	}
-
-	//	public void setPreferredSize(Dimension d) {
-	//		super.setPreferredSize(d);
-	//		spectro.setPreferredSize(new Dimension(d.width, spectro.getPreferredSize().height));
-	//	}
-	//	
 	private void initgui() {
 		chooser = new JComboBox<>();
 		for (int i = 0; i < gui.project.speakerCount(); i++) {
@@ -177,15 +168,4 @@ public class SpectroControl extends JPanel {
 		repaint();
 	}
 
-	public static void main(String[] args) throws Exception {
-		SpectroControl m = new SpectroControl();
-		File f = new File("C:/xx.wav");
-		System.out.println("wav found "+f.exists());
-		AudioInputStream ais = AudioSystem.getAudioInputStream(f);
-		m.setAudioInputStream(0,ais);
-		JFrame jf = new JFrame();
-		jf.setSize(500,500);
-		jf.getContentPane().add(m);
-		jf.setVisible(true);
-	}
 }

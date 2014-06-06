@@ -79,16 +79,8 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 
 	public int mixidx=0;
 
-	//	public Player player;
-	/* TODO PARALLEL TRACKS
-	public TemporalSigPanel sigPanel = null;
-	public ToolBarTemporalSig toolbar = null;
-	*/
-
 	public ProjectTable table;
 
-	// position lue pour la derniere fois dans le flux audio
-	long currentSample = 0;
 	public Project project = new TrackProject();
 	private JProgressBar progressBar = new JProgressBar(0, 1000);
 	private JLabel infoLabel = new JLabel();
@@ -225,14 +217,12 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		}
 	}
 
-	private float lastSecClickedOnSpectro = 0;
 	public void clicOnSpectro(float frf) {
 		float prevsec = getCurPosInSec();
 		float sec = TimeConverter.frame2sec((int) frf);
 		sec += prevsec;
 		// on lit une seconde avant la pos
 		setCurPosInSec(sec-1);
-		lastSecClickedOnSpectro=sec;
 		ctrlbox.getPlayerGUI().startPlaying();
 		try {
 			Thread.sleep(1000);
@@ -320,25 +310,6 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		}}, BorderLayout.PAGE_END);
 	}
 
-	/**
-	 * cette fonction est toujours appel�e lorsque l'audio a fini de jouer, soit
-	 * parce qu'on a appuye sur ESC, soit parce qu'on est arriv� � la fin
-	 */
-	void stopPlaying() {
-		ctrlbox.getPlayerGUI().stopPlaying();
-		/*
-		if (player.isPlaying()) {
-			currentSample = player.getLastSamplePlayed();
-			player.stopPlaying();
-			if (sigPanel != null) {
-				sigPanel.stopPlaying();
-			}
-		}
-		if (playerController != null) {
-			playerController.pause();
-		}
-		 */
-	}
 
 	public void newplaystarted() {
 		// Copy all alignable words - TODO: this isn't necessary anymore
@@ -404,31 +375,6 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 			karaokeHighlighter.stop();
 			karaokeHighlighter = null;
 		}
-	}
-
-	public void startPlayingFrom(float nsec) {
-		/*
-		currentSample = OldAlignment.second2sample(nsec);
-		caretSensible = true;
-
-		if (currentSample < 0) {
-			currentSample = 0;
-		}
-		// positionne l'audio buffer
-		audiobuf.samplePosition = currentSample;
-		System.err.println("play from " + OldAlignment.sample2second(currentSample));
-		// relance le thread qui grise les mots
-		if (project.words != null) {
-			playerController.unpause();
-		}
-		// lance la lecture
-		player.play(mixidx, new plugins.player.PlayerListener() {
-
-			public void playerHasFinished() {
-				stopPlaying();
-			}
-		}, currentSample);
-		 */
 	}
 
 	private void getRecoResult(SpeechReco asr) {

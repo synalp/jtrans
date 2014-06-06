@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 import fr.loria.synalp.jtrans.gui.JTransGUI;
@@ -121,7 +120,6 @@ public class SpectroPanel extends JPanel {
     
     /** Actually creates the Spectrogram image. */
     protected void computeSpectrogram(int frdeb, int frfin) {
-        try {
             /* Run through all the spectra one at a time and convert
              * them to an log intensity value.
              */
@@ -192,11 +190,6 @@ public class SpectroPanel extends JPanel {
                             scaleFilter));
             Dimension sz = getSize();
             repaint(0, 0, 0, sz.width - 1, sz.height - 1);
-        } catch (Exception e) {
-            e.printStackTrace();
-    		JOptionPane.showMessageDialog(null, "PBBBB "+e);
-
-        }
     }
 
     public int getScaledWidth() {
