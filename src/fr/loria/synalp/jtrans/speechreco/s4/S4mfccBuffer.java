@@ -48,7 +48,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 import edu.cmu.sphinx.frontend.*;
+import edu.cmu.sphinx.frontend.feature.DeltasFeatureExtractor;
+import edu.cmu.sphinx.frontend.feature.LiveCMN;
+import edu.cmu.sphinx.frontend.filter.Dither;
+import edu.cmu.sphinx.frontend.filter.Preemphasizer;
+import edu.cmu.sphinx.frontend.frequencywarp.MelFrequencyFilterBank;
+import edu.cmu.sphinx.frontend.transform.DiscreteCosineTransform;
+import edu.cmu.sphinx.frontend.transform.DiscreteFourierTransform;
 import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
+import edu.cmu.sphinx.frontend.window.RaisedCosineWindower;
 
 /**
  * 
@@ -165,7 +173,7 @@ public class S4mfccBuffer extends BaseDataProcessor {
 		AudioFileDataSource afds = new AudioFileDataSource(3200, null);
 		afds.setAudioFile(audio, null);
 		S4mfccBuffer mfcc = new S4mfccBuffer();
-		mfcc.setSource(S4ForceAlignBlocViterbi.getFrontEnd(afds));
+		mfcc.setSource(getFrontEnd(afds));
 		return mfcc.getAllData();
 	}
 
@@ -182,6 +190,26 @@ public class S4mfccBuffer extends BaseDataProcessor {
 		}
 
 		return data;
+	}
+
+
+	public static FrontEnd getFrontEnd(DataProcessor... sourceList) {
+		ArrayList<DataProcessor> frontEndList = new ArrayList<>();
+		for (DataProcessor source: sourceList) {
+			if (null != source) {
+				frontEndList.add(source);
+			}
+		}
+		frontEndList.add(new Dither(2,false,Double.MAX_VALUE,-Double.MAX_VALUE));
+		frontEndList.add(new DataBlocker(50));
+		frontEndList.add(new Preemphasizer(0.97));
+		frontEndList.add(new RaisedCosineWindower(0.46f,25.625f,10f));
+		frontEndList.add(new DiscreteFourierTransform(512, false));
+		frontEndList.add(new MelFrequencyFilterBank(133.33334, 6855.4976, 40));
+		frontEndList.add(new DiscreteCosineTransform(40,13));
+		frontEndList.add(new LiveCMN(12,100,160));
+		frontEndList.add(new DeltasFeatureExtractor(3));
+		return new FrontEnd(frontEndList);
 	}
 
 }

@@ -20,16 +20,10 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 import fr.loria.synalp.jtrans.gui.JTransGUI;
-
-import edu.cmu.sphinx.frontend.DataProcessor;
-import edu.cmu.sphinx.frontend.FrontEnd;
-import edu.cmu.sphinx.frontend.filter.Preemphasizer;
-import edu.cmu.sphinx.frontend.transform.DiscreteFourierTransform;
-import edu.cmu.sphinx.frontend.window.RaisedCosineWindower;
+import static fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer.getFrontEnd;
 
 public class SpectroPanel extends JPanel {
-	AudioInputStream audioIn;
-	FrontEnd fft=null;
+
     protected BufferedImage spectrogram;
     /** A scaled version of the spectrogram image. */
     protected Image scaledSpectrogram;
@@ -39,7 +33,6 @@ public class SpectroPanel extends JPanel {
     protected float zoom = 1.0f;
 
     public JTransGUI aligneur;
-	AudioStreamSource audiosource;
 	MFCCbuffer buf;
 	
     /**
@@ -66,51 +59,10 @@ public class SpectroPanel extends JPanel {
 			}
 		});
 	}
-	
-	private void initFronEnd(AudioInputStream a) {
-		ArrayList<DataProcessor> frontEndList = new ArrayList<DataProcessor>();
-		audiosource = new AudioStreamSource(a);
-		frontEndList.add(audiosource);
-		frontEndList.add(new DetDataBlocker(50));
-		frontEndList.add(new Preemphasizer(0.97));
-		frontEndList.add(new RaisedCosineWindower(0.46f,25.625f,10f));
-		frontEndList.add(new DiscreteFourierTransform(512, false));
-//		frontEndList.add(new MelFrequencyFilterBank(133.33334, 6855.4976, 40));
-
-		fft = new FrontEnd(frontEndList);
-		
-/*
-		try {
-		JOptionPane.showMessageDialog(null, "bef getdata");
-		fft.getData();
-		fft.getData();
-		fft.getData();
-		fft.getData();
-		fft.getData();
-		fft.getData();
-		JOptionPane.showMessageDialog(null, "aft getdata");
-		} catch (Exception e ) {
-			JOptionPane.showMessageDialog(null, "exc "+e);
-		}
-		*/
-		buf = new MFCCbuffer(fft);
-	}
 
 	public void setAudioInputStream(AudioInputStream audio) {
-//		AudioFormat f = new AudioFormat(16000, 16, 1, true, true);
-//		audioIn = AudioSystem.getAudioInputStream(f, audio);
-		try {
-			initFronEnd(audio);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		buf = new MFCCbuffer(getFrontEnd(new AudioStreamSource(audio)));
 	}
-	
-	int frBufDeb=-1, frBufEnd=-1;
-
-    private int getFrameForTime(float tsec) {
-    	return (int)(tsec*100);
-    }
 
     // relativement au debut de l'audio stream
     private double[] getSpectrumAtFrame(int fr) {

@@ -29,20 +29,11 @@ import edu.cmu.sphinx.decoder.search.PartitionActiveListFactory;
 import edu.cmu.sphinx.decoder.search.SimpleActiveListManager;
 import edu.cmu.sphinx.decoder.search.WordActiveListFactory;
 import edu.cmu.sphinx.decoder.search.WordPruningBreadthFirstSearchManager;
-import edu.cmu.sphinx.frontend.DataBlocker;
 import edu.cmu.sphinx.frontend.DataEndSignal;
-import edu.cmu.sphinx.frontend.DataProcessor;
 import edu.cmu.sphinx.frontend.FrontEnd;
 import edu.cmu.sphinx.frontend.Signal;
 import edu.cmu.sphinx.frontend.SignalListener;
-import edu.cmu.sphinx.frontend.feature.DeltasFeatureExtractor;
-import edu.cmu.sphinx.frontend.feature.LiveCMN;
-import edu.cmu.sphinx.frontend.filter.Preemphasizer;
-import edu.cmu.sphinx.frontend.frequencywarp.MelFrequencyFilterBank;
-import edu.cmu.sphinx.frontend.transform.DiscreteCosineTransform;
-import edu.cmu.sphinx.frontend.transform.DiscreteFourierTransform;
 import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
-import edu.cmu.sphinx.frontend.window.RaisedCosineWindower;
 import edu.cmu.sphinx.linguist.Linguist;
 import edu.cmu.sphinx.linguist.WordSequence;
 import edu.cmu.sphinx.linguist.acoustic.AcousticModel;
@@ -57,6 +48,8 @@ import edu.cmu.sphinx.result.Path;
 import edu.cmu.sphinx.result.Result;
 import edu.cmu.sphinx.result.WordResult;
 import edu.cmu.sphinx.util.LogMath;
+
+import static fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer.getFrontEnd;
 
 /**
  * nouveau ASR base sur Sphinx4 mais sans fichiers de configuration.
@@ -298,21 +291,11 @@ public class S4ASR implements SignalListener {
 	}
 
 	private void initFronEnd(String wavname) {
-		ArrayList<DataProcessor> frontEndList = new ArrayList<DataProcessor>();
 		wavsource = new AudioFileDataSource(3200,null);
 		System.out.println("wavname "+wavname);
 		wavsource.setAudioFile(new File(wavname), null);
-		frontEndList.add(wavsource);
-		frontEndList.add(new DataBlocker(50));
-		frontEndList.add(new Preemphasizer(0.97));
-		frontEndList.add(new RaisedCosineWindower(0.46f,25.625f,10f));
-		frontEndList.add(new DiscreteFourierTransform(512, false));
-		frontEndList.add(new MelFrequencyFilterBank(133.33334, 6855.4976, 40));
-		frontEndList.add(new DiscreteCosineTransform(40,13));
-		frontEndList.add(new LiveCMN(12,100,160));
-		frontEndList.add(new DeltasFeatureExtractor(3));
 
-		mfcc = new FrontEnd(frontEndList);
+		mfcc = getFrontEnd(wavsource);
 		signalEndReached=false;
 		mfcc.addSignalListener(this);
 

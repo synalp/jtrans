@@ -9,6 +9,9 @@ package fr.loria.synalp.jtrans.speechreco.s4;
 
 import java.io.Serializable;
 
+/**
+ * @deprecated
+ */
 public class S4AlignOrder implements Serializable {
 	final public static S4AlignOrder terminationOrder = new S4AlignOrder(-1, -1);
 	

@@ -23,22 +23,12 @@ import edu.cmu.sphinx.decoder.search.SimpleBreadthFirstSearchManager;
 import edu.cmu.sphinx.decoder.search.Token;
 import edu.cmu.sphinx.frontend.BaseDataProcessor;
 import edu.cmu.sphinx.frontend.Data;
-import edu.cmu.sphinx.frontend.DataBlocker;
 import edu.cmu.sphinx.frontend.DataEndSignal;
 import edu.cmu.sphinx.frontend.DataProcessingException;
 import edu.cmu.sphinx.frontend.DataProcessor;
-import edu.cmu.sphinx.frontend.FrontEnd;
-import edu.cmu.sphinx.frontend.feature.DeltasFeatureExtractor;
-import edu.cmu.sphinx.frontend.feature.LiveCMN;
-import edu.cmu.sphinx.frontend.filter.Dither;
-import edu.cmu.sphinx.frontend.filter.Preemphasizer;
-import edu.cmu.sphinx.frontend.frequencywarp.MelFrequencyFilterBank;
-import edu.cmu.sphinx.frontend.transform.DiscreteCosineTransform;
-import edu.cmu.sphinx.frontend.transform.DiscreteFourierTransform;
 import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
 import edu.cmu.sphinx.frontend.util.Microphone;
 import edu.cmu.sphinx.frontend.util.WavWriter;
-import edu.cmu.sphinx.frontend.window.RaisedCosineWindower;
 import edu.cmu.sphinx.jsgf.JSGFGrammar;
 import edu.cmu.sphinx.jsgf.JSGFGrammarException;
 import edu.cmu.sphinx.jsgf.JSGFGrammarParseException;
@@ -53,6 +43,8 @@ import fr.loria.synalp.jtrans.speechreco.grammaire.Grammatiseur;
 import fr.loria.synalp.jtrans.speechreco.s4.*;
 import fr.loria.synalp.jtrans.utils.PrintStreamProgressDisplay;
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
+
+import static fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer.getFrontEnd;
 
 public class LiveSpeechReco extends PhoneticForcedGrammar {
 	public static LiveSpeechReco gram=null;
@@ -165,35 +157,18 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 		stopit=false;
 		
 		// FRONTEND
-		ArrayList<DataProcessor> frontEndList = new ArrayList<DataProcessor>();
 		System.out.println("LIVERECO OPENMIKE mixidx "+mixidx);
 		mikeSource = new Microphone(16000, 16, 1, true, true, true, 10, false, "average", 0, ""+mixidx, 6400);
 
-		{
-			System.out.println("mikesource created");
-		}
-		
-		frontEndList.add(mikeSource);
-		
 		WavWriter wavw=null;
 		final long wavwritestart = System.currentTimeMillis();
 		if (wavout!=null) {
 			System.out.println("SAVING IN "+wavout);
 			wavw = new WavWriter(wavout, true, 16, true, false);
 			wavw.initialize();
-			frontEndList.add(wavw);
 		}
-		
-		frontEndList.add(new Dither(2,false,Double.MAX_VALUE,-Double.MAX_VALUE));
-		frontEndList.add(new DataBlocker(50));
-		frontEndList.add(new Preemphasizer(0.97));
-		frontEndList.add(new RaisedCosineWindower(0.46f,25.625f,10f));
-		frontEndList.add(new DiscreteFourierTransform(512, false));
-		frontEndList.add(new MelFrequencyFilterBank(133.33334, 6855.4976, 40));
-		frontEndList.add(new DiscreteCosineTransform(40,13));
-		frontEndList.add(new LiveCMN(12,100,160));
-		frontEndList.add(new DeltasFeatureExtractor(3));
-		BaseDataProcessor mfcc = new FrontEnd(frontEndList);
+
+		BaseDataProcessor mfcc = getFrontEnd(mikeSource, wavw);
 
 		LogMath logMath = HMMModels.getLogMath();
 		if (mods==null) {
@@ -317,22 +292,11 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 
 	public void wavReco() {
 		// FRONTEND
-		ArrayList<DataProcessor> frontEndList = new ArrayList<DataProcessor>();
 		mikeSource=null;
 		
 		AudioFileDataSource wavsrc = new AudioFileDataSource(3200, null);
 		wavsrc.setAudioFile(new File(wavfile), null);
-		frontEndList.add(wavsrc);
-		frontEndList.add(new Dither(2,false,Double.MAX_VALUE,-Double.MAX_VALUE));
-		frontEndList.add(new DataBlocker(50));
-		frontEndList.add(new Preemphasizer(0.97));
-		frontEndList.add(new RaisedCosineWindower(0.46f,25.625f,10f));
-		frontEndList.add(new DiscreteFourierTransform(512, false));
-		frontEndList.add(new MelFrequencyFilterBank(133.33334, 6855.4976, 40));
-		frontEndList.add(new DiscreteCosineTransform(40,13));
-		frontEndList.add(new LiveCMN(12,100,160));
-		frontEndList.add(new DeltasFeatureExtractor(3));
-		BaseDataProcessor mfcc = new FrontEnd(frontEndList);
+		BaseDataProcessor mfcc = getFrontEnd(wavsrc);
 
 		LogMath logMath = HMMModels.getLogMath();
 		if (mods==null) {
@@ -579,19 +543,8 @@ public class LiveSpeechReco extends PhoneticForcedGrammar {
 	}
 	private static void debug2() {
 		// FRONTEND
-		ArrayList<DataProcessor> frontEndList = new ArrayList<DataProcessor>();
 		Microphone mikeSource = new Microphone(16000, 16, 1, true, true, false, 10, false, "average", 0, "default", 6400);
-		frontEndList.add(mikeSource);
-		frontEndList.add(new Dither(2,false,Double.MAX_VALUE,-Double.MAX_VALUE));
-		frontEndList.add(new DataBlocker(50));
-		frontEndList.add(new Preemphasizer(0.97));
-		frontEndList.add(new RaisedCosineWindower(0.46f,25.625f,10f));
-		frontEndList.add(new DiscreteFourierTransform(512, false));
-		frontEndList.add(new MelFrequencyFilterBank(133.33334, 6855.4976, 40));
-		frontEndList.add(new DiscreteCosineTransform(40,13));
-		frontEndList.add(new LiveCMN(12,100,160));
-		frontEndList.add(new DeltasFeatureExtractor(3));
-		BaseDataProcessor mfcc = new FrontEnd(frontEndList);
+		BaseDataProcessor mfcc = getFrontEnd(mikeSource);
 		//		mfccs = new S4RoundBufferFrontEnd(null, 10000);
 		S4mfccBuffer mfccs = new S4mfccBuffer();
 		mfccs.setSource(mfcc);

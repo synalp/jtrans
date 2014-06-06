@@ -64,21 +64,10 @@ import edu.cmu.sphinx.decoder.search.PartitionActiveListFactory;
 import edu.cmu.sphinx.decoder.search.SimpleBreadthFirstSearchManager;
 import edu.cmu.sphinx.decoder.search.Token;
 import edu.cmu.sphinx.frontend.Data;
-import edu.cmu.sphinx.frontend.DataBlocker;
 import edu.cmu.sphinx.frontend.DataEndSignal;
-import edu.cmu.sphinx.frontend.DataProcessor;
 import edu.cmu.sphinx.frontend.DataStartSignal;
-import edu.cmu.sphinx.frontend.FrontEnd;
-import edu.cmu.sphinx.frontend.feature.DeltasFeatureExtractor;
-import edu.cmu.sphinx.frontend.feature.LiveCMN;
-import edu.cmu.sphinx.frontend.filter.Dither;
-import edu.cmu.sphinx.frontend.filter.Preemphasizer;
-import edu.cmu.sphinx.frontend.frequencywarp.MelFrequencyFilterBank;
-import edu.cmu.sphinx.frontend.transform.DiscreteCosineTransform;
-import edu.cmu.sphinx.frontend.transform.DiscreteFourierTransform;
 import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
 import edu.cmu.sphinx.frontend.util.Microphone;
-import edu.cmu.sphinx.frontend.window.RaisedCosineWindower;
 import edu.cmu.sphinx.linguist.SearchState;
 import edu.cmu.sphinx.linguist.SearchStateArc;
 import edu.cmu.sphinx.linguist.acoustic.AcousticModel;
@@ -86,6 +75,8 @@ import edu.cmu.sphinx.linguist.flat.FlatLinguist;
 import edu.cmu.sphinx.util.LogMath;
 import fr.loria.synalp.jtrans.utils.PrintStreamProgressDisplay;
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
+
+import static fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer.getFrontEnd;
 
 /**
  * utiliser Sphinx4 pour aligner et pour n'avoir qu'un seul ensemble de HMMs
@@ -97,6 +88,8 @@ import fr.loria.synalp.jtrans.utils.ProgressDisplay;
  * J'utilise donc une approche de type "programmation"
  * 
  * @author cerisara
+ *
+ * @deprecated
  *
  */
 public class S4ForceAlignBlocViterbi extends Thread {
@@ -159,21 +152,6 @@ public class S4ForceAlignBlocViterbi extends Thread {
 			mfccs.clear();
 			wavfile.setAudioFile(new File(wavname), null);
 		}
-	}
-
-	public static FrontEnd getFrontEnd(DataProcessor source) {
-		ArrayList<DataProcessor> frontEndList = new ArrayList<DataProcessor>();
-		frontEndList.add(source);
-		frontEndList.add(new Dither(2,false,Double.MAX_VALUE,-Double.MAX_VALUE));
-		frontEndList.add(new DataBlocker(50));
-		frontEndList.add(new Preemphasizer(0.97));
-		frontEndList.add(new RaisedCosineWindower(0.46f,25.625f,10f));
-		frontEndList.add(new DiscreteFourierTransform(512, false));
-		frontEndList.add(new MelFrequencyFilterBank(133.33334, 6855.4976, 40));
-		frontEndList.add(new DiscreteCosineTransform(40,13));
-		frontEndList.add(new LiveCMN(12,100,160));
-		frontEndList.add(new DeltasFeatureExtractor(3));
-		return new FrontEnd(frontEndList);
 	}
 
 	private void initS4Mike() {
