@@ -1,7 +1,7 @@
 package fr.loria.synalp.jtrans.gui;
 
 import fr.loria.synalp.jtrans.project.Token;
-import static fr.loria.synalp.jtrans.utils.TimeConverter.second2frame;
+import static fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer.second2frame;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;

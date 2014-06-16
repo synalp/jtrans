@@ -219,7 +219,7 @@ public class S4mfccBuffer extends BaseDataProcessor {
 		frontEndList.add(new Dither(2,false,Double.MAX_VALUE,-Double.MAX_VALUE));
 		frontEndList.add(new DataBlocker(50));
 		frontEndList.add(new Preemphasizer(0.97));
-		frontEndList.add(new RaisedCosineWindower(0.46f,25.625f,10f));
+		frontEndList.add(new RaisedCosineWindower(0.46f, 25.625f, FRAMES_PER_SECOND/10f));
 		frontEndList.add(new DiscreteFourierTransform(512, false));
 
 		if (withMFCC) {
@@ -234,6 +234,17 @@ public class S4mfccBuffer extends BaseDataProcessor {
 
 	public static FrontEnd getFrontEnd(DataProcessor... sourceList) {
 		return getFrontEnd(true, sourceList);
+	}
+
+
+	public static int FRAMES_PER_SECOND = 100;
+
+	public static float frame2second(int f) {
+		return (float)f/FRAMES_PER_SECOND;
+	}
+
+	public static int second2frame(float s) {
+		return (int)(s*FRAMES_PER_SECOND);
 	}
 
 }

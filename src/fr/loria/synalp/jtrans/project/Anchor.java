@@ -1,6 +1,7 @@
 package fr.loria.synalp.jtrans.project;
 
-import fr.loria.synalp.jtrans.utils.TimeConverter;
+import static fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer.frame2second;
+import static fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer.second2frame;
 
 public class Anchor
 		implements Comparable<Anchor>
@@ -35,7 +36,7 @@ public class Anchor
 
 
 	public int getFrame() {
-		return TimeConverter.second2frame(seconds);
+		return second2frame(seconds);
 	}
 
 
@@ -45,7 +46,7 @@ public class Anchor
 
 
 	public void setFrame(int frame) {
-		seconds = TimeConverter.frame2second(frame);
+		seconds = frame2second(frame);
 	}
 
 

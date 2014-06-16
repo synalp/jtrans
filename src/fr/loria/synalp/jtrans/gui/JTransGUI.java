@@ -30,6 +30,7 @@ import fr.loria.synalp.jtrans.speechreco.SpeechReco;
 import fr.loria.synalp.jtrans.gui.spectro.SpectroControl;
 import fr.loria.synalp.jtrans.speechreco.BiaisAdapt;
 import fr.loria.synalp.jtrans.utils.*;
+import static fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer.frame2second;
 
 /**
  * Main panel.
@@ -185,7 +186,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 
 	public void clicOnSpectro(int frf) {
 		float prevsec = getCurPosInSec();
-		float sec = TimeConverter.frame2second(frf);
+		float sec = frame2second(frf);
 		sec += prevsec;
 		// on lit une seconde avant la pos
 		setCurPosInSec(sec-1);

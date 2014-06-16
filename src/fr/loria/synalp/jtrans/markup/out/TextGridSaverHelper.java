@@ -6,7 +6,7 @@ import java.io.*;
 import java.util.Iterator;
 
 import static fr.loria.synalp.jtrans.utils.FileUtils.getUTF8Writer;
-import static fr.loria.synalp.jtrans.utils.TimeConverter.frame2second;
+import static fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer.frame2second;
 
 public class TextGridSaverHelper {
 

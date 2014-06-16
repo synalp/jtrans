@@ -4,6 +4,8 @@ import fr.loria.synalp.jtrans.align.Aligner;
 import fr.loria.synalp.jtrans.align.ViterbiAligner;
 import fr.loria.synalp.jtrans.utils.*;
 import fr.loria.synalp.jtrans.graph.StateGraph;
+import static fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer.frame2second;
+import static fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer.second2frame;
 
 import javax.sound.sampled.*;
 import java.io.*;
@@ -270,8 +272,8 @@ public abstract class Project {
 					System.out.printf("worddiff %d %3d %6.2f %6.2f %4d %4d %4d %s\n",
 							i,
 							w,
-							TimeConverter.frame2second(f1),
-							TimeConverter.frame2second(f2),
+							frame2second(f1),
+							frame2second(f2),
 							f2 - f1,
 							l2 - l1,
 							l2 - f2 - (l1 - f1),
@@ -303,7 +305,7 @@ public abstract class Project {
 				AudioFormat format = audioInputStream.getFormat();
 				long frames = audioInputStream.getFrameLength();
 				double durationInSeconds = (frames+0.0) / format.getFrameRate();
-				audioSourceTotalFrames = TimeConverter.second2frame((float)durationInSeconds);
+				audioSourceTotalFrames = second2frame((float)durationInSeconds);
 			} catch (IOException ex) {
 				audioSourceTotalFrames = -1;
 			} catch (UnsupportedAudioFileException ex) {

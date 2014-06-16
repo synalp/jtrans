@@ -1,6 +1,6 @@
 package fr.loria.synalp.jtrans.project;
 
-import static fr.loria.synalp.jtrans.utils.TimeConverter.frame2second;
+import static fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer.frame2second;
 import static fr.loria.synalp.jtrans.graph.StatePool.SILENCE_PHONE;
 
 import java.util.ArrayList;

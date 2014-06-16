@@ -10,7 +10,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import fr.loria.synalp.jtrans.gui.JTransGUI;
-import fr.loria.synalp.jtrans.utils.TimeConverter;
+import static fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer.second2frame;
 
 /**
  * "wrap" un SpectroPanel dans un autre Panel, et
@@ -20,7 +20,7 @@ import fr.loria.synalp.jtrans.utils.TimeConverter;
  *
  */
 public class SpectroControl extends JPanel {
-	float startSeconds = 0;
+	int startFrame = 0;
 	SpectroPanel spectro;
 	TimelineWords words = new TimelineWords();
 	JButton refresh = new JButton("refresh");
@@ -47,7 +47,7 @@ public class SpectroControl extends JPanel {
 
 	public void refreshWords() {
 		words.setTokens(gui.project.getTokens(spkID));
-		words.setFirstFrame(TimeConverter.second2frame(startSeconds));
+		words.setFirstFrame(startFrame);
 		words.repaint();
 	}
 
@@ -146,8 +146,7 @@ public class SpectroControl extends JPanel {
 		// on a un X-pixel = 1 frame = 0.01s, et avec le zoom: 1 frame = zoom xpixel
 		// pour afficher toute la largeur, il faut donc calculer width/zoom frames
 		//		int nfr = (int)((float)getWidth()*0.6f/spectro.getZoom());
-		int frame = TimeConverter.second2frame(startSeconds);
-		spectro.computeSpectrogram(frame, frame+500);
+		spectro.computeSpectrogram(startFrame, startFrame+500);
 		int w = (int)((float)getWidth()*0.9f);
 		int h = 80;
 		spectro.setSize(new Dimension(w, h));
@@ -163,8 +162,8 @@ public class SpectroControl extends JPanel {
 	}
 
 	public void setAudioInputStreamPosition(float startSeconds) {
-		this.startSeconds = startSeconds;
-		words.setFirstFrame(TimeConverter.second2frame(startSeconds));
+		startFrame = second2frame(startSeconds);
+		words.setFirstFrame(startFrame);
 		posdeb.setText(String.format("%.3f", startSeconds));
 		refresh();
 		repaint();
