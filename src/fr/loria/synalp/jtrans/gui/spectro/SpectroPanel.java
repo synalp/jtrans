@@ -31,7 +31,6 @@ public class SpectroPanel extends JPanel {
     /** The zooming factor. */
     protected float zoom = 1.0f;
 
-    public JTransGUI aligneur;
 	List<FloatData> buf;
 	
     /**
@@ -47,12 +46,12 @@ public class SpectroPanel extends JPanel {
 	public void setZoom(float v) {zoom=v;}
 	public float getZoom() {return zoom;}
 
-	public SpectroPanel() {
+	public SpectroPanel(final JTransGUI gui) {
 		addMouseListener(new MouseAdapter() {
 			public void mouseClicked(MouseEvent e) {
 				int x=e.getX();
 				if (e.getButton()==MouseEvent.BUTTON1) {
-					aligneur.clicOnSpectro((float)x/zoom);
+					gui.clicOnSpectro((float) x / zoom);
 					System.out.println("clic at "+x);
 				}
 			}
@@ -60,7 +59,11 @@ public class SpectroPanel extends JPanel {
 	}
 
 	public void setAudioInputStream(AudioInputStream audio) {
-		buf = S4mfccBuffer.getAllData(audio, false);
+		if (null == audio) {
+			buf = null;
+		} else {
+			buf = S4mfccBuffer.getAllData(audio, false);
+		}
 	}
 
     /** Actually creates the Spectrogram image. */

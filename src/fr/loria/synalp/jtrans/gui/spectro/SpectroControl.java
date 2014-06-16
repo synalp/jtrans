@@ -21,7 +21,7 @@ import fr.loria.synalp.jtrans.utils.TimeConverter;
  */
 public class SpectroControl extends JPanel {
 	float startSeconds = 0;
-	SpectroPanel spectro = new SpectroPanel();
+	SpectroPanel spectro;
 	TimelineWords words = new TimelineWords();
 	JButton refresh = new JButton("refresh");
 	JSlider offset = new JSlider(0,200,80);
@@ -35,8 +35,8 @@ public class SpectroControl extends JPanel {
 
 	public SpectroControl(JTransGUI main) {
 		gui = main;
+		spectro = new SpectroPanel(main);
 		initgui();
-		spectro.aligneur= gui;
 	}
 
 	public void setSpeaker(int spkID) {
@@ -145,9 +145,9 @@ public class SpectroControl extends JPanel {
 	public void refresh() {
 		// on a un X-pixel = 1 frame = 0.01s, et avec le zoom: 1 frame = zoom xpixel
 		// pour afficher toute la largeur, il faut donc calculer width/zoom frames
-		// on commence tjs a la frame 0, car l'audioinputstream est decale pour commencer au bon endroit
 		//		int nfr = (int)((float)getWidth()*0.6f/spectro.getZoom());
-		spectro.computeSpectrogram(0, 500);
+		int frame = TimeConverter.second2frame(startSeconds);
+		spectro.computeSpectrogram(frame, frame+500);
 		int w = (int)((float)getWidth()*0.9f);
 		int h = 80;
 		spectro.setSize(new Dimension(w, h));
@@ -158,10 +158,13 @@ public class SpectroControl extends JPanel {
 		validate();
 	}
 
-	public void setAudioInputStream(float startSeconds, AudioInputStream a) {
+	public void setAudioInputStream(AudioInputStream audio) {
+		spectro.setAudioInputStream(audio);
+	}
+
+	public void setAudioInputStreamPosition(float startSeconds) {
 		this.startSeconds = startSeconds;
 		posdeb.setText(String.format("%.3f", startSeconds));
-		spectro.setAudioInputStream(a);
 		refresh();
 		repaint();
 	}

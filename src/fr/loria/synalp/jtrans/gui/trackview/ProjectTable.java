@@ -437,7 +437,7 @@ public class ProjectTable
 		if (word.isAligned()) {
 			model.highlightToken(spkID, word);
 			gui.setCurPosInSec(word.getSegment().getStartSecond());
-			gui.sigpan.setSpeaker(spkID);
+			gui.spectro.setSpeaker(spkID);
 		} else {
 			replay = false;
 		}

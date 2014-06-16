@@ -68,7 +68,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	 */
 	private float cursec = 0;
 	public ControlBox ctrlbox;
-	public SpectroControl sigpan;
+	public SpectroControl spectro;
 
 	/* IMPORTANT: the karaoke highlighter *has* to be a Swing timer, not a
 	java.util.Timer. This is to ensure that the callback is called from
@@ -95,21 +95,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 
 	public void setCurPosInSec(float sec) {
 		cursec = sec;
-
-		/*
-		int frame = TimeConverter.second2frame(cursec);
-        // vieux panel
-        if (sigPanel!=null) {
-            long currentSample = TimeConverter.frame2sample(frame);
-            if (currentSample < 0) currentSample = 0;
-            sigPanel.setProgressBar(currentSample);
-        }
-		*/
-
-		// nouveau panel
-		sigpan.setAudioInputStream(cursec, getAudioStreamFromSec(cursec));
-
-		updateViewers();
+		spectro.setAudioInputStreamPosition(cursec);
 	}
 
 	@Override
@@ -165,7 +151,8 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	public void setAudioSource(File soundFile) {
 		setIndeterminateProgress("Loading audio from " + soundFile + "...");
 		project.setAudio(soundFile);
-		updateViewers();
+		spectro.setAudioInputStream(getAudioStreamFromSec(0));
+		setCurPosInSec(0);
 		setProgressDone();
 	}
 	
@@ -205,15 +192,6 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		} catch (IOException e) {
 			e.printStackTrace();
 			return null;
-		}
-	}
-
-	private void updateViewers() {
-		// update spectro
-		AudioInputStream aud = getAudioStreamFromSec(getCurPosInSec());
-		if (aud!=null&&sigpan!=null) {
-			sigpan.setAudioInputStream(getCurPosInSec(),aud);
-			sigpan.refresh();
 		}
 	}
 
@@ -295,9 +273,8 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 			add(infoLabel, BorderLayout.CENTER);
 		}};
 
-		sigpan = new SpectroControl(this);
-		AudioInputStream aud = getAudioStreamFromSec(getCurPosInSec());
-		if (aud!=null) sigpan.setAudioInputStream(getCurPosInSec(),aud);
+		spectro = new SpectroControl(this);
+		spectro.setAudioInputStreamPosition(getCurPosInSec());
 
 		// Add everything to the panel
 
@@ -305,7 +282,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		add(multiTrackScrollPane, BorderLayout.CENTER);
 
 		add(new JPanel(new BorderLayout()) {{
-			add(sigpan, BorderLayout.PAGE_START);
+			add(spectro, BorderLayout.PAGE_START);
 			add(status, BorderLayout.PAGE_END);
 		}}, BorderLayout.PAGE_END);
 	}
