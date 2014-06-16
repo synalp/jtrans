@@ -83,11 +83,11 @@ public class ControlBox extends JPanel implements ActionListener {
 	public void actionPerformed(ActionEvent e) {
 		if (e.getActionCommand().equals("playstart")) {
 			playergui.setStartSec(aligneur.getCurPosInSec());
-			aligneur.newplaystarted();
+			aligneur.startKaraoke();
 		} else if (e.getActionCommand().equals("rewind")) {
 			aligneur.setCurPosInSec(0);
 		} else if (e.getActionCommand().equals("playstop")) {
-			aligneur.newplaystopped();
+			aligneur.stopKaraoke();
 			float prevStartingTime = playergui.getRelativeStartingSec();
 			aligneur.setCurPosInSec(prevStartingTime+(float)playergui.getTimePlayed()/1000f);
 		}

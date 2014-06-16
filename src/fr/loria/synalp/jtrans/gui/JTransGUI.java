@@ -13,15 +13,12 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.*;
-import java.util.ArrayList;
 import java.util.List;
 import javax.sound.sampled.*;
 import javax.swing.*;
-import javax.swing.Timer;
 
 import fr.loria.synalp.jtrans.JTrans;
 import fr.loria.synalp.jtrans.align.Aligner;
-import fr.loria.synalp.jtrans.project.Token;
 import fr.loria.synalp.jtrans.gui.trackview.ProjectTable;
 import fr.loria.synalp.jtrans.markup.in.MarkupLoader;
 import fr.loria.synalp.jtrans.markup.in.ParsingException;
@@ -57,8 +54,6 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 
 
 
-	public static final int KARAOKE_UPDATE_INTERVAL = 50; // milliseconds
-
 
 	public JFrame jf=null;
 
@@ -69,13 +64,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	private float cursec = 0;
 	public ControlBox ctrlbox;
 	public SpectroControl spectro;
-
-	/* IMPORTANT: the karaoke highlighter *has* to be a Swing timer, not a
-	java.util.Timer. This is to ensure that the callback is called from
-	Swing's event dispatch thread. */
-	private Timer karaokeHighlighter = null;
-
-	private PlayerGUI playergui;
+	private KaraokeHighlighter karaoke;
 
 	public int mixidx=0;
 
@@ -137,8 +126,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	}
 
 	public void quit() {
-		if (karaokeHighlighter != null)
-			karaokeHighlighter.stop();
+		stopKaraoke();
 		jf.dispose();
 		System.exit(0);
 	}
@@ -262,7 +250,6 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		multiTrackScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 
 		ctrlbox = new ControlBox(this);
-		playergui = ctrlbox.getPlayerGUI();
 
 		infoLabel.setFont(new Font(Font.DIALOG, Font.PLAIN, 11));
 
@@ -288,71 +275,20 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	}
 
 
-	public void newplaystarted() {
-		// Copy all alignable words - TODO: this isn't necessary anymore
-		final List<List<Token>> words = new ArrayList<>();
-		for (int i = 0; i < project.speakerCount(); i++) {
-			words.add(new ArrayList<Token>());
-			for (Token w: project.getTokens(i)) {
-				if (w.isAligned()) {
-					words.get(i).add(w);
-				}
-			}
-		}
-
-		karaokeHighlighter = new Timer(KARAOKE_UPDATE_INTERVAL, new AbstractAction() {
-			int[] hl = new int[project.speakerCount()];
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				long curt = System.currentTimeMillis();
-				long t0 = playergui.getTimePlayStarted();
-				int curfr = TimeConverter.millisec2frame(curt-t0);
-				// ajoute le debut du segment joué
-				curfr += playergui.getRelativeStartingSec()*100;
-
-				for (int i = 0; i < project.speakerCount(); i++) {
-					List<Token> wordList = words.get(i);
-					if (wordList.isEmpty()) {
-						continue;
-					}
-
-					int newHl = hl[i];
-
-					while (newHl < wordList.size() &&
-							wordList.get(newHl).getSegment().getEndFrame() < curfr) {
-						newHl++;
-					}
-
-					if (newHl >= wordList.size()) {
-						continue;
-					}
-
-					// Only update UI if the word wasn't already highlighted
-					Token w = wordList.get(newHl);
-
-					if (w.getSegment().getStartFrame() > curfr) {
-						table.highlightWord(i, null);
-						continue;
-					}
-
-					if (hl[i] != newHl) {
-						table.highlightWord(i, w);
-					}
-
-					hl[i] = newHl;
-				}
-			}
-		});
-		karaokeHighlighter.start();
+	public void startKaraoke() {
+		karaoke = new KaraokeHighlighter(this);
+		karaoke.start();
 	}
 
-	public void newplaystopped() {
-		if (karaokeHighlighter != null) {
-			karaokeHighlighter.stop();
-			karaokeHighlighter = null;
+
+	public void stopKaraoke() {
+		if (karaoke != null) {
+			karaoke.stop();
+			karaoke = null;
 		}
 	}
+
+
 
 	private void getRecoResult(SpeechReco asr) {
 		List<String> lmots = getRecoResultOld(asr);
