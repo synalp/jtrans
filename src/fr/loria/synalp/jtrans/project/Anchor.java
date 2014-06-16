@@ -45,7 +45,7 @@ public class Anchor
 
 
 	public void setFrame(int frame) {
-		seconds = TimeConverter.frame2sec(frame);
+		seconds = TimeConverter.frame2second(frame);
 	}
 
 

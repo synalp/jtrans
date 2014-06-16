@@ -49,10 +49,8 @@ public class SpectroPanel extends JPanel {
 	public SpectroPanel(final JTransGUI gui) {
 		addMouseListener(new MouseAdapter() {
 			public void mouseClicked(MouseEvent e) {
-				int x=e.getX();
-				if (e.getButton()==MouseEvent.BUTTON1) {
-					gui.clicOnSpectro((float) x / zoom);
-					System.out.println("clic at "+x);
+				if (e.getButton() == MouseEvent.BUTTON1) {
+					gui.clicOnSpectro((int)(e.getX() / zoom));
 				}
 			}
 		});

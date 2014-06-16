@@ -6,7 +6,7 @@ import java.io.*;
 import java.util.Iterator;
 
 import static fr.loria.synalp.jtrans.utils.FileUtils.getUTF8Writer;
-import static fr.loria.synalp.jtrans.utils.TimeConverter.frame2sec;
+import static fr.loria.synalp.jtrans.utils.TimeConverter.frame2second;
 
 public class TextGridSaverHelper {
 
@@ -116,7 +116,7 @@ public class TextGridSaverHelper {
 				.append("\n")
 				.append("\nxmin = 0")
 				.append("\nxmax = ")
-				.append(Float.toString(frame2sec(frameCount)))
+				.append(Float.toString(frame2second(frameCount)))
 				.append("\ntiers? <exists>")
 				.append("\nsize = ")
 				.append(Integer.toString(tierCount))
@@ -141,7 +141,7 @@ public class TextGridSaverHelper {
 				.append("\n\t\tname = \"").append(name).append('"') // TODO escape strings
 				.append("\n\t\txmin = 0")
 				.append("\n\t\txmax = ")
-				.append(Float.toString(frame2sec(frameCount)))
+				.append(Float.toString(frame2second(frameCount)))
 				.append("\n\t\tintervals: size = ")
 				.append(Integer.toString(intervalCount));
 	}
@@ -158,9 +158,9 @@ public class TextGridSaverHelper {
 	{
 		w.append("\n\t\tintervals [").append(Integer.toString(id)).append("]:")
 				.append("\n\t\t\txmin = ")
-				.append(Float.toString(frame2sec(xminFrame)))
+				.append(Float.toString(frame2second(xminFrame)))
 				.append("\n\t\t\txmax = ")
-				.append(Float.toString(frame2sec(xmaxFrame)))
+				.append(Float.toString(frame2second(xmaxFrame)))
 				.append("\n\t\t\ttext = \"").append(content).append('"'); // TODO escape strings
 	}
 

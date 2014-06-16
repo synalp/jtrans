@@ -1,6 +1,6 @@
 package fr.loria.synalp.jtrans.project;
 
-import static fr.loria.synalp.jtrans.utils.TimeConverter.frame2sec;
+import static fr.loria.synalp.jtrans.utils.TimeConverter.frame2second;
 import static fr.loria.synalp.jtrans.graph.StatePool.SILENCE_PHONE;
 
 import java.util.ArrayList;
@@ -55,11 +55,11 @@ public class Token {
 		}
 
 		public float getStartSecond() {
-			return frame2sec(start);
+			return frame2second(start);
 		}
 
 		public float getEndSecond() {
-			return frame2sec(end);
+			return frame2second(end);
 		}
 
 		public int getStartFrame() {
@@ -75,7 +75,7 @@ public class Token {
 		}
 
 		public float getLengthSeconds() {
-			return frame2sec(getLengthFrames());
+			return frame2second(getLengthFrames());
 		}
 	}
 

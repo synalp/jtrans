@@ -183,9 +183,9 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		}
 	}
 
-	public void clicOnSpectro(float frf) {
+	public void clicOnSpectro(int frf) {
 		float prevsec = getCurPosInSec();
-		float sec = TimeConverter.frame2sec((int) frf);
+		float sec = TimeConverter.frame2second(frf);
 		sec += prevsec;
 		// on lit une seconde avant la pos
 		setCurPosInSec(sec-1);

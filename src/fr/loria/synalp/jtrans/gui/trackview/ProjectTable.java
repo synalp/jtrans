@@ -357,7 +357,7 @@ public class ProjectTable
 		float initialPos;
 
 		if (!word.isAligned()) {
-			float endOfAudio = TimeConverter.frame2sec((int) project.audioSourceTotalFrames);
+			float endOfAudio = TimeConverter.frame2second((int) project.audioSourceTotalFrames);
 			initialPos = before?
 					(range.prev!=null? range.prev.seconds: 0) :
 					(range.next!=null? range.next.seconds: endOfAudio);
