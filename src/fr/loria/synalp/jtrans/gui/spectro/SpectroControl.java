@@ -164,6 +164,7 @@ public class SpectroControl extends JPanel {
 
 	public void setAudioInputStreamPosition(float startSeconds) {
 		this.startSeconds = startSeconds;
+		words.setFirstFrame(TimeConverter.second2frame(startSeconds));
 		posdeb.setText(String.format("%.3f", startSeconds));
 		refresh();
 		repaint();
