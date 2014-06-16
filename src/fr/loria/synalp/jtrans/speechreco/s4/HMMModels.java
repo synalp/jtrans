@@ -9,7 +9,6 @@ package fr.loria.synalp.jtrans.speechreco.s4;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 
 import edu.cmu.sphinx.linguist.acoustic.AcousticModel;
@@ -25,8 +24,6 @@ public abstract class HMMModels {
 	private static LogMath logMath = null;
 	private static UnitManager unitManager = null;
 
-	// le resource doit etre en dernier !
-//	public static String pathHMMs[] = {"res/acmod","../jtrans/res/acmod","resource:/res/acmod"};
 	public static String modelDef = "ESTER2_Train_373f_a01_s01.f04.lexV02_alg01_ter.cd_2500.mdef";
 	public static String datapath = "ESTER2_Train_373f_a01_s01.f04.lexV02_alg01_ter.cd_2500.params.064g/";
 
@@ -54,34 +51,12 @@ public abstract class HMMModels {
 				// ancienne version de S4
 				loader = new Sphinx3Loader(modurl,modelDef,datapath,logm,um,0f,1e-7f,0.0001f,false);
 				
-/*				
-				for (int pathidx=0;pathidx<pathHMMs.length;pathidx++) {
-					String u = FileUtils.getRessource("plugins.speechreco.aligners.sphiinx4.HMMModels", pathHMMs[pathidx]);
-System.out.println("acmod trying path "+pathHMMs[pathidx]+" "+u);
-					if (u!=null) {
-						File f = new File(u);
-						if (f.exists()) {
-							URL tt = f.toURI().toURL();
-							System.out.println("acoustic models url "+tt);
-							loader = new Sphinx3Loader(tt, modelDef, datapath, logm, um, 0, 1e-7f, 0.0001f, false);
-							break;
-						}
-					}
-				}
-				*/
-				
 				mods = new TiedStateAcousticModel(loader, um, true);
 				mods.allocate();
-			} catch (MalformedURLException e) {
-				e.printStackTrace();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
 		return mods;
-	}
-
-	public static void main(String args[]) {
-		AcousticModel mods = getAcousticModels();
 	}
 }
