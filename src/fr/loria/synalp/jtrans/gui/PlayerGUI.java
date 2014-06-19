@@ -5,10 +5,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.JToggleButton;
+import javax.sound.sampled.LineUnavailableException;
+import javax.swing.*;
 
 import fr.loria.synalp.jtrans.utils.Player;
 
@@ -47,6 +45,7 @@ public class PlayerGUI extends JPanel {
 	}
 	
 	public void startPlaying() {
+		try
 		{
 			// on appelle les listeners avant de jouer car ceux-ci peuvent avoir
 			// qqchose a faire juste avant de commencer !
@@ -56,6 +55,10 @@ public class PlayerGUI extends JPanel {
 			player.play(aligneur.getAudioStreamFromSec(aligneur.getCurPosInSec()));
 			timePlayStartedMs=System.currentTimeMillis();
 			timeIntervalPlayed=0;
+		} catch (LineUnavailableException ex) {
+			ex.printStackTrace();
+			aligneur.errorMessage("Can't open audio line", ex);
+			return;
 		}
 		playstop.setText("Pause");
 		playstop.setSelected(true);
@@ -63,7 +66,7 @@ public class PlayerGUI extends JPanel {
 	}
 	
 	public void stopPlaying() {
-		player.stopPlaying();
+		player.stop();
 		if (timePlayStartedMs>=0)
 			timeIntervalPlayed=System.currentTimeMillis()-timePlayStartedMs;
 		timePlayStartedMs=-1;

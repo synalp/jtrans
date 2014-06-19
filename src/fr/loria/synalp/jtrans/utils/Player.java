@@ -7,95 +7,92 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.Mixer;
 import javax.sound.sampled.SourceDataLine;
-import javax.swing.JOptionPane;
 
 public class Player {
-	private int mixidx=-1;
-	private SourceDataLine line=null;
-	private AudioFormat format=null;
-	private AudioInputStream data;
-	private boolean stop=false;
-	private boolean isplaying=false;
 
-	public void setMixer(int m) {mixidx=m;}
+	private static final int BUFFER_SIZE = 4096;
 
-	public void stopPlaying() {
-		stop=true;
+	/** Must be {@code null} when not playing back */
+	private PlaybackThread thread = null;
+
+
+	public void play(final AudioInputStream audioStream)
+			throws LineUnavailableException
+	{
+		if (isPlaying()) {
+			stop();
+		}
+
+		AudioFormat format = audioStream.getFormat();
+		DataLine.Info info = new DataLine.Info(SourceDataLine.class, format);
+		final SourceDataLine audioLine = (SourceDataLine) AudioSystem.getLine(info);
+
+		audioLine.open(format);
+		audioLine.start();
+
+		assert null == thread;
+		thread = new PlaybackThread(audioStream, audioLine);
+		thread.start();
 	}
+
+
+	public void stop() {
+		if (!isPlaying()) {
+			return;
+		}
+
+		assert null != thread;
+		thread.scheduleStop();
+
+		try {
+			thread.join();
+		} catch (InterruptedException ex) {
+			ex.printStackTrace();
+		}
+
+		thread = null;
+	}
+
 
 	public boolean isPlaying() {
-		return isplaying;
+		return null != thread;
 	}
 
-	private void openLine(int mixidx) {
-		System.out.println("openline "+mixidx+" "+line+" "+format);
-		if (mixidx<0) {
-			try {
-				line = AudioSystem.getSourceDataLine(format);
-				line.open(format);
-			} catch (LineUnavailableException e) {
-				e.printStackTrace();
-				JOptionPane.showMessageDialog(null, "Veuillez fermer tous les logiciels qui pourraient \n�tre en train d'utiliser la ligne audio");
-			}
-		} else {
-			if (isPlaying()) stopPlaying();
-			Mixer.Info[] mixersinfo = AudioSystem.getMixerInfo();
-			Mixer mix = AudioSystem.getMixer(mixersinfo[mixidx]);
-			DataLine.Info lineinfo = new DataLine.Info(SourceDataLine.class,format);
-			try {
-				line = (SourceDataLine)mix.getLine(lineinfo);
-				System.out.println("line = "+line);
-				line.open();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+
+	private class PlaybackThread extends Thread {
+
+		private boolean stop = false;
+		private AudioInputStream stream;
+		private SourceDataLine line;
+
+		public PlaybackThread(AudioInputStream ais, SourceDataLine sdl) {
+			stream = ais;
+			line = sdl;
 		}
-	}
 
-	public void play(AudioInputStream ais) {
-		data=ais;
-		format = ais.getFormat();
-		openLine(mixidx);
-		stop = false;
-		line.start();
-		Thread remplisseurThread = new Remplisseur();
-		remplisseurThread.setPriority(Thread.MAX_PRIORITY);
-		remplisseurThread.setName("Thread Remplisseur");
-		remplisseurThread.start();
-		isplaying=true;
-		line.start();
-	}
-
-	private class Remplisseur extends Thread {
-		public Remplisseur() {
-			super("PlayerRemplisseurThread");
+		public void scheduleStop() {
+			stop = true;
 		}
-		public void run(){
-			//Remplissage du buffer
-			byte[] frame = new byte[200];
 
-			//on continue à la remplir
+		@Override
+		public void run() {
+			byte[] buf = new byte[BUFFER_SIZE];
+			int read;
+
 			try {
-				while (!stop) {
-					int nread;
-					nread = data.read(frame);
-					if (nread<0) break;
-					line.write(frame, 0, nread);
+				while (!stop && (read = stream.read(buf)) >= 0) {
+					line.write(buf, 0, read);
 				}
-				if (!stop)
-					while (line.available()>0) //on laisse le temps à la line de se vider
-						Thread.sleep(100);
-				line.flush();
+
+				line.drain();
 				line.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+				stream.close();
+			} catch (IOException ex) {
+				ex.printStackTrace();
 			}
-			isplaying=false;
 		}
+
 	}
 
 }
