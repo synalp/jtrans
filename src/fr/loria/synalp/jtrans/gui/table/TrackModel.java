@@ -1,4 +1,4 @@
-package fr.loria.synalp.jtrans.gui.trackview;
+package fr.loria.synalp.jtrans.gui.table;
 
 import fr.loria.synalp.jtrans.project.Phrase;
 import fr.loria.synalp.jtrans.project.Project;

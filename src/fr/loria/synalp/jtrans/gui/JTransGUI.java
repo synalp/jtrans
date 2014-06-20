@@ -19,7 +19,7 @@ import javax.swing.*;
 
 import fr.loria.synalp.jtrans.JTrans;
 import fr.loria.synalp.jtrans.align.Aligner;
-import fr.loria.synalp.jtrans.gui.trackview.ProjectTable;
+import fr.loria.synalp.jtrans.gui.table.ProjectTable;
 import fr.loria.synalp.jtrans.markup.in.MarkupLoader;
 import fr.loria.synalp.jtrans.markup.in.ParsingException;
 import fr.loria.synalp.jtrans.project.Project;

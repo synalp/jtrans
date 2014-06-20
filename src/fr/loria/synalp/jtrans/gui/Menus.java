@@ -22,7 +22,7 @@ import static javax.swing.KeyStroke.getKeyStroke;
 import edu.cmu.sphinx.result.Result;
 
 import fr.loria.synalp.jtrans.project.Anchor;
-import fr.loria.synalp.jtrans.gui.trackview.ProjectTable;
+import fr.loria.synalp.jtrans.gui.table.ProjectTable;
 import fr.loria.synalp.jtrans.markup.in.MarkupLoader;
 import fr.loria.synalp.jtrans.markup.out.JTRSaver;
 import fr.loria.synalp.jtrans.markup.out.MarkupSaver;

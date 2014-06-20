@@ -1,7 +1,7 @@
 package fr.loria.synalp.jtrans.gui;
 
 import fr.loria.synalp.jtrans.project.Project;
-import fr.loria.synalp.jtrans.gui.trackview.ProjectTable;
+import fr.loria.synalp.jtrans.gui.table.ProjectTable;
 import fr.loria.synalp.jtrans.markup.in.MarkupLoader;
 import fr.loria.synalp.jtrans.markup.in.MarkupLoaderPool;
 
