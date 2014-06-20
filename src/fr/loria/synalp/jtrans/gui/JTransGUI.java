@@ -74,6 +74,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	public Project project = new TrackProject();
 	private JProgressBar progressBar = new JProgressBar(0, 1000);
 	private JLabel infoLabel = new JLabel();
+	private JButton abortButton = new JButton("Abort");
 
 	public WordFinder contentWordFinder = new WordFinder.ByContent(this);
 	public WordFinder anonWordFinder = new WordFinder.Anonymous(this);
@@ -259,6 +260,8 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 			add(new JSeparator(), BorderLayout.PAGE_START);
 			add(progressBar, BorderLayout.LINE_START);
 			add(infoLabel, BorderLayout.CENTER);
+			add(abortButton, BorderLayout.LINE_END);
+			abortButton.setEnabled(false);
 		}};
 
 		spectro = new SpectroControl(this);
@@ -456,7 +459,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 			return;
 		}
 
-		new Thread() {
+		final Thread t = new Thread() {
 			@Override
 			public void run() {
 				Aligner aligner;
@@ -481,9 +484,28 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 					errorMessage("An error occured during the alignment!", ex);
 				}
 
+				SwingUtilities.invokeLater(new Runnable() {
+					@Override
+					public void run() {
+						abortButton.setEnabled(false);
+					}
+				});
+
 				setProgressDone();
+
 			}
-		}.start();
+		};
+
+		abortButton.addActionListener(new AbstractAction() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				t.interrupt();
+			}
+		});
+
+		t.start();
+
+		abortButton.setEnabled(true);
 	}
 
 	public void setProject(Project project) {

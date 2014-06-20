@@ -816,6 +816,10 @@ public class StateGraph {
 	 *                   or buffer
 	 * @param startFrame first frame to analyze
 	 * @param endFrame last frame to analyze
+	 *
+	 * @throws InterruptedException Checks the thread's interruption status at
+	 * each frame iteration.
+	 * @throws IOException If the swapper runs into any I/O problems.
 	 */
 	public void viterbi(
 			List<FloatData> data,
@@ -849,6 +853,11 @@ public class StateGraph {
 		vpf[0] = 0; // Probabilities are in the log domain
 
 		for (int f = startFrame; f <= endFrame; f++) {
+			// Allow cancellation
+			if (Thread.interrupted()) {
+				throw new InterruptedException("forward Viterbi");
+			}
+
 			if (progress != null) {
 				progress.setProgress(String.format(
 						"Viterbi forward pass: frame %d of %d (deflated swap: %d MB)",
@@ -911,13 +920,24 @@ public class StateGraph {
 	 * @return A time line of the most likely node at each frame. Given as an
 	 * array of node IDs, with array indices being frame numbers relative to
 	 * the first frame given to StateGraph#viterbi.
+	 *
+	 * @throws InterruptedException Checks the thread's interruption status at
+	 * each frame iteration.
+	 * @throws IOException If the swapper runs into any I/O problems.
 	 */
-	public int[] backtrack(SwapInflater swapReader) throws IOException {
+	public int[] backtrack(SwapInflater swapReader)
+			throws IOException, InterruptedException
+	{
 		InboundTransitionBridge in = new InboundTransitionBridge();
 
 		int leadNode = nNodes - 1;
 		int[] timeline = new int[swapReader.getFrameCount()];
 		for (int f = timeline.length-1; f >= 0; f--) {
+			// Allow cancellation
+			if (Thread.interrupted()) {
+				throw new InterruptedException("backward Viterbi");
+			}
+
 			byte transID = swapReader.getIncomingTransition(f, leadNode);
 			leadNode = in.inNode[leadNode][transID];
 			timeline[f] = leadNode;

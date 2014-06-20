@@ -51,12 +51,13 @@ public class ViterbiAligner extends Aligner {
 			final String text,
 			final int startFrame,
 			final int endFrame)
+			throws InterruptedException
 	{
 		Cache.ObjectFactory factory = new Cache.ObjectFactory() {
-			public int[] make() {
+			public int[] make() throws InterruptedException {
 				try {
 					return getRawTimeline(graph, text, startFrame, endFrame);
-				} catch (IOException|InterruptedException ex) {
+				} catch (IOException ex) {
 					ex.printStackTrace();
 					return null;
 				}

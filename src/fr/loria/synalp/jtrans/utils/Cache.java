@@ -22,7 +22,7 @@ public class Cache {
 	 * created or re-created.
 	 */
 	public interface ObjectFactory {
-		public Object make();
+		public Object make() throws InterruptedException;
 	}
 
 
@@ -98,6 +98,7 @@ public class Cache {
 									  String extension,
 									  ObjectFactory factory,
 									  Object... identifiers)
+			throws InterruptedException
 	{
 		File cacheFile = getCacheFile(cacheGroup, extension, identifiers);
 
