@@ -468,18 +468,18 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 					return;
 				}
 
+				aligner.setPostAlignHook(new Runnable() {
+					@Override
+					public void run() {
+						table.repaint();
+					}
+				});
+
 				try {
 					project.align(aligner, null);
 				} catch (Exception ex) {
 					errorMessage("An error occured during the alignment!", ex);
 				}
-
-				SwingUtilities.invokeLater(new Runnable() {
-					@Override
-					public void run() {
-						table.refreshModel();
-					}
-				});
 
 				setProgressDone();
 			}

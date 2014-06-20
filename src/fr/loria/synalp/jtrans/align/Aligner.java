@@ -23,7 +23,12 @@ public abstract class Aligner {
 	protected List<FloatData> data;
 	protected final File audio;
 	protected final ProgressDisplay progress;
+
+	/** Run at each refinement iteration */
 	private Runnable refinementIterationHook;
+
+	/** Run after each call to align() */
+	private Runnable postAlignHook;
 
 
 	/**
@@ -83,6 +88,14 @@ public abstract class Aligner {
 	 */
 	public void setRefinementIterationHook(Runnable r) {
 		refinementIterationHook = r;
+	}
+
+
+	/**
+	 * Sets a hook to be run after every call to {@code align()}.
+	 */
+	public void setPostAlignHook(Runnable r) {
+		postAlignHook = r;
 	}
 
 
@@ -150,6 +163,10 @@ public abstract class Aligner {
 		}
 
 		alignment.commitToTokens();
+
+		if (null != postAlignHook) {
+			postAlignHook.run();
+		}
 
 		return alignment;
 	}
