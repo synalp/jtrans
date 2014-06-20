@@ -23,7 +23,6 @@ public class SpectroControl extends JPanel {
 	int startFrame = 0;
 	SpectroPanel spectro;
 	TimelineWords words = new TimelineWords();
-	JButton refresh = new JButton("refresh");
 	JSlider offset = new JSlider(0,200,80);
 	JSlider zoom = new JSlider(1,200,80);
 	JLabel posdeb = new JLabel("0 sec");
@@ -80,8 +79,6 @@ public class SpectroControl extends JPanel {
 		b1.add(Box.createHorizontalGlue());
 		b1.add(zoom);
 		b1.add(Box.createHorizontalGlue());
-		b1.add(refresh);
-		b1.add(Box.createHorizontalGlue());
 		b1.add(offset);
 		b1.add(Box.createHorizontalGlue());
 
@@ -101,12 +98,6 @@ public class SpectroControl extends JPanel {
 				float curs = Float.parseFloat(posdeb.getText());
 				curs-=1;
 				gui.setCurPosInSec(curs);
-			}
-		});
-		refresh.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				refresh();
 			}
 		});
 		offset.addChangeListener(new ChangeListener() {
