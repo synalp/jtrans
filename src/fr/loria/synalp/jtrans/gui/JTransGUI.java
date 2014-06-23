@@ -448,7 +448,12 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		return true;
 	}
 
-	public void alignAll() {
+	/**
+	 * Verifies that a valid audio file is attached to the current project.
+	 * If not, displays an error message.
+	 * @return true if a valid audio file is attached to the current project.
+	 */
+	public boolean checkAudio() {
 		if (project.audioFile == null) {
 			JOptionPane.showMessageDialog(
 					jf,
@@ -456,6 +461,14 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 					"Please set an audio file (File -> Load audio).",
 					"No audio file",
 					JOptionPane.ERROR_MESSAGE);
+			return false;
+		}
+
+		return true;
+	}
+
+	public void alignAll() {
+		if (!checkAudio()) {
 			return;
 		}
 
