@@ -3,9 +3,7 @@
 # .git/info/exclude.
 
 # files and directories created by JTrans
-sr.cfg
 wavout.wav
-out*.wav
 *.dot
 
 # build products

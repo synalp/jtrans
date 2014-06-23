@@ -4,7 +4,6 @@ import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -68,6 +67,7 @@ import edu.cmu.sphinx.util.props.ConfigurationManager;
 import edu.cmu.sphinx.util.props.PropertyException;
 import edu.cmu.sphinx.util.props.PropertySheet;
 
+import static fr.loria.synalp.jtrans.utils.FileUtils.createVanishingTempFile;
 import static fr.loria.synalp.jtrans.utils.Paths.RES_DIR;
 
 /**
@@ -200,13 +200,10 @@ public class SpeechReco {
 	}
 
 	private URL fixCfgPaths(URL cfg) {
-		System.out.println("debug fix path "+cfg);
-		File wdf = new File(".");
-		String wd = wdf.getAbsolutePath();
-		wd=wd.replace('\\', '/');
 		try {
+			File config = createVanishingTempFile("sr_fixed", "cfg");
 			BufferedReader f = new BufferedReader(new InputStreamReader(cfg.openStream()));
-			PrintWriter ff = new PrintWriter(new FileWriter("sr.cfg"));
+			PrintWriter ff = new PrintWriter(config);
 			for (;;) {
 				String s=f.readLine();
 				if (s==null) break;
@@ -218,7 +215,7 @@ public class SpeechReco {
 			}
 			ff.close();
 			f.close();
-			return new URL("file:///"+wd+"/sr.cfg");
+			return config.toURI().toURL();
 		} catch (IOException e) {
 			e.printStackTrace();
 			return null;
@@ -251,13 +248,11 @@ public class SpeechReco {
 
 				AudioInputStream bis = new AudioInputStream(ais, af, nsamplesPerChunk);
 				if (bis.available()==0) break;
-				String outfile = "out"+i+".wav";
-				File f2rm = new File(outfile);
-				if (f2rm.exists()) f2rm.delete();
-				int n=AudioSystem.write(bis, AudioFileFormat.Type.WAVE, new File(outfile));
+				File out = createVanishingTempFile("out" + i + "_", ".wav");
+				int n=AudioSystem.write(bis, AudioFileFormat.Type.WAVE, out);
 				if (n==0) break;
 				FichSegments seg = new FichSegments();
-				seg.segmentWavFileName=outfile;
+				seg.segmentWavFileName=out.getAbsolutePath();
 				seg.offsetInFrames=(int)(startSec*mfccFrameRate);
 				wavout.add(seg);
 				ais.close();
