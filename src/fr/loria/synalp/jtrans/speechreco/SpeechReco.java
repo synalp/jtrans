@@ -210,7 +210,10 @@ public class SpeechReco {
 			for (;;) {
 				String s=f.readLine();
 				if (s==null) break;
-				s=s.replace("file:///xtof/libs/sphinx4/", "file:///"+wd+"/../jtrans2/res/");
+				s=s.replace("file:///xtof/libs/sphinx4",
+						RES_DIR.toURI().toString());
+				s=s.replace("file:///home/xtof/git/jtrans2/res",
+						RES_DIR.toURI().toString());
 				ff.println(s);
 			}
 			ff.close();

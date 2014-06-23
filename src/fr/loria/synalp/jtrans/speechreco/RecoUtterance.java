@@ -13,6 +13,9 @@ import java.util.List;
 
 import edu.cmu.sphinx.util.NISTAlign;
 
+import fr.loria.synalp.jtrans.project.Anchor;
+import fr.loria.synalp.jtrans.project.Token;
+import fr.loria.synalp.jtrans.project.TurnProject;
 import fr.loria.synalp.jtrans.utils.SuiteDeMots;
 
 public class RecoUtterance extends ArrayList<RecoWord> {
@@ -151,4 +154,31 @@ public class RecoUtterance extends ArrayList<RecoWord> {
 				addAll(ws);
 		}
     }
+
+
+	public static TurnProject prepareProject() {
+		TurnProject project = new TurnProject();
+		project.newSpeaker("Default");
+		TurnProject.Turn turn = project.newTurn();
+		turn.start = new Anchor(0);
+		turn.end = new Anchor(0);
+		return project;
+	}
+
+
+	public void updateProject(TurnProject project) {
+		assert 1 == project.speakerCount();
+		assert 1 == project.turns.size();
+
+		List<Token> tokens = project.turns.get(0).spkTokens.get(0);
+		tokens.clear();
+
+		for (RecoWord word: this) {
+			Token token = new Token(word.word);
+			tokens.add(token);
+		}
+
+		assert null != project.turns.get(0).end;
+		project.turns.get(0).end.setFrame(get(size()-1).frameEnd);
+	}
 }

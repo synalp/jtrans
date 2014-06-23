@@ -13,7 +13,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.*;
-import java.util.List;
 import javax.sound.sampled.*;
 import javax.swing.*;
 
@@ -25,6 +24,7 @@ import fr.loria.synalp.jtrans.markup.in.ParsingException;
 import fr.loria.synalp.jtrans.project.Project;
 import fr.loria.synalp.jtrans.project.TrackProject;
 import fr.loria.synalp.jtrans.project.TurnProject;
+import fr.loria.synalp.jtrans.speechreco.RecoUtterance;
 import fr.loria.synalp.jtrans.speechreco.SpeechReco;
 
 import fr.loria.synalp.jtrans.gui.spectro.SpectroControl;
@@ -292,76 +292,43 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 		}
 	}
 
-
-
-	private void getRecoResult(SpeechReco asr) {
-		List<String> lmots = getRecoResultOld(asr);
-		//    	alignement.merge(asr.fullalign,0);
-		//   	alignement.checkWithText(lmots, 0);
-
-		//    	System.out.println("debuglmots "+lmots.size()+" "+alignement.wordsIdx.size()+" "+alignement.wordsEnd.size());
-		REIMPLEMENT_DEC2013(); /*
-		edit.colorizeWords(0, lmots.size() - 1);
-		repaint();
-		*/
-	}
-
-	private List<String> getRecoResultOld(SpeechReco asr) {
-		REIMPLEMENT_DEC2013();
-/*
-		StringBuilder sb = new StringBuilder();
-		ArrayList<String> lmots = new ArrayList<String>();
-
-		project = new Project();
-		for (RecoWord word : asr.resRecoPublic) {
-			String[] phones = new String[word.frameEnd-word.frameDeb];
-			int[] states = new int[word.frameEnd-word.frameDeb];
-			for (int t=0;t<word.frameEnd-word.frameDeb;t++) {
-				phones[t] = word.getPhone(t);
-				states[t] = word.getState(t);
-				// TODO : ajouter les GMM qui ont ete perdues dans RecoWord
-			}
-			project.words.addRecognizedSegment(word.word,word.frameDeb,word.frameEnd,phones,states);
-			if (word.word.charAt(0)=='<') continue;
-			int posdebinpanel = sb.length();
-			sb.append(word.word+" ");
-			lmots.add(word.word);
-			//    		project.words.wordsIdx.add(project.words.words.size()-1);
-			int posfininpanel = sb.length();
-			Word ew = new Word(word.word);
-			ew.start = posdebinpanel;
-			ew.end = posfininpanel;
-			project.elts.add(ew);
-		}
-		setProject(project);
-
-		//    	rec=rec.replaceAll("<[^>]+>", "");
-		//    	rec=rec.replaceAll("  +", " ");
-		//    	rec=rec.trim();
-		//    	System.out.println("TEXT FROM RECO: "+rec);
-		edit.setText(sb.toString());
-		edit.setCaretPosition(0);
-		edit.textChanged = false;
-		edit.setIgnoreRepaint(false);
-		edit.repaint();
-		return lmots;
-*/ return null;
-	}
-
 	public void asr() {
+		if (!checkAudio()) {
+			return;
+		}
+
+		File audio = project.audioFile;
+		final TurnProject recoProject = RecoUtterance.prepareProject();
+		recoProject.setAudio(audio);
+		setProject(recoProject);
+
 		setIndeterminateProgress("Transcribing...");
-		new Thread() {
+
+		final SpeechReco asr = SpeechReco.getSpeechReco();
+
+		asr.recoListener = new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				asr.resRecoPublic.updateProject(recoProject);
+
+				SwingUtilities.invokeLater(new Runnable() {
+					@Override
+					public void run() {
+						table.refreshModel();
+						table.doLayout();
+					}
+				});
+			}
+		};
+
+		new Thread("ASR") {
 			@Override
 			public void run() {
-				final SpeechReco asr = SpeechReco.getSpeechReco();
-				asr.recoListener=new ActionListener() {
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						getRecoResult(asr);
-					}
-				};
 				asr.doReco(project.convertedAudioFile.getAbsolutePath(), "");
-				getRecoResult(asr);
+
+				// Run final project update
+				asr.recoListener.actionPerformed(null);
+
 				setProgressDone();
 			}
 		}.start();
