@@ -19,6 +19,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.LogManager;
 
+import static fr.loria.synalp.jtrans.utils.ResourceInstaller.standardResourceInstaller;
+
 public class JTrans {
 
 	public static String logID = "_" + System.currentTimeMillis();
@@ -402,8 +404,8 @@ public class JTrans {
 
 		cli = new JTrans(args);
 
-		if (ResourceInstaller.shouldReinstallResources()) {
-			ResourceInstaller.installResources();
+		if (!standardResourceInstaller.check()) {
+			System.exit(1);
 		}
 
 		if (!cli.computeLikelihoods &&

@@ -31,6 +31,7 @@ import fr.loria.synalp.jtrans.gui.spectro.SpectroControl;
 import fr.loria.synalp.jtrans.speechreco.BiaisAdapt;
 import fr.loria.synalp.jtrans.utils.*;
 import static fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer.frame2second;
+import static fr.loria.synalp.jtrans.utils.ResourceInstaller.asrResourceInstaller;
 
 /**
  * Main panel.
@@ -293,7 +294,7 @@ public class JTransGUI extends JPanel implements ProgressDisplay {
 	}
 
 	public void asr() {
-		if (!checkAudio()) {
+		if (!checkAudio() || !asrResourceInstaller.check()) {
 			return;
 		}
 
