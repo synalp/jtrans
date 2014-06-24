@@ -59,42 +59,6 @@ public abstract class Project {
 		return set;
 	}
 
-	public void anonymizeWord(String w) {
-		w = w.toLowerCase();
-
-		for (Token token: getAllTokens()) {
-			if (token.toString().toLowerCase().equals(w)) {
-				token.setAnonymize(true);
-			}
-		}
-	}
-
-
-	public AnonymizingAudioInputStream getAnonymizingAudioInputStream()
-			throws IOException, UnsupportedAudioFileException
-	{
-		assert convertedAudioFile != null: "no converted audio file!";
-
-		BinarySegmentation sequence = new BinarySegmentation();
-
-		for (Token token: getAllTokens()) {
-			if (!token.shouldBeAnonymized()) {
-				continue;
-			}
-
-			if (!token.isAligned()) {
-				System.err.println("WARNING: Can't anonymize unaligned word!!!");
-			}
-
-			Token.Segment seg = token.getSegment();
-			sequence.union(seg.getStartSecond(), seg.getLengthSeconds());
-		}
-
-		return new AnonymizingAudioInputStream(
-				AudioSystem.getAudioInputStream(convertedAudioFile),
-				sequence);
-	}
-
 
 	public void clearAlignment() {
 		for (Token token: getAllTokens()) {
