@@ -16,9 +16,9 @@ public class RecoWord {
 	public String[] phstates;
 	
 	public String getPhone(int t) {
-		int i = phstates[t].indexOf(':');
-		if (i<0) return null;
-		return phstates[t].substring(0,i);
+		String s = phstates[t];
+		int bracket = s.indexOf('[');
+		return bracket >= 0? s.substring(0, bracket): s;
 	}
 	public int getState(int t) {
 		int i = phstates[t].indexOf(':');

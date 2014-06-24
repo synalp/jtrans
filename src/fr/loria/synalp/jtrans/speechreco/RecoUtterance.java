@@ -174,7 +174,29 @@ public class RecoUtterance extends ArrayList<RecoWord> {
 		tokens.clear();
 
 		for (RecoWord word: this) {
-			Token token = new Token(word.word);
+			String w = word.word;
+
+			// don't add junk
+			if (w.equals("<s>") || w.equals("</s>")) {
+				continue;
+			}
+
+			Token token = new Token(w);
+			token.setSpeaker(0);
+			token.setSegment(word.frameDeb, word.frameEnd-1); // word.frameEnd exclusive
+
+			// add aligned phones
+			Token.Phone phone = null;
+			for (int f = word.frameDeb; f < word.frameEnd; f++) {
+				String p = word.getPhone(f - word.frameDeb);
+				if (phone == null || !phone.toString().equals(p)) {
+					phone = new Token.Phone(p, new Token.Segment(f, f));
+					token.addPhone(phone);
+				} else {
+					phone.getSegment().setEndFrame(f);
+				}
+			}
+
 			tokens.add(token);
 		}
 
