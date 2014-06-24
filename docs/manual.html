@@ -3,93 +3,63 @@
 <title>JTrans User Manual</title>
 
 <style>
-#interactive-screenshot {
-	display: table;
-}
-
-#interactive-screenshot img {
-	display: table-cell;
-	margin-right: -50px;
-	margin-left: -57px;
-	margin-top: -20px;
-	margin-bottom: -20px;
-}
-
-#map-caption {
-	display: table-cell;
-	vertical-align: top;
-	padding-top: 50px;
-	padding-left: 20px;
-}
 
 .important, noscript {
 	color: red;
 	font-weight: bold;
 }
+
+table td.empty {
+	background: black;
+}
+
+table td.anchor {
+	background: gray;
+	color: white;
+	text-align: center;
+	border: 1px solid gray; /* for printing */
+	padding: 3px;
+	font-style: italic;
+}
+
+table td.speech {
+	border: 1px solid black; /* for printing */
+	padding: 5px;
+}
+
+h1 {
+	background: black;
+	color: white;
+	text-align: center;
+	padding: 1em;
+	font-variant: small-caps;
+}
+
+h2 {
+	border-bottom: 4px solid;
+}
+
+article h1, h2, h3 {
+	margin-top: 3em;
+	margin-bottom: 1.5em;
+}
+
+article h1 {
+	page-break-before: always;
+}
+
+@media (max-width: 999px) {
+	div.adapt img {
+		width: 100%;
+	}
+}
+
 </style>
 
 <script>
 
-var MAP_STRINGS = {
-	anchor: {
-		title: "Anchor",
-		description: "<p>Anchors guide the alignment process (see above for an explanation).</p> <p>Right-clicking on an anchor will open a pop-up menu letting you adjust its position or delete it.</p> <p>Deleting an anchor causes the two cells around it to merge.</p> <p>Please note that modifying an anchor will automatically clear the adjacent alignment.</p>",
-	},
-
-	redcell: {
-		title: "Cell with 'red' (unaligned) text",
-		description: "<p>The text in this cell is red because it is not aligned.</p> <p>You can create anchors before or after any word by right-clicking on it.</p> <p>Unaligned text may happen, among other things, if poor sound quality, undecipherable words, or erroneous timing information confuse JTrans. You may want to adjust the neighboring anchors and try aligning again.</p>",
-	},
-
-	bluecell: {
-		title: "Cell with 'blue' (aligned) text",
-		description: "<p>The text in this cell is blue because it has been aligned. That is, JTrans has computed the start time and end time for each blue word.</p> <p>Right-clicking on a word lets you create anchors around that word.</p> <p>Right-clicking anywhere in the cell lets you clear the alignment in this cell.</p> <p>To select a word by left-clicking, please see 'Highlighted cell.'</p>"
-	},
-
-	selcell: {
-		title: "Highlighted cell",
-		description: "<p>During playback, the currently-uttered words are highlighted (kind of like a karaoke).</p> <p>You may also left-click on aligned words at any time (whether the file is being played back or not). Left-clicking on an aligned word selects it, which moves the playback position to the word's position, and updates the spectrogram.</p><p>Selecting an unaligned word has no effect.</p>",
-	},
-
-	spectro: {
-		title: "Spectrogram",
-		description: "A graphical rendition of the sound around the currently selected word. The word timeline shows the aligned words for the selected speaker."
-	},
-
-	visspk: {
-		title: "Visible Speakers",
-		description: "<p>Some transcripts involve many speakers which speak sporadically. You may want to gain some screen real estate by hiding some speakers from the main view by unchecking the corresponding boxes.</p> <p>During playback, a rectangle flashes around currently-speaking speakers, so you don't miss them even if they're hidden from the main view.</p>",
-	},
-
-	blank: {
-		title: "Silence",
-		description: "This area is blank because the speaker is not uttering any words between the two surrounding anchors.",
-	},
-
-	spkhdr: {
-		title: "Speaker names",
-		description: "You may resize each column."
-	},
-}
-
 window.onload = function() {
 	makeTableOfContents();
-	makeScreenshotCallbacks();
-
-}
-
-function makeScreenshotCallbacks() {
-	var caption = document.getElementById("map-caption");
-	var areas = document.getElementsByTagName("area");
-	for (var i = 0; i < areas.length; i++) {
-		areas[i].onmouseover = function() {
-			var str = MAP_STRINGS[this.className];
-			caption.innerHTML = "<h3>" + str.title + "</h3>" + str.description;
-		}
-		areas[i].onmouseout = function() {
-			caption.innerHTML = "";
-		}
-	}
 }
 
 function makeTableOfContents() {
@@ -131,8 +101,9 @@ function makeTableOfContents() {
 </script>
 
 
-<h1>JTrans: text-to-speech alignment software</h1>
-<h1>User Manual</h1>
+<h1 class="first">JTrans: text-to-speech alignment software</h1>
+
+<p>User manual last updated June 26, 2014</p>
 
 <h2>Table of contents</h2>
 <div id="toc"></div>
@@ -140,6 +111,8 @@ function makeTableOfContents() {
 
 <article>
 
+
+<h1>Introduction</h1>
 
 <h2>Overview of text-to-speech alignment</h2>
 
@@ -194,6 +167,8 @@ level.</li>
 </ul>
 
 
+<h1>Getting started</h1>
+
 <h2>How to run JTrans</h2>
 
 <p>Run <tt>jtrans.jar</tt>. The first time you open JTrans, it will attempt to
@@ -201,9 +176,7 @@ download and install the resources it needs to function properly. This is a 55
 MB download.</p>
 
 
-<h2>Project structure</h2>
-
-<h3>Speakers and anchors</h3>
+<h2>Project structure: speakers and anchors</h2>
 
 <p>A JTrans project consists of one or more <strong>speakers</strong>. Each
 speaker has their own speech <strong>text</strong> (which may occur
@@ -215,38 +188,6 @@ JTrans may have trouble aligning every word. Placing manual timing anchors
 tells JTrans where exactly a group of words starts and ends, and therefore
 enhances the precision with which each individual phoneme is aligned.</p>
 
-
-<h3>Turn-based vs. Track-based projects</h3>
-
-<p class="important">Please read this paragraph if you intend to align a
-recording without any timing information.</p>
-
-<p>Internally, JTrans distinguishes two types of projects:</p>
-
-<ul>
-
-	<li><strong>Turn-based</strong>: all speech occurs in turns. A turn has the
-	same start and end time for all speakers. If several speakers speak
-	simultaneously, all overlapped speech must occur in the same turn. (Such
-	projects typically originate from Transcriber or raw text.)</li>
-
-	<li><strong>Track-based</strong>: each speaker is assigned its own
-	independent track.  In a given track, speech timing is not affected by any
-	other tracks.  (Such projects typically originate from Praat.)</li>
-
-</ul>
-
-<p>The downside to turn-based projects is that overlapping speech is more
-loosely delimited than what is possible with track-based projects. However,
-<strong>turn-based projects may be aligned without any timing
-information</strong>, and missing anchor times can be deduced. This is
-<strong>not</strong> possible with track-based projects, which require
-complete timing information to be useful.</p>
-
-<p>Note: there is no functional difference between turn-based and
-track-based projects that contain one single speaker. If you have a
-single-speaker, track-based project and you need to align without timing info,
-you should convert the project to turn-based.</p>
 
 <h2>Workflow</h2>
 
@@ -291,21 +232,14 @@ different sample rate – but the results are not guaranteed to be optimal.
 
 <h3>Alignment</h3>
 
-<p>When your project has both text and a sound file, you can try to start
-aligning.</p>
+<p>When your project has both text and a sound file, you can try to align the
+words to the audio track by clicking the <em>Align</em> button in the main
+window, or the <em>"Align &rarr; Align..."</em> menu item.</p>
 
-<p>If your project contains <strong>anchors</strong>, you can align the words
-by clicking the <em>Align</em> button in the main window, or via the <em>"Align
-&rarr; Auto-align between anchors"</em> menu item.</p>
-
-<p>If the project does not contain any anchors, you can start an alignment via
-the <em>"Align &rarr; Auto-align all (no anchors)".</em> Please bear in mind
-that, without any anchors, an alignment will probably be sub-optimal.</p>
-
-<p>Aligning a file for the first time takes about one minute. The actual
-duration depends on the length of the file, the number of speakers,
-and the power of your computer. Subsequent alignments will take less time
-because partial alignments are cached.</p>
+<p>Aligning a file for the first time typically takes about one minute. The
+actual duration depends on the length of the file, the number of speakers, and
+the power of your computer. Subsequent alignments will take less time because
+partial alignments are cached.</p>
 
 
 <h3>Saving and exporting a project</h3>
@@ -340,41 +274,133 @@ either be aligned (shown in blue) or unaligned (shown in red).</p>
 
 <p>Anchors guide the alignment process as mentioned earlier.</p>
 
-
-<h3>Screenshot</h3>
-
-<p>Move your mouse over an item in the screenshot to obtain a description.
-<noscript>JavaScript is required.</noscript></p>
-
-<div id="interactive-screenshot">
-<img src="window.png" usemap="#map">
-
-<div id="map-caption"></div>
-
-<map name="map">
-<area shape="rect" coords="547,123,634,407" class="visspk" />
-<area shape="rect" coords="57 ,426,634,544" class="spectro" />
-<area shape="rect" coords="57 ,124,528,140" class="anchor" />
-<area shape="rect" coords="57 ,182,528,198" class="anchor" />
-<area shape="rect" coords="57 ,240,528,255" class="anchor" />
-<area shape="rect" coords="294,281,528,297" class="anchor" />
-<area shape="rect" coords="294,323,528,338" class="anchor" />
-<area shape="rect" coords="294,366,528,382" class="anchor" />
-<area shape="rect" coords="294,409,528,424" class="anchor" />
-<area shape="rect" coords="294,197,528,238" class="blank" />
-<area shape="rect" coords="57 ,256,293,424" class="blank" />
-<area shape="rect" coords="294,256,528,281" class="selcell" />
-<area shape="rect" coords="57 ,197,293,238" class="redcell" />
-<area shape="rect" coords="57 ,141,528,181" class="bluecell" />
-<area shape="rect" coords="294,297,528,323" class="bluecell" />
-<area shape="rect" coords="294,339,528,366" class="bluecell" />
-<area shape="rect" coords="294,382,528,409" class="bluecell" />
-<area shape="rect" coords="57 ,106,528,124" class="spkhdr" />
-</map>
+<div class="adapt">
+<img src="window.png">
 </div>
 
+<h3>Speakers</h3>
+<p>One column per speaker. You may resize each column.</p>
 
-<h2>Command line use</h2>
+<h3>Anchor</h3>
+<p>Anchors guide the alignment process (see above for an explanation).</p>
+<!--
+<p>Right-clicking on an anchor will open a pop-up menu letting you adjust its
+position or delete it.</p>
+<p>Deleting an anchor causes the two cells around it to merge.</p>
+<p>Please note that modifying an anchor will automatically clear the adjacent
+alignment.</p>
+-->
+
+<h3>Speech</h3>
+<p>The text in this cell is blue because it has been aligned. That is, JTrans
+has computed the start time and end time for each blue word. Unaligned words
+are displayed in red (not pictured here).</p>
+<!--
+<p>Right-clicking on a word lets you create anchors around that word.</p>
+<p>Right-clicking anywhere in the cell lets you clear the alignment in this
+cell.</p>
+-->
+<p>During playback, the currently-uttered words are highlighted (kind of like a
+karaoke).</p>
+<p>You may also left-click on aligned words at any time (whether the file is
+being played back or not). Left-clicking on an aligned word selects it (shown
+with a pink highlight), which moves the playback position to the word's
+position, and updates the spectrogram.</p>
+<p>Selecting an unaligned word has no effect.</p>
+
+<h3>Silence</h3>
+<p>This area is blank because the speaker is not uttering any words between the
+two surrounding anchors.</p>
+
+<h3>Spectrogram</h3>
+<p>A graphical rendition of the sound around the currently selected word.</p>
+
+<h3>Alignment timeline</h3>
+<p>The timeline shows the aligned words and phones for the selected speaker
+around the currently selected word.</p>
+<p>Use the pull-down menu on the far left to display a different speaker's word
+and phones in the timeline.</p>
+
+<h3>Progress display</h3>
+<p>During a long alignment, progress is shown here. Some operations may be
+cancelled with the Abort button.</p>
+
+
+
+<h2>Clearing/bypassing the cache</h2>
+
+<p>JTrans caches partial alignments and converted audio files on disk. This
+speeds up some tasks considerably.</p>
+
+<p>However, if you work with a lot of different files, the size of JTrans's
+cache can blow up quickly. You may safely clear JTrans's cache at any time to
+save disk space. To do that, simply delete the contents of the
+<tt>~/.jtrans/cache</tt> directory.</p>
+
+<p>You may also want to <strong>bypass</strong> the cache temporarily,
+especially if you are modifying a critical section of the program.  Pass the
+<code>--bypass-cache</code> argument (shorthand: <code>-B</code> to JTrans on
+the command line.  Objects won't be read from the cache, but they will still be
+written to it.</p>
+
+<p>You can also have JTrans delete any cache files it uses/creates with the
+<code>--volatile-cache</code> argument. This is especially useful when aligning
+batches of large corpora with limited disk space. Please note that turning on
+volatile cache does not affect pre-existing cache files that are not used by
+JTrans at the time of invocation.</p>
+
+
+
+
+<h2>Anonymization of sensitive words</h2>
+
+<p>Some corpora contain sensitive information such as given names, place names,
+phone numbers, etc. If the transcription is 100% clear-text and the relevant
+audio chunks are not bleeped out, you can use JTrans to produce an anonymized
+audio file.</p>
+
+<p>JTrans will align the whole file first &mdash; hence the need for a
+clear-text transcription. Then, it will output an "anonymization track" using
+the timing information for the sensitive words inferred from the alignment.
+This anonymization track must then be fed to <a
+href="http://sldr.org/voir_depot.php?id=526">a Praat script by Daniel Hirst</a>
+in order to produce the anonymized audio file.</p>
+
+<p>The standard syntax for sensitive words is as such (but it can be overridden
+by markup loaders):</p>
+
+<pre>*Alice* said, don't let *John* *Doe* eat the cake</pre>
+
+<p>In the example above, the words <code>Alice</code>, <code>John</code>, and
+<code>Doe</code> can be anonymized. Please note that there cannot be a space
+character between two asterisks, e.g. this syntax will not work: <code>*John
+Doe*</code>; please put asterisks around each separate word.</p>
+
+
+
+<h2>Anchorless alignment</h2>
+
+<p>Experimental. Only works with turn-based projects.</p>
+
+<p>To showcase JTrans's alignment technique, you can try clearing all anchors
+to have JTrans align the entire file without timing information.</p>
+
+<p>Use Align &rarr; Clear anchors, then realign the file.</p>
+
+<p>Warning: aligning a long file without any anchors may take a long time.</p>
+
+
+<h2>Automatic Speech Recognition (ASR)</h2>
+
+<p>Experimental.</p>
+
+<p>First, load an audio file (File &rarr; Open Audio), then run ASR (in the
+Process menu). The transcription will appear on screen as it is being
+processed.</p>
+
+
+
+<h1>Command line usage</h1>
 
 <p>JTrans provides a command line interface for launching the graphical
 interface and for aligning transcriptions without the GUI.</p>
@@ -383,7 +409,7 @@ interface and for aligning transcriptions without the GUI.</p>
 the CLI switches.</p>
 
 
-<h3>Launching the graphical interface from the command line</h3>
+<h2>Launching the graphical interface from the command line</h2>
 
 <p>Running the JAR file without any arguments, or without specifying an output
 format, will automatically open the graphical user interface.</p>
@@ -404,7 +430,7 @@ detect an audio file with a similar name.</p>
 textgrid).</p>
 
 
-<h3>Aligning a transcription from the command line</h3>
+<h2>Aligning a transcription from the command line</h2>
 
 <p>Sample use:</p>
 
@@ -419,18 +445,14 @@ textgrid).</p>
     &mdash; see below to learn more about available formats.
     Output files will be placed in the <code>aligned</code> directory.</p>
 
-<h3>Available input/output formats (for <code>infmt</code>
-    and <code>outfmt</code>)</h3>
+<h2>Available input/output formats (for <code>infmt</code>
+    and <code>outfmt</code>)</h2>
 
-<p>To get a list of the available input format codes for use with
-    <code>infmt</code>, run:</p>
-<pre>java -jar jtrans.jar --list-infmt</pre>
+<p>To get a list of the available input and output format codes for use with
+<code>infmt</code> and <code>outfmt</code>, run:</p>
+<pre>java -jar jtrans.jar --list-formats</pre>
 
-<p>To get a list of the available output format codes for use with
-    <code>outfmt</code>, run:</p>
-<pre>java -jar jtrans.jar --list-outfmt</pre>
-
-<h3>Audio file auto-detection</h3>
+<h2>Audio file auto-detection</h2>
 
 <p>If the audio file bears the same name as the markup file (except for the
 suffix) and both files are located in the same directory, you may use the
@@ -444,21 +466,387 @@ the command line.</p>
 <p>This will load blah.trs, along with any of "blah.ogg", "blah.mp3" or
 "blah.wav".</p>
 
-<h2>Clearing/bypassing the cache</h2>
 
-<p>JTrans caches partial alignments and converted audio files on disk. This
-speeds up some tasks considerably.</p>
 
-<p>However, if you work with a lot of different files, the size of JTrans's
-cache can blow up quickly. You may safely clear JTrans's cache at any time to
-save disk space. To do that, simply delete the contents of the
-<tt>~/.jtrans/cache</tt> directory.</p>
+<h2>Research-oriented experimental switches</h2>
 
-<p>You may also want to <strong>bypass</strong> the cache temporarily,
-especially if you are modifying a critical section of the program.  Pass the
-<code>--bypass-cache</code> argument (shorthand: <code>-B</code> to JTrans on
-the command line.  Objects won't be read from the cache, but they will still be
-written to it.</p>
+<p>Note: switches are case-sensitive!</p>
+
+<table>
+	<tr>
+		<th>-h</th>
+		<td>Help screen with an up-to-date list of switches</td>
+	</tr>
+
+	<tr>
+		<th>-L</th>
+		<td>Compute alignment likelihood</td>
+	</tr>
+
+	<tr>
+		<th>-C</th>
+		<td>Clear anchors before aligning (TurnProject only).</td>
+	</tr>
+
+	<tr>
+		<th>-I</th>
+		<td>Ignore overlaps. In case of a turn with overlapping speech, discard
+			everybody's speech except for whoever speaks the most in the turn.
+		For TurnProject only.</td>
+	</tr>
+
+	<tr>
+		<th>-M</th>
+		<td>Refine alignment with Metropolis-Hastings</td>
+	</tr>
+
+	<tr>
+		<th>--worddiff</th>
+		<td>Align with timing info (reference), then realign without timing
+			info. Compare word timings in both alignments.</td>
+	</tr>
+
+	<tr>
+		<th>--anchordiff</th>
+		<td>Same as --worddiff, but compare anchor timings instead.</td>
+	</tr>
+
+	<tr>
+		<th>--linear</th>
+		<td>Align HMM states evenly across the entire transcription
+			(it is recommended to use -r with this option)</td>
+	</tr>
+
+	<tr>
+		<th>-r</th>
+		<td>Align once with Viterbi and extract a reference path in the
+			StateGraph from this alignment. Use this reference path for
+			subsequent alignments.</td>
+	</tr>
+
+</table>
+
+
+<h1>Technical information</h1>
+
+
+<h2>Turn-based vs. Track-based projects</h2>
+
+<p class="important">Please read this paragraph if you intend to align a
+recording without any timing information, and/or if you want to write a custom
+parser.</p>
+
+<p>Internally, JTrans distinguishes two types of projects:
+<strong>turn-based</strong> and <strong>track-based</strong>.</p>
+
+<h3>In a nutshell</h3>
+
+<table border=1 cellspacing=0 cellpadding=5>
+	<tr>
+		<th></th>
+		<th width="42%">TurnProject</th>
+		<th width="42%">TrackProject</th>
+	</tr>
+
+	<tr>
+		<th>Constraint</th>
+		<td>Synchronized speech "turns" across all speakers</td>
+		<td>Mandatory timing information in the entire transcription</td>
+	</tr>
+
+	<tr>
+		<th>Freedom</th>
+		<td>Timing information can be inferred, so it is not mandatory for
+			every turn to specify it</td>
+		<td>Each track (i.e. speaker) is independent from the others,
+			allowing baroque non-synchronized speech arrangements</td>
+	</tr>
+
+	<tr>
+		<th>Alignable without timing info</th>
+		<td>Yes</td>
+		<td>No</td>
+	</tr>
+
+	<tr>
+		<th>Input formats</th>
+		<td>Transcriber (*.TRS), raw text files without timing info</td>
+		<td>Praat (*.TextGrid)</td>
+	</tr>
+
+	<tr>
+		<th>Sample diagram (chronological order top-to-bottom)</th>
+		<td>
+			<table border=0>
+				<tr>
+					<td width="25%"></td>
+					<th width="25%">Spk1</td>
+					<th width="25%">Spk2</td>
+					<th width="25%">Spk3</td>
+				</tr>
+				<tr>
+					<td></td>
+					<td colspan=3 class="anchor">Anchor</td>
+				</tr>
+				<tr>
+					<th>Turn #0</th>
+					<td class="speech">blah</td>
+					<td class="empty"></td>
+					<td class="speech">blah blah</td>
+				</tr>
+				<tr>
+					<td></td>
+					<td colspan=3 class="anchor">Anchor</td>
+				</tr>
+				<tr>
+					<th>Turn #1</th>
+					<td class="empty"></td>
+					<td class="speech">blah blah</td>
+					<td class="empty"></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td colspan=3 class="anchor">Anchor</td>
+				</tr>
+				<tr>
+					<th>Turn #2</th>
+					<td class="speech">blah blah</td>
+					<td class="empty"></td>
+					<td class="empty"></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td colspan=3 class="anchor">Anchor</td>
+				</tr>
+				<tr>
+					<td></td>
+					<td class="empty"></td>
+					<td class="empty"></td>
+					<td class="empty"></td>
+				</tr>
+			</table>
+		</td>
+		<td>
+			<table border=0>
+				<tr>
+					<th width="33%">Track #0</td>
+					<th width="33%">Track #1</td>
+					<th width="33%">Track #2</td>
+				</tr>
+				<tr>
+					<td class="empty"></td>
+					<td class="empty" rowspan=2></td>
+					<td class="anchor">Anchor</td>
+				</tr>
+				<tr>
+					<td class="anchor">Anchor</td>
+					<td rowspan=3 class="speech">blah blah</td>
+				</tr>
+				<tr>
+					<td class="speech">blah</td>
+					<td class="anchor">Anchor</td>
+				</tr>
+				<tr>
+					<td class="anchor">Anchor</td>
+					<td rowspan=3 class="speech">blah blah</td>
+				</tr>
+				<tr>
+					<td class="empty"></td>
+					<td class="anchor">Anchor</td>
+				</tr>
+				<tr>
+					<td class="anchor">Anchor</td>
+					<td rowspan=3 class="empty"></td>
+				</tr>
+				<tr>
+					<td class="speech">blah blah</td>
+					<td class="anchor">Anchor</td>
+				</tr>
+				<tr>
+					<td class="anchor">Anchor</td>
+					<td class="empty"></td>
+				</tr>
+			</table>
+		</td>
+</table>
+
+<h3>In detail</h3>
+
+<ul>
+
+	<li><strong>Turn-based</strong>: all speech occurs in turns. A turn has the
+	same start and end time for all speakers. If several speakers speak
+	simultaneously, all overlapped speech must occur in the same turn. (Such
+	projects typically originate from Transcriber or raw text.)</li>
+
+	<li><strong>Track-based</strong>: each speaker is assigned its own
+	independent track.  In a given track, speech timing is not affected by any
+	other tracks.  (Such projects typically originate from Praat.)</li>
+
+</ul>
+
+<p>The downside to turn-based projects is that overlapping speech is more
+loosely delimited than what is possible with track-based projects. However,
+<strong>turn-based projects may be aligned without any timing
+information</strong>, and missing anchor times can be deduced. This is
+<strong>not</strong> possible with track-based projects, which require
+complete timing information to be useful.</p>
+
+<p>Note: there is no functional difference between turn-based and
+track-based projects that contain one single speaker. If you have a
+single-speaker, track-based project and you need to align without timing info,
+you should convert the project to turn-based.</p>
+
+
+<h2>Overlapping speech management in TurnProject without any anchors</h2>
+
+<p>When anchors are available, aligning overlapping speech is relatively
+straightforward.  Each speaker is aligned independently from the others.
+Overlapping speech is not really a problem here because we know what words are
+being uttered thanks to the transcript, and we know approximately when they are
+pronounced thanks to the anchors.</p>
+
+<p>However, when anchors are not available in a TurnProject, overlapping speech
+is a bit trickier. JTrans's strategy in case of overlapping speech is as
+follows:</p>
+
+<ol>
+	<li>Create a long sequence of words, ignoring overlaps. In a turn with
+	overlapping speech, drop all speakers except the one who utters the most
+	words.</li>
+	<li>Align that sequence normally.</li>
+	<li>Infer turn start/end times (anchors) from the alignment.</li>
+	<li>Align any still-unaligned speech thanks to the inferred anchors.</li>
+</ol>
+
+<p>For example, assume we are facing the following situation:</p>
+
+<table border=0>
+	<tr>
+		<th width="33%">Turn #0</td>
+		<td width="33%"class="speech">moo moo</td>
+		<td width="33%"class="empty"></td>
+	</tr>
+	<tr>
+		<th>Turn #1</td>
+		<td class="speech">ribbit ribbit</td>
+		<td class="speech">quack quack quack quack</td>
+	</tr>
+	<tr>
+		<th>Turn #2</td>
+		<td class="empty"></td>
+		<td class="speech">meow</td>
+	</tr>
+</table>
+
+<p>Turn #1 contains overlapping speech.</p>
+
+<ol>
+	<li>Our word sequence will be: <strong>moo moo, quack quack quack quack,
+		meow</strong>. We dropped "ribbit ribbit" temporarily.</li>
+	<li>Align the sequence.</li>
+	<li>We can now infer anchor timing for all turns.</li>
+	<li>Align "ribbit ribbit" with the inferred anchors.</li>
+</ol>
+
+<h2>Format notes</h2>
+
+<p>Some information about the formats that can be read/written by JTrans.</p>
+
+<h3>JSON ("JTR")</h3>
+
+<p>This is JTrans's "native" format. Its sole purpose is to easily 
+
+<p>Please do not rely on this format for anything perennial. It changes
+frequently. <span class="important">Do keep the original markup
+files.</span></p>
+
+<p>However, thanks to it being JSON, you can whip up a custom analysis script
+fairly easily in your language of choice (as long as it supports JSON).</p>
+
+<h3>Transcriber</h3>
+
+<p>JTrans can load Transcriber files into <code>TurnProject</code>. JTrans does
+not currently output Transcriber. JTrans supports the following features of the
+Transcriber format:</p>
+
+<ul>
+	<li>Speaker names</li>
+	<li>Turn start/end times</li>
+	<li><code>Sync</code> times</li>
+	<li><code>Who</code> tags (simultaneous speech)</li>
+	<li>Comments/Events (please note that <code>Event</code> types are
+	ignored)</li>
+</ul>
+
+<p>The following features are ignored:</p>
+
+<ul>
+	<li>Speaker metadata (accent, dialect etc)</li>
+	<li>Ad-hoc alternate pronunciations (no standardized tag)</li>
+	<li>Topics</li>
+</ul>
+
+<p>JTrans can open some non-standard flavors of Transcriber thanks to markup
+plugins (a.k.a. "preprocessors"), e.g. <code>TCOF</code>,
+<code>FrankenTRS</code>, etc. Reminder: use <code>jtrans.jar
+--list-formats</code> to list all available markup plugins.</p>
+
+<h3>TextGrid</h3>
+
+<h4>Flavors</h4>
+
+<p>There are 3 flavors of the TextGrid format:</p>
+
+<ul>
+	<li>"text file"</li>
+	<li>"binary file"</li>
+	<li>"short text file"</li>
+</ul>
+
+<p>JTrans only supports "text files". If your file is not in this format, you
+can open it in Praat and save it to the appropriate format in the "Praat
+Objects" window, then JTrans should be able to open it.</p>
+
+<h4>Encoding</h4>
+
+<p>Unfortunately, the TextGrid format does not specify a standard encoding.
+Many different encodings are used in the wild. When opening a TextGrid file,
+JTrans infers the encoding from its contents (thanks to juniversalchardet).</p>
+
+<p>However, JTrans only <em>exports</em> TextGrid files as UTF-8.</p>
+
+<h4>Praat display bug (missing boundaries)</h4>
+
+<p>Praat seems to have a display bug (?) where boundaries are not rendered
+before an empty interval. However, if you highlight an interval with a
+"missing" boundary, its boundaries become apparent.</p>
+
+<h4>Exported intervals</h4>
+
+<p>Word intervals include the silence that follows the word (if any). You can
+observe this with a "words+phones" output.</p>
+
+<p>Words that couldn't be aligned are exported as 0-length intervals where they
+are expected to be. (However, this should be fairly rare and only occurs when
+the interval given to JTrans for a phrase is too short to fit a
+StateGraph.)</p>
+
+<p>Non-alignable elements (i.e. comments) are exported to TextGrid as 0-length
+intervals whose text is surrounded with square brackets <code>[]</code>. They
+are "glued" to a neighboring interval. Being 0-length, they are not visible in
+the Praat GUI, but still there in the TextGrid file. Example:
+
+<pre>
+    intervals [141]:
+        xmin = 42.422
+        xmax = 42.422
+        text = "[hhh]"
+</pre>
+
+<p>Any metadata about the comment is lost, however; e.g. whether the comment
+denotes noise, etc.</p>
+
 
 
 </article>
