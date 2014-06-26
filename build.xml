@@ -8,7 +8,7 @@
 	<property name="test.build" location="build-test"/>
 	<property name="test.reports" location="test-reports"/>
 	<property name="dist" location="dist"/>
-	<property name="version" value="0.2-SNAPSHOT"/>
+	<property name="version" value="0.2"/>
 	<property name="jarfile" location="jtrans.jar"/>
 	<property name="release.prefix" value="jtrans-${version}"/>
 
