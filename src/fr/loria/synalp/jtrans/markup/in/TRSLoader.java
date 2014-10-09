@@ -105,7 +105,7 @@ public class TRSLoader implements MarkupLoader {
 
 			while (null != child) {
 				String name = child.getNodeName();
-
+// System.out.println("debugname "+child.getTextContent());
 				// Speech text
 				if (name.equals("#text")) {
 					pTurn.addAll(spkID, RawTextLoader.tokenize(
@@ -142,8 +142,12 @@ public class TRSLoader implements MarkupLoader {
 				// Change speakers in a multi-speaker turn
 				else if (name.equals("Who")) {
 					// Speaker numbering starts at 1 in the XML file
-					int nb = Integer.parseInt(((Element)child).getAttribute("nb"));
-					spkID = turnTracks.get(nb - 1);
+					int nb = Integer.parseInt(((Element)child).getAttribute("nb"))-1;
+					if (nb>=turnTracks.size()) {
+						System.err.println("WARNING error in TRS file: undefined speakers "+nb+" "+turnTracks.size());
+						nb=0;
+					}
+					spkID = turnTracks.get(nb);
 				}
 
 				else {
