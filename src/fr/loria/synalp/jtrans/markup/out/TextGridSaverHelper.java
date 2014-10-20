@@ -1,6 +1,7 @@
 package fr.loria.synalp.jtrans.markup.out;
 
 import fr.loria.synalp.jtrans.project.*;
+import fr.loria.synalp.jtrans.utils.FileUtils;
 
 import java.io.*;
 import java.util.Iterator;
@@ -14,14 +15,30 @@ public class TextGridSaverHelper {
 	 * If true, anonymized words will be replaced with "*ANON*" and their
 	 * phones will not be shown.
 	 */
-	public static boolean censorAnonWords = false;
-
+	public static enum docensort {withNPs, anonymous, both};
+	public static docensort censorAnonWords = docensort.both;
 
 	protected TextGridSaverHelper() {
 		// Don't let anyone but subclasses instantiate
 	}
 
-	public static void savePraat(
+	public static void savePraat(Project p,File f,boolean withWords,boolean withPhons) throws IOException {
+		if (censorAnonWords==docensort.both) {
+			String ext="";
+			String s=f.getAbsolutePath();
+			int i=s.lastIndexOf('.');
+			if (i>=0) ext=s.substring(i);
+			File fanon = new File(FileUtils.noExt(s)+"_anon"+ext);
+			savePraat(true, p, fanon, withWords, withPhons);
+			savePraat(false, p, f, withWords, withPhons);
+		} else if (censorAnonWords==docensort.withNPs) {
+			savePraat(false, p, f, withWords, withPhons);
+		} else {
+			savePraat(true,p, f, withWords, withPhons);
+		}
+	}
+	private static void savePraat(
+			boolean anonymous,
 			Project p,
 			File f,
 			boolean withWords,
@@ -58,14 +75,15 @@ public class TextGridSaverHelper {
 
 				for (Token token: phrase) {
 					if (token.isAlignable() && token.isAligned()) {
-						boolean censored = censorAnonWords && token.shouldBeAnonymized();
+						boolean censored = anonymous && token.shouldBeAnonymized();
+						String tok = token.shouldBeAnonymized()?"*"+token.toString()+"*":token.toString();
 
 						praatInterval(
 								wordSB,
 								wordCount + 1,
 								token.getSegment().getStartFrame(),
 								token.getSegment().getEndFrame(),
-								censored? "*ANON*": token.toString());
+								censored? "*ANON*": tok);
 						wordCount++;
 
 						if (!censored) {
