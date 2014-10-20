@@ -14,7 +14,7 @@ public class TextGridSaverHelper {
 	 * If true, anonymized words will be replaced with "*ANON*" and their
 	 * phones will not be shown.
 	 */
-	public static boolean censorAnonWords = true;
+	public static boolean censorAnonWords = false;
 
 
 	protected TextGridSaverHelper() {
@@ -160,7 +160,7 @@ public class TextGridSaverHelper {
 				.append("\n\t\t\txmin = ")
 				.append(Float.toString(frame2second(xminFrame)))
 				.append("\n\t\t\txmax = ")
-				.append(Float.toString(frame2second(xmaxFrame)))
+				.append(Float.toString(frame2second(xmaxFrame,false)))
 				.append("\n\t\t\ttext = \"").append(content).append('"'); // TODO escape strings
 	}
 

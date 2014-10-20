@@ -238,9 +238,23 @@ public class S4mfccBuffer extends BaseDataProcessor {
 
 
 	public static int FRAMES_PER_SECOND = 100;
-
+	
+	/*
+	 * small hack to fix the issue of 0.01s remaining interval
+	 */
 	public static float frame2second(int f) {
-		return (float)f/FRAMES_PER_SECOND;
+		return frame2second(f, true);
+	}
+	public static float frame2second(int f, boolean isStart) {
+		float r;
+		if (isStart)
+			r=(float)f/FRAMES_PER_SECOND;
+		else {
+			r=(float)f/FRAMES_PER_SECOND+1f/FRAMES_PER_SECOND;
+		}
+		int ri = (int)((r+0.5f)*100f);
+		float rif = (float)ri/100f;
+		return rif;
 	}
 
 	public static int second2frame(float s) {
