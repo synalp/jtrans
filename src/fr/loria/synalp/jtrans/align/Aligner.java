@@ -205,10 +205,17 @@ public abstract class Aligner {
 		they have in common), we subtract 1 frame from the final anchor. */
 
 		if (iFrame >= frameCount) {
+			/*
+			 * This often only occurs at the end of long files, because the last part of the file is missing;
+			 * so it's a bit harsh to throw everything away because of a small sync error at the end;
+			 * I rather print a warning and don't align instead of an exception.
+			 * 
 			throw new IllegalArgumentException(String.format(
 					"Initial frame (%d) beyond frame count (%d)! " +
 							"(in phrase: %s)",
 					iFrame, frameCount, words));
+			 */
+			System.err.println(String.format("ERROR: Initial frame (%d) beyond frame count (%d)! " + "(in phrase: %s)", iFrame, frameCount, words));
 		}
 
 		if (fFrame >= frameCount) {
@@ -219,7 +226,13 @@ public abstract class Aligner {
 
 		if (iFrame - fFrame > 1) {
 			// initial frame after final frame
+			/*
 			throw new IllegalArgumentException(String.format(
+					"Initial frame (%d, %s) after final frame (%d, %s)! " +
+							"(in phrase: %s)",
+					iFrame, start, fFrame, end, words));
+					*/
+			System.err.println(String.format(
 					"Initial frame (%d, %s) after final frame (%d, %s)! " +
 							"(in phrase: %s)",
 					iFrame, start, fFrame, end, words));
