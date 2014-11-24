@@ -22,14 +22,17 @@ public class TextGridAnonSaver implements MarkupSaver {
 	public static void savePraatAnonTier(Project p, File f) throws IOException {
 		final int frameCount = (int) p.audioSourceTotalFrames;
 
+		int lastend=0;
 		ArrayList<int[]> anonsegs = new ArrayList<int[]>();
 		for (int i = 0; i < p.speakerCount(); i++) {
 			Iterator<Phrase> itr = p.phraseIterator(i);
 			while (itr.hasNext()) {
 				Phrase phrase = itr.next();
 				for (Token token: phrase) {
+					int end = token.getSegment().getEndFrame();
+					if (end>lastend) lastend=end;
 					if (token.isAligned() && token.shouldBeAnonymized()) {
-						int[] seg = {token.getSegment().getStartFrame(),token.getSegment().getEndFrame()};
+						int[] seg = {token.getSegment().getStartFrame(),end};
 						anonsegs.add(seg);
 					}
 				}
@@ -43,7 +46,7 @@ public class TextGridAnonSaver implements MarkupSaver {
 		qsort.sort(debs, ids);
 		// rebuild the segments in order and merge overlapping ones
 		ArrayList<int[]> asegs = new ArrayList<int[]>();
-		int prevdeb=-1, prevend=-1;;
+		int prevdeb=-1, prevend=-1;
 		for (int i=0;i<ids.length;i++) {
 			int deb=anonsegs.get(ids[i])[0];
 			int end=anonsegs.get(ids[i])[1];
@@ -66,11 +69,13 @@ public class TextGridAnonSaver implements MarkupSaver {
 				// overlapping segs: replace the end of the previous one with the new end
 				int[] limits = asegs.get(asegs.size()-1);
 				limits[1]=end;
+				prevend=end;
 				continue;
 			} else {
 				// standard case: 2 anon segs separated by a non-anon seg
 				int[] limits={deb,end};
 				asegs.add(limits);
+				prevend=end;
 			}
 		}
 
@@ -89,14 +94,23 @@ public class TextGridAnonSaver implements MarkupSaver {
 						deb,
 						"x");
 				anonCount++;
-				praatInterval(
-						anonSB,
-						anonCount + 1,
-						deb,
-						end,
-						"buzz");
-				anonCount++;
 			}
+			praatInterval(
+					anonSB,
+					anonCount + 1,
+					deb,
+					end,
+					"buzz");
+			prevend=end;
+			anonCount++;
+		}
+		if (prevend<lastend) {
+			praatInterval(
+					anonSB,
+					anonCount + 1,
+					prevend,
+					lastend,
+					"x");
 		}
 
 		Writer w = getUTF8Writer(f);
