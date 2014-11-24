@@ -170,16 +170,33 @@ public class TextGridSaverHelper {
 	 * @param w Append text to this writer
 	 * @param id Interval ID (Interval numbering starts at 1 and is contiguous!)
 	 */
-	public static void praatInterval(
+	public static float praatInterval(
 			Appendable w, int id, int xminFrame, int xmaxFrame, String content)
 			throws IOException
 	{
+		float endSec=frame2second(xmaxFrame,false);
 		w.append("\n\t\tintervals [").append(Integer.toString(id)).append("]:")
 				.append("\n\t\t\txmin = ")
 				.append(Float.toString(frame2second(xminFrame)))
 				.append("\n\t\t\txmax = ")
-				.append(Float.toString(frame2second(xmaxFrame,false)))
+				.append(Float.toString(endSec))
 				.append("\n\t\t\ttext = \"").append(content).append('"'); // TODO escape strings
+		return endSec;
+	}
+	// added this second function because in some cases, we really want the beginning of the next segment to match the end of the previous,
+	// at the millisecond level !
+	public static float praatInterval(
+			Appendable w, int id, float xminSec, int xmaxFrame, String content)
+			throws IOException
+	{
+		float endSec=frame2second(xmaxFrame,false);
+		w.append("\n\t\tintervals [").append(Integer.toString(id)).append("]:")
+				.append("\n\t\t\txmin = ")
+				.append(Float.toString(xminSec))
+				.append("\n\t\t\txmax = ")
+				.append(Float.toString(endSec))
+				.append("\n\t\t\ttext = \"").append(content).append('"'); // TODO escape strings
+		return endSec;
 	}
 
 }

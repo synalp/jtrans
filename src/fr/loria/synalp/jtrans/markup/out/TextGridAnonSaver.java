@@ -29,11 +29,13 @@ public class TextGridAnonSaver implements MarkupSaver {
 			while (itr.hasNext()) {
 				Phrase phrase = itr.next();
 				for (Token token: phrase) {
-					int end = token.getSegment().getEndFrame();
-					if (end>lastend) lastend=end;
-					if (token.isAligned() && token.shouldBeAnonymized()) {
-						int[] seg = {token.getSegment().getStartFrame(),end};
-						anonsegs.add(seg);
+					if (token.isAligned()) {
+						int end = token.getSegment().getEndFrame();
+						if (end>lastend) lastend=end;
+						if (token.shouldBeAnonymized()) {
+							int[] seg = {token.getSegment().getStartFrame(),end};
+							anonsegs.add(seg);
+						}
 					}
 				}
 			}
@@ -82,24 +84,28 @@ public class TextGridAnonSaver implements MarkupSaver {
 		StringBuilder anonSB = new StringBuilder();
 		int anonCount = 0;
 		prevend=0;
+		float prevendsec=0;
 		for (int i=0;i<asegs.size();i++) {
 			int deb=asegs.get(i)[0];
 			int end=asegs.get(i)[1];
 			if (deb>prevend) {
 				// insert a nonanon seg
-				praatInterval(
+				prevendsec=praatInterval(
 						anonSB,
 						anonCount + 1,
-						prevend,
-						deb,
+						prevendsec,
+						// end-1 is a hack because when later converting frames to seconds, a +1 is added to the end of the segment
+						// this is because in the main (non-anon) code for segments, segments ends one frame before the beginning of the new segments,
+						// while in this code, segments end = next segment start
+						deb-1,
 						"x");
 				anonCount++;
 			}
-			praatInterval(
+			prevendsec=praatInterval(
 					anonSB,
 					anonCount + 1,
-					deb,
-					end,
+					prevendsec,
+					end-1,
 					"buzz");
 			prevend=end;
 			anonCount++;
@@ -108,8 +114,8 @@ public class TextGridAnonSaver implements MarkupSaver {
 			praatInterval(
 					anonSB,
 					anonCount + 1,
-					prevend,
-					lastend,
+					prevendsec,
+					lastend-1,
 					"x");
 		}
 
