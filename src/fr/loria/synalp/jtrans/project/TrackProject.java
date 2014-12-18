@@ -8,7 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 
 public class TrackProject extends Project {
-	public List<List<Phrase>> tracks = new ArrayList<>();
+	public List<List<Phrase>> tracks = new ArrayList<List<Phrase>>();
 
 	@Override
 	public List<Token> getTokens(int speaker) {
@@ -19,6 +19,15 @@ public class TrackProject extends Project {
 		return res;
 	}
 
+	public void fixTracks() {
+		for (int i=0;i<tracks.size();i++) {
+			List<Phrase> x = tracks.get(i);
+			for (int j=0;j<x.size();j++) {
+				System.out.println(x.get(j).getClass().getName());
+			}
+		}
+	}
+	
 	@Override
 	public Iterator<Phrase> phraseIterator(int speaker) {
 		return tracks.get(speaker).iterator();

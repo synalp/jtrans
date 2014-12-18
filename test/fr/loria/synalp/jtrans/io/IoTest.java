@@ -42,11 +42,11 @@ public class IoTest {
 			String f=saveJtr2();
 			JTRLoader l = new JTRLoader();
 			TrackProject p=(TrackProject)l.parse(new File(f));
-			Iterator<Phrase> i = p.phraseIterator(0);
-			while (i.hasNext()) {
-				Phrase pp = i.next();
-				System.out.println(pp);
-			}
+//			Iterator<Phrase> i = p.phraseIterator(0);
+//			while (i.hasNext()) {
+//				Phrase pp = i.next();
+//				System.out.println(pp);
+//			}
 		} catch (Exception e) {e.printStackTrace();fail();}
 	}
 }
