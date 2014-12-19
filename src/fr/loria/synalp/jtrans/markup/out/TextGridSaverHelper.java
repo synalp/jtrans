@@ -198,5 +198,17 @@ public class TextGridSaverHelper {
 				.append("\n\t\t\ttext = \"").append(content).append('"'); // TODO escape strings
 		return endSec;
 	}
+	public static float praatInterval(
+			Appendable w, int id, float xminSec, float xmaxSec, String content)
+			throws IOException
+	{
+		w.append("\n\t\tintervals [").append(Integer.toString(id)).append("]:")
+				.append("\n\t\t\txmin = ")
+				.append(Float.toString(xminSec))
+				.append("\n\t\t\txmax = ")
+				.append(Float.toString(xmaxSec))
+				.append("\n\t\t\ttext = \"").append(content).append('"'); // TODO escape strings
+		return xmaxSec;
+	}
 
 }
