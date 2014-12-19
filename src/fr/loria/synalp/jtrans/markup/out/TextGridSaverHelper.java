@@ -78,12 +78,6 @@ public class TextGridSaverHelper {
 						boolean censored = anonymous && token.shouldBeAnonymized();
 						String tok = token.shouldBeAnonymized()?"*"+token.toString()+"*":token.toString();
 
-						// debug
-						if (tok.equals("crois"))
-							System.out.println("debugcrois "+token.getSegment().getStartFrame()+" "+token.getSegment().getEndFrame());
-			if (tok.equals("crois"))
-			System.out.println("debugcrois "+token.getSegment().getStartSecond()+" "+token.getSegment().getEndSecond());
-						
 						praatInterval(
 								wordSB,
 								wordCount + 1,
