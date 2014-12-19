@@ -252,7 +252,7 @@ public class S4mfccBuffer extends BaseDataProcessor {
 		else {
 			r=(float)f/FRAMES_PER_SECOND+1f/FRAMES_PER_SECOND;
 		}
-		int ri = (int)((r+0.5f)*100f);
+		int ri = (int)(r*100f+0.5f);
 		float rif = (float)ri/100f;
 		return rif;
 	}
