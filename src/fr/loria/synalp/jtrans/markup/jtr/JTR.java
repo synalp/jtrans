@@ -59,8 +59,14 @@ public final class JTR {
 				ArrayList<Token> t = new ArrayList<Token>();
 				for (int i=0;i<l.size();i++) {
 					JsonObject o = l.get(i).getAsJsonObject(); // Token
-					// TODO: read all fields of Token one by one !!!
-					Token tt = new Token("oo");
+					String txt = o.get("text").getAsString();
+					String type = o.get("type").getAsString();
+					int speaker = o.get("speaker").getAsInt();
+					boolean anon = o.get("anonymize").getAsBoolean();
+					// TODO: read segment + phones
+					Token tt = new Token(txt,fr.loria.synalp.jtrans.project.Token.Type.valueOf(type));
+					tt.setSpeaker(speaker);
+					tt.setAnonymize(anon);
 					t.add(tt);
 				}
 				System.out.println("indes "+json);
