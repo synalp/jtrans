@@ -15,6 +15,7 @@ import fr.loria.synalp.jtrans.project.Project;
 import fr.loria.synalp.jtrans.project.Token;
 import fr.loria.synalp.jtrans.project.Token.Phone;
 import fr.loria.synalp.jtrans.project.Token.Segment;
+import fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer;
 
 import java.io.File;
 import java.lang.reflect.Type;
@@ -59,6 +60,7 @@ public final class JTR {
 					JsonDeserializationContext arg2) throws JsonParseException {
 				JsonArray l = json.getAsJsonArray();
 				ArrayList<Token> t = new ArrayList<Token>();
+				int phrasedeb=Integer.MAX_VALUE, phraseend=-Integer.MAX_VALUE;
 				for (int i=0;i<l.size();i++) {
 					JsonObject o = l.get(i).getAsJsonObject(); // Token
 					String txt = o.get("text").getAsString();
@@ -74,7 +76,9 @@ public final class JTR {
 					if (s!=null) {
 						JsonObject so=s.getAsJsonObject();
 						int start = so.get("start").getAsInt();
+						if (start<phrasedeb) phrasedeb=start;
 						int end   = so.get("end").getAsInt();
+						if (end>phraseend) phraseend=end;
 						tt.setSegment(start, end);
 					}
 					s = o.get("phones");
@@ -86,15 +90,22 @@ public final class JTR {
 							s = o.get("segment");
 							JsonObject soo=s.getAsJsonObject();
 							int start = soo.get("start").getAsInt();
+							if (start<phrasedeb) phrasedeb=start;
 							int end   = soo.get("end").getAsInt();
+							if (end>phraseend) phraseend=end;
 							Segment seg = new Segment(start, end);
 							Phone pp = new Phone(ph, seg);
 							tt.addPhone(pp);
 						}
 					}
 				}
-				System.out.println("indes "+json);
-				return new Phrase(new Anchor(0), new Anchor(10), t);
+				float pdeb,pfin;
+				if (phrasedeb==Integer.MAX_VALUE || phraseend==-Integer.MAX_VALUE)
+				{pdeb=-1; pfin=-1;} else {
+					pdeb=S4mfccBuffer.frame2second(phrasedeb);
+					pfin=S4mfccBuffer.frame2second(phraseend);
+				}
+				return new Phrase(new Anchor(pdeb), new Anchor(pfin), t);
 			}
 		}
 		gb.registerTypeAdapter(Phrase.class, new PhraseDeserializer());
