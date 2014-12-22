@@ -13,6 +13,8 @@ import fr.loria.synalp.jtrans.project.Anchor;
 import fr.loria.synalp.jtrans.project.Phrase;
 import fr.loria.synalp.jtrans.project.Project;
 import fr.loria.synalp.jtrans.project.Token;
+import fr.loria.synalp.jtrans.project.Token.Phone;
+import fr.loria.synalp.jtrans.project.Token.Segment;
 
 import java.io.File;
 import java.lang.reflect.Type;
@@ -63,11 +65,33 @@ public final class JTR {
 					String type = o.get("type").getAsString();
 					int speaker = o.get("speaker").getAsInt();
 					boolean anon = o.get("anonymize").getAsBoolean();
-					// TODO: read segment + phones
 					Token tt = new Token(txt,fr.loria.synalp.jtrans.project.Token.Type.valueOf(type));
 					tt.setSpeaker(speaker);
 					tt.setAnonymize(anon);
 					t.add(tt);
+					// read segment + phones
+					JsonElement s = o.get("segment");
+					if (s!=null) {
+						JsonObject so=s.getAsJsonObject();
+						int start = so.get("start").getAsInt();
+						int end   = so.get("end").getAsInt();
+						tt.setSegment(start, end);
+					}
+					s = o.get("phones");
+					if (s!=null) {
+						JsonArray so=s.getAsJsonArray();
+						for (int j=0;j<so.size();j++) {
+							o=so.get(j).getAsJsonObject();
+							String ph = o.get("phone").getAsString();
+							s = o.get("segment");
+							JsonObject soo=s.getAsJsonObject();
+							int start = soo.get("start").getAsInt();
+							int end   = soo.get("end").getAsInt();
+							Segment seg = new Segment(start, end);
+							Phone pp = new Phone(ph, seg);
+							tt.addPhone(pp);
+						}
+					}
 				}
 				System.out.println("indes "+json);
 				return new Phrase(new Anchor(0), new Anchor(10), t);
