@@ -76,7 +76,8 @@ public class TrackModel extends ProjectModel<TrackProject> {
 
 		for (int i = 0; i < project.speakerCount(); i++) {
 			columns.add(new TrackColumn(i));
-			rows += 3 * project.tracks.get(i).size();
+			rows += 3 * project.getTrackSize(i);
+//			rows += 3 * project.tracks.get(i).size();
 		}
 
 		for (Column c: columns) {

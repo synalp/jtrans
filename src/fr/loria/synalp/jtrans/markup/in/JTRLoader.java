@@ -24,7 +24,7 @@ public class JTRLoader implements MarkupLoader {
 		if (pw.project instanceof TrackProject) {
 			System.out.println("track project detected");
 			TrackProject p = (TrackProject)pw.project;
-			p.fixTracks();
+			p.removeEmptyPhrases();
 		}
 		
 		return pw.project;

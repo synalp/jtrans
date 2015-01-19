@@ -13,6 +13,8 @@ import fr.loria.synalp.jtrans.markup.out.JTRSaver;
 import fr.loria.synalp.jtrans.project.Anchor;
 import fr.loria.synalp.jtrans.project.Phrase;
 import fr.loria.synalp.jtrans.project.Token;
+import fr.loria.synalp.jtrans.project.Token.Segment;
+import fr.loria.synalp.jtrans.project.Token.Phone;
 import fr.loria.synalp.jtrans.project.TrackProject;
 import static org.junit.Assert.*;
 
@@ -27,7 +29,13 @@ public class IoTest {
 			Anchor fin = new Anchor(15);
 			ArrayList<Token> toks = new ArrayList<Token>();
 			toks.add(new Token("il"));
+			toks.get(0).setSegment(10, 12); // alignement obtenu
+			Segment s_il = new Segment(10, 11);
+			toks.get(0).addPhone(new Phone("i", s_il));
+			s_il = new Segment(11, 12);
+			toks.get(0).addPhone(new Phone("l", s_il));
 			toks.add(new Token("mange"));
+			toks.get(1).setSegment(13, 15); // alignement obtenu
 			t1.add(new Phrase(deb, fin, toks));
 			p.addTrack("toto", t1);
 			JTRSaver f = new JTRSaver();
