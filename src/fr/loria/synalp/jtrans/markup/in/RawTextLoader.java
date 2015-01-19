@@ -121,17 +121,47 @@ public class RawTextLoader implements MarkupLoader {
 
 	private static List<Token> parseWords(String text) {
 		List<Token> list = new ArrayList<>();
-		for (String w: text.trim().split("\\s+")) {
-			Token word;
-
-			Matcher m = ANONYMOUS_WORD_PATTERN.matcher(w);
-			if (m.matches()) {
-				word = new Token(m.group(1));
-				word.setAnonymize(true);
+		
+		// get anonymous limits
+		ArrayList<int[]> anonlimits = new ArrayList<int[]>();
+		int i=0;
+		boolean inAnon=false;
+		int deb=0;
+		for (;;) {
+			int j=text.indexOf('*',i);
+			if (j<0) break;
+			if (inAnon) {
+				int[] ll = {deb,j};
+				anonlimits.add(ll);
+				inAnon=false;
 			} else {
-				word = new Token(w);
+				deb=j+1;
+				inAnon=true;
 			}
+			i=j+1;
+		}
+		if (inAnon) {
+			System.out.println("ERROR tracking anonymous segments "+text);
+		}
 
+		deb=0;
+		final int fin=text.length();
+		for (i=0;i<anonlimits.size();i++) {
+			if (anonlimits.get(i)[0]-deb>0)
+				for (String w: text.substring(0,deb).trim().split("\\s+")) {
+					Token word = new Token(w);
+					list.add(word);
+				}
+			{
+				Token word = new Token(text.substring(anonlimits.get(i)[0], anonlimits.get(i)[1]).trim());
+				word.setAnonymize(true);
+				list.add(word);
+			}
+			deb=anonlimits.get(i)[1];
+		}
+		// treat what remains:
+		for (String w: text.substring(deb,fin).trim().split("\\s+")) {
+			Token word = new Token(w);
 			list.add(word);
 		}
 		return list;
