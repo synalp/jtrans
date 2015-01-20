@@ -72,15 +72,47 @@ public class RawTextLoader implements MarkupLoader {
 		}
 
 		List<Token> elList = new ArrayList<>();
-		ArrayList<NonTextSegment> nonText = new ArrayList<NonTextSegment>();
-
+		ArrayList<NonTextSegment> nonText0 = new ArrayList<NonTextSegment>();
 
 		for (Map.Entry<Token.Type, String> entry: commentPatterns.entrySet()) {
 			Pattern pat = Pattern.compile(entry.getValue());
 			Matcher mat = pat.matcher(normedText);
 			while (mat.find())
-				nonText.add(new NonTextSegment(mat.start(), mat.end(), entry.getKey()));
+				nonText0.add(new NonTextSegment(mat.start(), mat.end(), entry.getKey()));
 		}
+
+		// remove nontext segments that are inside an anonymous segment
+		ArrayList<NonTextSegment> nonText = new ArrayList<NonTextSegment>();
+		// get anonymous limits
+		ArrayList<int[]> anonlimits = new ArrayList<int[]>();
+		int i=0;
+		boolean inAnon=false;
+		int deb=0;
+		for (;;) {
+			int j=normedText.indexOf('*',i);
+			if (j<0) break;
+			if (inAnon) {
+				int[] ll = {deb,j};
+				anonlimits.add(ll);
+				inAnon=false;
+			} else {
+				deb=j+1;
+				inAnon=true;
+			}
+			i=j+1;
+		}
+		if (inAnon) {
+			System.out.println("ERROR tracking anonymous segments0 "+normedText);
+		}
+		for (NonTextSegment seg : nonText0) {
+			boolean isin=false;
+			for (int[] aseg : anonlimits) {
+				if (seg.start>=aseg[0]&&seg.start<aseg[1]) {isin=true; break;}
+				if (seg.end>=aseg[0]&&seg.end<aseg[1]) {isin=true; break;}
+			}
+			if (!isin) nonText.add(seg);
+		}
+		
 		Collections.sort(nonText);
 
 		// Turn the non-text segments into Elements
@@ -117,7 +149,6 @@ public class RawTextLoader implements MarkupLoader {
 
 		return elList;
 	}
-
 
 	private static List<Token> parseWords(String text) {
 		List<Token> list = new ArrayList<>();
