@@ -178,27 +178,33 @@ public class RawTextLoader implements MarkupLoader {
 		deb=0;
 		final int fin=text.length();
 		for (i=0;i<anonlimits.size();i++) {
-			if (anonlimits.get(i)[0]-deb>0) {
-				for (String w: text.substring(0,anonlimits.get(i)[0]).trim().split("\\s+")) {
-					Token word = new Token(w);
-					list.add(word);
+			if (anonlimits.get(i)[0]-deb>1) { // les limites sont apres l'etoile. -1 pour eviter l'etoile
+				for (String w: text.substring(0,anonlimits.get(i)[0]-1).trim().split("\\s+")) {
+					w=w.trim();
+					if (w.length()>0) {
+						Token word = new Token(w);
+						list.add(word);
+					}
 				}
 			}
 			{
-				Token word = new Token(text.substring(anonlimits.get(i)[0], anonlimits.get(i)[1]).trim());
-				word.setAnonymize(true);
-				list.add(word);
+				String w = text.substring(anonlimits.get(i)[0], anonlimits.get(i)[1]).trim();
+				if (w.length()>0) {
+					Token word = new Token(w);
+					word.setAnonymize(true);
+					list.add(word);
+				}
 			}
-			deb=anonlimits.get(i)[1];
-			System.out.println("tttt0 "+anonlimits.get(i)[0]+" "+anonlimits.get(i)[1]);
+			deb=anonlimits.get(i)[1]+1;
 		}
 		// treat what remains:
 		for (String w: text.substring(deb,fin).trim().split("\\s+")) {
-			Token word = new Token(w);
-			list.add(word);
+			w=w.trim();
+			if (w.length()>0) {
+				Token word = new Token(w);
+				list.add(word);
+			}
 		}
-		
-		System.out.println("tttt "+text+" === "+list);
 		
 		return list;
 	}
