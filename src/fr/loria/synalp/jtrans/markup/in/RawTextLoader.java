@@ -178,23 +178,28 @@ public class RawTextLoader implements MarkupLoader {
 		deb=0;
 		final int fin=text.length();
 		for (i=0;i<anonlimits.size();i++) {
-			if (anonlimits.get(i)[0]-deb>0)
-				for (String w: text.substring(0,deb).trim().split("\\s+")) {
+			if (anonlimits.get(i)[0]-deb>0) {
+				for (String w: text.substring(0,anonlimits.get(i)[0]).trim().split("\\s+")) {
 					Token word = new Token(w);
 					list.add(word);
 				}
+			}
 			{
 				Token word = new Token(text.substring(anonlimits.get(i)[0], anonlimits.get(i)[1]).trim());
 				word.setAnonymize(true);
 				list.add(word);
 			}
 			deb=anonlimits.get(i)[1];
+			System.out.println("tttt0 "+anonlimits.get(i)[0]+" "+anonlimits.get(i)[1]);
 		}
 		// treat what remains:
 		for (String w: text.substring(deb,fin).trim().split("\\s+")) {
 			Token word = new Token(w);
 			list.add(word);
 		}
+		
+		System.out.println("tttt "+text+" === "+list);
+		
 		return list;
 	}
 

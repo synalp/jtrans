@@ -35,6 +35,7 @@ public class MarkupPluginPool<HandlerType extends MarkupPlugin> {
 			}
 
 			String key = clazz.getSimpleName();
+			
 			if (key.endsWith(optSuffix)) {
 				key = key.substring(0, key.length() - optSuffix.length());
 			}
