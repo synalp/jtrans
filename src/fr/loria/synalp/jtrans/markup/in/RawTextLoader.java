@@ -101,6 +101,7 @@ public class RawTextLoader implements MarkupLoader {
 			}
 			i=j+1;
 		}
+			
 		if (inAnon) {
 			System.out.println("ERROR tracking anonymous segments0 "+normedText);
 		}
@@ -151,7 +152,7 @@ public class RawTextLoader implements MarkupLoader {
 	}
 
 	private static List<Token> parseWords(String text) {
-		List<Token> list = new ArrayList<>();
+		List<Token> list = new ArrayList<Token>();
 		
 		// get anonymous limits
 		ArrayList<int[]> anonlimits = new ArrayList<int[]>();
@@ -174,12 +175,17 @@ public class RawTextLoader implements MarkupLoader {
 		if (inAnon) {
 			System.out.println("ERROR tracking anonymous segments "+text);
 		}
+		
+//		System.out.print("anonlimits ");
+//		for (int[] l : anonlimits) System.out.print(l[0]+"-"+l[1]+" "+text.substring(l[0], l[1]));
+//		System.out.println();
 
 		deb=0;
 		final int fin=text.length();
 		for (i=0;i<anonlimits.size();i++) {
 			if (anonlimits.get(i)[0]-deb>1) { // les limites sont apres l'etoile. -1 pour eviter l'etoile
-				for (String w: text.substring(0,anonlimits.get(i)[0]-1).trim().split("\\s+")) {
+				// il y a un segment de text avant la portion a anonymiser
+				for (String w: text.substring(deb,anonlimits.get(i)[0]-1).trim().split("\\s+")) {
 					w=w.trim();
 					if (w.length()>0) {
 						Token word = new Token(w);
@@ -206,6 +212,7 @@ public class RawTextLoader implements MarkupLoader {
 			}
 		}
 		
+//		System.out.println("list "+list);
 		return list;
 	}
 
