@@ -1,5 +1,6 @@
 package fr.loria.synalp.jtrans.markup.out;
 
+import fr.loria.synalp.jtrans.graph.StatePool;
 import fr.loria.synalp.jtrans.project.*;
 import fr.loria.synalp.jtrans.utils.FileUtils;
 
@@ -78,27 +79,60 @@ public class TextGridSaverHelper {
 						boolean censored = anonymous && token.shouldBeAnonymized();
 						String tok = token.shouldBeAnonymized()?"*"+token.toString()+"*":token.toString();
 
-						praatInterval(
-								wordSB,
-								wordCount + 1,
-								token.getSegment().getStartFrame(),
-								token.getSegment().getEndFrame(),
-								censored? "*ANON*": tok);
-						wordCount++;
+                        int startWfr = token.getFirstNonSilenceFrame();
+                        int endWfr = token.getLastNonSilenceFrame();
+                        if (startWfr<0) {
+                            // ce n'est que un SIL: j'ajoute un mot pour le SIL
+                            praatInterval(
+                                    wordSB,
+                                    wordCount + 1,
+                                    token.getSegment().getStartFrame(),
+                                    token.getSegment().getEndFrame(),
+                                    censored ? "*ANON*" : tok);
+                            wordCount++;
+                        } else {
+                            if (startWfr>token.getSegment().getStartFrame()) {
+                                // il y a un SIL devant: j'ajoute un mot "SIL" devant
+                                praatInterval(
+                                    wordSB,
+                                    wordCount + 1,
+                                    token.getSegment().getStartFrame(),
+                                    startWfr,
+                                    StatePool.SILENCE_PHONE);
+                                wordCount++;
+                            }
+                            praatInterval(
+                                    wordSB,
+                                    wordCount + 1,
+                                    startWfr,
+                                    endWfr,
+                                    censored ? "*ANON*" : tok);
+                            wordCount++;
+                            if (endWfr<token.getSegment().getEndFrame()) {
+                                // il y a un SIL derriere; j'ajoute un mot "SIL" a la fin
+                                praatInterval(
+                                        wordSB,
+                                        wordCount + 1,
+                                        token.getSegment().getStartFrame(),
+                                        startWfr,
+                                        StatePool.SILENCE_PHONE);
+                                wordCount++;
+                            }
+                        }
+                        // dans tous les cas, j'ajoute les phonemes
+                        if (!censored) {
+                            for (Token.Phone phone : token.getPhones()) {
+                                praatInterval(
+                                        phoneSB,
+                                        phoneCount + 1,
+                                        phone.getSegment().getStartFrame(),
+                                        phone.getSegment().getEndFrame(),
+                                        phone.toString());
+                                phoneCount++;
+                            }
+                        }
 
-						if (!censored) {
-							for (Token.Phone phone: token.getPhones()) {
-								praatInterval(
-										phoneSB,
-										phoneCount + 1,
-										phone.getSegment().getStartFrame(),
-										phone.getSegment().getEndFrame(),
-										phone.toString());
-								phoneCount++;
-							}
-						}
-
-						lastFrame = token.getSegment().getEndFrame();
+                        lastFrame = token.getSegment().getEndFrame();
 					} else if (null != token) {
 						praatInterval(
 								wordSB,

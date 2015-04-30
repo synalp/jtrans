@@ -15,7 +15,6 @@ public class Token {
 	private final List<Phone> phones;
 	private boolean anonymize;
 
-
 	public static enum Type {
 		/** Alignable token */
 		WORD,
@@ -127,8 +126,11 @@ public class Token {
 		return isAlignable()? text: "["+text+"]";
 	}
 
+    public boolean hasTrailingSIL() {
+        return (phones!=null&&phones.size()>0&&phones.get(phones.size()-1).isSilence());
+    }
 
-	public void clearAlignment() {
+    public void clearAlignment() {
 		if (isAlignable()) {
 			segment = null;
 			phones.clear();
