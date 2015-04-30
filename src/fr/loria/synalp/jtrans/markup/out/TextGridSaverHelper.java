@@ -113,8 +113,8 @@ public class TextGridSaverHelper {
                                 praatInterval(
                                         wordSB,
                                         wordCount + 1,
-                                        token.getSegment().getStartFrame(),
-                                        startWfr,
+                                        endWfr,
+                                        token.getSegment().getEndFrame(),
                                         StatePool.SILENCE_PHONE);
                                 wordCount++;
                             }
