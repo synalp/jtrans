@@ -74,6 +74,7 @@ public class TextGridSaverHelper {
 					lastFrame = phrase.getInitialAnchor().getFrame();
 				}
 
+                int textidStard2add = -1; String textid2add = "BUG";
 				for (Token token: phrase) {
 					if (token.isAlignable() && token.isAligned()) {
 						boolean censored = anonymous && token.shouldBeAnonymized();
@@ -81,43 +82,55 @@ public class TextGridSaverHelper {
 
                         int startWfr = token.getFirstNonSilenceFrame();
                         int endWfr = token.getLastNonSilenceFrame();
+                        lastFrame = token.getSegment().getEndFrame();
                         if (startWfr<0) {
                             // ce n'est que un SIL: j'ajoute un mot pour le SIL
-                            praatInterval(
-                                    wordSB,
-                                    wordCount + 1,
-                                    token.getSegment().getStartFrame(),
-                                    token.getSegment().getEndFrame(),
-                                    censored ? "*ANON*" : tok);
-                            wordCount++;
+                            // et bien non, en fait, j'ai decide de ne pas faire apparaitre du tout les SIL dans la tier des mots...
+//                            praatInterval(
+//                                    wordSB,
+//                                    wordCount + 1,
+//                                    token.getSegment().getStartFrame(),
+//                                    token.getSegment().getEndFrame(),
+//                                    censored ? "*ANON*" : tok);
+//                            wordCount++;
                         } else {
-                            if (startWfr>token.getSegment().getStartFrame()) {
-                                // il y a un SIL devant: j'ajoute un mot "SIL" devant
+//                            if (startWfr>token.getSegment().getStartFrame()) {
+//                                // il y a un SIL devant: j'ajoute un mot "SIL" devant
+//                                praatInterval(
+//                                    wordSB,
+//                                    wordCount + 1,
+//                                    token.getSegment().getStartFrame(),
+//                                    startWfr,
+//                                    StatePool.SILENCE_PHONE);
+//                                wordCount++;
+//                            }
+                            if (textidStard2add>=0) {
+                                // first add a START textid comment with the same frame as the next word
                                 praatInterval(
-                                    wordSB,
-                                    wordCount + 1,
-                                    token.getSegment().getStartFrame(),
-                                    startWfr,
-                                    StatePool.SILENCE_PHONE);
-                                wordCount++;
+                                        wordSB,
+                                        ++wordCount,
+                                        startWfr,
+                                        startWfr-1,
+                                        textid2add);
+                                textidStard2add=-1;
                             }
                             praatInterval(
                                     wordSB,
-                                    wordCount + 1,
+                                    ++wordCount,
                                     startWfr,
                                     endWfr,
                                     censored ? "*ANON*" : tok);
-                            wordCount++;
-                            if (endWfr<token.getSegment().getEndFrame()) {
-                                // il y a un SIL derriere; j'ajoute un mot "SIL" a la fin
-                                praatInterval(
-                                        wordSB,
-                                        wordCount + 1,
-                                        endWfr,
-                                        token.getSegment().getEndFrame(),
-                                        StatePool.SILENCE_PHONE);
-                                wordCount++;
-                            }
+                            lastFrame=endWfr;
+//                            if (endWfr<token.getSegment().getEndFrame()) {
+//                                // il y a un SIL derriere; j'ajoute un mot "SIL" a la fin
+//                                praatInterval(
+//                                        wordSB,
+//                                        wordCount + 1,
+//                                        endWfr,
+//                                        token.getSegment().getEndFrame(),
+//                                        StatePool.SILENCE_PHONE);
+//                                wordCount++;
+//                            }
                         }
                         // dans tous les cas, j'ajoute les phonemes
                         if (!censored) {
@@ -132,18 +145,36 @@ public class TextGridSaverHelper {
                             }
                         }
 
-                        lastFrame = token.getSegment().getEndFrame();
 					} else if (null != token) {
-						praatInterval(
-								wordSB,
-								wordCount + 1,
-								lastFrame,
-								lastFrame,
-								token.toString());
-						wordCount++;
-					}
-				}
-			}
+                        if (token.toString().charAt(0)=='[') {
+                            // on traite le cas des commentaires textid
+                            if (token.toString().endsWith("start]")) {
+                                textid2add=token.toString();
+                                textidStard2add=lastFrame; // this value is actually not used; the only important thing is that it is >=0
+                            } else if (token.toString().endsWith("end]")) {
+                                if (textidStard2add<0) {
+                                    // only add the textid comment iff there are at least 1 real word in the interval
+                                    praatInterval(
+                                            wordSB,
+                                            ++wordCount,
+                                            lastFrame+1,
+                                            lastFrame,
+                                            token.toString());
+                                } else {
+                                    // cancels the previously started segment, because it is empty
+                                    textidStard2add=-1;
+                                }
+                            }
+                        } else
+                            praatInterval(
+                                    wordSB,
+                                    ++wordCount,
+                                    lastFrame,
+                                    lastFrame-1,
+                                    token.toString());
+                    }
+                }
+            }
 
 			if (withWords) {
 				praatTierHeader(w, id++, p.getSpeakerName(i) + " words", wordCount, frameCount);
