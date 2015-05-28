@@ -19,7 +19,7 @@ public class RawTextLoader implements MarkupLoader {
         {
             // test si on a des incertitudes sur l'orthographe
             int k=0;
-            for (;;) {
+            while (k<text.length()) {
                 int i = text.indexOf('(', k);
                 if (i >= 0) {
                     k=i+1;
@@ -51,6 +51,58 @@ public class RawTextLoader implements MarkupLoader {
                             k=i;
                         }
                     }
+                } else break;
+            }
+        }
+
+        {
+            // test si on a des incertitudes sur l'orthographe
+            int k=0;
+            while (k<text.length()) {
+                int i = text.indexOf('/', k);
+                if (i >= 0) {
+                    k=i+1;
+                    if (k>=text.length()) break;
+                    if (text.charAt(k)!='/') { // laisse passer les doubles // = segmentations manuelles
+                        int j = text.indexOf('/', k);
+                        if (j < 0) System.out.println("ERROR alternatives: " + text);
+                        else {
+                            k = j + 1;
+
+                            int l = text.indexOf(',', i);
+                            if (l < 0) System.out.println("ERROR alternatives: " + text);
+                            else {
+                                final String firstAlt = text.substring(i + 1, l).trim();
+                                boolean textmodified = false;
+                                System.out.println("CATCH alternatives: " + text.substring(i, j + 1));
+                                int freespace = text.lastIndexOf(' ', i);
+                                if (freespace < 0) {
+                                    freespace = text.indexOf(' ', j);
+                                    if (freespace < 0)
+                                        System.out.println("ERROR no free space to add a comment: " + text);
+                                    else {
+                                        // on place le commentaire apres
+                                        String s = text.substring(0, i) + firstAlt + " " + text.substring(j + 1, freespace) + " {" + text.substring(i, j + 1) + "} ";
+                                        k = s.length();
+                                        text = s + text.substring(freespace + 1);
+                                        textmodified = true;
+                                    }
+                                } else {
+                                    // on place le commentaire avant
+                                    String s = text.substring(0, freespace) + " {" + text.substring(i, j + 1) + "} " + text.substring(freespace + 1, i) + firstAlt + " ";
+                                    k = s.length();
+                                    text = s + text.substring(j + 1);
+                                    textmodified = true;
+                                }
+                                if (!textmodified) {
+                                    // pas de commentaire
+                                    String s = text.substring(0, i) + firstAlt + " " + text.substring(j + 1);
+                                    text = s;
+                                    k = i;
+                                }
+                            }
+                        }
+                    } else k++;
                 } else break;
             }
         }
