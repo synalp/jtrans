@@ -15,6 +15,46 @@ public class RawTextLoader implements MarkupLoader {
 	 * Substitute junk characters with ones that JTrans can handle.
 	 */
 	public static String normalizeText(String text) {
+
+        {
+            // test si on a des incertitudes sur l'orthographe
+            int k=0;
+            for (;;) {
+                int i = text.indexOf('(', k);
+                if (i >= 0) {
+                    k=i+1;
+                    int j = text.indexOf(')', i);
+                    if (j < 0) System.out.println("ERROR parentheses: " + text);
+                    else {
+                        boolean textmodified = false;
+                        System.out.println("CATCH parenthese: " + text.substring(i, j + 1));
+                        int freespace = text.lastIndexOf(' ', i);
+                        if (freespace < 0) {
+                            freespace = text.indexOf(' ', j);
+                            if (freespace < 0) System.out.println("ERROR no free space to add a comment: " + text);
+                            else {
+                                String s = text.substring(0, i) + text.substring(j + 1, freespace) + " {" + text.substring(i, j + 1) + "} ";
+                                k=s.length();
+                                text = s + text.substring(freespace + 1);
+                                textmodified = true;
+                            }
+                        } else {
+                            String s = text.substring(0, freespace) + " {" + text.substring(i, j + 1) + "} " + text.substring(freespace + 1, i);
+                            k=s.length();
+                            text = s + text.substring(j + 1);
+                            textmodified = true;
+                        }
+                        if (!textmodified) {
+                            // remove the parenthesis
+                            String s = text.substring(0, i) + text.substring(j + 1);
+                            text = s;
+                            k=i;
+                        }
+                    }
+                } else break;
+            }
+        }
+
 		return text
 				.replace('\u2019', '\'')            // smart quotes
 				.replace("\r\n", "\n")              // Windows CRLF
@@ -34,7 +74,7 @@ public class RawTextLoader implements MarkupLoader {
 	public static final Map<Token.Type, String> DEFAULT_PATTERNS =
 			new HashMap<Token.Type, String>()
 	{{
-		put(Token.Type.COMMENT,            "(\\{[^\\}]*\\}|\\[[^\\]]*\\]|\\+)");
+		put(Token.Type.COMMENT,            "(\\{[^\\}]*\\}|\\+|\\[|\\]|\\|)"); // ce qui est entre {} ou les + ou les [ ou ] ou |
 		put(Token.Type.NOISE,              "XXX");
 		put(Token.Type.OVERLAP_START_MARK, "<");
 		put(Token.Type.OVERLAP_END_MARK,   ">");

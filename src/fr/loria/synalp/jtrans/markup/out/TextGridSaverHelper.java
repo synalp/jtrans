@@ -69,7 +69,7 @@ public class TextGridSaverHelper {
 			while (itr.hasNext()) {
 				Phrase phrase = itr.next();
 
-				// frame onto which to tack 0-length elements
+                // frame onto which to tack 0-length elements
 				if (phrase.getInitialAnchor() != null) {
 					lastFrame = phrase.getInitialAnchor().getFrame();
 				}
@@ -164,14 +164,24 @@ public class TextGridSaverHelper {
                                     // cancels the previously started segment, because it is empty
                                     textidStard2add=-1;
                                 }
+                            } else {
+                                // autre commentaire
+                                praatInterval(
+                                    wordSB,
+                                    ++wordCount,
+                                        lastFrame+1,
+                                        lastFrame,
+                                    token.toString());
                             }
-                        } else
+                        } else {
+                            // mot prononcé
                             praatInterval(
                                     wordSB,
                                     ++wordCount,
                                     lastFrame,
-                                    lastFrame-1,
+                                    lastFrame - 1,
                                     token.toString());
+                        }
                     }
                 }
             }
