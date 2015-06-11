@@ -65,6 +65,8 @@ public class TextGridSaverHelper {
 			// frame onto which to tack 0-length elements
 			int lastFrame = 0;
 
+			int textidStard2add = -1; String textid2add = "BUG";
+
 			Iterator<Phrase> itr = p.phraseIterator(i);
 			while (itr.hasNext()) {
 				Phrase phrase = itr.next();
@@ -74,7 +76,6 @@ public class TextGridSaverHelper {
 					lastFrame = phrase.getInitialAnchor().getFrame();
 				}
 
-                int textidStard2add = -1; String textid2add = "BUG";
 				for (Token token: phrase) {
 					if (token.isAlignable() && token.isAligned()) {
 						boolean censored = anonymous && token.shouldBeAnonymized();
@@ -83,7 +84,7 @@ public class TextGridSaverHelper {
                         int startWfr = token.getFirstNonSilenceFrame();
                         int endWfr = token.getLastNonSilenceFrame();
                         lastFrame = token.getSegment().getEndFrame();
-                        if (startWfr<0) {
+						if (startWfr<0) {
                             // ce n'est que un SIL: j'ajoute un mot pour le SIL
                             // et bien non, en fait, j'ai decide de ne pas faire apparaitre du tout les SIL dans la tier des mots...
 //                            praatInterval(
@@ -147,7 +148,7 @@ public class TextGridSaverHelper {
 
 					} else if (null != token) {
                         if (token.toString().charAt(0)=='[') {
-                            // on traite le cas des commentaires textid
+							// on traite le cas des commentaires textid
                             if (token.toString().endsWith("start]")) {
                                 textid2add=token.toString();
                                 textidStard2add=lastFrame; // this value is actually not used; the only important thing is that it is >=0
