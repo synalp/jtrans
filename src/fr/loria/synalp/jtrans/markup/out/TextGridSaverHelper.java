@@ -115,6 +115,7 @@ public class TextGridSaverHelper {
                                         textid2add);
                                 textidStard2add=-1;
                             }
+							// cas normal: mot prononcé et aligné
                             praatInterval(
                                     wordSB,
                                     ++wordCount,
@@ -147,6 +148,7 @@ public class TextGridSaverHelper {
                         }
 
 					} else if (null != token) {
+						// token non-alignable ou non-aligné
                         if (token.toString().charAt(0)=='[') {
 							// on traite le cas des commentaires textid
                             if (token.toString().endsWith("start]")) {
@@ -175,7 +177,7 @@ public class TextGridSaverHelper {
                                     token.toString());
                             }
                         } else {
-                            // mot prononcé
+                            // mot prononcé non aligné (pb d'alignement ?)
                             praatInterval(
                                     wordSB,
                                     ++wordCount,
@@ -251,9 +253,38 @@ public class TextGridSaverHelper {
 			throws IOException
 	{
 		float endSec=frame2second(xmaxFrame,false);
+		float debSec=frame2second(xminFrame,false);
+		if (debSec>endSec) debSec=endSec;
+
+		// ajoute un segment vide pour pouvoir editer sous praat
+		{
+			String s=w.toString();
+			int i=s.lastIndexOf("xmax = ");
+			if (i>=0) {
+				int j=s.indexOf('\n',i);
+				float lastTime = Float.parseFloat(s.substring(i+7,j));
+				if (lastTime>debSec) {
+					System.err.println("WARNING; minTime>maxTime "+lastTime+" "+debSec);
+				} else if (lastTime<debSec) {
+					if (debSec-lastTime<0.02) {
+						debSec=lastTime;
+					} else {
+						w.append("\n\t\tintervals [").append(Integer.toString(id)).append("]:")
+								.append("\n\t\t\txmin = ")
+								.append(Float.toString(lastTime))
+								.append("\n\t\t\txmax = ")
+								.append(Float.toString(debSec))
+								.append("\n\t\t\ttext = \"\"");
+					}
+				}
+			} else {
+				// TODO: ajouter aussi un segment vide si c'est le premier segment qui ne commence pas a zero ?
+			}
+		}
+
 		w.append("\n\t\tintervals [").append(Integer.toString(id)).append("]:")
 				.append("\n\t\t\txmin = ")
-				.append(Float.toString(frame2second(xminFrame)))
+				.append(Float.toString(debSec))
 				.append("\n\t\t\txmax = ")
 				.append(Float.toString(endSec))
 				.append("\n\t\t\ttext = \"").append(content).append('"'); // TODO escape strings
