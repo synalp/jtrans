@@ -59,8 +59,8 @@ public class TextGridSaverHelper {
 			StringBuilder wordSB = new StringBuilder();
 			StringBuilder phoneSB = new StringBuilder();
 
-			int wordCount = 0;
-			int phoneCount = 0;
+			int[] wordCount = {0};
+			int[] phoneCount = {0};
 
 			// frame onto which to tack 0-length elements
 			int lastFrame = 0;
@@ -109,7 +109,7 @@ public class TextGridSaverHelper {
                                 // first add a START textid comment with the same frame as the next word
                                 praatInterval(
                                         wordSB,
-                                        ++wordCount,
+                                        wordCount,
                                         startWfr,
                                         startWfr-1,
                                         textid2add);
@@ -118,7 +118,7 @@ public class TextGridSaverHelper {
 							// cas normal: mot prononcé et aligné
                             praatInterval(
                                     wordSB,
-                                    ++wordCount,
+                                        wordCount,
                                     startWfr,
                                     endWfr,
                                     censored ? "*ANON*" : tok);
@@ -139,11 +139,10 @@ public class TextGridSaverHelper {
                             for (Token.Phone phone : token.getPhones()) {
                                 praatInterval(
                                         phoneSB,
-                                        phoneCount + 1,
+                                        phoneCount,
                                         phone.getSegment().getStartFrame(),
                                         phone.getSegment().getEndFrame(),
                                         phone.toString());
-                                phoneCount++;
                             }
                         }
 
@@ -159,7 +158,7 @@ public class TextGridSaverHelper {
                                     // only add the textid comment iff there are at least 1 real word in the interval
                                     praatInterval(
                                             wordSB,
-                                            ++wordCount,
+                                            wordCount,
                                             lastFrame+1,
                                             lastFrame,
                                             token.toString());
@@ -171,7 +170,7 @@ public class TextGridSaverHelper {
                                 // autre commentaire
                                 praatInterval(
                                     wordSB,
-                                    ++wordCount,
+                                    wordCount,
                                         lastFrame+1,
                                         lastFrame,
                                     token.toString());
@@ -180,7 +179,7 @@ public class TextGridSaverHelper {
                             // mot prononcé non aligné (pb d'alignement ?)
                             praatInterval(
                                     wordSB,
-                                    ++wordCount,
+                                    wordCount,
                                     lastFrame,
                                     lastFrame - 1,
                                     token.toString());
@@ -190,12 +189,12 @@ public class TextGridSaverHelper {
             }
 
 			if (withWords) {
-				praatTierHeader(w, id++, p.getSpeakerName(i) + " words", wordCount, frameCount);
+				praatTierHeader(w, id++, p.getSpeakerName(i) + " words", wordCount[0], frameCount);
 				w.write(wordSB.toString());
 			}
 
 			if (withPhons) {
-				praatTierHeader(w, id++, p.getSpeakerName(i) + " phons", phoneCount, frameCount);
+				praatTierHeader(w, id++, p.getSpeakerName(i) + " phons", phoneCount[0], frameCount);
 				w.write(phoneSB.toString());
 			}
 		}
@@ -247,9 +246,11 @@ public class TextGridSaverHelper {
 	 * Appends a Praat interval.
 	 * @param w Append text to this writer
 	 * @param id Interval ID (Interval numbering starts at 1 and is contiguous!)
+
+	   TODO: we use the other praatInterval functions when doing anonymisation... So there must be some mismatch/diff btw both; try and make a single fct !
 	 */
 	public static float praatInterval(
-			Appendable w, int id, int xminFrame, int xmaxFrame, String content)
+			Appendable w, int[] id, int xminFrame, int xmaxFrame, String content)
 			throws IOException
 	{
 		float endSec=frame2second(xmaxFrame,false);
@@ -269,7 +270,7 @@ public class TextGridSaverHelper {
 					if (debSec-lastTime<0.02) {
 						debSec=lastTime;
 					} else {
-						w.append("\n\t\tintervals [").append(Integer.toString(id)).append("]:")
+						w.append("\n\t\tintervals [").append(Integer.toString(++id[0])).append("]:")
 								.append("\n\t\t\txmin = ")
 								.append(Float.toString(lastTime))
 								.append("\n\t\t\txmax = ")
@@ -282,7 +283,7 @@ public class TextGridSaverHelper {
 			}
 		}
 
-		w.append("\n\t\tintervals [").append(Integer.toString(id)).append("]:")
+		w.append("\n\t\tintervals [").append(Integer.toString(++id[0])).append("]:")
 				.append("\n\t\t\txmin = ")
 				.append(Float.toString(debSec))
 				.append("\n\t\t\txmax = ")
