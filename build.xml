@@ -127,5 +127,10 @@
 		<ivy:retrieve pattern="${libs}/[artifact]-[revision](-[classifier]).[ext]" type="source"/>
 	</target>
 
+	<target name="run" depends="jar"
+		description="Run JTrans from jar">
+	  <java jar="${jarfile}" fork="true">
+	  </java>
+	</target>
 </project>
 
