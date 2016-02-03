@@ -276,6 +276,8 @@ public class JTrans {
 				loader = new TextGridLoader();
 			} else if (fn.endsWith(".txt")) {
 				loader = new RawTextLoader();
+			} else if (fn.endsWith(".icor")) {
+				loader = new ICORTextLoader();
 			}
 		}
 
