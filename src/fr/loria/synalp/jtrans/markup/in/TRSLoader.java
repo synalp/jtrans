@@ -100,6 +100,7 @@ public class TRSLoader implements MarkupLoader {
 			TurnProject.Turn pTurn = project.newTurn();
 
 			float endTime = Float.parseFloat(turn.getAttribute("endTime"));
+			// TODO: this will crash if there is no endTime !!
 			if (endTime > lastEnd)
 				lastEnd = endTime;
 
