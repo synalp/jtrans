@@ -12,144 +12,146 @@ import static fr.loria.synalp.jtrans.speechreco.s4.S4mfccBuffer.frame2second;
 
 public class TextGridSaverHelper {
 
-	/**
-	 * If true, anonymized words will be replaced with "*ANON*" and their
-	 * phones will not be shown.
-	 */
-	public static enum docensort {withNPs, anonymous, both};
-	public static docensort censorAnonWords = docensort.both;
+    /**
+     * If true, anonymized words will be replaced with "*ANON*" and their
+     * phones will not be shown.
+     */
+    public static enum docensort {withNPs, anonymous, both};
+    public static docensort censorAnonWords = docensort.both;
 
-	protected TextGridSaverHelper() {
-		// Don't let anyone but subclasses instantiate
+    protected TextGridSaverHelper() {
+	// Don't let anyone but subclasses instantiate
+    }
+
+    public static void savePraat(Project p,File f,boolean withWords,boolean withPhons) throws IOException {
+	if (censorAnonWords==docensort.both) {
+	    String ext="";
+	    String s=f.getAbsolutePath();
+	    int i=s.lastIndexOf('.');
+	    if (i>=0) ext=s.substring(i);
+	    File fanon = new File(FileUtils.noExt(s)+"_anon"+ext);
+	    savePraat(true, p, fanon, withWords, withPhons);
+	    savePraat(false, p, f, withWords, withPhons);
+	} else if (censorAnonWords==docensort.withNPs) {
+	    savePraat(false, p, f, withWords, withPhons);
+	} else {
+	    savePraat(true,p, f, withWords, withPhons);
 	}
+    }
+    private static void savePraat(
+				  boolean anonymous,
+				  Project p,
+				  File f,
+				  boolean withWords,
+				  boolean withPhons)
+	throws IOException
+    {
+	Writer w = getUTF8Writer(f);
 
-	public static void savePraat(Project p,File f,boolean withWords,boolean withPhons) throws IOException {
-		if (censorAnonWords==docensort.both) {
-			String ext="";
-			String s=f.getAbsolutePath();
-			int i=s.lastIndexOf('.');
-			if (i>=0) ext=s.substring(i);
-			File fanon = new File(FileUtils.noExt(s)+"_anon"+ext);
-			savePraat(true, p, fanon, withWords, withPhons);
-			savePraat(false, p, f, withWords, withPhons);
-		} else if (censorAnonWords==docensort.withNPs) {
-			savePraat(false, p, f, withWords, withPhons);
-		} else {
-			savePraat(true,p, f, withWords, withPhons);
-		}
-	}
-	private static void savePraat(
-			boolean anonymous,
-			Project p,
-			File f,
-			boolean withWords,
-			boolean withPhons)
-			throws IOException
-	{
-		Writer w = getUTF8Writer(f);
+	final int frameCount = (int) p.audioSourceTotalFrames;
 
-		final int frameCount = (int) p.audioSourceTotalFrames;
+	praatFileHeader(w,
+			frameCount,
+			p.speakerCount() * ((withWords?1:0) + (withPhons?1:0)));
 
-		praatFileHeader(w,
-				frameCount,
-				p.speakerCount() * ((withWords?1:0) + (withPhons?1:0)));
+	int id = 1;
+	for (int i = 0; i < p.speakerCount(); i++) {
+	    StringBuilder wordSB = new StringBuilder();
+	    StringBuilder phoneSB = new StringBuilder();
 
-		int id = 1;
-		for (int i = 0; i < p.speakerCount(); i++) {
-			StringBuilder wordSB = new StringBuilder();
-			StringBuilder phoneSB = new StringBuilder();
+	    int[] wordCount = {0};
+	    int[] phoneCount = {0};
 
-			int[] wordCount = {0};
-			int[] phoneCount = {0};
+	    // frame onto which to tack 0-length elements
+	    int lastFrame = 0;
 
-			// frame onto which to tack 0-length elements
-			int lastFrame = 0;
+	    int textidStard2add = -1; String textid2add = "BUG";
 
-			int textidStard2add = -1; String textid2add = "BUG";
-
-			Iterator<Phrase> itr = p.phraseIterator(i);
-			while (itr.hasNext()) {
-				Phrase phrase = itr.next();
+	    Iterator<Phrase> itr = p.phraseIterator(i);
+	    while (itr.hasNext()) {
+		Phrase phrase = itr.next();
 
                 // frame onto which to tack 0-length elements
-				if (phrase.getInitialAnchor() != null) {
-					lastFrame = phrase.getInitialAnchor().getFrame();
-				}
+		if (phrase.getInitialAnchor() != null) {
+		    lastFrame = phrase.getInitialAnchor().getFrame();
+		}
 
-				for (Token token: phrase) {
-					if (token.isAlignable() && token.isAligned()) {
-						boolean censored = anonymous && token.shouldBeAnonymized();
-						String tok = token.shouldBeAnonymized()?"*"+token.toString()+"*":token.toString();
+		for (Token token: phrase) {
+		    if (token.isAlignable() && token.isAligned()) {
+			boolean censored = anonymous && token.shouldBeAnonymized();
+			String tok = token.shouldBeAnonymized()?"*"+token.toString()+"*":token.toString();
 
                         int startWfr = token.getFirstNonSilenceFrame();
                         int endWfr = token.getLastNonSilenceFrame();
                         lastFrame = token.getSegment().getEndFrame();
-						if (startWfr<0) {
+			if (startWfr<0) {
                             // ce n'est que un SIL: j'ajoute un mot pour le SIL
                             // et bien non, en fait, j'ai decide de ne pas faire apparaitre du tout les SIL dans la tier des mots...
-//                            praatInterval(
-//                                    wordSB,
-//                                    wordCount + 1,
-//                                    token.getSegment().getStartFrame(),
-//                                    token.getSegment().getEndFrame(),
-//                                    censored ? "*ANON*" : tok);
-//                            wordCount++;
+			    //                            praatInterval(
+			    //                                    wordSB,
+			    //                                    wordCount + 1,
+			    //                                    token.getSegment().getStartFrame(),
+			    //                                    token.getSegment().getEndFrame(),
+			    //                                    censored ? "*ANON*" : tok);
+			    //                            wordCount++;
                         } else {
-//                            if (startWfr>token.getSegment().getStartFrame()) {
-//                                // il y a un SIL devant: j'ajoute un mot "SIL" devant
-//                                praatInterval(
-//                                    wordSB,
-//                                    wordCount + 1,
-//                                    token.getSegment().getStartFrame(),
-//                                    startWfr,
-//                                    StatePool.SILENCE_PHONE);
-//                                wordCount++;
-//                            }
+			    //                            if (startWfr>token.getSegment().getStartFrame()) {
+			    //                                // il y a un SIL devant: j'ajoute un mot "SIL" devant
+			    //                                praatInterval(
+			    //                                    wordSB,
+			    //                                    wordCount + 1,
+			    //                                    token.getSegment().getStartFrame(),
+			    //                                    startWfr,
+			    //                                    StatePool.SILENCE_PHONE);
+			    //                                wordCount++;
+			    //                            }
+
+
                             if (textidStard2add>=0) {
                                 // first add a START textid comment with the same frame as the next word
                                 praatInterval(
-                                        wordSB,
-                                        wordCount,
-                                        startWfr,
-                                        startWfr-1,
-                                        textid2add);
+					      wordSB,
+					      wordCount,
+					      startWfr,
+					      startWfr-1,
+					      textid2add);
                                 textidStard2add=-1;
                             }
-							// cas normal: mot prononcé et aligné
+			    // cas normal: mot prononcé et aligné
                             praatInterval(
-                                    wordSB,
-                                        wordCount,
-                                    startWfr,
-                                    endWfr,
-                                    censored ? "*ANON*" : tok);
+					  wordSB,
+					  wordCount,
+					  startWfr,
+					  endWfr,
+					  censored ? "*ANON*" : tok);
                             lastFrame=endWfr;
-//                            if (endWfr<token.getSegment().getEndFrame()) {
-//                                // il y a un SIL derriere; j'ajoute un mot "SIL" a la fin
-//                                praatInterval(
-//                                        wordSB,
-//                                        wordCount + 1,
-//                                        endWfr,
-//                                        token.getSegment().getEndFrame(),
-//                                        StatePool.SILENCE_PHONE);
-//                                wordCount++;
-//                            }
+			    //                            if (endWfr<token.getSegment().getEndFrame()) {
+			    //                                // il y a un SIL derriere; j'ajoute un mot "SIL" a la fin
+			    //                                praatInterval(
+			    //                                        wordSB,
+			    //                                        wordCount + 1,
+			    //                                        endWfr,
+			    //                                        token.getSegment().getEndFrame(),
+			    //                                        StatePool.SILENCE_PHONE);
+			    //                                wordCount++;
+			    //                            }
                         }
                         // dans tous les cas, j'ajoute les phonemes
                         if (!censored) {
                             for (Token.Phone phone : token.getPhones()) {
                                 praatInterval(
-                                        phoneSB,
-                                        phoneCount,
-                                        phone.getSegment().getStartFrame(),
-                                        phone.getSegment().getEndFrame(),
-                                        phone.toString());
+					      phoneSB,
+					      phoneCount,
+					      phone.getSegment().getStartFrame(),
+					      phone.getSegment().getEndFrame(),
+					      phone.toString());
                             }
                         }
 
-					} else if (null != token) {
-						// token non-alignable ou non-aligné
+		    } else if (null != token) {
+			// token non-alignable ou non-aligné
                         if (token.toString().charAt(0)=='[') {
-							// on traite le cas des commentaires textid
+			    // on traite le cas des commentaires textid
                             if (token.toString().endsWith("start]")) {
                                 textid2add=token.toString();
                                 textidStard2add=lastFrame; // this value is actually not used; the only important thing is that it is >=0
@@ -157,11 +159,11 @@ public class TextGridSaverHelper {
                                 if (textidStard2add<0) {
                                     // only add the textid comment iff there are at least 1 real word in the interval
                                     praatInterval(
-                                            wordSB,
-                                            wordCount,
-                                            lastFrame+1,
-                                            lastFrame,
-                                            token.toString());
+						  wordSB,
+						  wordCount,
+						  lastFrame+1,
+						  lastFrame,
+						  token.toString());
                                 } else {
                                     // cancels the previously started segment, because it is empty
                                     textidStard2add=-1;
@@ -169,154 +171,156 @@ public class TextGridSaverHelper {
                             } else {
                                 // autre commentaire
                                 praatInterval(
-                                    wordSB,
-                                    wordCount,
-                                        lastFrame+1,
-                                        lastFrame,
-                                    token.toString());
+					      wordSB,
+					      wordCount,
+					      lastFrame+1,
+					      lastFrame,
+					      token.toString());
                             }
                         } else {
                             // mot prononcé non aligné (pb d'alignement ?)
                             praatInterval(
-                                    wordSB,
-                                    wordCount,
-                                    lastFrame,
-                                    lastFrame - 1,
-                                    token.toString());
+					  wordSB,
+					  wordCount,
+					  lastFrame,
+					  lastFrame - 1,
+					  token.toString());
                         }
                     }
                 }
             }
 
-			if (withWords) {
-				praatTierHeader(w, id++, p.getSpeakerName(i) + " words", wordCount[0], frameCount);
-				w.write(wordSB.toString());
-			}
+	    if (withWords) {
+		praatTierHeader(w, id++, p.getSpeakerName(i) + " words", wordCount[0], frameCount);
+		w.write(wordSB.toString());
+	    }
 
-			if (withPhons) {
-				praatTierHeader(w, id++, p.getSpeakerName(i) + " phons", phoneCount[0], frameCount);
-				w.write(phoneSB.toString());
-			}
-		}
-
-		w.close();
+	    if (withPhons) {
+		praatTierHeader(w, id++, p.getSpeakerName(i) + " phons", phoneCount[0], frameCount);
+		w.write(phoneSB.toString());
+	    }
 	}
 
+	w.close();
+    }
 
-	public static void praatFileHeader(Appendable w, int frameCount, int tierCount)
-		throws IOException
-	{
-		w.append("File type = \"ooTextFile\"")
-				.append("\nObject class = \"TextGrid\"")
-				.append("\n")
-				.append("\nxmin = 0")
-				.append("\nxmax = ")
-				.append(Float.toString(frame2second(frameCount)))
-				.append("\ntiers? <exists>")
-				.append("\nsize = ")
-				.append(Integer.toString(tierCount))
-				.append("\nitem []:");
+
+    public static void praatFileHeader(Appendable w, int frameCount, int tierCount)
+	throws IOException
+    {
+	w.append("File type = \"ooTextFile\"")
+	    .append("\nObject class = \"TextGrid\"")
+	    .append("\n")
+	    .append("\nxmin = 0")
+	    .append("\nxmax = ")
+	    .append(Float.toString(frame2second(frameCount)))
+	    .append("\ntiers? <exists>")
+	    .append("\nsize = ")
+	    .append(Integer.toString(tierCount))
+	    .append("\nitem []:");
+    }
+
+
+    /**
+     * Appends a Praat tier header.
+     * @param w Append text to this writer
+     * @param id Tier ID (Praat tier numbering starts at 1 and is contiguous!)
+     * @param name Tier name
+     * @param intervalCount Number of intervals in the tier
+     */
+    public static void praatTierHeader(
+				       Appendable w, int id, String name, int intervalCount, int frameCount)
+	throws IOException
+    {
+	assert id > 0;
+	w.append("\n\titem [").append(Integer.toString(id)).append("]:")
+	    .append("\n\t\tclass = \"IntervalTier\"")
+	    .append("\n\t\tname = \"").append(name).append('"') // TODO escape strings
+	    .append("\n\t\txmin = 0")
+	    .append("\n\t\txmax = ")
+	    .append(Float.toString(frame2second(frameCount)))
+	    .append("\n\t\tintervals: size = ")
+	    .append(Integer.toString(intervalCount));
+    }
+
+
+    /**
+     * Appends a Praat interval.
+     * @param w Append text to this writer
+     * @param id Interval ID (Interval numbering starts at 1 and is contiguous!)
+
+     TODO: we use the other praatInterval functions when doing anonymisation... So there must be some mismatch/diff btw both; try and make a single fct !
+    */
+    public static float praatInterval(
+				      Appendable w, int[] id, int xminFrame, int xmaxFrame, String content)
+	throws IOException
+    {
+	float endSec=frame2second(xmaxFrame,false);
+	float debSec=frame2second(xminFrame,false);
+	if (debSec>endSec) debSec=endSec;
+
+	// STAGE 1 : Check timing consistency with the previous interval (if any)
+	float lastTime = 0f;
+	if (id[0]>0) {
+	    String s=w.toString();
+	    int i=s.lastIndexOf("xmax = ");
+	    int j=s.indexOf('\n',i);
+	    lastTime = Float.parseFloat(s.substring(i+7,j));
 	}
 
-
-	/**
-	 * Appends a Praat tier header.
-	 * @param w Append text to this writer
-	 * @param id Tier ID (Praat tier numbering starts at 1 and is contiguous!)
-	 * @param name Tier name
-	 * @param intervalCount Number of intervals in the tier
-	 */
-	public static void praatTierHeader(
-			Appendable w, int id, String name, int intervalCount, int frameCount)
-			throws IOException
-	{
-		assert id > 0;
-		w.append("\n\titem [").append(Integer.toString(id)).append("]:")
-				.append("\n\t\tclass = \"IntervalTier\"")
-				.append("\n\t\tname = \"").append(name).append('"') // TODO escape strings
-				.append("\n\t\txmin = 0")
-				.append("\n\t\txmax = ")
-				.append(Float.toString(frame2second(frameCount)))
-				.append("\n\t\tintervals: size = ")
-				.append(Integer.toString(intervalCount));
+	if ( debSec < (lastTime - 0.02) ) {
+	    System.err.println("WARNING: minTime>maxTime "+lastTime+" "+debSec);
+	} else if ( debSec > (lastTime + 0.02) ) {
+	    // Add empty interval
+	    //System.err.println("WARNING: adding empty interval between "+lastTime+" and "+debSec);
+	    w.append("\n\t\tintervals [").append(Integer.toString(++id[0])).append("]:")
+		.append("\n\t\t\txmin = ")
+		.append(Float.toString(lastTime))
+		.append("\n\t\t\txmax = ")
+		.append(Float.toString(debSec))
+		.append("\n\t\t\ttext = \"\"");
+	} else {
+	    // tiny difference : adjust debSec
+	    //System.err.println("WARNING: adjusting timing from "+debSec+" to "+lastTime);
+	    if (debSec < lastTime) debSec = lastTime;
+	    if (endSec < debSec) endSec = debSec; 
 	}
 
-
-	/**
-	 * Appends a Praat interval.
-	 * @param w Append text to this writer
-	 * @param id Interval ID (Interval numbering starts at 1 and is contiguous!)
-
-	   TODO: we use the other praatInterval functions when doing anonymisation... So there must be some mismatch/diff btw both; try and make a single fct !
-	 */
-	public static float praatInterval(
-			Appendable w, int[] id, int xminFrame, int xmaxFrame, String content)
-			throws IOException
-	{
-		float endSec=frame2second(xmaxFrame,false);
-		float debSec=frame2second(xminFrame,false);
-		if (debSec>endSec) debSec=endSec;
-
-		// ajoute un segment vide pour pouvoir editer sous praat
-		{
-			String s=w.toString();
-			int i=s.lastIndexOf("xmax = ");
-			if (i>=0) {
-				int j=s.indexOf('\n',i);
-				float lastTime = Float.parseFloat(s.substring(i+7,j));
-				if (lastTime>debSec) {
-					System.err.println("WARNING; minTime>maxTime "+lastTime+" "+debSec);
-				} else if (lastTime<debSec) {
-					if (debSec-lastTime<0.02) {
-						debSec=lastTime;
-					} else {
-						w.append("\n\t\tintervals [").append(Integer.toString(++id[0])).append("]:")
-								.append("\n\t\t\txmin = ")
-								.append(Float.toString(lastTime))
-								.append("\n\t\t\txmax = ")
-								.append(Float.toString(debSec))
-								.append("\n\t\t\ttext = \"\"");
-					}
-				}
-			} else {
-				// TODO: ajouter aussi un segment vide si c'est le premier segment qui ne commence pas a zero ?
-			}
-		}
-
-		w.append("\n\t\tintervals [").append(Integer.toString(++id[0])).append("]:")
-				.append("\n\t\t\txmin = ")
-				.append(Float.toString(debSec))
-				.append("\n\t\t\txmax = ")
-				.append(Float.toString(endSec))
-				.append("\n\t\t\ttext = \"").append(content).append('"'); // TODO escape strings
-		return endSec;
-	}
-	// added this second function because in some cases, we really want the beginning of the next segment to match the end of the previous,
-	// at the millisecond level !
-	public static float praatInterval(
-			Appendable w, int id, float xminSec, int xmaxFrame, String content)
-			throws IOException
-	{
-		float endSec=frame2second(xmaxFrame,false);
-		w.append("\n\t\tintervals [").append(Integer.toString(id)).append("]:")
-				.append("\n\t\t\txmin = ")
-				.append(Float.toString(xminSec))
-				.append("\n\t\t\txmax = ")
-				.append(Float.toString(endSec))
-				.append("\n\t\t\ttext = \"").append(content).append('"'); // TODO escape strings
-		return endSec;
-	}
-	public static float praatInterval(
-			Appendable w, int id, float xminSec, float xmaxSec, String content)
-			throws IOException
-	{
-		w.append("\n\t\tintervals [").append(Integer.toString(id)).append("]:")
-				.append("\n\t\t\txmin = ")
-				.append(Float.toString(xminSec))
-				.append("\n\t\t\txmax = ")
-				.append(Float.toString(xmaxSec))
-				.append("\n\t\t\ttext = \"").append(content).append('"'); // TODO escape strings
-		return xmaxSec;
-	}
+	// STAGE 2 : Add the interval
+	w.append("\n\t\tintervals [").append(Integer.toString(++id[0])).append("]:")
+	    .append("\n\t\t\txmin = ")
+	    .append(Float.toString(debSec))
+	    .append("\n\t\t\txmax = ")
+	    .append(Float.toString(endSec))
+	    .append("\n\t\t\ttext = \"").append(content).append('"'); // TODO escape strings
+	return endSec;
+    }
+    // added this second function because in some cases, we really want the beginning of the next segment to match the end of the previous,
+    // at the millisecond level !
+    public static float praatInterval(
+				      Appendable w, int id, float xminSec, int xmaxFrame, String content)
+	throws IOException
+    {
+	float endSec=frame2second(xmaxFrame,false);
+	w.append("\n\t\tintervals [").append(Integer.toString(id)).append("]:")
+	    .append("\n\t\t\txmin = ")
+	    .append(Float.toString(xminSec))
+	    .append("\n\t\t\txmax = ")
+	    .append(Float.toString(endSec))
+	    .append("\n\t\t\ttext = \"").append(content).append('"'); // TODO escape strings
+	return endSec;
+    }
+    public static float praatInterval(
+				      Appendable w, int id, float xminSec, float xmaxSec, String content)
+	throws IOException
+    {
+	w.append("\n\t\tintervals [").append(Integer.toString(id)).append("]:")
+	    .append("\n\t\t\txmin = ")
+	    .append(Float.toString(xminSec))
+	    .append("\n\t\t\txmax = ")
+	    .append(Float.toString(xmaxSec))
+	    .append("\n\t\t\ttext = \"").append(content).append('"'); // TODO escape strings
+	return xmaxSec;
+    }
 
 }
