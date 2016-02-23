@@ -186,9 +186,25 @@ public class TextGridSaverHelper {
 					  lastFrame - 1,
 					  token.toString());
                         }
-                    }
-                }
-            }
+                    }// endif token non-alignable
+                }//for-loop on token
+            }// while-loop on phrase
+
+	    // add an empty final intervals if needed 
+	    if (lastFrame < frameCount ) {
+		praatInterval(
+			      wordSB,
+			      wordCount,
+			      lastFrame,
+			      frameCount,
+			      "");
+		praatInterval(
+			      phoneSB,
+			      phoneCount,
+			      lastFrame,
+			      frameCount,
+			      "");
+	    }
 
 	    if (withWords) {
 		praatTierHeader(w, id++, p.getSpeakerName(i) + " words", wordCount[0], frameCount);
@@ -199,7 +215,7 @@ public class TextGridSaverHelper {
 		praatTierHeader(w, id++, p.getSpeakerName(i) + " phons", phoneCount[0], frameCount);
 		w.write(phoneSB.toString());
 	    }
-	}
+	}// for-loop on speakers
 
 	w.close();
     }
