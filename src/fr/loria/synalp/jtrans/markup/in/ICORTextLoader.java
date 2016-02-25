@@ -123,6 +123,7 @@ public class ICORTextLoader implements MarkupLoader {
 	}
 
 
+    // Mot à anonymiser, c'est une chaîne de caractères encadrée par des astérisques
 	public static final Pattern ANONYMOUS_WORD_PATTERN =
 			Pattern.compile("\\*([^\\*\\s]+)\\*");
 
@@ -130,7 +131,7 @@ public class ICORTextLoader implements MarkupLoader {
 	public static final Map<Token.Type, String> DEFAULT_PATTERNS =
 			new HashMap<Token.Type, String>()
 	{{
-		// COMMENTS : les chevrons < et >, le texte entre double parentheses et les timings
+		// COMMENTS : les chevrons < et >, le texte entre double-parentheses et les timings
 		put(Token.Type.COMMENT,            "(<|>|\\(\\((\\w|\\s)+\\)\\)|&|\\(\\d+:\\d+:\\d+\\))");
 		// BRUITS : les aspirations et expirations
 		put(Token.Type.NOISE,              "((\\s|^)h |(\\s|^).h |(\\s|^)H |(\\s|^).H )");
