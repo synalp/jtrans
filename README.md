@@ -49,6 +49,17 @@ JTrans is distributed under the
 [CeCILL-C](http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html)
 license.
 
+How to cite:
+
+    @InProceedings{cerisara09,
+      author =   {Cerisara, C. and Mella, O. and Fohr, D.},
+      title =    {JTrans, an open-source software for semi-automatic text-to-speech alignment},
+      booktitle =    {Proc. of INTERSPEECH},
+      year =     {2009},
+      address =      {Brighton, UK},
+      month = sep,
+    }
+
 
 ## Building JTrans from source
 
