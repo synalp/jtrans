@@ -16,6 +16,8 @@ public class TurnProject extends Project {
 
 	public List<Turn> turns = new ArrayList<>();
 
+    /* the original XML Document */
+    public org.w3c.dom.Document document;
 
 	@Override
 	public Iterator<Phrase> phraseIterator(int speaker) {
@@ -60,7 +62,7 @@ public class TurnProject extends Project {
 
 	public class Turn {
 		public Anchor start;
-		public Anchor end;
+	    public Anchor end;
 		/** Tokens per speaker */
 		public List<List<Token>> spkTokens;
 
@@ -87,7 +89,7 @@ public class TurnProject extends Project {
 			float earliest = Float.MAX_VALUE;
 			float latest = Float.MIN_VALUE;
 
-			for (int i = 0; i < speakerCount(); i++) {
+			for (int i = 0; i < speakerCount(); i++) {			 
 				for (Token w: spkTokens.get(i)) {
 					if (w.isAligned()) {
 						Token.Segment seg = w.getSegment();
