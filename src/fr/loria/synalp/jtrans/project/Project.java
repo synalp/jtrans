@@ -29,6 +29,7 @@ public abstract class Project {
 
 
 	public File audioFile;
+
 	/** Audio file in a suitable format for processing */
 	public transient File convertedAudioFile = null;
 	public transient long audioSourceTotalFrames = -1;
