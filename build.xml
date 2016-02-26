@@ -89,6 +89,27 @@
 		</jar>
 	</target>
 
+	<target name="fatjar" depends="compile"
+		description="Generate JAR distribution including libs">
+		<manifestclasspath property="manifest.classpath" jarfile="${jarfile}">
+			<classpath refid="my.classpath"/>
+		</manifestclasspath>
+		<jar destfile="${dist}/jtrans-fat.jar" basedir="${build}">
+			<manifest>
+				<attribute name="Class-Path" value="${manifest.classpath}"/>
+				<attribute name="Main-Class" value="fr.loria.synalp.jtrans.JTrans"/>
+				<attribute name="Implementation-Title" value="JTrans"/>
+				<attribute name="Implementation-Version" value="${version}"/>
+				<attribute name="Implementation-Vendor" value="Christophe Cerisara"/>
+				<attribute name="Built-Date" value="${TODAY}"/>
+				<attribute name="Built-By" value="${user.name}"/>
+			</manifest>
+			<zipgroupfileset dir="${libs}"
+					 excludes="junit-*,hamcrest-*,*-sources.jar,*-javadoc.jar"/>
+		</jar>
+	</target>
+
+
 	<target name="test" depends="compile-tests">
 		<junit printsummary="on" fork="true" haltonfailure="no">
 			<classpath refid="test.classpath"/>
