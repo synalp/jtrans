@@ -35,12 +35,17 @@ public class CleanTextGridSaver implements MarkupSaver {
 
 	final int frameCount = (int) p.audioSourceTotalFrames;
 
+	int nSpk = p.speakerCount();
+	if (p.getSpeakerId(TurnProject.hackNobody) > -1) nSpk--;
+	
 	praatFileHeader(w,
 			frameCount,
-			p.speakerCount() * ((withWords?1:0) + (withPhons?1:0)));
+			nSpk * ((withWords?1:0) + (withPhons?1:0)));
 
 	int id = 1;
 	for (int i = 0; i < p.speakerCount(); i++) {
+	    if (p.getSpeakerName(i) == TurnProject.hackNobody) continue;
+
 	    StringBuilder wordSB = new StringBuilder();
 
 	    int[] wordCount = {0};
@@ -72,17 +77,16 @@ public class CleanTextGridSaver implements MarkupSaver {
 					       wordCount,
 					       startWfr);
 			}
-			{
-			    // cas normal: mot prononcé et aligné
-                            praatInterval(
-					  wordSB,
-					  wordCount,
-					  startWfr,
-					  endWfr,
-					  tok);
+			
+			// cas normal: mot prononcé et aligné
+			praatInterval(
+				      wordSB,
+				      wordCount,
+				      startWfr,
+				      endWfr,
+				      tok);
 
-                            lastFrame=endWfr;
-                        }
+			lastFrame=endWfr;                        
 		    } 
                 }
             }
@@ -149,35 +153,38 @@ public class CleanTextGridSaver implements MarkupSaver {
 				      Appendable w, int[] id, int xminFrame, int xmaxFrame, String content)
 	throws IOException
     {
-	float endSec=frame2second(xmaxFrame,false);
 	float debSec=frame2second(xminFrame,false);
-	if (debSec>endSec) debSec=endSec;
+	float endSec=frame2second(xmaxFrame,false);
 
-	// ajoute un segment vide pour pouvoir editer sous praat
-	{
-	    String s=w.toString();
-	    int i=s.lastIndexOf("xmax = ");
-	    if (i>=0) {
-		int j=s.indexOf('\n',i);
-		float lastTime = Float.parseFloat(s.substring(i+7,j));
-		if (lastTime>debSec) {
-		    System.err.println("WARNING; minTime>maxTime "+lastTime+" "+debSec);
-		} else if (lastTime<debSec) {
-		    if (debSec-lastTime<0.02) {
-			debSec=lastTime;
-		    } else {
-			w.append("\n\t\tintervals [").append(Integer.toString(++id[0])).append("]:")
-			    .append("\n\t\t\txmin = ")
-			    .append(Float.toString(lastTime))
-			    .append("\n\t\t\txmax = ")
-			    .append(Float.toString(debSec))
-			    .append("\n\t\t\ttext = \"\"");
-		    }
-		}
-	    } else {
-		// TODO: ajouter aussi un segment vide si c'est le premier segment qui ne commence pas a zero ?
+	if (debSec>endSec) {
+	    System.err.println("Attention, start ("+debSec+") > end ("+endSec+")\n");
+	    //endSec=debSec;
+	}
+
+	String s=w.toString();
+	int i=s.lastIndexOf("xmax = ");
+
+	if (i>=0) {
+	    int j=s.indexOf('\n',i);
+	    float lastTime = Float.parseFloat(s.substring(i+7,j));
+	    
+	    //don't start too early
+	    if (lastTime>debSec) debSec = lastTime;
+
+	    //don't end too early
+	    if (endSec< (debSec+0.02f)) endSec = Math.round((debSec+0.02f) * 1000f)/1000;
+
+	    //if starts too far, add an empty interval in between
+	    if (debSec > (lastTime+0.02f)) {
+		w.append("\n\t\tintervals [").append(Integer.toString(++id[0])).append("]:")
+		.append("\n\t\t\txmin = ")
+		.append(Float.toString(lastTime))
+		.append("\n\t\t\txmax = ")
+		.append(Float.toString(debSec))
+		.append("\n\t\t\ttext = \"\"");
 	    }
 	}
+
 
 	w.append("\n\t\tintervals [").append(Integer.toString(++id[0])).append("]:")
 	    .append("\n\t\t\txmin = ")

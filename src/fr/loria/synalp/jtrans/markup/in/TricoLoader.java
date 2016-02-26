@@ -16,13 +16,16 @@ import java.util.regex.Pattern;
  * Parser for the TransICOR file format.
  */
 public class TricoLoader extends TRSLoader {
+
+
     public static Pattern DTD_PATTERN =
 	Pattern.compile("^.*(transicor[0-9a-z]*\\.dtd)$");
+
 
     public TurnProject parse(File file)
 	throws ParsingException, IOException
     {
-	
+	System.out.println("TricoLoader parse");
 	return parse(parseXML(file));
     }
 
@@ -62,6 +65,11 @@ public class TricoLoader extends TRSLoader {
 		spkIDMap.put(trsID, newSpkID);
 	    }
 
+	// MQ : HACK for empty turns that still have a duration
+	String trsID   = "spkHackNobody";
+	int hackNobodyID = project.newSpeaker( TurnProject.hackNobody );
+	spkIDMap.put(trsID, hackNobodyID);
+
 	// Extract relevant information (speech text, Sync tags...) from Turn tags.
 	NodeList turnList = doc.getElementsByTagName("Turn");
 
@@ -75,7 +83,11 @@ public class TricoLoader extends TRSLoader {
 	    if (speakerAttr.isEmpty()) {
 		//System.err.println("TRS WARNING: skipping turn without any speakers");
 		// Si, on va quand même creer un turn
-		TurnProject.Turn pTurn = project.newTurn();		
+		// Et on va même ajouter un mot = "f" pour que le Turn ait une durée
+		TurnProject.Turn pTurn = project.newTurn();
+		List<Integer> turnTracks = new ArrayList<>();
+		turnTracks.add(hackNobodyID);
+		pTurn.add(hackNobodyID, new Token("f"));
 		continue;
 	    }
 
@@ -148,6 +160,83 @@ public class TricoLoader extends TRSLoader {
     }
 
 
+    
+	public static Document parseXML(File file)
+			throws ParsingException, IOException
+	{
+	    System.err.println("TricoLoader parseXML");
+		try {
+			return newXMLDocumentBuilder().parse(file);
+		} catch (ParserConfigurationException ex) {
+			ex.printStackTrace();
+			throw new ParsingException(ex.toString());
+		} catch (SAXException ex) {
+			ex.printStackTrace();
+			throw new ParsingException(ex.toString());
+		}
+	}
 
+	/**
+	 * Return a DocumentBuilder suitable to parsing a TRS file.
+	 */
+	protected static DocumentBuilder newXMLDocumentBuilder()
+			throws ParserConfigurationException
+	{
+		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+		dbf.setValidating(true);
+		dbf.setNamespaceAware(true);
+		DocumentBuilder builder = dbf.newDocumentBuilder();
+
+		builder.setEntityResolver(new EntityResolver() {
+			@Override
+			public InputSource resolveEntity(String publicId, String systemId)
+					throws IOException, SAXException
+			{
+				Matcher m = DTD_PATTERN.matcher(systemId);
+				if (!m.matches()) {
+					return null;
+				}
+
+				String dtdName = m.group(1);
+				System.out.println("DTD = "+dtdName);
+				InputStream dtd = TricoLoader.class.getResourceAsStream(dtdName);
+				if (dtd == null) {
+					throw new SAXException("Lacking DTD: " + dtdName);
+				}
+
+				return new InputSource(dtd);
+			}
+		});
+
+		builder.setErrorHandler(new ErrorHandler() {
+			@Override
+			public void warning(SAXParseException e) {
+				System.err.println("XML Warning: " + e);
+			}
+
+			@Override
+			public void error(SAXParseException e) {
+				System.err.println("XML Error: " + e);
+			}
+
+			@Override
+			public void fatalError(SAXParseException e) throws SAXException {
+				System.err.println("XML Fatal Error: " + e);
+				throw e;
+			}
+		});
+
+		return builder;
+	}
+
+
+	public String getFormat() {
+		return "TransICOR";
+	}
+
+
+	public String getExt() {
+		return ".trico";
+	}
 
 }

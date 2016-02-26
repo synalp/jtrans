@@ -20,11 +20,10 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.OutputKeys;
+
  
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Node;
+import org.w3c.dom.*;
 
 /** Save the project as a TRICO file.
     From a TRICO file, rewrite the original XML content with updated timing.
@@ -55,6 +54,7 @@ public class TricoSaver implements MarkupSaver {
 	int nSpeakers = p.speakerCount();
 
 	// STAGE 1: update timing for non empty turns
+	float last = Float.MIN_VALUE;
 	for (int i=0; i< p.turns.size(); i++){
 	    Turn t = p.turns.get(i);
 	    float earliest = Float.MAX_VALUE;
@@ -69,10 +69,19 @@ public class TricoSaver implements MarkupSaver {
 		    }
 		}
 	    }
+	   
+	    // Entre deux tours pleins, on ajuste la frontière
+	    if ((last > Float.MIN_VALUE) && (earliest < Float.MAX_VALUE)) {
+		earliest = last;
+	    }
+
 	    t.start=new Anchor(earliest);
 	    t.end=new Anchor(latest);		       
+
+	    last = latest;
 	}
 
+	
 	// STAGE 2: update timings for empty turns
 	// Count how many empty turns there are between two valid anchors and divide
 	float minMin = 0f;
@@ -100,8 +109,12 @@ public class TricoSaver implements MarkupSaver {
 		t.end = new Anchor ( prev + (next - prev) / nEmpty );
 
 		prev = prev + (next - prev) / nEmpty;
+	    } else {
+		prev = t.end.seconds;
 	    }
 	}
+	
+
     }
 
     /** print a raw XML list of Turns, with starting and ending time stamps
@@ -163,8 +176,17 @@ public class TricoSaver implements MarkupSaver {
 	Source source = new DOMSource(p.document);
 	Result result = new StreamResult(file);
 	try {
-	    Transformer xformer = TransformerFactory.newInstance().newTransformer();
-	    xformer.transform(source, result);
+	    Transformer transformer = TransformerFactory.newInstance().newTransformer();
+	    transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+	    transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
+	    transformer.setOutputProperty(OutputKeys.METHOD, "xml");
+	    DOMImplementation domImpl = p.document.getImplementation();
+	    DocumentType doctype = domImpl.createDocumentType("Trans",
+							      "transicor.dtd",
+							      "transicor.dtd");
+	    //transformer.setOutputProperty(OutputKeys.DOCTYPE_PUBLIC, doctype.getPublicId());
+	    transformer.setOutputProperty(OutputKeys.DOCTYPE_SYSTEM, doctype.getSystemId());
+	    transformer.transform(source, result);
 	    System.err.println("Trico file written.");
 	} catch (TransformerException e) {
 	    System.err.println("\n\nTransformer ERROR");

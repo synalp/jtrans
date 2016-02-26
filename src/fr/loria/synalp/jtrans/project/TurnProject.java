@@ -12,9 +12,14 @@ import java.util.List;
  */
 public class TurnProject extends Project {
 
-	public static boolean ALIGN_OVERLAPS = true;
+    /** virtual speaker for empty turns 
+	keep in mind to export his track properly
+     */
+    public final static String hackNobody = "*Hack-Nobody*";
 
-	public List<Turn> turns = new ArrayList<>();
+    public static boolean ALIGN_OVERLAPS = true;
+
+    public List<Turn> turns = new ArrayList<>();
 
     /* the original XML Document */
     public org.w3c.dom.Document document;
@@ -376,5 +381,4 @@ public class TurnProject extends Project {
 
 		return inferred;
 	}
-
 }

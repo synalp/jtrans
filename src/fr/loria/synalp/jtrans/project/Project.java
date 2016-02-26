@@ -46,6 +46,10 @@ public abstract class Project {
 		return speakerNames.get(speaker);
 	}
 
+    public int getSpeakerId(String name) {
+		return speakerNames.indexOf(name);
+	}
+
 	public abstract List<Token> getTokens(int speaker);
 
 	public abstract Iterator<Phrase> phraseIterator(int speaker);
