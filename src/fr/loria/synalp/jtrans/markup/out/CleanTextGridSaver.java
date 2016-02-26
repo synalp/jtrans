@@ -153,39 +153,38 @@ public class CleanTextGridSaver implements MarkupSaver {
 				      Appendable w, int[] id, int xminFrame, int xmaxFrame, String content)
 	throws IOException
     {
-	float debSec=frame2second(xminFrame,false);
-	float endSec=frame2second(xmaxFrame,false);
-
-	if (debSec>endSec) {
-	    System.err.println("Attention, start ("+debSec+") > end ("+endSec+")\n");
-	    //endSec=debSec;
-	}
-
+	//get the endTime of the previous segment
+	float lastTime = 0f;
 	String s=w.toString();
 	int i=s.lastIndexOf("xmax = ");
-
 	if (i>=0) {
 	    int j=s.indexOf('\n',i);
-	    float lastTime = Float.parseFloat(s.substring(i+7,j));
-	    
-	    //don't start too early
-	    if (lastTime>debSec) debSec = lastTime;
+	    lastTime = Float.parseFloat(s.substring(i+7,j));
+	}
 
-	    //don't end too early
-	    if (endSec< (debSec+0.02f)) endSec = Math.round((debSec+0.02f) * 1000f)/1000;
+	float debSec=frame2second(xminFrame,false);
+	float endSec=frame2second(xmaxFrame,false);	   
+	
+	//don't start too early
+	if (debSec<lastTime) debSec = lastTime;
 
-	    //if starts too far, add an empty interval in between
-	    if (debSec > (lastTime+0.02f)) {
-		w.append("\n\t\tintervals [").append(Integer.toString(++id[0])).append("]:")
+	//don't end too early
+	if ( endSec < (debSec  + 0.02f) ) endSec = Math.round((debSec+0.02) * 100f)/100f;
+
+	// At this point, we sure have lastTime < debSec < endSec
+
+	//if starts too far, add an empty interval in between
+	if (debSec > (lastTime+0.02f)) {
+	    w.append("\n\t\tintervals [").append(Integer.toString(++id[0])).append("]:")
 		.append("\n\t\t\txmin = ")
 		.append(Float.toString(lastTime))
 		.append("\n\t\t\txmax = ")
 		.append(Float.toString(debSec))
 		.append("\n\t\t\ttext = \"\"");
-	    }
+	} else {
+	    debSec = lastTime;
 	}
-
-
+	
 	w.append("\n\t\tintervals [").append(Integer.toString(++id[0])).append("]:")
 	    .append("\n\t\t\txmin = ")
 	    .append(Float.toString(debSec))
