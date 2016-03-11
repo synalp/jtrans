@@ -179,6 +179,7 @@ public class TricoSaver implements MarkupSaver {
 	    Transformer transformer = TransformerFactory.newInstance().newTransformer();
 	    transformer.setOutputProperty(OutputKeys.INDENT, "yes");
 	    transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
+		transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
 	    transformer.setOutputProperty(OutputKeys.METHOD, "xml");
 	    DOMImplementation domImpl = p.document.getImplementation();
 	    DocumentType doctype = domImpl.createDocumentType("Trans",
