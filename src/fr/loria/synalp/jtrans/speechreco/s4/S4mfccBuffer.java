@@ -43,8 +43,11 @@ termes.
 
 package fr.loria.synalp.jtrans.speechreco.s4;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -152,18 +155,52 @@ public class S4mfccBuffer extends BaseDataProcessor {
 	public List<FloatData> getAllData() {
 		List<FloatData> data = new ArrayList<>();
 
-		// Get data
-		for (;;) {
-			Data d = getData();
-			if (d instanceof DataEndSignal) {
-				break;
-			}
-
+		/*if (true) {
 			try {
-				data.add(FloatData.toFloatData(d));
-			} catch (IllegalArgumentException ex) {
-				// not a FloatData/DoubleData
+				System.out.println("lala");
+				BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File("/home/gserrier/test.mfc"))));
+				// debug pour connaitre le nb de trames
+						FloatData fd = (FloatData)x;
+						bw.write("" + fd.getValues()[0]);
+						for(int i=1; i < fd.getValues().length; ++i){
+							bw.write(";" + fd.getValues()[i]);
+						}
+						bw.newLine();
+					bw.close();
+				}
+				System.out.println("Nb of frames: "+nfr);
+			
+			//System.exit(0);
+		}*/
+
+			// Get data
+		try{
+			BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File("/home/gserrier/test.mfc"))));
+			for (;;) {
+				Data d = getData();
+				if (d instanceof DataStartSignal) {
+				} else if (d instanceof DataEndSignal) {
+					break;
+				} else {
+					FloatData fd = (FloatData)d;
+					bw.write("" + fd.getValues()[0]);
+					for(int i=1; i < fd.getValues().length; ++i){
+						bw.write(";" + fd.getValues()[i]);
+					}
+					bw.newLine();
+				}
+	
+				try {
+					data.add(FloatData.toFloatData(d));
+				} catch (IllegalArgumentException ex) {
+					// not a FloatData/DoubleData
+				}
 			}
+			bw.close();
+		} catch (Exception e) {
+			System.out.println("Can't write in mfcc dump file");
+			e.printStackTrace();
+			System.exit(-1);
 		}
 
 		System.out.println("Got " + data.size() + " frames");

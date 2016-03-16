@@ -44,10 +44,13 @@ termes.
 package fr.loria.synalp.jtrans.speechreco.s4;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -66,6 +69,7 @@ import edu.cmu.sphinx.decoder.search.Token;
 import edu.cmu.sphinx.frontend.Data;
 import edu.cmu.sphinx.frontend.DataEndSignal;
 import edu.cmu.sphinx.frontend.DataStartSignal;
+import edu.cmu.sphinx.frontend.FloatData;
 import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
 import edu.cmu.sphinx.frontend.util.Microphone;
 import edu.cmu.sphinx.linguist.SearchState;
@@ -162,6 +166,7 @@ public class S4ForceAlignBlocViterbi extends Thread {
 	}
 
 	private void initS4() {
+		System.out.println("Init s4");
 		wavfile = new AudioFileDataSource(3200,null);
 		System.out.println("wavname "+wavname);
 		wavfile.setAudioFile(new File(wavname), null);
@@ -169,16 +174,32 @@ public class S4ForceAlignBlocViterbi extends Thread {
 		mfccs.setSource(getFrontEnd(wavfile));
 
 		if (false) {
-			// debug pour connaitre le nb de trames
-			int nfr=0;
-			while (!mfccs.noMoreFramesAvailable) {
-				Data x = mfccs.getData();
-				if (x instanceof DataStartSignal) {
-				} else if (x instanceof DataEndSignal) {
-				} else
-					nfr++;
+			try {
+				System.out.println("lala");
+				BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File("/home/gserrier/test.mfc"))));
+				// debug pour connaitre le nb de trames
+				int nfr=0;
+				while (!mfccs.noMoreFramesAvailable) {
+					Data x = mfccs.getData();
+					if (x instanceof DataStartSignal) {
+					} else if (x instanceof DataEndSignal) {
+					} else {
+						nfr++;
+						FloatData fd = (FloatData)x;
+						bw.write("" + fd.getValues()[0]);
+						for(int i=1; i < fd.getValues().length; ++i){
+							bw.write(";" + fd.getValues()[i]);
+						}
+						bw.newLine();
+					}
+					bw.close();
+				}
+				System.out.println("Nb of frames: "+nfr);
+			} catch (Exception e) {
+				System.out.println("Can't write in mfcc dump file");
+				System.exit(-1);
 			}
-			System.out.println("Nb of frames: "+nfr);
+			//System.exit(0);
 		}
 
 		try {
