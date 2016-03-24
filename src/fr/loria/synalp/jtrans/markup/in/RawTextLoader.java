@@ -114,7 +114,8 @@ public class RawTextLoader implements MarkupLoader {
 				.replace('\u00a0', ' ')             // non-breaking spaces
 				.replaceAll("[\"=/]", " ")          // junk punctuation marks
 				.replaceAll("\'(\\S)", "\' $1")     // add space after apostrophes glued to a word
-				.replace('-', ' ')					// delete all '-'; TODO: keep the dash attached to the second word ? keep special words attached "week-end" ?
+                .replaceAll("-"," -")
+//				.replace('-', ' ')					// delete all '-'; TODO: keep the dash attached to the second word ? keep special words attached "week-end" ?
 		;
 	}
 
