@@ -16,6 +16,7 @@ import java.io.*;
  * @see StateGraph#viterbi
  */
 public class ViterbiAligner extends Aligner {
+    public static String saveForwardBackward = null;
 
 	/**
 	 * Maximum number of bytes for a Viterbi backtrack stack to reside in
@@ -128,6 +129,9 @@ public class ViterbiAligner extends Aligner {
 
 		swapWriter.init(graph.getNodeCount(), out);
 		graph.viterbi(data, swapWriter, startFrame, endFrame);
+		if (ViterbiAligner.saveForwardBackward!=null) {
+            graph.forward(data, startFrame, endFrame);
+        }
 
 		swapReader.init(swapWriter.getIndex(), inFactory);
 		int[] timeline = graph.backtrack(swapReader);

@@ -10,6 +10,7 @@ import fr.loria.synalp.jtrans.speechreco.s4.*;
 import fr.loria.synalp.jtrans.utils.ProgressDisplay;
 import fr.loria.synalp.jtrans.graph.swap.SwapDeflater;
 import fr.loria.synalp.jtrans.graph.swap.SwapInflater;
+import fr.loria.synalp.jtrans.align.ViterbiAligner;
 
 import java.io.*;
 import java.util.*;
@@ -925,6 +926,8 @@ public class StateGraph {
 			throw new IllegalArgumentException("endFrame >= data.size()");
 		}
 		LogMath lm = HMMModels.getLogMath();
+        final String alphaFile = ViterbiAligner.saveForwardBackward;
+        DataOutputStream alphaf = new DataOutputStream(new FileOutputStream(alphaFile));
 
 		assert startFrame <= endFrame;
 		assert startFrame >= 0;
@@ -971,13 +974,43 @@ public class StateGraph {
 				vcf[i] += emission;
 			}
 
-            // TODO: write the vcf = alpha(t) vector to disk
+            // write the vcf = alpha(t) vector to disk
+            alphaf.writeInt(f);
+            alphaf.writeInt(nNodes);
+            for (int i=0;i<nNodes;i++) alphaf.writeFloat(vcf[i]);
 
 			// swap vectors
 			float[] temp = vcf;
 			vcf = vpf;
 			vpf = temp;
 		}
+
+        // TODO: init Beta
+		Arrays.fill(vpf, Float.NEGATIVE_INFINITY);
+		vpf[nNodes-1] = 0; // Probabilities are in the log domain
+        // store emission probas in a temporary array because we gonna iterate several times over them
+        for (int t=endFrame-1;t>=startFrame;t--) {
+            Arrays.fill(vcf,0f);
+            for (int j=0;j<nNodes;j++) {
+                for (byte k = 1; k < in.inCount[j]; k++) {
+                    int i=in.inNode[j][k];
+                    float tmplog=lm.addAsLinear(vcf[i], in.inProb[j][k] + getStateAt(j).getScore(data.get(t+1)) + vpf[j]);
+                    vcf[i]=tmplog;
+                }
+            }
+
+            // write the vcf = beta(t) vector to disk: WARNING: en sens inverse !!!!
+            alphaf.writeInt(t);
+            alphaf.writeInt(nNodes);
+            for (int i=0;i<nNodes;i++) alphaf.writeFloat(vcf[i]);
+
+			// swap vectors
+			float[] temp = vcf;
+			vcf = vpf;
+			vpf = temp;
+        }
+
+        alphaf.close();
 	}
 
 

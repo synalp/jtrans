@@ -155,6 +155,9 @@ public class JTrans {
 						"Use dumb linear alignment instead of Viterbi. " +
 						"It is recommended to use a reference path. (-r) " +
 						"Don't use unless you know what you are doing!");
+                
+                accepts("alphabeta",
+                        "In addition to Viterbi, run a forward backward pass to save the alphas/betas").withRequiredArg();
 
 				accepts("z",
 						"Anonymize word")
@@ -205,6 +208,11 @@ public class JTrans {
 		if (optset.has("metropolis-hastings")) {
 			refine = true;
 		}
+
+		if (optset.has("alphabeta")) {
+            ViterbiAligner.saveForwardBackward=(String)optset.valueOf("alphabeta");
+            System.out.println("Will run alphabeta "+ViterbiAligner.saveForwardBackward);
+        }
 
 		if (optset.has("ignore-overlaps")) {
 			TurnProject.ALIGN_OVERLAPS = false;
