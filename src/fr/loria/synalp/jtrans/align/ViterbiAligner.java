@@ -128,13 +128,14 @@ public class ViterbiAligner extends Aligner {
 		// Run alignment
 
 		swapWriter.init(graph.getNodeCount(), out);
-		graph.viterbi(data, swapWriter, startFrame, endFrame);
+        int[] timeline;
 		if (ViterbiAligner.saveForwardBackward!=null) {
-            graph.forward(data, startFrame, endFrame);
+            timeline = graph.forward(data, startFrame, endFrame);
+        } else {
+            graph.viterbi(data, swapWriter, startFrame, endFrame);
+            swapReader.init(swapWriter.getIndex(), inFactory);
+		    timeline = graph.backtrack(swapReader);
         }
-
-		swapReader.init(swapWriter.getIndex(), inFactory);
-		int[] timeline = graph.backtrack(swapReader);
 		assert timeline.length == length;
 
 		return timeline;

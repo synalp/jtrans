@@ -915,8 +915,9 @@ public class StateGraph {
 
     /**
         forward pass; useful when trying to compute confidence measure of word transitions
+        Cette methode *remplace* le Viterbi classique, et realise aussi un Viterbi, mais affiche en plus les probas Xi pour chaque debut de mot sur le chemin de Viterbi
     */
-	public void forward(
+	public int[] forward(
 			List<FloatData> data,
 			int startFrame,
 			int endFrame)
@@ -995,43 +996,115 @@ public class StateGraph {
             }
         }
 
-        DataOutputStream alphaf = new DataOutputStream(new FileOutputStream(alphaFile));
-        for (int t=startFrame;t<endFrame;t++) {
-            // calcul du denominator
-            float denom=0f;
-            for (int j=0;j<nNodes;j++) {
-                // on regarde toutes les transitions qui arrivent en j
-                for (byte k = 1; k < in.inCount[j]; k++) {
-                    int i = in.inNode[j][k];
-                    float logaij = in.inProb[j][k];
-                    float num=alpha[t][i]+logaij+beta[t+1][j]+getStateAt(j).getScore(data.get(t+1));
-                    if (j==0&&k==1) denom=num;
-                    else denom=lm.addAsLinear(denom,num);
-                }
-            }
-            if (denom!=0f) {
-                System.out.println("denom "+denom);
+        byte[][] bestprev = new byte[frameCount][nNodes];
+        {
+            // VITERBI
 
+            // Probability vectors
+            float[] vpf = new float[nNodes]; // vector for previous frame (read-only)
+            float[] vcf = new float[nNodes]; // vector for current frame (write-only)
+
+            // ID of the incoming transition that yielded bestReachProb for each state
+            byte[] bestInTrans = new byte[nNodes];
+
+            // Initialize probability vector
+            // We only have one initial node (node #0), probability 1
+            Arrays.fill(vpf, Float.NEGATIVE_INFINITY);
+            vpf[0] = 0; // Probabilities are in the log domain
+
+            for (int f = startFrame; f <= endFrame; f++) {
+                // Allow cancellation
+                if (Thread.interrupted()) {
+                    throw new InterruptedException("forward Viterbi");
+                }
+
+                for (int i = 0; i < nNodes; i++) {
+                    // Emission probability (frame score)
+                    // We could cache this for unique states, but in practice
+                    // ScoreCachingSenone already does it for us.
+                    float emission = getStateAt(i).getScore(data.get(f));
+                    // Decommenter pour afficher les probas d'emission de chaque trame et de chaque phone sur les chemins possibles
+                    // System.out.println("probaemission "+emission+" "+getStateAt(i)+" "+f);
+
+                    // Probability to reach a node given the previous vector v
+                    // i.e. max(P(k -> i) * v[k]) for each predecessor k of node #i
+                    float bestReachProb;
+
+                    // Initialize with first incoming transition
+                    // If last node, loop forever (log prob 0).
+                    // (Please see correctLastNodeTransitions() for an explanation
+                    // of why the last node's log prob isn't just set to 0.)
+                    bestReachProb = (i == nNodes-1? 0: in.inProb[i][0]) + vpf[in.inNode[i][0]]; // log domain
+                    bestInTrans[i] = 0;
+
+                    // Find best probability among all incoming transitions
+                    for (byte j = 1; j < in.inCount[i]; j++) {
+                        float p = in.inProb[i][j] + vpf[in.inNode[i][j]]; // log domain
+                        if (p > bestReachProb) {
+                            bestReachProb = p;
+                            bestInTrans[i] = j;
+                        }
+                    }
+
+                    vcf[i] = emission + bestReachProb; // log domain
+                }
+                for (int i=0;i<nNodes;i++) bestprev[f][i]=bestInTrans[i];
+
+                // swap vectors
+                float[] temp = vcf;
+                vcf = vpf;
+                vpf = temp;
+            }
+        }
+
+        int[] timeline = new int[frameCount];
+        {
+            // BACKTRACK
+
+            int leadNode = nNodes - 1;
+            for (int f = timeline.length-1; f >= 0; f--) {
+                // Allow cancellation
+                if (Thread.interrupted()) {
+                    throw new InterruptedException("backward Viterbi");
+                }
+                byte transID = bestprev[f][leadNode];
+                leadNode = in.inNode[leadNode][transID];
+                timeline[f] = leadNode;
+            }
+        }
+
+
+        // calcul des probas Xi
+        for (int t=startFrame+1, tidx=1;t<endFrame;t++,tidx++) {
+            if (timeline[tidx]!=timeline[tidx-1] && getStateAt(timeline[tidx]).getState()==0) { // transition + debut de phoneme
+                // calcul du denominator
+                float denom=0f;
                 for (int j=0;j<nNodes;j++) {
-                    // on ne veut que les transitions inter-mots; on prend en 1ere approximation le max de ces transitions
-                    if (getStateAt(j).getState()==0) {
-                        float ximax=Float.NEGATIVE_INFINITY;
-                        int sleft=-1;
-                        // on regarde toutes les transitions qui arrivent en j
-                        for (byte k = 1; k < in.inCount[j]; k++) {
-                            int i = in.inNode[j][k];
-                            // puisque j est l'etat entrant du HMM, donc i est toujours un etat sortant
+                    // on regarde toutes les transitions qui arrivent en j
+                    for (byte k = 1; k < in.inCount[j]; k++) {
+                        int i = in.inNode[j][k];
+                        float logaij = in.inProb[j][k];
+                        float num=alpha[t][i]+logaij+beta[t+1][j]+getStateAt(j).getScore(data.get(t+1));
+                        if (j==0&&k==1) denom=num;
+                        else denom=lm.addAsLinear(denom,num);
+                    }
+                }
+                if (denom!=0f) {
+                    int j=timeline[tidx];
+                    int i=timeline[tidx-1];
+                    // on cherche parmi toutes les transitions qui arrivent en j la bonne
+                    for (byte k = 1; k < in.inCount[j]; k++) {
+                        if (i == in.inNode[j][k]) {
                             float logaij = in.inProb[j][k];
                             float num=alpha[t][i]+logaij+beta[t+1][j]+getStateAt(j).getScore(data.get(t+1));
                             float xi = num-denom;
-                            if (xi>ximax) {ximax=xi; sleft=i;}
+                            System.out.println("xi "+xi+" trame "+t+" stateleft "+getStateAt(i)+" stateright "+getStateAt(j)+" denom "+denom);
                         }
-                        if (ximax>Float.NEGATIVE_INFINITY) System.out.println("ximax "+ximax+" trame "+t+" stateleft "+getStateAt(sleft)+" stateright "+getStateAt(j)+" denom "+denom);
                     }
                 }
             }
         }
-        alphaf.close();
+        return timeline;
 	}
 
 
