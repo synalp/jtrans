@@ -1078,10 +1078,10 @@ public class StateGraph {
         for (int t=startFrame+1, tidx=1;t<endFrame;t++,tidx++) {
             if (timeline[tidx]!=timeline[tidx-1] && getStateAt(timeline[tidx]).getState()==0) { // transition + debut de phoneme
                 // calcul du denominator
-                float denom=0f;
+                float denom=-Float.MAX_VALUE;
                 for (int j=0;j<nNodes;j++) {
                     // on regarde toutes les transitions qui arrivent en j
-                    for (byte k = 1; k < in.inCount[j]; k++) {
+                    for (byte k = 0; k < in.inCount[j]; k++) {
                         int i = in.inNode[j][k];
                         float logaij = in.inProb[j][k];
                         float num=alpha[t][i]+logaij+beta[t+1][j]+getStateAt(j).getScore(data.get(t+1));
@@ -1089,11 +1089,11 @@ public class StateGraph {
                         else denom=lm.addAsLinear(denom,num);
                     }
                 }
-                if (denom!=0f) {
+                if (denom!=-Float.MAX_VALUE) {
                     int j=timeline[tidx];
                     int i=timeline[tidx-1];
                     // on cherche parmi toutes les transitions qui arrivent en j la bonne
-                    for (byte k = 1; k < in.inCount[j]; k++) {
+                    for (byte k = 0; k < in.inCount[j]; k++) {
                         if (i == in.inNode[j][k]) {
                             float logaij = in.inProb[j][k];
                             float num=alpha[t][i]+logaij+beta[t+1][j]+getStateAt(j).getScore(data.get(t+1));
