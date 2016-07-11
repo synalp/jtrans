@@ -938,8 +938,8 @@ public class StateGraph {
 		InboundTransitionBridge in = new InboundTransitionBridge();
 
 		// alpha vectors
-        float[][] alpha = new float[endFrame+1-startFrame][nNodes];
-        float[][] beta = new float[endFrame+1-startFrame][nNodes];
+        float[][] alpha = new float[endFrame+1][nNodes];
+        float[][] beta = new float[endFrame+1][nNodes];
 
 		// Initialize probability vector
 		// We only have one initial node (node #0), probability 1
