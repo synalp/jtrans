@@ -912,6 +912,75 @@ public class StateGraph {
 		swapWriter.close();
 	}
 
+    /**
+        forward pass; useful when trying to compute confidence measure of word transitions
+    */
+	public void forward(
+			List<FloatData> data,
+			int startFrame,
+			int endFrame)
+			throws IOException, InterruptedException
+	{
+		if (endFrame >= data.size()) {
+			throw new IllegalArgumentException("endFrame >= data.size()");
+		}
+		LogMath lm = HMMModels.getLogMath();
+
+		assert startFrame <= endFrame;
+		assert startFrame >= 0;
+		assert endFrame >= 0;
+
+		int frameCount = 1 + endFrame - startFrame;
+
+		InboundTransitionBridge in = new InboundTransitionBridge();
+
+		// alpha vectors
+		float[] vpf = new float[nNodes]; // vector for previous frame (read-only)
+		float[] vcf = new float[nNodes]; // vector for current frame (write-only)
+
+		// Initialize probability vector
+		// We only have one initial node (node #0), probability 1
+		Arrays.fill(vpf, Float.NEGATIVE_INFINITY);
+		vpf[0] = 0; // Probabilities are in the log domain
+
+		for (int f = startFrame; f <= endFrame; f++) {
+			// Allow cancellation
+			if (Thread.interrupted()) {
+				throw new InterruptedException("forward alpha");
+			}
+
+			for (int i = 0; i < nNodes; i++) {
+				// Emission probability (frame score)
+				// We could cache this for unique states, but in practice
+				// ScoreCachingSenone already does it for us.
+				float emission = getStateAt(i).getScore(data.get(f));
+                // Decommenter pour afficher les probas d'emission de chaque trame et de chaque phone sur les chemins possibles
+                // System.out.println("probaemission "+emission+" "+getStateAt(i)+" "+f);
+
+				assert in.inCount[i] >= 1;
+
+				// Compute alphas
+				for (byte j = 1; j < in.inCount[i]; j++) {
+					float p = in.inProb[i][j] + vpf[in.inNode[i][j]]; // log domain
+                    if (j==1) {vcf[i]=p;}
+                    else {
+                        float tmpalpha = lm.addAsLinear(vcf[i],p);
+                        vcf[i]=tmpalpha;
+                    }
+				}
+				vcf[i] += emission;
+			}
+
+            // TODO: write the vcf = alpha(t) vector to disk
+
+			// swap vectors
+			float[] temp = vcf;
+			vcf = vpf;
+			vpf = temp;
+		}
+	}
+
+
 
 	/**
 	 * Finds the most likely path between the initial and final nodes using the

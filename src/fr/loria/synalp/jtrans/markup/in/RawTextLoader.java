@@ -15,8 +15,11 @@ public class RawTextLoader implements MarkupLoader {
 	 * Substitute junk characters with ones that JTrans can handle.
 	 */
 	public static String normalizeText(String text) {
-
         {
+            /*
+                En fait, le text qui arrive ici a deja les // supprimes !!
+                C'est parce que les // dans le texte ont ete transformes en <Comment // /> par les scripts de pretraitement du LIF
+            */
             // test si on a des incertitudes sur l'orthographe
             int k=0;
             while (k<text.length()) {
@@ -102,21 +105,25 @@ public class RawTextLoader implements MarkupLoader {
                                 }
                             }
                         }
-                    } else k++;
+                    } else {
+                        k++;
+                        System.out.println("CATCH //");
+                    }
                 } else break;
             }
         }
 
-		return text
+		text = text
 				.replace('\u2019', '\'')            // smart quotes
 				.replace("\r\n", "\n")              // Windows CRLF
 				.replace('\r', '\n')                // remaining non-Unix linebreaks
 				.replace('\u00a0', ' ')             // non-breaking spaces
-				.replaceAll("[\"=/]", " ")          // junk punctuation marks
+				.replaceAll("[\"=/]", " ")          // junk punctuation marks (Note: heureusement que les // ont ete traites avant JTrans, sinon on les perdrait ici)
 				.replaceAll("\'(\\S)", "\' $1")     // add space after apostrophes glued to a word
                 .replaceAll("-"," -")
 //				.replace('-', ' ')					// delete all '-'; TODO: keep the dash attached to the second word ? keep special words attached "week-end" ?
 		;
+        return text;
 	}
 
 
