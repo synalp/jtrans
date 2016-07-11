@@ -1048,7 +1048,7 @@ public class StateGraph {
 
                     vcf[i] = emission + bestReachProb; // log domain
                 }
-                for (int i=0;i<nNodes;i++) bestprev[f][i]=bestInTrans[i];
+                for (int i=0;i<nNodes;i++) bestprev[f-startFrame][i]=bestInTrans[i];
 
                 // swap vectors
                 float[] temp = vcf;
