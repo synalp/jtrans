@@ -872,6 +872,8 @@ public class StateGraph {
 				// We could cache this for unique states, but in practice
 				// ScoreCachingSenone already does it for us.
 				float emission = getStateAt(i).getScore(data.get(f));
+                // Decommenter pour afficher les probas d'emission de chaque trame et de chaque phone sur les chemins possibles
+                // System.out.println("probaemission "+emission+" "+getStateAt(i)+" "+f);
 
 				assert in.inCount[i] >= 1;
 
