@@ -927,7 +927,6 @@ public class StateGraph {
 		}
 		LogMath lm = HMMModels.getLogMath();
         final String alphaFile = ViterbiAligner.saveForwardBackward;
-        DataOutputStream alphaf = new DataOutputStream(new FileOutputStream(alphaFile));
 
 		assert startFrame <= endFrame;
 		assert startFrame >= 0;
@@ -938,13 +937,14 @@ public class StateGraph {
 		InboundTransitionBridge in = new InboundTransitionBridge();
 
 		// alpha vectors
-		float[] vpf = new float[nNodes]; // vector for previous frame (read-only)
-		float[] vcf = new float[nNodes]; // vector for current frame (write-only)
+        float[][] alpha = new float[endFrame+1-startFrame][nNodes];
+        float[][] beta = new float[endFrame+1-startFrame][nNodes];
 
 		// Initialize probability vector
 		// We only have one initial node (node #0), probability 1
-		Arrays.fill(vpf, Float.NEGATIVE_INFINITY);
-		vpf[0] = 0; // Probabilities are in the log domain
+        float[] prev = new float[nNodes];
+		Arrays.fill(prev, Float.NEGATIVE_INFINITY);
+		prev[0] = 0; // Probabilities are in the log domain
 
 		for (int f = startFrame; f <= endFrame; f++) {
 			// Allow cancellation
@@ -964,52 +964,73 @@ public class StateGraph {
 
 				// Compute alphas
 				for (byte j = 1; j < in.inCount[i]; j++) {
-					float p = in.inProb[i][j] + vpf[in.inNode[i][j]]; // log domain
-                    if (j==1) {vcf[i]=p;}
+					float p = in.inProb[i][j] + prev[in.inNode[i][j]]; // log domain
+                    if (j==1) {alpha[f][i]=p;}
                     else {
-                        float tmpalpha = lm.addAsLinear(vcf[i],p);
-                        vcf[i]=tmpalpha;
+                        float tmpalpha = lm.addAsLinear(alpha[f][i],p);
+                        alpha[f][i]=tmpalpha;
                     }
 				}
-				vcf[i] += emission;
+				alpha[f][i] += emission;
 			}
-
-            // write the vcf = alpha(t) vector to disk
-            alphaf.writeInt(f);
-            alphaf.writeInt(nNodes);
-            for (int i=0;i<nNodes;i++) alphaf.writeFloat(vcf[i]);
-
-			// swap vectors
-			float[] temp = vcf;
-			vcf = vpf;
-			vpf = temp;
+            prev=alpha[f];
 		}
 
-        // TODO: init Beta
-		Arrays.fill(vpf, Float.NEGATIVE_INFINITY);
-		vpf[nNodes-1] = 0; // Probabilities are in the log domain
-        // store emission probas in a temporary array because we gonna iterate several times over them
+        // TODO: check init Beta
+        float[] next = beta[endFrame];
+		Arrays.fill(next, Float.NEGATIVE_INFINITY);
+		next[nNodes-1] = 0; // Probabilities are in the log domain
         for (int t=endFrame-1;t>=startFrame;t--) {
-            Arrays.fill(vcf,0f);
+			// Allow cancellation
+			if (Thread.interrupted()) {
+				throw new InterruptedException("forward beta");
+			}
+            Arrays.fill(beta[t],0f);
             for (int j=0;j<nNodes;j++) {
                 for (byte k = 1; k < in.inCount[j]; k++) {
                     int i=in.inNode[j][k];
-                    float tmplog=lm.addAsLinear(vcf[i], in.inProb[j][k] + getStateAt(j).getScore(data.get(t+1)) + vpf[j]);
-                    vcf[i]=tmplog;
+                    float tmplog=lm.addAsLinear(beta[t][i], in.inProb[j][k] + getStateAt(j).getScore(data.get(t+1)) + beta[t+1][j]);
+                    beta[t][i]=tmplog;
                 }
             }
-
-            // write the vcf = beta(t) vector to disk: WARNING: en sens inverse !!!!
-            alphaf.writeInt(t);
-            alphaf.writeInt(nNodes);
-            for (int i=0;i<nNodes;i++) alphaf.writeFloat(vcf[i]);
-
-			// swap vectors
-			float[] temp = vcf;
-			vcf = vpf;
-			vpf = temp;
         }
 
+        DataOutputStream alphaf = new DataOutputStream(new FileOutputStream(alphaFile));
+        for (int t=startFrame;t<endFrame;t++) {
+            // calcul du denominator
+            float denom=0f;
+            for (int j=0;j<nNodes;j++) {
+                // on regarde toutes les transitions qui arrivent en j
+                for (byte k = 1; k < in.inCount[j]; k++) {
+                    int i = in.inNode[j][k];
+                    float logaij = in.inProb[j][k];
+                    float num=alpha[t][i]+logaij+beta[t+1][j]+getStateAt(j).getScore(data.get(t+1));
+                    if (j==0&&k==1) denom=num;
+                    else denom=lm.addAsLinear(denom,num);
+                }
+            }
+            if (denom!=0f) {
+                System.out.println("denom "+denom);
+
+                for (int j=0;j<nNodes;j++) {
+                    // on ne veut que les transitions inter-mots; on prend en 1ere approximation le max de ces transitions
+                    if (getStateAt(j).getState()==0) {
+                        float ximax=Float.NEGATIVE_INFINITY;
+                        int sleft=-1;
+                        // on regarde toutes les transitions qui arrivent en j
+                        for (byte k = 1; k < in.inCount[j]; k++) {
+                            int i = in.inNode[j][k];
+                            // puisque j est l'etat entrant du HMM, donc i est toujours un etat sortant
+                            float logaij = in.inProb[j][k];
+                            float num=alpha[t][i]+logaij+beta[t+1][j]+getStateAt(j).getScore(data.get(t+1));
+                            float xi = num-denom;
+                            if (xi>ximax) {ximax=xi; sleft=i;}
+                        }
+                        if (ximax>Float.NEGATIVE_INFINITY) System.out.println("ximax "+ximax+" trame "+t+" stateleft "+getStateAt(sleft)+" stateright "+getStateAt(j)+" denom "+denom);
+                    }
+                }
+            }
+        }
         alphaf.close();
 	}
 
