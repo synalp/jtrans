@@ -118,11 +118,29 @@ public class RawTextLoader implements MarkupLoader {
 				.replace("\r\n", "\n")              // Windows CRLF
 				.replace('\r', '\n')                // remaining non-Unix linebreaks
 				.replace('\u00a0', ' ')             // non-breaking spaces
-				.replaceAll("[\"=/]", " ")          // junk punctuation marks (Note: heureusement que les // ont ete traites avant JTrans, sinon on les perdrait ici)
+				.replaceAll("[\"=]", " ")           // junk punctuation marks (Note: heureusement que les // ont ete traites avant JTrans, sinon on les perdrait ici. ATTENTION: les // ne sont pas traites avant dans le cas des TextGrid !)
 				.replaceAll("\'(\\S)", "\' $1")     // add space after apostrophes glued to a word
                 .replaceAll("-"," -")
 //				.replace('-', ' ')					// delete all '-'; TODO: keep the dash attached to the second word ? keep special words attached "week-end" ?
 		;
+        // don't know how to remove / but not // with regexp; so:
+        {
+            int i=text.length();
+            for (;;) {
+                int j=text.lastIndexOf('/',i);
+                if (j<0) break;
+                if (j==0) {
+                    text=text.substring(1);
+                    break;
+                }
+                if (text.charAt(j-1)=='/') {
+                    i=j-2;
+                } else {
+                    text=text.substring(0,j)+" "+text.substring(j+1);
+                    i=j;
+                }
+            }
+        }
         return text;
 	}
 
@@ -134,7 +152,7 @@ public class RawTextLoader implements MarkupLoader {
 	public static final Map<Token.Type, String> DEFAULT_PATTERNS =
 			new HashMap<Token.Type, String>()
 	{{
-		put(Token.Type.COMMENT,            "(\\{[^\\}]*\\}|\\+|\\[|\\]|\\|)"); // ce qui est entre {} ou les + ou les [ ou ] ou |
+		put(Token.Type.COMMENT,            "(\\{[^\\}]*\\}|\\+|\\[|\\]|\\||//)"); // ce qui est entre {} ou les + ou les [ ou ] ou | ou //
 		put(Token.Type.NOISE,              "XXX");
 		put(Token.Type.OVERLAP_START_MARK, "<");
 		put(Token.Type.OVERLAP_END_MARK,   ">");
