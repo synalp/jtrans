@@ -141,6 +141,9 @@ public class RawTextLoader implements MarkupLoader {
                 }
             }
         }
+        // il y a un autre bug lorsqu'on lit depuis les textgrid, c'est que dans les amorces "a-", le tiret est considere comme un event acoustique. Je le transforme donc ici en comment:
+        text=text.replaceAll(" - "," [-] ");
+        text=text.replaceAll(" -$"," [-]");
         return text;
 	}
 
@@ -152,7 +155,10 @@ public class RawTextLoader implements MarkupLoader {
 	public static final Map<Token.Type, String> DEFAULT_PATTERNS =
 			new HashMap<Token.Type, String>()
 	{{
-		put(Token.Type.COMMENT,            "(\\{[^\\}]*\\}|\\+|\\[|\\]|\\||//)"); // ce qui est entre {} ou les + ou les [ ou ] ou | ou //
+        // Nouvelles conventions ORFEO:
+        // {incises} : ce sont des events acoustiques
+        // [commentaires] : ce ne sont pas des events acoustiques
+		put(Token.Type.COMMENT,            "(\\{|\\}|\\+|\\[[^\\]]*\\]|\\||//)");
 		put(Token.Type.NOISE,              "XXX");
 		put(Token.Type.OVERLAP_START_MARK, "<");
 		put(Token.Type.OVERLAP_END_MARK,   ">");
