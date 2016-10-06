@@ -36,13 +36,13 @@ public class RawTextLoader implements MarkupLoader {
                             freespace = text.indexOf(' ', j);
                             if (freespace < 0) System.out.println("ERROR no free space to add a comment: " + text);
                             else {
-                                String s = text.substring(0, i) + text.substring(j + 1, freespace) + " {" + text.substring(i, j + 1) + "} ";
+                                String s = text.substring(0, i) + text.substring(j + 1, freespace) + " [" + text.substring(i, j + 1) + "] ";
                                 k=s.length();
                                 text = s + text.substring(freespace + 1);
                                 textmodified = true;
                             }
                         } else {
-                            String s = text.substring(0, freespace) + " {" + text.substring(i, j + 1) + "} " + text.substring(freespace + 1, i);
+                            String s = text.substring(0, freespace) + " [" + text.substring(i, j + 1) + "] " + text.substring(freespace + 1, i);
                             k=s.length();
                             text = s + text.substring(j + 1);
                             textmodified = true;
@@ -85,14 +85,14 @@ public class RawTextLoader implements MarkupLoader {
                                         System.out.println("ERROR no free space to add a comment: " + text);
                                     else {
                                         // on place le commentaire apres
-                                        String s = text.substring(0, i) + firstAlt + " " + text.substring(j + 1, freespace) + " {" + text.substring(i, j + 1) + "} ";
+                                        String s = text.substring(0, i) + firstAlt + " " + text.substring(j + 1, freespace) + " [" + text.substring(i, j + 1) + "] ";
                                         k = s.length();
                                         text = s + text.substring(freespace + 1);
                                         textmodified = true;
                                     }
                                 } else {
                                     // on place le commentaire avant
-                                    String s = text.substring(0, freespace) + " {" + text.substring(i, j + 1) + "} " + text.substring(freespace + 1, i) + firstAlt + " ";
+                                    String s = text.substring(0, freespace) + " [" + text.substring(i, j + 1) + "] " + text.substring(freespace + 1, i) + firstAlt + " ";
                                     k = s.length();
                                     text = s + text.substring(j + 1);
                                     textmodified = true;
