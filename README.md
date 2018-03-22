@@ -31,17 +31,12 @@ enough and where speech recognition fails.
 
 ## Warning
 
-As of today, JTrans is still alpha-quality software:
+As of today, JTrans:
 
-- It only works with French texts for now, but we plan to introduce support for
+- Only works with French texts for now, but we plan to introduce support for
   other languages in the future (particularly English).
 
-- It is currently tailored to the conventions used in a certain set of corpora.
-
-- Over the years, JTrans has gone through many iterations brought by several
-  developers. The codebase is in the process of being cleaned up, so don't be
-  surprised if some parts are still "hectic".
-
+- Is currently tailored to the conventions used in a certain set of corpora.
 
 ## License
 
@@ -105,7 +100,31 @@ http://talc1.loria.fr/users/cerisara/jtrans/jtrans_res_20140416.zip (about 55
 MB) and unzip it in `~/.jtrans`.
 
 
+## Testing JTrans
+
+Download a small part of the TCOF corpus here:
+http://talc1.loria.fr/users/cerisara/jtrans/ag_ael.zip
+
+Unzip both .trs and .wav files somewhere, and launch JTrans either manually:
+
+    java -jar jtrans.jar ag_ael_08.trs
+
+or alternatively graphically, with the menu File/Open or the shortcut Ctrl-o to load the extracted .trs file.
+
+In both cases, JTrans will find and propose to also download the corresponding .wav file, just selects "OK".
+
+When you see both the text and the spectrogram (bottom part), you can then press the button "Align", and just wait until it's finished.
+You can then press the button "Play" to check the alignment, and navigate in the transcription by clicking on a word somewhere in the text.
+
+## Troubleshooting
+
+If JTrans hangs or fails to load the .wav file, you might not have booked enough RAM.
+Then, re-run JTrans with the option to allocate a larger amount of RAM, depending on your computer, for instance:
+
+    java -Xmx2G -jar jtrans.jar
+
 ## Running the unit tests
 
 Please install the resources before running the unit tests (see above).
+Unit tests should be run with apache "ant test".
 
