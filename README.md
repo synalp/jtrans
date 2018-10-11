@@ -33,10 +33,8 @@ enough and where speech recognition fails.
 
 As of today, JTrans:
 
-- Only works with French texts for now, but we plan to introduce support for
-  other languages in the future (particularly English).
-
-- Is currently tailored to the conventions used in a certain set of corpora.
+- Only works with French texts for now.
+- Is currently tailored to the conventions used in a certain set of corpora. But it can also work with raw text files.
 
 ## License
 
@@ -55,6 +53,11 @@ How to cite:
       month = sep,
     }
 
+
+## Getting JTrans
+
+If you don't want to build JTrans from source, you may download it here:
+http://talc1.loria.fr/users/cerisara/jtrans/jtrans.jar
 
 ## Building JTrans from source
 
