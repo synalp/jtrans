@@ -118,10 +118,26 @@ You can then press the button "Play" to check the alignment, and navigate in the
 
 ## Troubleshooting
 
+### Memory error
+
 If JTrans hangs or fails to load the .wav file, you might not have booked enough RAM.
 Then, re-run JTrans with the option to allocate a larger amount of RAM, depending on your computer, for instance:
 
     java -Xmx2G -jar jtrans.jar
+
+### Java version error
+
+Please check that you indeed have java version 1.8 or later:
+
+    java -version
+
+### JNI error
+
+This is probably because you use a "slim" jar file, which does not contain all .jar libraries.
+You may rather want to use a "fat" jar file, with all libraries included.
+This fat jtrans.jar may be compiled with the option
+
+    ant fatjar
 
 ## Running the unit tests
 
