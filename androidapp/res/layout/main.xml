@@ -4,9 +4,20 @@
 	android:layout_width="fill_parent"
 	android:layout_height="fill_parent" >
 
+	<TextView
+		android:id="@+id/textid"
+		android:layout_height="wrap_content"
+		android:layout_width="wrap_content"
+		android:text="0" />
 	<Button
 		android:layout_height="wrap_content"
 		android:layout_width="wrap_content"
 		android:text="Quit"
 		android:onClick="quitte" />
+	<Button
+		android:layout_height="fill_parent"
+		android:layout_width="fill_parent"
+		android:id="@+id/recb"
+		android:text="Push to talk" />
+
 </LinearLayout>

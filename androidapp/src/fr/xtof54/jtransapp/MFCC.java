@@ -229,9 +229,9 @@ public class MFCC {
 
 
 	public static List<FloatData> getMFCC(InputStream audio) {
-		AndroidMikeDataSource afds = new AndroidMikeDataSource(3200, null);
+		AndroidMikeDataSource afds = new AndroidMikeDataSource();
 		afds.setMikeStream(audio);
-		FrontEnd fe = getFrontEnd(withMFCC, afds);
+		FrontEnd fe = getFrontEnd(true, afds);
 
 		List<FloatData> data = new ArrayList<>();
 		for (;;) {
