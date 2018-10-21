@@ -49,10 +49,18 @@ public class JTransapp extends Activity {
 
 	public void mikeEnded() {
 		// called from the mike
-		Button recb = (Button)findViewById(R.id.recb);
-		recb.setBackgroundColor(Color.GRAY);
-		System.out.println("detjtrapp mikeended");
-		recb.invalidate();
+		try {
+			runOnUiThread(new Runnable() {
+				public void run() {
+					Button recb = (Button)findViewById(R.id.recb);
+					recb.setBackgroundColor(Color.GRAY);
+					System.out.println("detjtrapp mikeended");
+					recb.invalidate();
+				}
+			});
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	public void clear(View v) {
@@ -69,6 +77,9 @@ public class JTransapp extends Activity {
 	}
 	public void quitte(View v) {
 		System.exit(1);
+	}
+	public void mfcc(View v) {
+		mike.getRawAudio();
 	}
 
 	public void refreshText() {

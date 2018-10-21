@@ -2,6 +2,8 @@ package fr.xtof54.jtransapp;
 
 import java.io.InputStream;
 import java.util.Calendar;
+import java.nio.ByteBuffer;
+import java.io.File;
 
 import android.media.AudioRecord;
 import android.media.AudioFormat;
@@ -16,6 +18,7 @@ public class Mike extends InputStream {
 	private int curinbuf=0, maxinbuf=0;
 	private MediaRecorder mrec=null;
 	private long startRecordTime = 0;
+	private boolean contrec = false;
 
 	public static final int SAMPLE_RATE = 16000;
 
@@ -23,22 +26,12 @@ public class Mike extends InputStream {
 	}
 
 	public void getRawAudio() {
+		System.out.println("detjtrapp mfcc "+startRecordTime);
 		if (startRecordTime<=0) return;
 		String PATH_NAME = JTransapp.main.fdir.getAbsolutePath()+"/recwav_"+startRecordTime+".3gp";
-		try {
-			MediaExtractor wavio = new MediaExtractor();
-			wavio.setDataSource(new File(PATH_NAME));
-			wavio.selectTrack(0);
-			ByteBuffer bytebuf = ByteBuffer.allocate();
-			while (wavio.readSampleData(bytebuf, 0) >=0) {
-				// TODO compute and add in list MFCC frame
-				wavio.advance();
-			}
-			wavio.release();
-			wavio=null;
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		MediaDecoder dec = new MediaDecoder(PATH_NAME);
+		short[] wav = dec.readShortData();
+		System.out.println("detjtrapp shortwav "+wav.length);
 	}
 
 	public void replay() {
@@ -55,6 +48,49 @@ public class Mike extends InputStream {
 	}
 
 	public void startRecord() {
+		contrec=true;
+		Thread recorder = new Thread(new Runnable() {
+			public void run() {
+				android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO);
+				int bufsize = AudioRecord.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+				if (bufsize == AudioRecord.ERROR || bufsize == AudioRecord.ERROR_BAD_VALUE) bufsize=SAMPLE_RATE*2;
+				short[] wav = new short[bufsize/2];
+
+				AudioRecord record = new AudioRecord.Builder()
+					.setAudioSource(MediaRecorder.AudioSource.MIC)
+					.setAudioFormat(new AudioFormat.Builder()
+							.setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+							.setSampleRate(SAMPLE_RATE)
+							.setChannelMask(AudioFormat.CHANNEL_IN_MONO)
+							.build())
+					.setBufferSizeInBytes(bufsize)
+					.build();
+				if (record.getState() != AudioRecord.STATE_INITIALIZED) {
+					System.out.println("detjtrapp audio record cannot initialize");
+					return;
+				}
+				record.startRecording();
+				System.out.println("detjtrapp start recording "+wav.length);
+				long shortsRead = 0;
+				while (contrec) {
+					int nbshorts = record.read(wav,0,wav.length);
+					if (nbshorts<0) {
+						System.out.println("detjtrapp audio recording error "+nbshorts);
+					} else {
+						shortsRead += nbshorts;
+					}
+					// TODO: conv to mfcc
+				}
+				record.stop();
+				record.release();
+				System.out.println("detjtrapp stopped recording "+shortsRead);
+				JTransapp.main.mikeEnded(); // callback to update the GUI (should use a listener here)
+			}
+		});
+		recorder.start();
+	}
+
+	public void startRecordInFile() {
 		if (mrec!=null) return;
 		try {
 			mrec = new MediaRecorder();
@@ -77,6 +113,9 @@ public class Mike extends InputStream {
 	}
 
 	public void stopRecord() {
+		contrec=false;
+	}
+	public void stopRecordInFile() {
 		if (mrec==null) {
 			System.out.println("detjtrapp mrec=null in stoprecord");
 			return;
