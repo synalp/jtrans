@@ -7,6 +7,7 @@ import android.media.AudioRecord;
 import android.media.AudioFormat;
 import android.media.MediaRecorder;
 import android.media.MediaPlayer;
+import android.media.MediaExtractor;
 
 public class Mike extends InputStream {
 	private AudioRecord ar = null;
@@ -16,7 +17,28 @@ public class Mike extends InputStream {
 	private MediaRecorder mrec=null;
 	private long startRecordTime = 0;
 
+	public static final int SAMPLE_RATE = 16000;
+
 	public Mike() {
+	}
+
+	public void getRawAudio() {
+		if (startRecordTime<=0) return;
+		String PATH_NAME = JTransapp.main.fdir.getAbsolutePath()+"/recwav_"+startRecordTime+".3gp";
+		try {
+			MediaExtractor wavio = new MediaExtractor();
+			wavio.setDataSource(new File(PATH_NAME));
+			wavio.selectTrack(0);
+			ByteBuffer bytebuf = ByteBuffer.allocate();
+			while (wavio.readSampleData(bytebuf, 0) >=0) {
+				// TODO compute and add in list MFCC frame
+				wavio.advance();
+			}
+			wavio.release();
+			wavio=null;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	public void replay() {
