@@ -13,9 +13,10 @@ public class Mike extends InputStream {
 	private byte[] buf=null;
 	private int curinbuf=0, maxinbuf=0;
 	private MediaRecorder mrec=null;
+	private long startRecordTime = 0;
 
 	public Mike() {
-}
+	}
 
 	public void startRecord() {
 		if (mrec!=null) return;
@@ -24,8 +25,8 @@ public class Mike extends InputStream {
 			mrec.setAudioSource(MediaRecorder.AudioSource.MIC);
 			mrec.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
 			mrec.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-			long currentTime = Calendar.getInstance().getTimeInMillis();
-			String PATH_NAME = JTransapp.main.fdir.getAbsolutePath()+"/recwav_"+currentTime+".3gp";
+			startRecordTime = Calendar.getInstance().getTimeInMillis();
+			String PATH_NAME = JTransapp.main.fdir.getAbsolutePath()+"/recwav_"+startRecordTime+".3gp";
 			mrec.setOutputFile(PATH_NAME);
 			mrec.prepare();
 			Thread recorder = new Thread(new Runnable() {
@@ -40,11 +41,26 @@ public class Mike extends InputStream {
 	}
 
 	public void stopRecord() {
-		if (mrec==null) return;
+		if (mrec==null) {
+			System.out.println("detjtrapp mrec=null in stoprecord");
+			return;
+		}
+		long curtime = Calendar.getInstance().getTimeInMillis();
+		if (curtime-startRecordTime<500) {
+			// at least 0.5s, otherwise the mediarecorder may crash
+			System.out.println("detjtrapp too short in stoprecord");
+			try {
+				Thread.sleep(500);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
 		mrec.stop();
 		mrec.reset();   // You can reuse the object by going back to setAudioSource() step
 		mrec.release(); // Now the object cannot be reused
 		mrec=null;
+		System.out.println("detjtrapp end in stoprecord");
+		JTransapp.main.mikeEnded(); // callback to update the GUI (should use a listener here)
 	}
 
 	public void startStream() {

@@ -7,6 +7,7 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.view.View.OnTouchListener;
 import android.view.MotionEvent;
+import android.graphics.Color;
 
 import java.io.File;
 
@@ -25,14 +26,18 @@ public class JTransapp extends Activity {
 		setContentView(R.layout.main);
 
 		txt = (TextView) findViewById(R.id.textid);
-		Button recb = (Button) findViewById(R.id.recb);
+		final Button recb = (Button) findViewById(R.id.recb);
 		recb.setOnTouchListener(new OnTouchListener() {
 			@Override
 			public boolean onTouch(View v, MotionEvent event) {
 				if(event.getAction() == MotionEvent.ACTION_DOWN) {
+					recb.setBackgroundColor(Color.RED);
+					recb.invalidate();
+					System.out.println("detjtrapp startrecord");
 					mike.startRecord();
 				} else if (event.getAction() == MotionEvent.ACTION_UP) {
 					mike.stopRecord();
+					System.out.println("detjtrapp stoprecord");
 					refreshText();
 				}
 
@@ -42,6 +47,23 @@ public class JTransapp extends Activity {
 		refreshText();
 	}
 
+	public void mikeEnded() {
+		// called from the mike
+		Button recb = (Button)findViewById(R.id.recb);
+		recb.setBackgroundColor(Color.GRAY);
+		System.out.println("detjtrapp mikeended");
+		recb.invalidate();
+	}
+
+	public void clear(View v) {
+		if (fdir!=null) {
+			File[] fs = fdir.listFiles();
+			for (File f: fs) {
+				if (f.isFile() && !f.delete()) System.out.println("detjtrapp cannot delete "+f.getAbsolutePath());
+			}
+		}
+		refreshText();
+	}
 	public void quitte(View v) {
 		System.exit(1);
 	}
@@ -50,7 +72,7 @@ public class JTransapp extends Activity {
 		if (fdir!=null) {
 			File[] fs = fdir.listFiles();
 			if (fs!=null) {
-				int nfs = fs.length;
+				String nfs = "n="+Integer.toString(fs.length);
 				if (txt!=null) {
 					txt.setText(nfs);
 					txt.invalidate();
