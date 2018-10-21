@@ -6,6 +6,7 @@ import java.util.Calendar;
 import android.media.AudioRecord;
 import android.media.AudioFormat;
 import android.media.MediaRecorder;
+import android.media.MediaPlayer;
 
 public class Mike extends InputStream {
 	private AudioRecord ar = null;
@@ -16,6 +17,19 @@ public class Mike extends InputStream {
 	private long startRecordTime = 0;
 
 	public Mike() {
+	}
+
+	public void replay() {
+		if (startRecordTime<=0) return;
+		String PATH_NAME = JTransapp.main.fdir.getAbsolutePath()+"/recwav_"+startRecordTime+".3gp";
+		try {
+			MediaPlayer mplayer = new MediaPlayer();
+			mplayer.setDataSource(PATH_NAME);
+			mplayer.prepare();
+			mplayer.start();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	public void startRecord() {

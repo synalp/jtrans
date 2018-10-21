@@ -64,6 +64,9 @@ public class JTransapp extends Activity {
 		}
 		refreshText();
 	}
+	public void replay(View v) {
+		mike.replay();
+	}
 	public void quitte(View v) {
 		System.exit(1);
 	}
