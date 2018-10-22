@@ -1,9 +1,13 @@
 package fr.xtof54.jtransapp;
 
 import java.io.InputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.Calendar;
 import java.nio.ByteBuffer;
-import java.io.File;
+import java.nio.ShortBuffer;
+import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
 
 import android.media.AudioRecord;
 import android.media.AudioFormat;
@@ -70,20 +74,35 @@ public class Mike extends InputStream {
 					return;
 				}
 				record.startRecording();
-				System.out.println("detjtrapp start recording "+wav.length);
-				long shortsRead = 0;
-				while (contrec) {
-					int nbshorts = record.read(wav,0,wav.length);
-					if (nbshorts<0) {
-						System.out.println("detjtrapp audio recording error "+nbshorts);
-					} else {
-						shortsRead += nbshorts;
+				try {
+					System.out.println("detjtrapp start recording "+wav.length);
+					startRecordTime = Calendar.getInstance().getTimeInMillis();
+					String PATH_NAME = JTransapp.main.fdir.getAbsolutePath()+"/recwav_"+startRecordTime+".raw";
+					FileChannel fout = new FileOutputStream(PATH_NAME).getChannel();
+					ByteBuffer myByteBuffer = ByteBuffer.allocate(wav.length*2);
+					myByteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+					ShortBuffer myShortBuffer = myByteBuffer.asShortBuffer();
+					long shortsRead = 0;
+					while (contrec) {
+						int nbshorts = record.read(wav,0,wav.length);
+						if (nbshorts<0) {
+							System.out.println("detjtrapp audio recording error "+nbshorts);
+						} else {
+							shortsRead += nbshorts;
+							myByteBuffer.clear();
+							myShortBuffer.clear();
+							myShortBuffer.put(wav,0,nbshorts);
+							fout.write(myByteBuffer);
+						}
+						// TODO: conv to mfcc
 					}
-					// TODO: conv to mfcc
+					record.stop();
+					record.release();
+					System.out.println("detjtrapp stopped recording "+shortsRead);
+					fout.close();
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
-				record.stop();
-				record.release();
-				System.out.println("detjtrapp stopped recording "+shortsRead);
 				JTransapp.main.mikeEnded(); // callback to update the GUI (should use a listener here)
 			}
 		});
