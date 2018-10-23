@@ -10,6 +10,7 @@ import android.view.MotionEvent;
 import android.graphics.Color;
 
 import java.io.File;
+import java.util.List;
 
 public class JTransapp extends Activity {
 	public Mike mike=null;
@@ -74,14 +75,13 @@ public class JTransapp extends Activity {
 		}
 		refreshText();
 	}
-	public void replay(View v) {
-		mike.replay();
-	}
 	public void quitte(View v) {
 		System.exit(1);
 	}
 	public void mfcc(View v) {
-		mike.getRawAudio();
+		mike.resetAudioSource();
+		List frames = MFCC.getMFCC(mike);
+		System.out.println("detjtrapp "+frames.size());
 	}
 
 	public void refreshText() {

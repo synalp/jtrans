@@ -25,7 +25,8 @@ public class MFCC {
 	private static class AndroidMikeDataSource extends BaseDataProcessor {
 
 		/** The property for the number of bytes to read from the InputStream each time. */
-		@S4Integer(defaultValue = 3200)
+		// default 3200
+		@S4Integer(defaultValue = 200)
 			public static final String PROP_BYTES_PER_READ = "bytesPerRead";
 
 		protected InputStream dataStream;
@@ -217,11 +218,11 @@ public class MFCC {
 
 		public void setMikeStream(InputStream mike) {
 			dataStream = mike;
-			sampleRate = 0;
+			sampleRate = 16000;
 			bigEndian  = false;
-			bytesPerValue = 16;
+			bytesPerValue = 2;
 			signedData = true;
-			// pb avec totalValuesRead qui est private et doit etre mis a zero !
+			totalValuesRead = 0;
 			super.initialize();
 
 		}
@@ -229,7 +230,7 @@ public class MFCC {
 
 
 	public static List<FloatData> getMFCC(InputStream audio) {
-		AndroidMikeDataSource afds = new AndroidMikeDataSource();
+		AndroidMikeDataSource afds = new AndroidMikeDataSource(200);
 		afds.setMikeStream(audio);
 		FrontEnd fe = getFrontEnd(true, afds);
 
