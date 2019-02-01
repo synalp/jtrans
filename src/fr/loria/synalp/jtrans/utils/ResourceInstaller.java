@@ -13,7 +13,7 @@ public class ResourceInstaller {
 	public static final String CURRENT_VERSION = "20140416";
 
 	public static final String BASE_URL =
-			"http://talc1.loria.fr/users/cerisara/jtrans/";
+			"http://synalp.loria.fr/jtrans/";
 
 	public static final ResourceInstaller standardResourceInstaller =
 			new ResourceInstaller(
