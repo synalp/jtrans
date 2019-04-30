@@ -135,7 +135,9 @@ public class FileUtils {
 		URLConnection con = url.openConnection();
 		con.connect();
 
+		// do not rely on getContentLength ? It's often wrong
 		long len = con.getContentLength();
+		System.out.println("downloading "+url);
 		long downloadedLen = 0;
 
 		byte[] buf = new byte[8192];
@@ -169,15 +171,17 @@ public class FileUtils {
 				}
 
 				progress.setProgress(
-						String.format("Downloading " + url + "... (%d KB/s)", bps/1024),
-						(float)downloadedLen/(float)len);
+					String.format("Downloading " + url + "... (%d KB/s)", bps/1024),
+					(float)downloadedLen/(float)len);
 
 				// Allow cancellation
 				Thread.sleep(0);
 			}
+			System.out.println("read nbytes "+read);
 		} finally {
 			closeQuietly(os);
 			closeQuietly(in);
+			System.out.println("downloaded "+target.length());
 		}
 	}
 

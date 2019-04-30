@@ -13,7 +13,7 @@ public class ResourceInstaller {
 	public static final String CURRENT_VERSION = "20140416";
 
 	public static final String BASE_URL =
-			"http://synalp.loria.fr/jtrans/";
+			"https://synalp.loria.fr/jtrans/";
 
 	public static final ResourceInstaller standardResourceInstaller =
 			new ResourceInstaller(
@@ -95,6 +95,7 @@ public class ResourceInstaller {
 			public Object call() throws Exception {
 				URL url = new URL(zipUrl);
 				File zip = FileUtils.createVanishingTempFile("jtrans-res-", ".zip");
+				System.out.println("downloading temp file into "+zip.getAbsolutePath());
 				FileUtils.downloadFile(url, zip, progress);
 				progress.setCancelable(false);
 				progress.setIndeterminateProgress("Decompressing...");
