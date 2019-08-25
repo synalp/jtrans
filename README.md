@@ -57,7 +57,7 @@ How to cite:
 ## Getting JTrans
 
 If you don't want to build JTrans from source, you may download it here:
-http://talc1.loria.fr/users/cerisara/jtrans/jtrans.jar
+https://synalp.loria.fr/jtrans/jtrans.jar
 
 ## Building JTrans from source
 
@@ -99,14 +99,14 @@ JTrans, it will download resources and install them in `~/.jtrans`
 (`%userprofile%\.jtrans` on Windows).
 
 You may also install resources manually: download
-http://talc1.loria.fr/users/cerisara/jtrans/jtrans_res_20140416.zip (about 55
+https://synalp.loria.fr/jtrans/jtrans_res_20140416.zip (about 55
 MB) and unzip it in `~/.jtrans`.
 
 
 ## Testing JTrans
 
 Download a small part of the TCOF corpus here:
-http://talc1.loria.fr/users/cerisara/jtrans/ag_ael.zip
+https://synalp.loria.fr/jtrans/ag_ael.zip
 
 Unzip both .trs and .wav files somewhere, and launch JTrans either manually:
 
